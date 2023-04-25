@@ -29,12 +29,12 @@ dy = [[0]*len(Theta)]*len(R)
 dz = [[0]*len(Theta)]*len(R)
 for iy in np.arange(len(Y)):
     for iz in np.arange(len(Z)):
-        if iz == len(Z) or iy == len(Y):
-            dz[iz] = dz[iz-1]
-            dz[iy] = dy[iy-1]
+        if iz == len(Z)-1 or iy == len(Y)-1:
+            dz[iy][iz] = dz[iy][iz-1]
+            dy[iy][iz] = dy[iy-1][iz]
         else:
-            dz[iy][iz] = Z[iz+1] - Z[iz]
-            dy[iy][iz] = Y[iy+1] - Z[iy]
+            dz[iy][iz] = Z[iy][iz+1] - Z[iy][iz]
+            dy[iy][iz] = Y[iy+1][iz] - Y[iy][iz]
 
 
 #create y,z space for interpolation
