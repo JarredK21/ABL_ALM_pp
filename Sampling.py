@@ -124,7 +124,7 @@ for case in cases:
     #plotting option
     plot_line_plots = False
     plot_isocontour = True
-    plot_u = True; plot_v = True; plot_w = True; plot_hvelmag = True
+    plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
     velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
     
     #check if no velocity components selected
@@ -134,7 +134,7 @@ for case in cases:
 
     fluc_vel = False
     movie_tot_vel_isocontour = False
-    plot_specific_offsets = True
+    plot_specific_offsets = False
 
     if plot_specific_offsets == True:    
         spec_offsets = [3]
