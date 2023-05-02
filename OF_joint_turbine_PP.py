@@ -1,5 +1,3 @@
-#from pyFAST.input_output import FASTOutputFile
-#import pyFAST.input_output as io
 import pyFAST.input_output as io
 import matplotlib.pyplot as plt
 import numpy as np

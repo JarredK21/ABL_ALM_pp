@@ -41,17 +41,20 @@ def search_2pi(theta):
     
     return i
 
+rotor_coordinates = [2560,2560,90]
 
-rotor_coordinates = np.array([2560,2560,90])
 
-Oy = np.sqrt( np.square(p_rotor.origin[0] - rotor_coordinates[0]) + np.square(p_rotor.origin[1] - rotor_coordinates[1]) )
-ly = np.sqrt( np.square(p_rotor.axis1[0]) + np.square(p_rotor.axis1[1]) )
+ly = 400
+Oy = 2560 - ly/2
 
-Oz = p_rotor.origin[2] - rotor_coordinates[2]
+Oz = p_rotor.origin[2]
 lz = p_rotor.axis2[2]
 
-ys = np.linspace(Oy,Oy+ly,y)
-zs = np.linspace(Oz,Oz+lz,z)
+ys = np.linspace(Oy,Oy+ly,y) - rotor_coordinates[1]
+zs = np.linspace(Oz,Oz+lz,z) - rotor_coordinates[2]
+
+dy = ys[1] - ys[0]
+dz = zs[1] - zs[0]
 
 
 velocityx = offset_data(p_rotor,no_cells_offset,i=0,velocity_comp="velocityx",it=0)
@@ -66,11 +69,9 @@ f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
 R = np.linspace(0,63,500)
 Theta = np.arange(0,2*np.pi,(2*np.pi)/729)
 
-
-delta_Ux = []
+IA = 0
 ir = 0
 for r in R:
-    delta_Ux_r = []
     itheta = 0
     for theta in Theta:
 
@@ -98,9 +99,11 @@ for r in R:
         Ux_1 =  f(Y_1,Z_1)
         Ux_2 =  f(Y_2,Z_2)
 
-        delta_Ux_r.append( np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] ) )
+        delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
+
+        IA += r * delta_Ux * dz * dy
 
         itheta+=1
-
-    delta_Ux.append(delta_Ux_r)
     ir+=1
+
+print(IA)
