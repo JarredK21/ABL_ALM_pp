@@ -62,7 +62,7 @@ def lineplot(x,y, plane_data_u,offset, xlabel, filename,case,dir):
 #isocontourplot
 def isocontourplot(u,p_h,x,y,Title,filename,dir,normal):
     
-    u_plane = u.reshape(x,y) #needs fixing x and y lengths and number of points aren't consistent.
+    u_plane = u.reshape(y,x) #needs fixing x and y lengths and number of points aren't consistent.
 
     if normal == "x":
         l = 1; m = 2
@@ -71,13 +71,21 @@ def isocontourplot(u,p_h,x,y,Title,filename,dir,normal):
     elif normal == "z":
         l = 0; m = 1
 
-    x_array = np.linspace(p_h.origin[l],(p_h.origin[l]+p_h.axis1[l]),x)
-    y_array = np.linspace(p_h.origin[m],(p_h.origin[m]+p_h.axis2[m]),y)
+    l1 = np.sqrt( np.square(p_h.axis1[0]) + np.square(p_h.axis1[1]) + np.square(p_h.axis1[2]) )
+    l2 = np.sqrt( np.square(p_h.axis2[0]) + np.square(p_h.axis2[1]) + np.square(p_h.axis2[2]) )
+
+    # x_array = np.linspace(p_h.origin[l],(p_h.origin[l]+l1),x)
+    # y_array = np.linspace(p_h.origin[m],(p_h.origin[m]+l2),y)
+
+
+    x_array = np.linspace(p_h.origin[1],p_h.origin[1]+l1,x)
+    y_array = np.linspace(p_h.origin[2],p_h.origin[2]+l2,y)
+
     X,Y = np.meshgrid(x_array,y_array)
+    #print(np.shape(X),np.shape(Y))
 
     fig = plt.figure()
     plt.rcParams['font.size'] = 12
-    #plt.contourf(X,Y,np.transpose(u_plane), cmap=cm.coolwarm)
     
     plt.contourf(X,Y,u_plane, cmap=cm.coolwarm)
     if normal == "x":
@@ -89,22 +97,35 @@ def isocontourplot(u,p_h,x,y,Title,filename,dir,normal):
     elif normal == "z":
         plt.xlabel("X axis [m]")
         plt.ylabel("Y axis [m]")
+    else:
+        plt.xlabel("{}degrees to X axis".format(round(np.degrees(np.arcsin(p_h.axis3[0]))),2))
+        plt.ylabel("Z axis [m]")
+
     plt.title(Title)
     plt.colorbar()
+    plt.tight_layout()
     plt.savefig(dir+"{}".format(filename))
     plt.close(fig)
 
 
 
-dir = "Ex1.3/post_processing/plots/"
-cases = ["Ex1.3"]
+init_path = "../../../jarred/ALM_sensitivity_analysis/"
+
+#cases = ["test10"]
+cases = ["Ex1"]
+
+
+dir = init_path + "Ex1/post_processing/plots2/"
 
 for case in cases:
 
-    sampling = glob.glob("{0}/post_processing/sampling*".format(case))
+    case_path = init_path + case
+    
+    sampling = glob.glob("{0}/post_processing/sampling*".format(case_path))
+    print(sampling)
     a = Dataset("./{}".format(sampling[0]))
-    p_h = a.groups["p_h"]
-
+    p_h = a.groups["p_sw1"]
+    #p_h = a.groups["p_h"]
 
     no_cells = len(p_h.variables["coordinates"])
     no_offsets = len(p_h.offsets)
@@ -114,9 +135,9 @@ for case in cases:
     y = p_h.ijk_dims[1] #no. data points
 
 
-    time_steps = len(p_h.variables["velocityx"])
+    time_steps = len(a.variables["time"])
     frequency = 1 #manual
-    dt = 0.001
+    dt = a.variables["time"][1] - a.variables["time"][0]
     time_per_time_step = frequency*dt
 
 
@@ -149,6 +170,8 @@ for case in cases:
         normal = "y"
     elif p_h.axis3[2] == 1:
         normal = "z"
+    else:
+        normal = "Angle"
 
 
     col_names = []
@@ -161,15 +184,15 @@ for case in cases:
     iv = 0
     for velocity_comp in velocity_comps:
         if velocity_plot[iv] == False:
+            iv+=1
             continue
-
         #loop over offsets
         for i in spec_offsets:
 
             if velocity_comp == "Magnitude horizontal velocity":
                 u = offset_data(p_h,velocity_comps[0], i, no_cells_offset,it=0) #slicing data into offset arrays
                 v = offset_data(p_h,velocity_comps[1], i, no_cells_offset,it=0)
-                u = np.sqrt(u**2 + v**2)
+                u = np.sqrt(np.square(u) + np.square(v))
 
             else:
                 u = offset_data(p_h,velocity_comp, i, no_cells_offset,it=0) #slicing data into offset arrays
