@@ -43,9 +43,6 @@ lz = p_rotor.axis2[2]
 ys = np.linspace(Oy,Oy+ly,y) - rotor_coordinates[1]
 zs = np.linspace(Oz,Oz+lz,z) - rotor_coordinates[2]
 
-dy = ys[1] - ys[0]
-dz = zs[1] - zs[0]
-
 
 velocityx = offset_data(p_rotor,no_cells_offset,i=0,velocity_comp="velocityx",it=0)
 velocityy = offset_data(p_rotor,no_cells_offset,i=0,velocity_comp="velocityx",it=0)
@@ -60,6 +57,10 @@ f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
 #create R,theta space over rotor
 R = np.linspace(0,63,500)
 Theta = np.arange(0,2*np.pi,(2*np.pi)/729)
+
+dR = R[1]-R[0]
+dTheta = Theta[1] - Theta[0]
+dA = (dTheta/2)*(dR**2)
 
 IA = 0
 ir = 0
@@ -93,7 +94,7 @@ for r in R:
 
         delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
-        IA += r * delta_Ux * dz * dy
+        IA += r * delta_Ux * dA
 
         itheta+=1
     ir+=1

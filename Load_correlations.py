@@ -87,13 +87,14 @@ def average_velocity_asymmetry(tstart, tend,case): #average velocity into vertic
     ys = np.linspace(Oy,Oy+ly,y) - rotor_coordinates[1]
     zs = np.linspace(Oz,Oz+lz,z) - rotor_coordinates[2]
 
-    dy = ys[1] - ys[0]
-    dz = zs[1] - zs[0]
-
 
     #create R,theta space over rotor
     R = np.linspace(0,63,500)
     Theta = np.arange(0,2*np.pi,(2*np.pi)/729)
+
+    dR = R[1]-R[0]
+    dTheta = Theta[1] - Theta[0]
+    dA = (dTheta/2)*(dR**2)
 
 
     avg_rotor_field_offset = []
@@ -151,7 +152,7 @@ def average_velocity_asymmetry(tstart, tend,case): #average velocity into vertic
 
                     delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
-                    IA += r * delta_Ux * dz * dy
+                    IA += r * delta_Ux * dA
             
             avg_rotor_field_it.append(np.average(Ux_rotor))
 
