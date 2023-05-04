@@ -15,22 +15,30 @@ import math
 # Titles = ["5 levels of refinement, no. actuator points = 54","5 levels of refinement, no. actuator points = 47",
 #           "5 levels of refinement, no. actuator points = 59"]
 
-cases = ["Ex4","Ex5"]
-act_stations_cases = [19,19]
-dt_cases = [0.001,0.001]
-Titles = ["54 actuator points, no. levels of refinement = 4","54 actuator points, no. levels of refinement = 6"]
+# cases = ["Ex4","Ex5"]
+# act_stations_cases = [19,19]
+# dt_cases = [0.001,0.001]
+# Titles = ["54 actuator points, no. levels of refinement = 4","54 actuator points, no. levels of refinement = 6"]
+
+cases = ["Ex1","Ex1_dblade_1.0","Ex1_dblade_2.0","test3","test2"]
+act_stations_cases = [54,54,54,94,94]
+dt_cases = [0.001,0.0039,0.0078,0.0039,0.0078]
+
+Titles = []
+for i in np.arange(0,len(dt_cases)):
+    Titles.append("54 actuator points, no. levels of refinement = 5: {0}s dt".format(dt_cases[i]))
 
 #plotting options
-plot_radial = True
+plot_radial = False
 plot_int = True
-plot_spectra = True
+plot_spectra = False
 
 ix = 0
 for case in cases:
 
-    dir = "{0}/post_processing/plots/".format(case)
+    dir = "../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/plots/".format(case)
 
-    df = io.fast_output_file.FASTOutputFile("{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+    df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
 
     # for col in df.columns:
     #     print(col)
@@ -140,13 +148,13 @@ for case in cases:
 
             radial_dist_variable(rad_variables[i],rad_units[i], number_rotor_rotations,rad_YLabel[i])
 
-    time_start = [10,10] #time in seconds to remove from start of data - insert 0 if plot all time
-    time_end = [100,25]
-    int_variables = ["Wind1VelX","RotTorq","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh"]
-    int_YLabel = ["Hub height Velocity", "Rotor Torque", "Rotor Force in X direction", "Rotor Force in Y direction", 
+    time_start = [10,10,10,10,10] #time in seconds to remove from start of data - insert 0 if plot all time
+    time_end = [100,24,24,24,24]
+    int_variables = ["RotSpeed","BldPitch1","Wind1VelX","RotTorq","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh"]
+    int_YLabel = ["Rotor speed","Blade pitch","Hub height Velocity", "Rotor Torque", "Rotor Force in X direction", "Rotor Force in Y direction", 
                   "Rotor Force in Z direction", "Rotor Moment in X direction", "Rotor Moment in Y direction", 
                   "Rotor Moment in Z direction"]
-    int_units = ["[m/s]","[kN-m]","[N]","[N]","[N]","[N-m]","[N-m]","[N-m]"]
+    int_units = ["[rpm]","[deg]","[m/s]","[kN-m]","[N]","[N]","[N]","[N-m]","[N-m]","[N-m]"]
 
     for i in np.arange(0,len(int_variables),1):
 

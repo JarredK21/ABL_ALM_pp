@@ -31,16 +31,6 @@ def offset_data(p_h,no_cells_offset,i,velocity_comp,it):
 
     return u_slice
 
-
-#search function to find index of theta +/- 2pi/3
-def search_2pi(theta):
-
-    for i in np.arange(0,len(Theta)):
-        if Theta[i+1] >= theta:
-            break
-    
-    return i
-
 rotor_coordinates = [2560,2560,90]
 
 
@@ -60,7 +50,9 @@ dz = zs[1] - zs[0]
 velocityx = offset_data(p_rotor,no_cells_offset,i=0,velocity_comp="velocityx",it=0)
 velocityy = offset_data(p_rotor,no_cells_offset,i=0,velocity_comp="velocityx",it=0)
 
-hvelmag = np.sqrt( np.square(velocityx) + np.square(velocityy) )
+
+hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
+
 hvelmag = hvelmag.reshape((z,y))
 
 f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")

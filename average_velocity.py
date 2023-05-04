@@ -3,11 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob 
-import os
-from matplotlib import cm
-from matplotlib.animation import PillowWriter
-import operator
-import math
+from scipy import interpolate
 
 
 init_path = "../../../jarred/ALM_sensitivity_analysis/"
@@ -40,16 +36,23 @@ for case in cases:
     no_offsets = len(p_h.offsets)
     no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
 
-    coordinates = offset_data(p_h,no_cells_offset,i=0,velocity_comp="coordinates",it=0)
+    y = p_h.ijk_dims[0] #no. data points
+    z = p_h.ijk_dims[1] #no. data points
 
     rotor_coordinates = np.array([2560,2560,90])
+    ly = 400
+    Oy = 2560 - ly/2
 
-    coordinates = np.subtract(np.array(coordinates),rotor_coordinates)
+    Oz = p_h.origin[2]
+    lz = p_h.axis2[2]
 
-    ys = coordinates[:,1]
-    zs = coordinates[:,2]
+    ys = np.linspace(Oy,Oy+ly,y) - rotor_coordinates[1]
+    zs = np.linspace(Oz,Oz+lz,z) - rotor_coordinates[2]
 
-    arc = np.sqrt( np.square(zs) + np.square(ys) )
+    #create R,theta space over rotor
+    R = np.linspace(0,63,500)
+    Theta = np.arange(0,2*np.pi,(2*np.pi)/729)
+
 
     avg_rotor_field_offset = []
     for j in np.arange(0,no_offsets):
@@ -57,14 +60,23 @@ for case in cases:
         velocityx = offset_data(p_h, no_cells_offset,j,velocity_comp="velocityx",it=0)
         velocityy = offset_data(p_h, no_cells_offset,j,velocity_comp="velocityy",it=0)
 
-        hvelmag = np.sqrt( np.square( np.array(velocityx) ) + np.square( np.array(velocityy) ) )
+        hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
+        hvelmag = hvelmag.reshape((z,y))
 
-        rotor_field = []
-        for i in np.arange(0,len(arc)):
-            if arc[i] <= 63.0:
-                rotor_field.append(hvelmag[i])
+        f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
+
+        Ux_rotor = []
+        for r in R:
+            for theta in Theta:
+
+                Y = r*np.cos(theta)
+                Z = r*np.sin(theta)
+
+                Ux =  f(Y,Z)
+
+                Ux_rotor.append(Ux)
         
-        avg_rotor_field_offset.append(np.average(rotor_field))
+        avg_rotor_field_offset.append(np.average(Ux_rotor))
 
     avg_rotor_field.append(avg_rotor_field_offset)
 avg_rotor_field =  np.array(avg_rotor_field)
@@ -74,4 +86,7 @@ for i in np.arange(0,no_offsets):
     plt.plot(cases,vel,"-ok")
     plt.xlabel("case")
     plt.ylabel("Average axial velocity at {}m offset to rotor plane".format(p_h.offsets[i]))
-    plt.show()
+plt.show()
+
+
+print(avg_rotor_field)

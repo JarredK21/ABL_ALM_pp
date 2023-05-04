@@ -192,7 +192,7 @@ for case in cases:
             if velocity_comp == "Magnitude horizontal velocity":
                 u = offset_data(p_h,velocity_comps[0], i, no_cells_offset,it=0) #slicing data into offset arrays
                 v = offset_data(p_h,velocity_comps[1], i, no_cells_offset,it=0)
-                u = np.sqrt(np.square(u) + np.square(v))
+                u = np.add( np.multiply(u,np.cos(np.radians(29))) , np.multiply( v,np.sin(np.radians(29))) )
 
             else:
                 u = offset_data(p_h,velocity_comp, i, no_cells_offset,it=0) #slicing data into offset arrays

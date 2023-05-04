@@ -20,9 +20,9 @@ dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dt_study2/"
 # markers = ["o","D","s"]
 # trans = [1,0.5,0.25]
 
-cases = ["test3","test2"]
+cases = ["Ex1","Ex1_dblade_1.0","Ex1_dblade_2.0","test3","test2"]
 act_stations_cases = [94,94]
-dt_cases = [0.0039,0.0078]
+dt_cases = [0.001,0.0039,0.0078,0.0039,0.0078]
 
 colors = ["red","blue","green"]
 markers = ["o","D","s"]
@@ -47,17 +47,18 @@ number_rotor_rotations = 3
 
 time_start = [10,10,10] #time in seconds to remove from start of data - insert 0 if plot all time
 time_end = [24,24,24] #time in seconds to plot upto - insert False if plot all time
-int_variables = ["Wind1VelX","RotTorq","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh"]
-int_YLabel = ["Hub height Velocity", "Rotor Torque", "Rotor Force in X direction", "Rotor Force in Y direction", 
+
+int_variables = ["RotSpeed","BldPitch1","Wind1VelX","RotTorq","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh"]
+int_YLabel = ["Rotor speed","Blade pitch","Hub height Velocity", "Rotor Torque", "Rotor Force in X direction", "Rotor Force in Y direction", 
                 "Rotor Force in Z direction", "Rotor Moment in X direction", "Rotor Moment in Y direction", 
                 "Rotor Moment in Z direction"]
-int_units = ["[m/s]","[kN-m]","[N]","[N]","[N]","[N-m]","[N-m]","[N-m]"]
+int_units = ["[rpm]","[deg]","[m/s]","[kN-m]","[N]","[N]","[N]","[N-m]","[N-m]","[N-m]"]
 
 
 #plotting options
 plot_ints = True
 plot_spectra = False
-plot_radial = True
+plot_radial = False
 avg_difference = False
 
 
