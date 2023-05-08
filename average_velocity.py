@@ -4,21 +4,19 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import glob 
 from scipy import interpolate
+from multiprocessing import Pool
 
 
-# init_path = "../../../jarred/ALM_sensitivity_analysis/"
+#dir = "./post_processing/plots/"
+dir = "../../../jarred/ALM_sensitivity_analysis/"
+case = "Ex1"
 
-# cases = ["Ex1","Ex1_dblade_1.0","Ex1_dblade_2.0"]
-
-dir = "./post_processing/plots/"
-
-cases = [1]
-
-sampling = glob.glob("./post_processing/sampling*")
+sampling = glob.glob("{0}/post_processing/sampling*".format(dir+case))
 a = Dataset("./{}".format(sampling[0]))
 p_rotor = a.groups["p_sw1"]
 
-time = p_rotor.variables["time"]
+time = a.variables["time"]
+time = time - time[0]
 tstart = 50
 tend = 350
 tstart_idx = np.searchsorted(time,tstart)
@@ -58,6 +56,15 @@ def offset_data(p_rotor,no_cells_offset,i,it,velocity_comp):
     return u_slice
 
 
+def Ux(r,theta):
+    Y = r*np.cos(theta)
+    Z = r*np.sin(theta)
+
+    Ux =  f(Y,Z)
+
+    return Ux
+
+
 for i in np.arange(0,no_offsets):
     avg_rotor_it = []
     for it in np.arange(tstart_idx,tend_idx):
@@ -70,16 +77,13 @@ for i in np.arange(0,no_offsets):
 
         f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
 
+
+        items = [(r,theta) for r in R for theta in Theta]
         Ux_rotor = []
-        for r in R:
-            for theta in Theta:
+        with Pool() as pool:
+            for Ux_i in pool.starmap(Ux,items):              
 
-                Y = r*np.cos(theta)
-                Z = r*np.sin(theta)
-
-                Ux =  f(Y,Z)
-
-                Ux_rotor.append(Ux)
+                Ux_rotor.append(Ux_i)
         
         avg_rotor_it.append(np.average(Ux_rotor))
 

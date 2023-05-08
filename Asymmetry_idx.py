@@ -3,10 +3,8 @@ import numpy as np
 import glob 
 from netCDF4 import Dataset
 from scipy import interpolate
+from multiprocessing import Pool
 
-
-# init_path = "../../../jarred/ALM_sensitivity_analysis/"
-# case = "Ex1"
 
 dir = "./post_processing/plots/"
 
@@ -15,6 +13,7 @@ a = Dataset("./{}".format(sampling[0]))
 p_rotor = a.groups["p_sw1"]
 
 time = a.variables["time"]
+time = time - time[0]
 no_cells = len(p_rotor.variables["coordinates"])
 no_offsets = len(p_rotor.offsets)
 no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
@@ -77,38 +76,45 @@ for i in np.arange(0,no_offsets,1):
         dTheta = Theta[1] - Theta[0]
         dA = (dTheta/2)*(dR**2)
 
+        def asymmetry_parameter(r,theta):
+            Y_0 = r*np.cos(theta)
+            Z_0 = r*np.sin(theta)
+
+            if theta + ((2*np.pi)/3) > (2*np.pi):
+                theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
+            else:
+                theta_1 = theta + (2*np.pi)/3
+
+            Y_1 = r*np.cos(theta_1)
+            Z_1 = r*np.sin(theta_1)
+
+
+            if theta - ((2*np.pi)/3) < 0:
+                theta_2 = theta - ((2*np.pi)/3) + (2*np.pi)
+            else:
+                theta_2 = theta - ((2*np.pi)/3)
+
+            Y_2 = r*np.cos(theta_2)
+            Z_2 = r*np.sin(theta_2)
+
+            Ux_0 =  f(Y_0,Z_0)
+            Ux_1 =  f(Y_1,Z_1)
+            Ux_2 =  f(Y_2,Z_2)
+
+            delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
+
+            IA = r * delta_Ux * dA
+
+            return IA
+
+
+        items = [(r,theta) for r in R for theta in Theta]
         IA = 0
-        for r in R:
-            for theta in Theta:
+        with Pool() as pool:
+            for IA_i in pool.starmap(asymmetry_parameter,items):              
 
-                Y_0 = r*np.cos(theta)
-                Z_0 = r*np.sin(theta)
-
-                if theta + ((2*np.pi)/3) > (2*np.pi):
-                    theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
-                else:
-                    theta_1 = theta + (2*np.pi)/3
-
-                Y_1 = r*np.cos(theta_1)
-                Z_1 = r*np.sin(theta_1)
-
-
-                if theta - ((2*np.pi)/3) < 0:
-                    theta_2 = theta - ((2*np.pi)/3) + (2*np.pi)
-                else:
-                    theta_2 = theta - ((2*np.pi)/3)
-
-                Y_2 = r*np.cos(theta_2)
-                Z_2 = r*np.sin(theta_2)
-
-                Ux_0 =  f(Y_0,Z_0)
-                Ux_1 =  f(Y_1,Z_1)
-                Ux_2 =  f(Y_2,Z_2)
-
-                delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
-
-                IA += r * delta_Ux * dA
-
+                IA += IA_i
+        
         IA_it.append(IA)
 
     fig = plt.figure(figsize=(14,8))
