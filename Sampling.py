@@ -37,28 +37,6 @@ def vmin_vmax(p_h,velocity_comp,i,no_cells_offset):
         return vmin, vmax
 
 
-
-#lineplot
-def lineplot(x,y, plane_data_u,offset, xlabel, filename,case,dir):
-    u = np.array(plane_data_u[:][offset])
-    u_plane = u.reshape(x,y) #needs fixing
-    u_line = np.average(u_plane, axis=0)
-
-    stats = glob.glob("{0}/post_processing/abl_statistics*".format(case))
-    b = Dataset("./{}".format(stats[0]))
-    mg = b.groups["mean_profiles"]
-    height = mg.variables["h"][:]
-
-    fig = plt.figure()
-    plt.rcParams['font.size'] = 12
-    plt.plot(u_line, height)
-    plt.xlabel(xlabel)
-    plt.ylabel("height from surface [m]")
-    plt.title("Offset = "+offset)
-    plt.savefig(dir+"{}".format(filename))
-    plt.close(fig)
-
-
 #isocontourplot
 def isocontourplot(u,p_h,x,y,Title,filename,dir,normal):
     
@@ -109,21 +87,15 @@ def isocontourplot(u,p_h,x,y,Title,filename,dir,normal):
 
 
 
-init_path = "../../../jarred/ALM_sensitivity_analysis/"
-
-#cases = ["test10"]
 cases = ["Ex1"]
 
-
-dir = init_path + "Ex1/post_processing/plots2/"
+dir = "./post_processing/plots/"
 
 for case in cases:
-
-    case_path = init_path + case
     
-    sampling = glob.glob("{0}/post_processing/sampling*".format(case_path))
-    print(sampling)
+    sampling = glob.glob("./post_processing/sampling*")
     a = Dataset("./{}".format(sampling[0]))
+    
     p_h = a.groups["p_sw1"]
     #p_h = a.groups["p_h"]
 

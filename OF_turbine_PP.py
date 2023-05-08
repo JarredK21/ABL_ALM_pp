@@ -20,25 +20,26 @@ import math
 # dt_cases = [0.001,0.001]
 # Titles = ["54 actuator points, no. levels of refinement = 4","54 actuator points, no. levels of refinement = 6"]
 
-cases = ["Ex1","Ex1_dblade_1.0","Ex1_dblade_2.0","test3","test2"]
-act_stations_cases = [54,54,54,94,94]
-dt_cases = [0.001,0.0039,0.0078,0.0039,0.0078]
+# cases = ["Ex1","Ex1_dblade_1.0","Ex1_dblade_2.0","test3","test2"]
+# act_stations_cases = [54,54,54,94,94]
+# dt_cases = [0.001,0.0039,0.0078,0.0039,0.0078]
 
-Titles = []
-for i in np.arange(0,len(dt_cases)):
-    Titles.append("54 actuator points, no. levels of refinement = 5: {0}s dt".format(dt_cases[i]))
+cases = ["NAWEA_23"]
+act_stations_cases = [54]
+dt_cases = [0.0039]
+Titles = ["54 Actuator points, no. levels of refinement = 5, dt = 0.0039s"]
 
 #plotting options
-plot_radial = False
+plot_radial = True
 plot_int = True
-plot_spectra = False
+plot_spectra = True
 
 ix = 0
 for case in cases:
 
-    dir = "../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/plots/".format(case)
+    dir = "../../../jarred/{0}/post_processing/plots/".format(case)
 
-    df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+    df = io.fast_output_file.FASTOutputFile("../../../jarred/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
 
     # for col in df.columns:
     #     print(col)
@@ -72,7 +73,18 @@ for case in cases:
         plt.savefig(dir+"{0}.png".format(Var))
         plt.close(fig)
 
-        
+
+
+    def energy_contents_check(case,Var,e_fft,signal,dt):
+    
+        E = (1/dt)*np.sum(e_fft)
+
+        q = np.sum(np.square(signal))
+
+        E2 = q
+
+        print(case, Var, E, E2, abs(E2/E))    
+
 
 
     def radial_dist_variable(Var,unit, no_rots,YLabel):
@@ -124,6 +136,8 @@ for case in cases:
         PSD[1:-1] = PSD[1:-1]*2
 
 
+        energy_contents_check(case,Var,PSD,signal,dt_cases[ix])
+
 
         fig = plt.figure(figsize=(14,8))
         plt.loglog(frq, PSD)
@@ -141,15 +155,15 @@ for case in cases:
     rad_YLabel = ["Local Relative Velocity", "Local Angle of Attack", "Local Coeffcient of Lift", "Local Coefficient of Drag",
                   "Local Aerofoil Normal Force", "Local Aerofoil Tangential Force", "Local Axial Velocity"]
     rad_units = ["[m/s]","[deg]","[-]","[-]","[N/m]","[N/m]","[m/s]"]
-    number_rotor_rotations = 3
+    number_rotor_rotations = 10
 
     if plot_radial == True:
         for i in np.arange(0,len(rad_variables),1):
 
             radial_dist_variable(rad_variables[i],rad_units[i], number_rotor_rotations,rad_YLabel[i])
 
-    time_start = [10,10,10,10,10] #time in seconds to remove from start of data - insert 0 if plot all time
-    time_end = [100,24,24,24,24]
+    time_start = [50] #time in seconds to remove from start of data - insert 0 if plot all time
+    time_end = [350]
     int_variables = ["RotSpeed","BldPitch1","Wind1VelX","RotTorq","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh"]
     int_YLabel = ["Rotor speed","Blade pitch","Hub height Velocity", "Rotor Torque", "Rotor Force in X direction", "Rotor Force in Y direction", 
                   "Rotor Force in Z direction", "Rotor Moment in X direction", "Rotor Moment in Y direction", 

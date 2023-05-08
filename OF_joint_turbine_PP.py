@@ -9,7 +9,7 @@ from scipy import interpolate
 import math
 
 
-dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dt_study2/"
+dir = "../../../jarred/ALM_sensitivity_analysis/test_act_line/post_processing/plots/"
 
 
 # cases = ["Ex1","Ex2","Ex3"]
@@ -20,9 +20,9 @@ dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dt_study2/"
 # markers = ["o","D","s"]
 # trans = [1,0.5,0.25]
 
-cases = ["Ex1","Ex1_dblade_1.0","Ex1_dblade_2.0","test3","test2"]
-act_stations_cases = [94,94]
-dt_cases = [0.001,0.0039,0.0078,0.0039,0.0078]
+cases = ["Ex1","Ex1_dblade_1.0","test_act_line"]
+act_stations_cases = [54,54,54]
+dt_cases = [0.001,0.0039,0.0039]
 
 colors = ["red","blue","green"]
 markers = ["o","D","s"]
@@ -58,7 +58,7 @@ int_units = ["[rpm]","[deg]","[m/s]","[kN-m]","[N]","[N]","[N]","[N-m]","[N-m]",
 #plotting options
 plot_ints = True
 plot_spectra = False
-plot_radial = False
+plot_radial = True
 avg_difference = False
 
 
