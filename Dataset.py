@@ -13,10 +13,10 @@ from multiprocessing import Pool
 
 
 #openfast data
-df = io.fast_output_file.FASTOutputFile("./NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
 
 #sampling data
-sampling = glob.glob("./post_processing/sampling*")
+sampling = glob.glob("../post_processing/sampling*")
 a = Dataset("./{}".format(sampling[0]))
 p_rotor = a.groups["p_sw1"]
 
@@ -109,99 +109,85 @@ def Ux_it_offset(i,it):
     return Ux_rotor/len(Ux_rotor)
 
 
+def delta_Ux(r,theta,f):
 
-def asymmetry_parameter_it():
-    for i in np.arange(0,no_offsets,1):
-        IA_it = []
-        for it in np.arange(tstart_sample_idx,tend_sample_idx):
+    Y_0 = r*np.cos(theta)
+    Z_0 = r*np.sin(theta)
 
-            velocityx = offset_data(p_rotor,no_cells_offset,i,it,velocity_comp="velocityx")
-            velocityy = offset_data(p_rotor,no_cells_offset,i,it,velocity_comp="velocityy")
+    if theta + ((2*np.pi)/3) > (2*np.pi):
+        theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
+    else:
+        theta_1 = theta + (2*np.pi)/3
 
-            hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
-
-            hvelmag = hvelmag.reshape((z,y))
-
-            f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
-
-            #create R,theta space over rotor
-            R = np.linspace(1.5,63,500)
-            Theta = np.arange(0,2*np.pi,(2*np.pi)/729)
-
-            dR = R[1]-R[0]
-            dTheta = Theta[1] - Theta[0]
-            dA = (dTheta/2)*(dR**2)
-
-            def asymmetry_parameter(r,theta):
-                Y_0 = r*np.cos(theta)
-                Z_0 = r*np.sin(theta)
-
-                if theta + ((2*np.pi)/3) > (2*np.pi):
-                    theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
-                else:
-                    theta_1 = theta + (2*np.pi)/3
-
-                Y_1 = r*np.cos(theta_1)
-                Z_1 = r*np.sin(theta_1)
+    Y_1 = r*np.cos(theta_1)
+    Z_1 = r*np.sin(theta_1)
 
 
-                if theta - ((2*np.pi)/3) < 0:
-                    theta_2 = theta - ((2*np.pi)/3) + (2*np.pi)
-                else:
-                    theta_2 = theta - ((2*np.pi)/3)
+    if theta - ((2*np.pi)/3) < 0:
+        theta_2 = theta - ((2*np.pi)/3) + (2*np.pi)
+    else:
+        theta_2 = theta - ((2*np.pi)/3)
 
-                Y_2 = r*np.cos(theta_2)
-                Z_2 = r*np.sin(theta_2)
+    Y_2 = r*np.cos(theta_2)
+    Z_2 = r*np.sin(theta_2)
 
-                Ux_0 =  f(Y_0,Z_0)
-                Ux_1 =  f(Y_1,Z_1)
-                Ux_2 =  f(Y_2,Z_2)
+    Ux_0 =  f(Y_0,Z_0)
+    Ux_1 =  f(Y_1,Z_1)
+    Ux_2 =  f(Y_2,Z_2)
 
-                delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
+    delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
-                IA = r * delta_Ux * dA
-
-                return IA
+    return delta_Ux,r
 
 
-            items = [(r,theta) for r in R for theta in Theta]
-            IA = 0
-            with Pool() as pool:
-                for IA_i in pool.starmap(asymmetry_parameter,items):              
+def asymmetry_parameter_it(i,it):
 
-                    IA += IA_i
-            
-            IA_it.append(IA)
+    velocityx = offset_data(p_rotor,no_cells_offset,i,it,velocity_comp="velocityx")
+    velocityy = offset_data(p_rotor,no_cells_offset,i,it,velocity_comp="velocityy")
 
-        return IA_it
+    hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
+
+    hvelmag = hvelmag.reshape((z,y))
+
+    f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
+
+    #create R,theta space over rotor
+    R = np.linspace(1.5,63,500)
+    Theta = np.arange(0,2*np.pi,(2*np.pi)/729)
+
+    dR = R[1]-R[0]
+    dTheta = Theta[1] - Theta[0]
+    dA = (dTheta/2)*(dR**2)
+
+    IA = 0
+    items = [(r,theta,f) for r in R for theta in Theta]
+    with Pool() as pool:
+        for delta_Ux_i,r in pool.starmap(delta_Ux,items):
+
+            IA += r * delta_Ux_i * dA
+
+    return IA
 
 
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
-    if Variable[0:1] == "Ux":
-        items2 = [(i,it) for i in np.arange(0,no_offsets) for it in np.arange(tstart_sample_idx,tend_sample_idx)]
-        Ux_it = []
-        with Pool() as pool:
-            for Ux_j in pool.starmap(Ux_it_offset,items2): 
-                Ux_it.append(Ux_j)
+    if Variable[0:2] == "Ux":
+        ic = 0
+        for i in np.arange(0,no_offsets):
+            Ux_it = []
+            for it in np.arange(tstart_sample_idx,tend_sample_idx):
+                Ux_it.append(Ux_it_offset(i,it))
+            dq["Ux_{}".format(offsets[ic])] = Ux_it
+            ic+=1 
 
-        if Variable == "Ux_{}".format(offsets[0]):
-            signal = Ux_it[0:(1/3)*len(Ux_it)]
-        elif Variable == "Ux_{}".format(offsets[1]):
-            signal = Ux_it[(1/3)*len(Ux_it):(2/3)*len(Ux_it)]
-        elif Variable == "Ux_{}".format(offsets[2]):
-            signal = Ux_it[(2/3)*len(Ux_it):]
-
-    elif Variable[0:1] == "IA":
-        IA_it_offset = []
-        IA_it_offset.append(asymmetry_parameter_it())
-
-        if Variable == "IA_{}".format(offsets[0]):
-            signal = IA_it_offset[0:(1/3)*len(IA_it_offset)]
-        elif Variable == "IA_{}".format(offsets[1]):
-            signal = IA_it_offset[(1/3)*len(Ux_it):(2/3)*len(IA_it_offset)]
-        elif Variable == "IA_{}".format(offsets[2]):
-            signal = IA_it_offset[(2/3)*len(IA_it_offset):]
+    elif Variable[0:2] == "IA":
+        ic = 0
+        for i in np.arange(0,no_offsets,1):
+            IA_it = []
+            for it in np.arange(tstart_sample_idx,tend_sample_idx):
+                IA_it.append(asymmetry_parameter_it(i,it))
+            dq["IA_{}".format(offsets[ic])] = IA_it
+            ic+=1
 
     elif Variable == "MR" or Variable == "Theta":
         signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
@@ -210,16 +196,15 @@ for iv in np.arange(2,len(Variables)):
         if Variable == "MR":
             signal = np.sqrt( np.square(signaly) + np.square(signalz) ) 
         elif Variable == "Theta": 
-            signal = np.arctan(np.true_divide(signalz,signaly))   
+            signal = np.arctan(np.true_divide(signalz,signaly)) 
+
+        dq[Variable] = signal  
 
     else:
         txt = "{0}_{1}".format(Variable,units[iv])
         signal = df[txt][tstart_OF_idx:tend_OF_idx]
+        dq[Variable] = signal
 
-
-
-    dq[Variable] = signal
 
 dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
-
-dw.to_csv("./post_processing/out.csv")
+dw.to_csv("../post_processing/out.csv")
