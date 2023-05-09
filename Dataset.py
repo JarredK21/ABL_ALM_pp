@@ -71,14 +71,13 @@ dA = dy * dz
 R = np.linspace(1.5,63,100)
 Theta = np.arange(0,2*np.pi,(2*np.pi)/300)
 
+u = np.array(p_rotor.variables["velocityx"])
+v = np.array(p_rotor.variables["velocityy"])
 
 
 def offset_data(p_rotor,no_cells_offset,i,it,velocity_comp):
 
-    if velocity_comp =="coordinates":
-        u = np.array(p_rotor.variables[velocity_comp]) #only time step
-    else:
-        u = np.array(p_rotor.variables[velocity_comp][it]) #only time step
+    u = np.array(p_rotor.variables[velocity_comp][it]) #only time step
 
     u_slice = u[i*no_cells_offset:((i+1)*no_cells_offset)]
 
@@ -86,12 +85,19 @@ def offset_data(p_rotor,no_cells_offset,i,it,velocity_comp):
 
 
 def Ux_it_offset(i,it):
-        
-    velocityx = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityx")
-    velocityy = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityy")
+    
+    start_time2 = time.time()
+    velocityx = u[it,:].reshape(no_offsets,no_cells_offset)
+    velocityy = v[it,:].reshape(no_offsets,no_cells_offset)
 
-    hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
+    # velocityx = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityx")
+    # velocityy = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityy")
+    print(np.shape(velocityx),np.shape(velocityy))
+
+    hvelmag = np.add( np.multiply(velocityx[i],np.cos(np.radians(29))) , np.multiply( velocityy[i],np.sin(np.radians(29))) )
     hvelmag = hvelmag.reshape((y,z))
+
+    print(time.time()-start_time2)
 
     Ux_rotor = 0
     ic = 0
