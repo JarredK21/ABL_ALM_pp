@@ -10,6 +10,7 @@ from scipy import interpolate
 from netCDF4 import Dataset
 import pandas as pd
 from multiprocessing import Pool
+import time
 
 
 #openfast data
@@ -62,6 +63,10 @@ lz = p_rotor.axis2[2]
 ys = np.linspace(Oy,Oy+ly,y) - rotor_coordinates[1]
 zs = np.linspace(Oz,Oz+lz,z) - rotor_coordinates[2]
 
+dy = ys[1]-ys[0]
+dz = zs[1] - zs[0]
+dA = dy * dz
+
 #create R,theta space over rotor
 R = np.linspace(1.5,63,100)
 Theta = np.arange(0,2*np.pi,(2*np.pi)/300)
@@ -80,39 +85,32 @@ def offset_data(p_rotor,no_cells_offset,i,it,velocity_comp):
     return u_slice
 
 
-def Ux(r,theta,f):
-    Y = r*np.cos(theta)
-    Z = r*np.sin(theta)
-
-    Ux =  f(Y,Z)
-
-    return Ux
-
-
 def Ux_it_offset(i,it):
         
     velocityx = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityx")
     velocityy = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityy")
 
     hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
-    hvelmag = hvelmag.reshape((z,y))
+    hvelmag = hvelmag.reshape((y,z))
 
-    f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
-
-    items = [(r,theta,f) for r in R for theta in Theta]
     Ux_rotor = 0
-    with Pool() as pool:
-        for Ux_i in pool.starmap(Ux,items):              
+    ic = 0
+    for j in np.arange(0,len(ys)):
+        for k in np.arange(0,len(zs)):
+            r = np.sqrt(ys[j]**2 + zs[k]**2)
+            if r <= 63 and r >= 1.5:
+                Ux_rotor += hvelmag[j,k]
+                ic+=1
 
-            Ux_rotor+=Ux_i
-
-    return Ux_rotor/len(Ux_rotor)
+    return Ux_rotor/ic
 
 
-def delta_Ux(r,theta,f):
+def delta_Ux(r,y,z,f):
 
-    Y_0 = r*np.cos(theta)
-    Z_0 = r*np.sin(theta)
+    Y_0 = y
+    Z_0 = z
+
+    theta = np.arccos(Y_0/r)
 
     if theta + ((2*np.pi)/3) > (2*np.pi):
         theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
@@ -137,7 +135,7 @@ def delta_Ux(r,theta,f):
 
     delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
-    return delta_Ux,r
+    return delta_Ux
 
 
 def asymmetry_parameter_it(i,it):
@@ -151,20 +149,14 @@ def asymmetry_parameter_it(i,it):
 
     f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
 
-    #create R,theta space over rotor
-    R = np.linspace(1.5,63,500)
-    Theta = np.arange(0,2*np.pi,(2*np.pi)/729)
-
-    dR = R[1]-R[0]
-    dTheta = Theta[1] - Theta[0]
-    dA = (dTheta/2)*(dR**2)
-
     IA = 0
-    items = [(r,theta,f) for r in R for theta in Theta]
-    with Pool() as pool:
-        for delta_Ux_i,r in pool.starmap(delta_Ux,items):
+    for j in np.arange(0,len(ys)):
+        for k in np.arange(0,len(zs)):
+            r = np.sqrt(ys[j]**2 + zs[k]**2)
+            if r <= 63 and r >= 1.5:
+                delta_Ux_i = delta_Ux(r,ys[j],zs[k],f)
 
-            IA += r * delta_Ux_i * dA
+                IA += r * delta_Ux_i * dA
 
     return IA
 
@@ -175,8 +167,10 @@ for iv in np.arange(2,len(Variables)):
         ic = 0
         for i in np.arange(0,no_offsets):
             Ux_it = []
+            start_time = time.time()
             for it in np.arange(tstart_sample_idx,tend_sample_idx):
                 Ux_it.append(Ux_it_offset(i,it))
+                print(len(Ux_it),time.time()-start_time)
             dq["Ux_{}".format(offsets[ic])] = Ux_it
             ic+=1 
 
