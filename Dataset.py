@@ -28,15 +28,14 @@ Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[0]),"Ux_{}".format(o
 units = ["[s]","[s]", "[m/s]", "[m/s]", "[m/s]","[$m^4/s$]","[$m^4/s$]","[$m^4/s$]","[N]","[N-m]","[N-m]","[rads]"]
 
 
-dq = pd.DataFrame(data=None,columns=Variables)
-print(dq)
+dq = dict()
 
 time_OF = np.array(df["Time_[s]"])
 time_sample = np.array(a.variables["time"])
 time_sample = time_sample - time_sample[0]
 
 tstart = 50
-tend = 60
+tend = 52
 tstart_OF_idx = np.searchsorted(time_OF,tstart)
 tend_OF_idx = np.searchsorted(time_OF,tend)
 tstart_sample_idx = np.searchsorted(time_sample,tstart)
@@ -221,5 +220,6 @@ for iv in np.arange(2,len(Variables)):
 
     dq[Variable] = signal
 
-print(dq[:])
-dq.to_csv("./post_processing/out.csv")
+dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
+
+dw.to_csv("./post_processing/out.csv")
