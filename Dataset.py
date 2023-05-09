@@ -63,8 +63,8 @@ ys = np.linspace(Oy,Oy+ly,y) - rotor_coordinates[1]
 zs = np.linspace(Oz,Oz+lz,z) - rotor_coordinates[2]
 
 #create R,theta space over rotor
-R = np.linspace(1.5,63,500)
-Theta = np.arange(0,2*np.pi,(2*np.pi)/729)
+R = np.linspace(1.5,63,100)
+Theta = np.arange(0,2*np.pi,(2*np.pi)/300)
 
 
 
