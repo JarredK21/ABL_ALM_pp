@@ -21,6 +21,8 @@ sampling = glob.glob("../post_processing/sampling*")
 a = Dataset("./{}".format(sampling[0]))
 p_rotor = a.groups["p_sw1"]
 
+print(p_rotor)
+
 offsets = p_rotor.offsets
 
 Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"IA_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
@@ -44,7 +46,7 @@ tend_sample_idx = np.searchsorted(time_sample,tend)
 dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
 dq["Time_sample"] = time_sample[tstart_sample_idx:tend_sample_idx]
 
-no_cells = len(p_rotor.variables["velocityx"])
+no_cells = len(p_rotor.variables["coordinates"])
 no_offsets = len(p_rotor.offsets)
 no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
 
