@@ -12,8 +12,6 @@ import pandas as pd
 from multiprocessing import Pool
 import time
 
-time_start = time.time()
-
 #openfast data
 df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
 
@@ -44,6 +42,8 @@ tend_sample_idx = np.searchsorted(time_sample,tend)
 
 dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
 dq["Time_sample"] = time_sample[tstart_sample_idx:tend_sample_idx]
+print(dq["Time_OF"])
+print(dq["Time_sample"])
 
 no_cells = len(p_rotor.variables["coordinates"])
 no_offsets = len(p_rotor.offsets)
@@ -66,12 +66,6 @@ dy = ys[1]-ys[0]
 dz = zs[1] - zs[0]
 dA = dy * dz
 
-#create R,theta space over rotor
-R = np.linspace(1.5,63,100)
-Theta = np.arange(0,2*np.pi,(2*np.pi)/300)
-
-print("line 77", time.time() - time_start)
-
 
 def offset_data(p_rotor,no_cells_offset,it,i,velocity_comp):
 
@@ -91,8 +85,6 @@ def it_offset(it):
     f = interpolate.interp2d(ys,zs,hvelmag_interp)
 
     hvelmag = hvelmag.reshape((y,z))
-
-    print("line 98",time.time()-time_start)
 
     IA = 0
     Ux_rotor = []
@@ -151,9 +143,6 @@ for iv in np.arange(3,len(Variables)):
             for Ux_i,IA_i in pool.imap(it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 Ux_it.append(Ux_i)
                 IA_it.append(IA_i)
-                print(len(Ux_it),time.time()-time_start)
-                print(Ux_it)
-                print(IA_it)
         dq["Ux_{}".format(offsets[i])] = Ux_it
         dq["IA_{}".format(offsets[i])] = IA_it
         print(dq["Ux_{}".format(offsets[i])])
@@ -177,4 +166,6 @@ for iv in np.arange(3,len(Variables)):
 
 
 dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
+print(dw)
+
 dw.to_csv("../post_processing/out.csv")
