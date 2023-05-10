@@ -12,62 +12,14 @@ import pandas as pd
 from multiprocessing import Pool
 import time
 
-#openfast data
-df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
-
-#sampling data
-sampling = glob.glob("../post_processing/sampling*")
-a = Dataset("./{}".format(sampling[0]))
-p_rotor = a.groups["p_sw1"]
-
-offsets = p_rotor.offsets
-
-Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"IA_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]", "[m/s]","[m^4/s]","[N]","[N-m]","[N-m]","[rads]"]
-
-
-dq = dict()
-
-time_OF = np.array(df["Time_[s]"])
-time_sample = np.array(a.variables["time"])
-time_sample = time_sample - time_sample[0]
-
-tstart = 50
-tend = 150
-tstart_OF_idx = np.searchsorted(time_OF,tstart)
-tend_OF_idx = np.searchsorted(time_OF,tend)
-tstart_sample_idx = np.searchsorted(time_sample,tstart)
-tend_sample_idx = np.searchsorted(time_sample,tend)
-
-
-dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
-dq["Time_sample"] = time_sample[tstart_sample_idx:tend_sample_idx]
-
-no_cells = len(p_rotor.variables["coordinates"])
-no_offsets = len(p_rotor.offsets)
-no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
-
-y = p_rotor.ijk_dims[0] #no. data points
-z = p_rotor.ijk_dims[1] #no. data points
-
-rotor_coordinates = np.array([2560,2560,90])
-ly = 400
-Oy = 2560 - ly/2
-
-Oz = p_rotor.origin[2]
-lz = p_rotor.axis2[2]
-
-ys = np.linspace(Oy,Oy+ly,y) - rotor_coordinates[1]
-zs = np.linspace(Oz,Oz+lz,z) - rotor_coordinates[2]
-
-dy = ys[1]-ys[0]
-dz = zs[1] - zs[0]
-dA = dy * dz
-
+start_time = time.time()
 
 def offset_data(p_rotor,no_cells_offset,it,i,velocity_comp):
 
-    u = np.array(p_rotor.variables[velocity_comp][it]) #only time step
+    if velocity_comp == "coordinates":
+        u = np.array(p_rotor.variables[velocity_comp]) #only time step
+    else:
+        u = np.array(p_rotor.variables[velocity_comp][it]) #only time step
 
     u_slice = u[i*no_cells_offset:((i+1)*no_cells_offset)]
 
@@ -147,15 +99,75 @@ def delta_Ux(r,j,k,f,hvelmag):
     return delta_Ux
 
 
+#openfast data
+df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+
+#sampling data
+sampling = glob.glob("../post_processing/sampling*")
+a = Dataset("./{}".format(sampling[0]))
+p_rotor = a.groups["p_sw1"]
+
+offsets = p_rotor.offsets
+
+Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"IA_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
+units = ["[s]","[s]", "[m/s]","[m^4/s]","[N]","[N-m]","[N-m]","[rads]"]
+
+
+dq = dict()
+
+time_OF = np.array(df["Time_[s]"])
+time_sample = np.array(a.variables["time"])
+time_sample = time_sample - time_sample[0]
+
+tstart = 50
+tend = 150
+tstart_OF_idx = np.searchsorted(time_OF,tstart)
+tend_OF_idx = np.searchsorted(time_OF,tend)
+tstart_sample_idx = np.searchsorted(time_sample,tstart)
+tend_sample_idx = np.searchsorted(time_sample,tend)
+
+
+dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
+dq["Time_sample"] = time_sample[tstart_sample_idx:tend_sample_idx]
+
+no_cells = len(p_rotor.variables["coordinates"])
+no_offsets = len(p_rotor.offsets)
+no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
+
+coordinates = offset_data(p_rotor,no_cells_offset,it=0,i=2,velocity_comp="coordinates")
+
+xo = coordinates[:,0]
+yo = coordinates[:,1]
+zo = coordinates[:,2]
+
+rotor_coordiates = [2560,2560,90]
+
+x_trans = xo - rotor_coordiates[0]
+y_trans = yo - rotor_coordiates[1]
+
+phi = np.radians(-29)
+xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
+ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
+zs = zo - rotor_coordiates[2]
+
+
+y = p_rotor.ijk_dims[0] #no. data points
+z = p_rotor.ijk_dims[1] #no. data points
+
+dy = ys[1]-ys[0]
+dz = zs[1] - zs[0]
+dA = dy * dz
+
+
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
     if Variable[0:2] == "Ux":
         i = 2
-        # Ux_it = []
-        # with Pool() as pool:
-        #     for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
-        #         Ux_it.append(Ux_i)
-        Ux_it = df["RtVAvgxh_[m/s]"][tstart_OF_idx:tend_OF_idx]
+        Ux_it = []
+        with Pool() as pool:
+            for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
+                Ux_it.append(Ux_i)
+        #Ux_it = df["RtVAvgxh_[m/s]"][tstart_OF_idx:tend_OF_idx]
         dq["Ux_{}".format(offsets[i])] = Ux_it
 
     elif Variable[0:2] == "IA":
@@ -184,4 +196,6 @@ for iv in np.arange(2,len(Variables)):
 
 dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
 
-dw.to_csv("../post_processing/out2.csv")
+dw.to_csv("../post_processing/out.csv")
+
+print(time.time() - start_time)

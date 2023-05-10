@@ -13,36 +13,37 @@ from multiprocessing import Pool
 import time
 
 
-#openfast data
-df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
-
 #sampling data
-sampling = glob.glob("../post_processing/sampling*")
+sampling = glob.glob("../../../jarred/ALM_sensitivity_analysis/test10/post_processing/sampling*")
 a = Dataset("./{}".format(sampling[0]))
 p_rotor = a.groups["p_sw1"]
 
-offsets = p_rotor.offsets
+no_cells = len(p_rotor.variables["coordinates"])
+no_offsets = len(p_rotor.offsets)
+no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
 
-Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"IA_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]", "[m/s]","[m^4/s]","[N]","[N-m]","[N-m]","[rads]"]
+def offset_data(p_rotor,no_cells_offset,it,i,velocity_comp):
 
+    if velocity_comp == "coordinates":
+        u = np.array(p_rotor.variables[velocity_comp]) #only time step
+    else:
+        u = np.array(p_rotor.variables[velocity_comp][it]) #only time step
 
-dq = dict()
+    u_slice = u[i*no_cells_offset:((i+1)*no_cells_offset)]
 
-time_OF = np.array(df["Time_[s]"])
-time_sample = np.array(a.variables["time"])
-time_sample = time_sample - time_sample[0]
+    return u_slice
 
-tstart = 50
-tend = 150
-tstart_OF_idx = np.searchsorted(time_OF,tstart)
-tend_OF_idx = np.searchsorted(time_OF,tend)
-tstart_sample_idx = np.searchsorted(time_sample,tstart)
-tend_sample_idx = np.searchsorted(time_sample,tend)
+coordinates = offset_data(p_rotor,no_cells_offset,it=0,i=2,velocity_comp="coordinates")
 
-dq["Time_OF"] = time_OF[tstart_OF_idx-20:tend_OF_idx+20]
-dq["Time_sample"] = time_sample[tstart_sample_idx-20:tend_sample_idx+20]
+x = coordinates[:,0]
+y = coordinates[:,1]
+z = coordinates[:,2]
 
-dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
+rotor_coordiates = [2560,2560,90]
 
-dw.to_csv("time.csv")
+x_trans = x - rotor_coordiates[0]
+y_trans = y - rotor_coordiates[1]
+
+phi = np.radians(-29)
+x_pri = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
+y_pri = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))

@@ -54,7 +54,7 @@ for i in np.arange(4,len(Variables)-1):
     unit = units[i]
     Ylabel = Ylabels[i]
 
-    df = pd.read_csv("../../../jarred/NAWEA_23/post_processing/out.csv")
+    df = pd.read_csv("../../../jarred/NAWEA_23/post_processing/out2.csv")
 
     time_OF = remove_nan("Time_OF")
     time_sample = remove_nan("Time_sample")
@@ -66,8 +66,8 @@ for i in np.arange(4,len(Variables)-1):
     Ux = remove_nan(Var = "Ux_{}".format(offsets[2]))
     IA = remove_nan(Var = "IA_{}".format(offsets[2]))
 
-    f = interpolate.interp1d(time_sample, Ux)
-    Ux = f(time_OF)
+    # f = interpolate.interp1d(time_sample, Ux)
+    # Ux = f(time_OF)
 
     f = interpolate.interp1d(time_sample,IA)
     IA = f(time_OF)
@@ -118,7 +118,7 @@ for i in np.arange(2,len(Variables)):
     unit = units[i]
     Ylabel = Ylabels[i]
 
-    df = pd.read_csv("../../../jarred/NAWEA_23/post_processing/out.csv")
+    df = pd.read_csv("../../../jarred/NAWEA_23/post_processing/out2.csv")
 
     time_OF = remove_nan("Time_OF")
     time_sample = remove_nan("Time_sample")
@@ -129,7 +129,7 @@ for i in np.arange(2,len(Variables)):
 
     signal = remove_nan(Var)
 
-    if Var[0:2] == "Ux" or Var[0:2] == "IA":
+    if Var[0:2] == "IA":
         f = interpolate.interp1d(time_sample, signal)
         signal = f(time_OF)
 
