@@ -112,10 +112,10 @@ def it_offset(i,it):
     return Ux_rotor/ic, IA
 
 
-def delta_Ux(r,y,z,f):
+def delta_Ux(r,y0,z0,f):
 
-    Y_0 = y
-    Z_0 = z
+    Y_0 = y0
+    Z_0 = z0
 
     theta = np.arccos(Y_0/r)
 
