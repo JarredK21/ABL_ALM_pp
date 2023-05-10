@@ -73,7 +73,7 @@ Theta = np.arange(0,2*np.pi,(2*np.pi)/300)
 print("line 77", time.time() - time_start)
 
 
-def offset_data(p_rotor,no_cells_offset,i,it,velocity_comp):
+def offset_data(p_rotor,no_cells_offset,it,i,velocity_comp):
 
     u = np.array(p_rotor.variables[velocity_comp][it]) #only time step
 
@@ -82,10 +82,10 @@ def offset_data(p_rotor,no_cells_offset,i,it,velocity_comp):
     return u_slice
 
 
-def it_offset(i,it):
+def it_offset(it):
 
-    velocityx = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityx")
-    velocityy = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityy")
+    velocityx = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityx")
+    velocityy = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityy")
     hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
     hvelmag_interp = hvelmag.reshape((z,y))
     f = interpolate.interp2d(ys,zs,hvelmag_interp)
@@ -147,11 +147,11 @@ for iv in np.arange(3,len(Variables)):
         i = 2
         Ux_it = []
         IA_it = []
-        for it in np.arange(tstart_sample_idx,tend_sample_idx):
-            Ux_i,IA_i = it_offset(i,it)
-            Ux_it.append(Ux_i)
-            IA_it.append(IA_i)
-            print(len(Ux_it),time.time()-time_start)
+        with Pool() as pool:
+            for Ux_i,IA_i in pool.imap(it_offset(), np.arange(tstart_sample_idx,tend_sample_idx)):
+                Ux_it.append(Ux_i)
+                IA_it.append(IA_i)
+                print(len(Ux_it),time.time()-time_start)
         dq["Ux_{}".format(offsets[i])] = Ux_it
         dq["IA_{}".format(offsets[i])] = IA_it
 
