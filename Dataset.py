@@ -87,29 +87,28 @@ def it_offset(i,it):
     velocityx = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityx")
     velocityy = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityy")
     hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
+    hvelmag_interp = hvelmag.reshape((z,y))
+    f = interpolate.interp2d(ys,zs,hvelmag_interp)
 
     hvelmag = hvelmag.reshape((y,z))
 
     print("line 98",time.time()-time_start)
 
     IA = 0
-    Ux_rotor = 0
-    ic = 0
+    Ux_rotor = []
     for j in np.arange(0,len(ys)):
         for k in np.arange(0,len(zs)):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
             if r <= 63 and r >= 1.5:
-                Ux_rotor += hvelmag[j,k]
+                Ux_rotor.append(hvelmag[j,k])
 
-                delta_Ux_i = delta_Ux(r,j,k,hvelmag)
+                delta_Ux_i = delta_Ux(r,j,k,f,hvelmag_interp)
                 IA += r * delta_Ux_i * dA
 
-                ic+=1
-
-    return Ux_rotor/ic, IA
+    return np.average(Ux_rotor), IA
 
 
-def delta_Ux(r,j,k,hvelmag):
+def delta_Ux(r,j,k,f,hvelmag):
 
     Y_0 = ys[j]
     Z_0 = zs[k]
@@ -123,8 +122,6 @@ def delta_Ux(r,j,k,hvelmag):
 
     Y_1 = r*np.cos(theta_1)
     Z_1 = r*np.sin(theta_1)
-    j1 = np.searchsorted(ys,Y_1)
-    k1 = np.searchsorted(zs,Z_1)
 
 
     if theta - ((2*np.pi)/3) < 0:
@@ -134,12 +131,10 @@ def delta_Ux(r,j,k,hvelmag):
 
     Y_2 = r*np.cos(theta_2)
     Z_2 = r*np.sin(theta_2)
-    j2 = np.searchsorted(ys,Y_2)
-    k2 = np.searchsorted(zs,Z_2)
 
     Ux_0 =  hvelmag[j][k]
-    Ux_1 =  hvelmag[j1][k1]
-    Ux_2 =  hvelmag[j2][k2]
+    Ux_1 =  f(Y_1,Z_1)
+    Ux_2 =  f(Y_2,Z_2)
 
     delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
