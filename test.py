@@ -44,8 +44,8 @@ tend_sample_idx = np.searchsorted(time_sample,tend)
 
 dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
 dq["Time_sample"] = time_sample[tstart_sample_idx:tend_sample_idx]
-print(dq["Time_OF"])
-print(dq["Time_sample"])
+print("time_OF",len(dq["Time_OF"]))
+print("Time sample",len(dq["Time_sample"]))
 
 no_cells = len(p_rotor.variables["coordinates"])
 no_offsets = len(p_rotor.offsets)
@@ -110,7 +110,7 @@ for iv in np.arange(2,len(Variables)):
             for Ux_i in pool.imap(it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 Ux_it.append(Ux_i)
         dq["Ux_{}".format(offsets[i])] = Ux_it
-        print(dq["Ux_{}".format(offsets[i])])
+        print("Ux",len(dq["Ux_{}".format(offsets[i])]))
 
     elif Variable == "MR" or Variable == "Theta":
         signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
@@ -120,12 +120,13 @@ for iv in np.arange(2,len(Variables)):
             signal = np.sqrt( np.square(signaly) + np.square(signalz) ) 
         elif Variable == "Theta": 
             signal = np.arctan(np.true_divide(signalz,signaly)) 
-
+        print(len(signal))
         dq[Variable] = signal  
 
     else:
         txt = "{0}_{1}".format(Variable,units[iv])
         signal = df[txt][tstart_OF_idx:tend_OF_idx]
+        print(len(signal))
         dq[Variable] = signal
 
 
