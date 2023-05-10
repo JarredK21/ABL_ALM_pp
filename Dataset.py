@@ -44,7 +44,7 @@ tend_sample_idx = np.searchsorted(time_sample,tend)
 dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
 dq["Time_sample"] = time_sample[tstart_sample_idx:tend_sample_idx]
 
-no_cells = len(p_rotor.variables["coordinates"])
+no_cells = len(p_rotor.variables["velocityx"])
 no_offsets = len(p_rotor.offsets)
 no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
 
@@ -85,7 +85,7 @@ def it_offset(i,it):
 
     velocityx = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityx")
     velocityy = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityy")
-
+    print(np.shape(velocityx))
     hvelmag = np.add( np.multiply(velocityx[i],np.cos(np.radians(29))) , np.multiply( velocityy[i],np.sin(np.radians(29))) )
 
     hvelmag = hvelmag.reshape((z,y))
