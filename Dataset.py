@@ -12,6 +12,7 @@ import pandas as pd
 from multiprocessing import Pool
 import time
 
+time_start = time.time()
 
 #openfast data
 df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
@@ -20,8 +21,6 @@ df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/N
 sampling = glob.glob("../post_processing/sampling*")
 a = Dataset("./{}".format(sampling[0]))
 p_rotor = a.groups["p_sw1"]
-
-print(p_rotor)
 
 offsets = p_rotor.offsets
 
@@ -50,8 +49,6 @@ no_cells = len(p_rotor.variables["coordinates"])
 no_offsets = len(p_rotor.offsets)
 no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
 
-print(no_offsets,no_cells_offset)
-
 y = p_rotor.ijk_dims[0] #no. data points
 z = p_rotor.ijk_dims[1] #no. data points
 
@@ -73,33 +70,30 @@ dA = dy * dz
 R = np.linspace(1.5,63,100)
 Theta = np.arange(0,2*np.pi,(2*np.pi)/300)
 
+print("line 77", time.time() - time_start)
+
 
 def offset_data(p_rotor,no_cells_offset,i,it,velocity_comp):
 
     u = np.array(p_rotor.variables[velocity_comp][it]) #only time step
-    print(np.shape(u))
 
     u_slice = u[i*no_cells_offset:((i+1)*no_cells_offset)]
-    print(np.shape(u_slice))
 
     return u_slice
 
 
 def it_offset(i,it):
-    
-    start_time2 = time.time()
 
     velocityx = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityx")
     velocityy = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityy")
-    print(np.shape(velocityx))
-    hvelmag = np.add( np.multiply(velocityx[i],np.cos(np.radians(29))) , np.multiply( velocityy[i],np.sin(np.radians(29))) )
+    hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
 
     hvelmag = hvelmag.reshape((z,y))
     f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
 
     hvelmag = hvelmag.reshape((y,z))
 
-    print(time.time()-start_time2)
+    print("line 98",time.time()-time_start)
 
     IA = 0
     Ux_rotor = 0
@@ -157,12 +151,11 @@ for iv in np.arange(3,len(Variables)):
         i = 2
         Ux_it = []
         IA_it = []
-        start_time = time.time()
         for it in np.arange(tstart_sample_idx,tend_sample_idx):
             Ux_i,IA_i = it_offset(i,it)
             Ux_it.append(Ux_i)
             IA_it.append(IA_i)
-            print(len(Ux_it),time.time()-start_time)
+            print(len(Ux_it),time.time()-time_start)
         dq["Ux_{}".format(offsets[i])] = Ux_it
         dq["IA_{}".format(offsets[i])] = IA_it
 
