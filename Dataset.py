@@ -25,7 +25,7 @@ p_rotor = a.groups["p_sw1"]
 offsets = p_rotor.offsets
 
 Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"IA_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]", "[m/s]", "[m/s]", "[m/s]","[$m^4/s$]","[$m^4/s$]","[$m^4/s$]","[N]","[N-m]","[N-m]","[rads]"]
+units = ["[s]","[s]", "[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[rads]"]
 
 
 dq = dict()
@@ -154,6 +154,8 @@ for iv in np.arange(3,len(Variables)):
                 print(len(Ux_it),time.time()-time_start)
         dq["Ux_{}".format(offsets[i])] = Ux_it
         dq["IA_{}".format(offsets[i])] = IA_it
+        print(dq[["Ux_{}".format(offsets[i])]])
+        print(dq["IA_{}".format(offsets[i])])
 
     elif Variable == "MR" or Variable == "Theta":
         signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
