@@ -48,6 +48,8 @@ no_cells = len(p_rotor.variables["velocityx"])
 no_offsets = len(p_rotor.offsets)
 no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
 
+print(no_offsets,no_cells_offset)
+
 y = p_rotor.ijk_dims[0] #no. data points
 z = p_rotor.ijk_dims[1] #no. data points
 
@@ -73,8 +75,10 @@ Theta = np.arange(0,2*np.pi,(2*np.pi)/300)
 def offset_data(p_rotor,no_cells_offset,i,it,velocity_comp):
 
     u = np.array(p_rotor.variables[velocity_comp][it]) #only time step
+    print(np.shape(u))
 
     u_slice = u[i*no_cells_offset:((i+1)*no_cells_offset)]
+    print(np.shape(u_slice))
 
     return u_slice
 
