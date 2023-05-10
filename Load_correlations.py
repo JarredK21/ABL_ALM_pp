@@ -58,6 +58,8 @@ for i in np.arange(4,len(Variables)-1):
 
     time_OF = remove_nan("Time_OF")
     time_sample = remove_nan("Time_sample")
+    time_sample[0] = time_OF[0]
+    time_sample[-1] = time_OF[-1]
 
     dt = time_OF[1] - time_OF[0]
 
@@ -70,7 +72,7 @@ for i in np.arange(4,len(Variables)-1):
     f = interpolate.interp1d(time_sample,IA)
     IA = f(time_OF)
 
-    Theta = remove_nan(Var = Theta)
+    Theta = remove_nan(Var = "Theta")
 
     signal = remove_nan(Var)
 
@@ -92,7 +94,7 @@ for i in np.arange(4,len(Variables)-1):
     if Var == "MR":
         ax2.plot(time_OF,IA,"--k")
         ax2.set_ylabel("IA' - Asymmetry Parameter [$m^4/s$]",fontsize=16)
-        plt.title("Correlating IA' at {0}m from turbine, with {1}".format(offsets[j],Ylabel),fontsize=18)
+        plt.title("Correlating IA' at {0}m from turbine, with {1}".format(offsets[2],Ylabel),fontsize=18)
         ax.legend(["-","Correlation with IA' = {0}".format(np.round(corr,2))])
     else:
         ax2.plot(time_OF,Ux,"--k")
@@ -106,28 +108,41 @@ for i in np.arange(4,len(Variables)-1):
     plt.close(fig)
 
 
-    #comparing time series
-    fig, axs = plt.subplots(5,1)
 
+#comparing time series
+fig, axs = plt.subplots(6,1,figsize=(32,24))
+plt.rcParams.update({'font.size': 16})
+for i in np.arange(2,len(Variables)):
+
+    Var = Variables[i]
+    unit = units[i]
+    Ylabel = Ylabels[i]
+
+    df = pd.read_csv("../../../jarred/NAWEA_23/post_processing/out.csv")
+
+    time_OF = remove_nan("Time_OF")
+    time_sample = remove_nan("Time_sample")
+    time_sample[0] = time_OF[0]
+    time_sample[-1] = time_OF[-1]
+
+    dt = time_OF[1] - time_OF[0]
+
+    signal = remove_nan(Var)
+
+    if Var[0:2] == "Ux" or Var[0:2] == "IA":
+        f = interpolate.interp1d(time_sample, signal)
+        signal = f(time_OF)
+
+    
     axs = axs.ravel()
 
-    for j in range(6):
+    j=i-2
 
-        if j==0:
-            axs[j].plot(time_OF,Ux)
-            axs[j].set_ylabel("Ux' - Rotor averaged normal Velocity [m/s]")
-        elif j==1:
-            axs[j].plot(time_OF,IA)
-            axs[j].set_ylabel("IA' - Asymmetry Parameter [$m^4/s$]")
-        elif j==5:
-            axs.plot(time_OF,Theta)
-            axs[j].set_ylabel("Angle [radians]")
-        else:
-            axs[j].plot(time_OF,signal)
-            axs[j].set_ylabel("{0}{1}".format(Ylabel,units))
+    axs[j].plot(time_OF,signal)
+    axs[j].set_title("{0}{1}".format(Ylabels[i],units[i]),fontsize=18)
 
-    fig.supxlabel("Time [s]")
-    plt.tight_layout()
-    plt.savefig(dir+"joint_vars.png")
-    plt.close(fig)
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(dir+"joint_vars.png")
+plt.close(fig)
 
