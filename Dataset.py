@@ -23,9 +23,7 @@ p_rotor = a.groups["p_sw1"]
 
 offsets = p_rotor.offsets
 
-Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[0]),"Ux_{}".format(offsets[1]),"Ux_{}".format(offsets[2]),
-             "IA_{}".format(offsets[0]),"IA_{}".format(offsets[1]),"IA_{}".format(offsets[2]),
-             "RtAeroFxh","RtAeroMxh","MR","Theta"]
+Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"IA_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
 units = ["[s]","[s]", "[m/s]", "[m/s]", "[m/s]","[$m^4/s$]","[$m^4/s$]","[$m^4/s$]","[N]","[N-m]","[N-m]","[rads]"]
 
 
@@ -71,9 +69,6 @@ dA = dy * dz
 R = np.linspace(1.5,63,100)
 Theta = np.arange(0,2*np.pi,(2*np.pi)/300)
 
-u = np.array(p_rotor.variables["velocityx"])
-v = np.array(p_rotor.variables["velocityy"])
-
 
 def offset_data(p_rotor,no_cells_offset,i,it,velocity_comp):
 
@@ -84,21 +79,23 @@ def offset_data(p_rotor,no_cells_offset,i,it,velocity_comp):
     return u_slice
 
 
-def Ux_it_offset(i,it):
+def it_offset(i,it):
     
     start_time2 = time.time()
-    velocityx = u[it,:].reshape(no_offsets,no_cells_offset)
-    velocityy = v[it,:].reshape(no_offsets,no_cells_offset)
 
-    # velocityx = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityx")
-    # velocityy = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityy")
-    print(np.shape(velocityx),np.shape(velocityy))
+    velocityx = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityx")
+    velocityy = offset_data(p_rotor, no_cells_offset,i,it,velocity_comp="velocityy")
 
     hvelmag = np.add( np.multiply(velocityx[i],np.cos(np.radians(29))) , np.multiply( velocityy[i],np.sin(np.radians(29))) )
+
+    hvelmag = hvelmag.reshape((z,y))
+    f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
+
     hvelmag = hvelmag.reshape((y,z))
 
     print(time.time()-start_time2)
 
+    IA = 0
     Ux_rotor = 0
     ic = 0
     for j in np.arange(0,len(ys)):
@@ -106,9 +103,13 @@ def Ux_it_offset(i,it):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
             if r <= 63 and r >= 1.5:
                 Ux_rotor += hvelmag[j,k]
+
+                delta_Ux_i = delta_Ux(r,ys[j],zs[k],f)
+                IA += r * delta_Ux_i * dA
+
                 ic+=1
 
-    return Ux_rotor/ic
+    return Ux_rotor/ic, IA
 
 
 def delta_Ux(r,y,z,f):
@@ -144,50 +145,20 @@ def delta_Ux(r,y,z,f):
     return delta_Ux
 
 
-def asymmetry_parameter_it(i,it):
-
-    velocityx = offset_data(p_rotor,no_cells_offset,i,it,velocity_comp="velocityx")
-    velocityy = offset_data(p_rotor,no_cells_offset,i,it,velocity_comp="velocityy")
-
-    hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
-
-    hvelmag = hvelmag.reshape((z,y))
-
-    f = interpolate.interp2d(ys,zs,hvelmag,kind="linear")
-
-    IA = 0
-    for j in np.arange(0,len(ys)):
-        for k in np.arange(0,len(zs)):
-            r = np.sqrt(ys[j]**2 + zs[k]**2)
-            if r <= 63 and r >= 1.5:
-                delta_Ux_i = delta_Ux(r,ys[j],zs[k],f)
-
-                IA += r * delta_Ux_i * dA
-
-    return IA
-
-
-for iv in np.arange(2,len(Variables)):
+for iv in np.arange(3,len(Variables)):
     Variable = Variables[iv]
-    if Variable[0:2] == "Ux":
-        ic = 0
-        for i in np.arange(0,no_offsets):
-            Ux_it = []
-            start_time = time.time()
-            for it in np.arange(tstart_sample_idx,tend_sample_idx):
-                Ux_it.append(Ux_it_offset(i,it))
-                print(len(Ux_it),time.time()-start_time)
-            dq["Ux_{}".format(offsets[ic])] = Ux_it
-            ic+=1 
-
-    elif Variable[0:2] == "IA":
-        ic = 0
-        for i in np.arange(0,no_offsets,1):
-            IA_it = []
-            for it in np.arange(tstart_sample_idx,tend_sample_idx):
-                IA_it.append(asymmetry_parameter_it(i,it))
-            dq["IA_{}".format(offsets[ic])] = IA_it
-            ic+=1
+    if Variable[0:2] == "IA":
+        i = 2
+        Ux_it = []
+        IA_it = []
+        start_time = time.time()
+        for it in np.arange(tstart_sample_idx,tend_sample_idx):
+            Ux_i,IA_i = it_offset(i,it)
+            Ux_it.append(Ux_i)
+            IA_it.append(IA_i)
+            print(len(Ux_it),time.time()-start_time)
+        dq["Ux_{}".format(offsets[i])] = Ux_it
+        dq["IA_{}".format(offsets[i])] = IA_it
 
     elif Variable == "MR" or Variable == "Theta":
         signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
