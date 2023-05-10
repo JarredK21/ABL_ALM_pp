@@ -24,8 +24,8 @@ p_rotor = a.groups["p_sw1"]
 
 offsets = p_rotor.offsets
 
-Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
+Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"IA_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
+units = ["[s]","[s]", "[m/s]","[m^4/s]","[N]","[N-m]","[N-m]","[rads]"]
 
 
 dq = dict()
@@ -80,7 +80,7 @@ def offset_data(p_rotor,no_cells_offset,it,i,velocity_comp):
     return u_slice
 
 
-def it_offset(it):
+def Ux_it_offset(it):
 
     velocityx = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityx")
     velocityy = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityy")
@@ -100,6 +100,59 @@ def it_offset(it):
     return np.average(Ux_rotor)
 
 
+def IA_it_offset(it):
+
+    velocityx = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityx")
+    velocityy = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityy")
+    hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
+    hvelmag_interp = hvelmag.reshape((z,y))
+    f = interpolate.interp2d(ys,zs,hvelmag_interp)
+
+
+    IA = 0
+    for j in np.arange(0,len(ys)):
+        for k in np.arange(0,len(zs)):
+            r = np.sqrt(ys[j]**2 + zs[k]**2)
+            if r <= 63 and r >= 1.5:
+
+                delta_Ux_i = delta_Ux(r,j,k,f,hvelmag_interp)
+                IA += r * delta_Ux_i * dA
+    print("line 120",time.time()-start_time)
+    return IA
+
+
+def delta_Ux(r,j,k,f,hvelmag):
+
+    Y_0 = ys[j]
+    Z_0 = zs[k]
+
+    theta = np.arccos(Y_0/r)
+
+    if theta + ((2*np.pi)/3) > (2*np.pi):
+        theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
+    else:
+        theta_1 = theta + (2*np.pi)/3
+
+    Y_1 = r*np.cos(theta_1)
+    Z_1 = r*np.sin(theta_1)
+
+
+    if theta - ((2*np.pi)/3) < 0:
+        theta_2 = theta - ((2*np.pi)/3) + (2*np.pi)
+    else:
+        theta_2 = theta - ((2*np.pi)/3)
+
+    Y_2 = r*np.cos(theta_2)
+    Z_2 = r*np.sin(theta_2)
+
+    Ux_0 =  hvelmag[j][k]
+    Ux_1 =  f(Y_1,Z_1)
+    Ux_2 =  f(Y_2,Z_2)
+
+    delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
+
+    return delta_Ux
+
 
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
@@ -107,10 +160,19 @@ for iv in np.arange(2,len(Variables)):
         i = 2
         Ux_it = []
         with Pool() as pool:
-            for Ux_i in pool.imap(it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
+            for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 Ux_it.append(Ux_i)
         dq["Ux_{}".format(offsets[i])] = Ux_it
         print("Ux",len(dq["Ux_{}".format(offsets[i])]))
+
+    elif Variable[0:2] == "IA":
+        i = 2
+        IA_it = []
+        with Pool() as pool:
+            for IA_i in pool.imap(IA_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
+                IA_it.append(IA_i)
+        dq["Ux_{}".format(offsets[i])] = IA_it
+        print("IA",len(dq["Ux_{}".format(offsets[i])]))
 
     elif Variable == "MR" or Variable == "Theta":
         signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
