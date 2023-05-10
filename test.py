@@ -33,9 +33,6 @@ time_OF = np.array(df["Time_[s]"])
 time_sample = np.array(a.variables["time"])
 time_sample = time_sample - time_sample[0]
 
-print(time_OF[:])
-print(time_sample[:])
-
 tstart = 50
 tend = 150
 tstart_OF_idx = np.searchsorted(time_OF,tstart)
@@ -43,8 +40,9 @@ tend_OF_idx = np.searchsorted(time_OF,tend)
 tstart_sample_idx = np.searchsorted(time_sample,tstart)
 tend_sample_idx = np.searchsorted(time_sample,tend)
 
-dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
-dq["Time_sample"] = time_sample[tstart_sample_idx:tend_sample_idx]
+dq["Time_OF"] = time_OF[tstart_OF_idx-20:tend_OF_idx+20]
+dq["Time_sample"] = time_sample[tstart_sample_idx-20:tend_sample_idx+20]
 
-print(dq["Time_OF"])
-print(dq["Time_sample"])
+dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
+
+dw.to_csv("time.csv")
