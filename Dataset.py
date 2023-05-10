@@ -148,7 +148,7 @@ for iv in np.arange(3,len(Variables)):
         Ux_it = []
         IA_it = []
         with Pool() as pool:
-            for Ux_i,IA_i in pool.imap(it_offset(), np.arange(tstart_sample_idx,tend_sample_idx)):
+            for Ux_i,IA_i in pool.imap(it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 Ux_it.append(Ux_i)
                 IA_it.append(IA_i)
                 print(len(Ux_it),time.time()-time_start)
