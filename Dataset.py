@@ -23,7 +23,7 @@ p_rotor = a.groups["p_sw1"]
 offsets = p_rotor.offsets
 
 Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"IA_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]", "[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[rads]"]
+units = ["[s]","[s]", "[m/s]","[m^4/s]","[N]","[N-m]","[N-m]","[rads]"]
 
 
 dq = dict()
@@ -33,7 +33,7 @@ time_sample = np.array(a.variables["time"])
 time_sample = time_sample - time_sample[0]
 
 tstart = 50
-tend = 52
+tend = 150
 tstart_OF_idx = np.searchsorted(time_OF,tstart)
 tend_OF_idx = np.searchsorted(time_OF,tend)
 tstart_sample_idx = np.searchsorted(time_sample,tstart)
@@ -42,8 +42,6 @@ tend_sample_idx = np.searchsorted(time_sample,tend)
 
 dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
 dq["Time_sample"] = time_sample[tstart_sample_idx:tend_sample_idx]
-print(dq["Time_OF"])
-print(dq["Time_sample"])
 
 no_cells = len(p_rotor.variables["coordinates"])
 no_offsets = len(p_rotor.offsets)
@@ -76,7 +74,26 @@ def offset_data(p_rotor,no_cells_offset,it,i,velocity_comp):
     return u_slice
 
 
-def it_offset(it):
+def Ux_it_offset(it):
+
+    velocityx = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityx")
+    velocityy = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityy")
+    hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
+
+
+    hvelmag = hvelmag.reshape((y,z))
+
+    Ux_rotor = []
+    for j in np.arange(0,len(ys)):
+        for k in np.arange(0,len(zs)):
+            r = np.sqrt(ys[j]**2 + zs[k]**2)
+            if r <= 63 and r >= 1.5:
+                Ux_rotor.append(hvelmag[j,k])
+
+    return np.average(Ux_rotor)
+
+
+def IA_it_offset(it):
 
     velocityx = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityx")
     velocityy = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityy")
@@ -87,17 +104,14 @@ def it_offset(it):
     hvelmag = hvelmag.reshape((y,z))
 
     IA = 0
-    Ux_rotor = []
     for j in np.arange(0,len(ys)):
         for k in np.arange(0,len(zs)):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
             if r <= 63 and r >= 1.5:
-                Ux_rotor.append(hvelmag[j,k])
 
-                delta_Ux_i = delta_Ux(r,j,k,f,hvelmag_interp)
+                delta_Ux_i = delta_Ux(r,j,k,f,hvelmag)
                 IA += r * delta_Ux_i * dA
-
-    return np.average(Ux_rotor), IA
+    return IA
 
 
 def delta_Ux(r,j,k,f,hvelmag):
@@ -133,20 +147,23 @@ def delta_Ux(r,j,k,f,hvelmag):
     return delta_Ux
 
 
-for iv in np.arange(3,len(Variables)):
+for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
-    if Variable[0:2] == "IA":
+    if Variable[0:2] == "Ux":
         i = 2
         Ux_it = []
+        with Pool() as pool:
+            for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
+                Ux_it.append(Ux_i)
+        dq["Ux_{}".format(offsets[i])] = Ux_it
+
+    elif Variable[0:2] == "IA":
+        i = 2
         IA_it = []
         with Pool() as pool:
-            for Ux_i,IA_i in pool.imap(it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
-                Ux_it.append(Ux_i)
+            for IA_i in pool.imap(IA_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 IA_it.append(IA_i)
-        dq["Ux_{}".format(offsets[i])] = Ux_it
         dq["IA_{}".format(offsets[i])] = IA_it
-        print(dq["Ux_{}".format(offsets[i])])
-        print(dq["IA_{}".format(offsets[i])])
 
     elif Variable == "MR" or Variable == "Theta":
         signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
@@ -156,7 +173,6 @@ for iv in np.arange(3,len(Variables)):
             signal = np.sqrt( np.square(signaly) + np.square(signalz) ) 
         elif Variable == "Theta": 
             signal = np.arctan(np.true_divide(signalz,signaly)) 
-
         dq[Variable] = signal  
 
     else:
@@ -166,6 +182,5 @@ for iv in np.arange(3,len(Variables)):
 
 
 dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
-print(dw)
 
 dw.to_csv("../post_processing/out.csv")
