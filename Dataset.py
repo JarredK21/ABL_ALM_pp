@@ -152,9 +152,11 @@ for iv in np.arange(3,len(Variables)):
                 Ux_it.append(Ux_i)
                 IA_it.append(IA_i)
                 print(len(Ux_it),time.time()-time_start)
+                print(Ux_it)
+                print(IA_it)
         dq["Ux_{}".format(offsets[i])] = Ux_it
         dq["IA_{}".format(offsets[i])] = IA_it
-        print(dq[["Ux_{}".format(offsets[i])]])
+        print(dq["Ux_{}".format(offsets[i])])
         print(dq["IA_{}".format(offsets[i])])
 
     elif Variable == "MR" or Variable == "Theta":
