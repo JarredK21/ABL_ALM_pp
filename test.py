@@ -33,8 +33,8 @@ time_OF = np.array(df["Time_[s]"])
 time_sample = np.array(a.variables["time"])
 time_sample = time_sample - time_sample[0]
 
-print(time_OF)
-print(time_sample)
+print(time_OF[:])
+print(time_sample[:])
 
 tstart = 50
 tend = 150
@@ -47,3 +47,4 @@ dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
 dq["Time_sample"] = time_sample[tstart_sample_idx:tend_sample_idx]
 
 print(dq["Time_OF"])
+print(dq["Time_sample"])
