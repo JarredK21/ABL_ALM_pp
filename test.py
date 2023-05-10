@@ -171,7 +171,7 @@ for iv in np.arange(2,len(Variables)):
         with Pool() as pool:
             for IA_i in pool.imap(IA_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 IA_it.append(IA_i)
-        dq["Ux_{}".format(offsets[i])] = IA_it
+        dq["IA_{}".format(offsets[i])] = IA_it
         print("IA",len(dq["Ux_{}".format(offsets[i])]))
 
     elif Variable == "MR" or Variable == "Theta":
