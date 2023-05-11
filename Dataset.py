@@ -120,7 +120,7 @@ time_sample = np.array(a.variables["time"])
 time_sample = time_sample - time_sample[0]
 
 tstart = 50
-tend = 150
+tend = 350
 tstart_OF_idx = np.searchsorted(time_OF,tstart)
 tend_OF_idx = np.searchsorted(time_OF,tend)
 tstart_sample_idx = np.searchsorted(time_sample,tstart)
@@ -158,26 +158,23 @@ dy = ys[1]-ys[0]
 dz = zs[1] - zs[0]
 dA = dy * dz
 
+print("line 161",time.time() - start_time)
 
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
     if Variable[0:2] == "Ux":
         i = 2
-        Ux_it = []
-        with Pool() as pool:
-            for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
-                Ux_it.append(Ux_i)
-                print(time.time()-start_time)
-        #Ux_it = df["RtVAvgxh_[m/s]"][tstart_OF_idx:tend_OF_idx]
+        Ux_it = df["RtVAvgxh_[m/s]"][tstart_OF_idx:tend_OF_idx]
         dq["Ux_{}".format(offsets[i])] = Ux_it
 
     elif Variable[0:2] == "IA":
         i = 2
         IA_it = []
+        print("IA calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
         with Pool() as pool:
             for IA_i in pool.imap(IA_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 IA_it.append(IA_i)
-                print(time.time()-start_time)
+                print(len(IA_it),time.time()-start_time)
         dq["IA_{}".format(offsets[i])] = IA_it
 
     elif Variable == "MR" or Variable == "Theta":
@@ -200,4 +197,4 @@ dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
 
 dw.to_csv("../post_processing/out.csv")
 
-print(time.time() - start_time)
+print("line 205",time.time() - start_time)

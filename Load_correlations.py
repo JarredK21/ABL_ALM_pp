@@ -66,9 +66,6 @@ for i in np.arange(4,len(Variables)-1):
     Ux = remove_nan(Var = "Ux_{}".format(offsets[2]))
     IA = remove_nan(Var = "IA_{}".format(offsets[2]))
 
-    # f = interpolate.interp1d(time_sample, Ux)
-    # Ux = f(time_OF)
-
     f = interpolate.interp1d(time_sample,IA)
     IA = f(time_OF)
 
