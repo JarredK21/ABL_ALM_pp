@@ -167,6 +167,7 @@ for iv in np.arange(2,len(Variables)):
         with Pool() as pool:
             for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 Ux_it.append(Ux_i)
+                print(time.time()-start_time)
         #Ux_it = df["RtVAvgxh_[m/s]"][tstart_OF_idx:tend_OF_idx]
         dq["Ux_{}".format(offsets[i])] = Ux_it
 
@@ -176,6 +177,7 @@ for iv in np.arange(2,len(Variables)):
         with Pool() as pool:
             for IA_i in pool.imap(IA_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 IA_it.append(IA_i)
+                print(time.time()-start_time)
         dq["IA_{}".format(offsets[i])] = IA_it
 
     elif Variable == "MR" or Variable == "Theta":
