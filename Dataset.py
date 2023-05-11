@@ -134,11 +134,14 @@ no_cells = len(p_rotor.variables["coordinates"])
 no_offsets = len(p_rotor.offsets)
 no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
 
+y = p_rotor.ijk_dims[0] #no. data points
+z = p_rotor.ijk_dims[1] #no. data points
+
 coordinates = offset_data(p_rotor,no_cells_offset,it=0,i=2,velocity_comp="coordinates")
 
-xo = coordinates[:,0]
-yo = coordinates[:,1]
-zo = coordinates[:,2]
+xo = coordinates[0:y,0]
+yo = coordinates[0:y,1]
+zo = np.linspace(p_rotor.origin[2],p_rotor.axis2[2],z)
 
 rotor_coordiates = [2560,2560,90]
 
@@ -150,9 +153,6 @@ xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
 ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
 zs = zo - rotor_coordiates[2]
 
-
-y = p_rotor.ijk_dims[0] #no. data points
-z = p_rotor.ijk_dims[1] #no. data points
 
 dy = ys[1]-ys[0]
 dz = zs[1] - zs[0]
