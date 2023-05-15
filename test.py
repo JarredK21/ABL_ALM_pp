@@ -27,7 +27,7 @@ def temporal_spectra(signal,dt):
 
     return frq, PSD
 
-dir = "../post_processing/"
+dir = "../post_processing/plots/"
 #openfast data
 df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
 
@@ -52,37 +52,49 @@ frqT, FFT_signalT = temporal_spectra(signal_T,dt)
 
 fig, (ax1,ax2,ax3,ax4) = plt.subplots(4,1,figsize=(32,24))
 ax1.plot(time_OF[tstart_OF_idx:tend_OF_idx],signaly)
+ax1.set_title("Rotor moment in Y direction - $M_y$ [N-m]",fontsize=18)
 ax2.plot(time_OF[tstart_OF_idx:tend_OF_idx],signalz)
+ax2.set_title("Rotor moment in Z direction - $M_z$ [N-m]",fontsize=18)
 ax3.plot(time_OF[tstart_OF_idx:tend_OF_idx],signal_MR)
+ax3.set_title("Rotor Out-of-plane bending moment [N-m]",fontsize=18)
 ax4.plot(time_OF[tstart_OF_idx:tend_OF_idx],signal_T)
+ax4.set_title("Rotor Out-of-plane bending moment angle [degrees]",fontsize=18)
+fig.supxlabel("Time [s]")
+plt.tight_layout()
 plt.savefig(dir+"1P_signals.png")
 plt.close(fig)
 
 
 fig, (ax1,ax2,ax3,ax4) = plt.subplots(4,1,figsize=(32,24))
 ax1.plot(frqy,FFT_signaly)
+ax1.set_title("Rotor moment in Y direction - $M_y$ [N-m]",fontsize=18)
 ax1.set_yscale('log')
 ax1.set_xscale('log')
 ax1.axvline(12.1/60)
 ax1.axvline((12.1/60)*3)
 
 ax2.plot(frqz,FFT_signalz)
+ax2.set_title("Rotor moment in Z direction - $M_z$ [N-m]",fontsize=18)
 ax2.set_yscale('log')
 ax2.set_xscale('log')
 ax2.axvline(12.1/60)
 ax2.axvline((12.1/60)*3)
 
 ax3.plot(frqMR,FFT_signalMR)
+ax3.set_title("Rotor Out-of-plane bending moment [N-m]",fontsize=18)
 ax3.set_yscale('log')
 ax3.set_xscale('log')
 ax3.axvline(12.1/60)
 ax3.axvline((12.1/60)*3)
 
 ax4.plot(frqT,FFT_signalT)
+ax4.set_title("Rotor Out-of-plane bending moment angle [degrees]",fontsize=18)
 ax4.set_yscale('log')
 ax4.set_xscale('log')
 ax4.axvline(12.1/60)
 ax4.axvline((12.1/60)*3)
 
+fig.supxlabel("Frequency [Hz]")
+plt.tight_layout()
 plt.savefig(dir+"1P_FFT_signals.png")
 plt.close(fig)
