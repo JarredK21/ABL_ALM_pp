@@ -184,7 +184,7 @@ for iv in np.arange(2,len(Variables)):
         if Variable == "MR":
             signal = np.sqrt( np.square(signaly) + np.square(signalz) ) 
         elif Variable == "Theta": 
-            signal = np.arctan(np.true_divide(signalz,signaly)) 
+            signal = np.arctan2(signalz,signaly)
         dq[Variable] = signal  
 
     else:
