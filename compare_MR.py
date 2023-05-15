@@ -27,9 +27,9 @@ def temporal_spectra(signal,dt):
 
     return frq, PSD
 
-dir = "../post_processing/plots/"
+dir = "../../../jarred/NAWEA_23/post_processing/plots/"
 #openfast data
-df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+df = io.fast_output_file.FASTOutputFile("../../../jarred/NAWEA_23/post_processing/NREL_5MW_Main.out").toDataFrame()
 
 tstart = 50
 tend = 350
