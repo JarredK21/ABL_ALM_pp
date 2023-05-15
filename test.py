@@ -83,3 +83,6 @@ ax4.set_yscale('log')
 ax4.set_xscale('log')
 ax4.axvline(12.1/60)
 ax4.axvline((12.1/60)*3)
+
+plt.savefig(dir+"1P_FFT_signals.png")
+plt.close(fig)
