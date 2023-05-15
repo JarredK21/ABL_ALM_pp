@@ -50,7 +50,7 @@ frqMR, FFT_signalMR = temporal_spectra(signal_MR,dt)
 signal_T = np.arctan2(signalz,signaly)
 frqT, FFT_signalT = temporal_spectra(signal_T,dt)
 
-fig, ax1,ax2,ax3,ax4 = plt.subplots(4,1,figsize=(32,24))
+fig, (ax1,ax2,ax3,ax4) = plt.subplots(4,1,figsize=(32,24))
 ax1.plot(time_OF[tstart_OF_idx:tend_OF_idx],signaly)
 ax2.plot(time_OF[tstart_OF_idx:tend_OF_idx],signalz)
 ax3.plot(time_OF[tstart_OF_idx:tend_OF_idx],signal_MR)
@@ -59,7 +59,7 @@ plt.savefig(dir+"1P_signals.png")
 plt.close(fig)
 
 
-fig, ax1,ax2,ax3,ax4 = plt.subplots(4,1,figsize=(32,24))
+fig, (ax1,ax2,ax3,ax4) = plt.subplots(4,1,figsize=(32,24))
 ax1.plot(frqy,FFT_signaly)
 ax1.set_yscale('log')
 ax1.set_xscale('log')
