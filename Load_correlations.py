@@ -21,8 +21,8 @@ units = ["[s]","[s]", "[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[degrees]"]
 Ylabels = ["Time","Time","$<Ux'>_{rotor}$ rotor averaged velocity","Asymmery Parameter","Rotor Thrust", "Rotor Torque",
             "Out-of-plane bending moment","Angle Out-of-plane bending moment"]
 
-compare_correlations = False
-compare_time_series = False
+compare_correlations = True
+compare_time_series = True
 compare_FFT = True
 
 
@@ -240,8 +240,6 @@ if compare_FFT == True:
 
         
         frq, FFT_signal = temporal_spectra(signal,dt,Var)
-
-        plt.plot()
         
         axs = axs.ravel()
 
@@ -253,8 +251,11 @@ if compare_FFT == True:
         axs[j].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
 
         frq_int = [1/60, 1/30, 12.1/60, (12.1/60)*3]
-        frq_label = ["60s eddy passage", "30s eddy passage", "1P", "3P"]
-        y_FFT = FFT_signal[0]+1e+03
+        frq_label = ["60s", "30s", "1P", "3P"]
+        if Var == "Theta":
+            y_FFT = 1e-04
+        else:
+            y_FFT = FFT_signal[0]+1e+03
         for l in np.arange(0,len(frq_int)):
             axs[j].axvline(frq_int[l])
             axs[j].text(frq_int[l],y_FFT, frq_label[l])

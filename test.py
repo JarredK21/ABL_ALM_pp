@@ -12,94 +12,74 @@ import pandas as pd
 from multiprocessing import Pool
 import time
 
+def temporal_spectra(signal,dt):
 
-def offset_data(p_rotor,no_cells_offset,it,i,velocity_comp):
-
-    if velocity_comp == "coordinates":
-        u = np.array(p_rotor.variables[velocity_comp]) #only time step
+    fs =1/dt
+    n = len(signal) 
+    if n%2==0:
+        nhalf = int(n/2+1)
     else:
-        u = np.array(p_rotor.variables[velocity_comp][it]) #only time step
+        nhalf = int((n+1)/2)
+    frq = np.arange(nhalf)*fs/n
+    Y   = np.fft.fft(signal)
+    PSD = abs(Y[range(nhalf)])**2 /(n*fs) # PSD
+    PSD[1:-1] = PSD[1:-1]*2
 
-    u_slice = u[i*no_cells_offset:((i+1)*no_cells_offset)]
+    return frq, PSD
 
-    return u_slice
-
-
-def Ux_it_offset(it):
-
-    velocityx = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityx")
-    velocityy = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityy")
-    hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
-
-
-    hvelmag = hvelmag.reshape((y,z))
-
-    Ux_rotor = []
-    for j in np.arange(0,len(ys)):
-        for k in np.arange(0,len(zs)):
-            r = np.sqrt(ys[j]**2 + zs[k]**2)
-            if r <= 63 and r >= 1.5:
-                Ux_rotor.append(hvelmag[j,k])
-
-    return np.average(Ux_rotor)
-
-
-#sampling data
-sampling = glob.glob("../../../jarred/ALM_sensitivity_analysis/test10/post_processing/sampling*")
-a = Dataset("./{}".format(sampling[0]))
-p_rotor = a.groups["p_sw1"]
-offsets = p_rotor.offsets
-
-print(p_rotor)
-
-dq = dict()
-
-time_sample = np.array(a.variables["time"])
-time_sample = time_sample - time_sample[0]
+dir = "../post_processing/"
+#openfast data
+df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
 
 tstart = 50
-tend = 150
+tend = 350
+time_OF = np.array(df["Time_[s]"])
+dt = time_OF[1] - time_OF[0]
+tstart_OF_idx = np.searchsorted(time_OF,tstart)
+tend_OF_idx = np.searchsorted(time_OF,tend)
 
-tstart_sample_idx = np.searchsorted(time_sample,tstart)
-tend_sample_idx = np.searchsorted(time_sample,tend)
-
-no_cells = len(p_rotor.variables["coordinates"])
-no_offsets = len(p_rotor.offsets)
-no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
-
-y = p_rotor.ijk_dims[0] #no. data points
-z = p_rotor.ijk_dims[1] #no. data points
-
-coordinates = offset_data(p_rotor,no_cells_offset,it=0,i=2,velocity_comp="coordinates")
-
-xo = coordinates[0:y,0]
-yo = coordinates[0:y,1]
-zo = np.linspace(p_rotor.origin[2],p_rotor.axis2[2],z)
-
-rotor_coordiates = [2560,2560,90]
-
-x_trans = xo - rotor_coordiates[0]
-y_trans = yo - rotor_coordiates[1]
-
-phi = np.radians(-29)
-xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
-ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
-zs = zo - rotor_coordiates[2]
-
-print(len(ys),len(zs))
-print(zs)
+signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
+frqy, FFT_signaly = temporal_spectra(signaly,dt)
+signalz = df["RtAeroMzh_[N-m]"][tstart_OF_idx:tend_OF_idx]
+frqz, FFT_signalz = temporal_spectra(signalz,dt)
 
 
-dy = ys[1]-ys[0]
-dz = zs[1] - zs[0]
-dA = dy * dz
+signal_MR = np.sqrt( np.square(signaly) + np.square(signalz) ) 
+frqMR, FFT_signalMR = temporal_spectra(signal_MR,dt)
+
+signal_T = np.arctan2(signalz,signaly)
+frqT, FFT_signalT = temporal_spectra(signal_T,dt)
+
+fig, ax1,ax2,ax3,ax4 = plt.subplots(4,1,figsize=(32,24))
+ax1.plot(time_OF[tstart_OF_idx:tend_OF_idx],signaly)
+ax2.plot(time_OF[tstart_OF_idx:tend_OF_idx],signalz)
+ax3.plot(time_OF[tstart_OF_idx:tend_OF_idx],signal_MR)
+ax4.plot(time_OF[tstart_OF_idx:tend_OF_idx],signal_T)
+plt.savefig(dir+"1P_signals.png")
+plt.close(fig)
 
 
-i = 2
-Ux_it = []
-with Pool() as pool:
-    for Ux_i in pool.imap(Ux_it_offset, np.arange(0,1)):
-        print(Ux_i)
-        Ux_it.append(Ux_i)
-#Ux_it = df["RtVAvgxh_[m/s]"][tstart_OF_idx:tend_OF_idx]
-dq["Ux_{}".format(offsets[i])] = Ux_it
+fig, ax1,ax2,ax3,ax4 = plt.subplots(4,1,figsize=(32,24))
+ax1.plot(frqy,FFT_signaly)
+ax1.set_yscale('log')
+ax1.set_xscale('log')
+ax1.axvline(12.1/60)
+ax1.axvline((12.1/60)*3)
+
+ax2.plot(frqz,FFT_signalz)
+ax2.set_yscale('log')
+ax2.set_xscale('log')
+ax2.axvline(12.1/60)
+ax2.axvline((12.1/60)*3)
+
+ax3.plot(frqMR,FFT_signalMR)
+ax3.set_yscale('log')
+ax3.set_xscale('log')
+ax3.axvline(12.1/60)
+ax3.axvline((12.1/60)*3)
+
+ax4.plot(frqT,FFT_signalT)
+ax4.set_yscale('log')
+ax4.set_xscale('log')
+ax4.axvline(12.1/60)
+ax4.axvline((12.1/60)*3)
