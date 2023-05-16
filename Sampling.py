@@ -329,7 +329,7 @@ for velocity_comp in velocity_comps:
                 return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
 
 
-            files = glob.glob(dir+filename+"*")
+            files = glob.glob(dir+filename+"*.png")
 
             files.sort(key=natural_keys)
 
