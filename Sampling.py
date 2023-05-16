@@ -208,7 +208,7 @@ for velocity_comp in velocity_comps:
         if movie_tot_vel_isocontour == True:
             
             folder = dir+"{}/".format(velocity_comp)
-            os.rmdir(folder)
+            #need to delete folder if exists
             os.makedirs(folder)
 
             if fluc_vel == True:
