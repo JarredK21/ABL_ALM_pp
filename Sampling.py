@@ -317,12 +317,17 @@ for velocity_comp in velocity_comps:
 
 
             #sort files
-            def atoi(text):
-                return int(text) if text.isdigit() else text
+            def atof(text):
+                try:
+                    retval = float(text)
+                except ValueError:
+                    retval = text
+                return retval
 
             def natural_keys(text):
+                
+                return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
 
-                return [ atoi(c) for c in re.split(r'(\d+)', text) ]
 
             files = glob.glob(dir+filename+"*")
 
