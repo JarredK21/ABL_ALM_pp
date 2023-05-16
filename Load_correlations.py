@@ -42,6 +42,7 @@ def low_pass_filter2(signal, cutoff):
 
     return low_pass_signal
 
+
 #needs fixing fft.shift()
 def low_pass_filter(signal,cutoff,dt):
     
