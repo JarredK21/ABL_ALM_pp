@@ -115,7 +115,7 @@ else:
 
 
 tstart = 50
-tend = 55
+tend = 350
 CFD_dt = 0.0039 #manual input
 Time = np.array(a.variables["time"])
 Time = Time - Time[0]
@@ -206,10 +206,9 @@ for velocity_comp in velocity_comps:
         print("line 227", time.time()-start_time)
         #generate movie for specific plane
         if movie_tot_vel_isocontour == True:
-
-
-            #metadata = dict(title="Movie",artist="Jarred")
-            #writer = PillowWriter(fps=25,metadata=metadata)
+            
+            folder = dir+"{}/".format(velocity_comp)
+            os.makedirs(folder)
 
             if fluc_vel == True:
                 f = "Fluctuating"
@@ -300,16 +299,14 @@ for velocity_comp in velocity_comps:
 
                 Title = "{0}, Offset = {1}, Time = {2}[s]".format(ft,p_h.offsets[i],round(T,4))
                 plt.title(Title)
-                
-                #writer.grab_frame()
-                plt.savefig(dir+"{0}_{1}.png".format(filename,round(T,4)))
+
+                plt.savefig(folder+"{0}_{1}.png".format(filename,round(T,4)))
                 plt.cla()
                 cb.remove()
                 plt.close(fig)
 
                 return T
 
-            #with writer.saving(fig,dir+"{0}".format(filename),len(time_steps)):
             with Pool() as pool:
                 for T in pool.imap(Update,time_steps):
 
@@ -336,17 +333,18 @@ for velocity_comp in velocity_comps:
             #write to video
             img_array = []
             for file in files:
-                print(file)
                 img = cv2.imread(file)
                 height, width, layers = img.shape
                 size = (width,height)
                 img_array.append(img)
+                print("Line 343",time.time()-start_time)
             
             #cv2.VideoWriter_fourcc(*'DIVX')
             out = cv2.VideoWriter(dir+filename+'.avi',0, 15, size)
             
             for i in range(len(img_array)):
                 out.write(img_array[i])
+                print("Line 350",time.time()-start_time)
             out.release()
 
     iv+=1 #velocity index
