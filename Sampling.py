@@ -208,6 +208,7 @@ for velocity_comp in velocity_comps:
         if movie_tot_vel_isocontour == True:
             
             folder = dir+"{}/".format(velocity_comp)
+            os.rmdir(folder)
             os.makedirs(folder)
 
             if fluc_vel == True:
@@ -340,7 +341,7 @@ for velocity_comp in velocity_comps:
                 print("Line 340",time.time()-start_time)
             
             #cv2.VideoWriter_fourcc(*'DIVX')
-            out = cv2.VideoWriter(dir+filename+'.avi',0, 15, size)
+            out = cv2.VideoWriter(folder+filename+'.avi',0, 15, size)
             
             for i in range(len(img_array)):
                 out.write(img_array[i])
