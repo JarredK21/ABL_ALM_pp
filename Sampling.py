@@ -11,6 +11,8 @@ import math
 import sys
 import time
 from multiprocessing import Pool
+import cv2
+import re
 
 
 def offset_data(p_h,velocity_comp, i, no_cells_offset,it):
@@ -24,24 +26,6 @@ def offset_data(p_h,velocity_comp, i, no_cells_offset,it):
     u_slice = u[i*no_cells_offset:((i+1)*no_cells_offset)]
 
     return u_slice
-
-
-def vmin_vmax(p_h,velocity_comp,i,no_cells_offset):
-            
-        #min and max over data
-        vmin_arr = []; vmax_arr = []
-        with Pool() as pool:
-            for u in pool.imap(offset_data,time_steps): #missing inputs
-
-                if fluc_vel == True:
-                    u = u - np.mean(u)
-                
-                vmin_arr.append(np.min(u)); vmax_arr.append(np.max(u))
-                print(time.time()-start_time)
-
-        vmin = math.floor(np.min(vmin_arr)); vmax = math.ceil(np.max(vmax_arr))
-
-        return vmin, vmax
 
 
 #isocontourplot
@@ -130,7 +114,7 @@ else:
 
 
 tstart = 50
-tend = 350
+tend = 55
 CFD_dt = 0.0039 #manual input
 Time = np.array(a.variables["time"])
 Time = Time - Time[0]
@@ -141,11 +125,11 @@ dt = round(a.variables["time"][1] - a.variables["time"][0],4)
 frequency = dt/CFD_dt
 
 
-
+dir = "../post_processing/plots/"
 
 #plotting option
 plot_isocontour = False
-plot_u = True; plot_v = False; plot_w = True; plot_hvelmag = True
+plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
 velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
 #check if no velocity components selected
@@ -153,7 +137,7 @@ if all(list(map(operator.not_, velocity_plot))) == True:
     sys.exit("error no velocity component selected")
 
 
-fluc_vel = True
+fluc_vel = False
 movie_tot_vel_isocontour = True
 plot_specific_offsets = True
 
@@ -222,18 +206,69 @@ for velocity_comp in velocity_comps:
         #generate movie for specific plane
         if movie_tot_vel_isocontour == True:
 
-            fig = plt.figure(figsize=(50,30))
-            plt.rcParams['font.size'] = 40
+
+            #metadata = dict(title="Movie",artist="Jarred")
+            #writer = PillowWriter(fps=25,metadata=metadata)
+
+            if fluc_vel == True:
+                f = "Fluctuating"
+            else:
+                f = "Total"
+            if velocity_comp == "Magnitude horizontal velocity":
+                ft = f + " Velocity $<Ux'>$ [m/s]"
+                fn = f + "_velHz"
+            else:
+                ft = f + " {} [m/s]".format(velocity_comp)
+                fn = f + "_{}".format(velocity_comp)
+
+            filename = "{0}_Offset={1}".format(fn,p_h.offsets[i])
+            print(ft,fn)
+
+            def vmin_vmax(it):
+                    
+                if velocity_comp == "Magnitude horizontal velocity":
+                    u = offset_data(p_h,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
+                    v = offset_data(p_h,velocity_comps[1], i, no_cells_offset,it)
+                    u = np.add( np.multiply(u,np.cos(np.radians(29))) , np.multiply( v,np.sin(np.radians(29))) )
+
+                else:
+                    u = offset_data(p_h,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
+                
+                if fluc_vel == True:
+                    u = u - np.mean(u)
+
+                return np.min(u), np.max(u)
+
+            #find vmin and vmax for isocontour plots            
+            #min and max over data
+            vmin_arr = []; vmax_arr = []
+            with Pool() as pool:
+                for vmin,vmax in pool.imap(vmin_vmax,time_steps):
+                    
+                    vmin_arr.append(vmin); vmax_arr.append(vmax)
+
+            cmin = math.floor(np.min(vmin_arr)); cmax = math.ceil(np.max(vmax_arr))
+            print("line 268",time.time()-start_time)
+            nlevs = (cmax-cmin)
+            levels = np.linspace(cmin,cmax,nlevs,dtype=int)
+
 
 
             def Update(it):
-                u = offset_data(p_h,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
+
+                if velocity_comp == "Magnitude horizontal velocity":
+                    u = offset_data(p_h,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
+                    v = offset_data(p_h,velocity_comps[1], i, no_cells_offset,it)
+                    u = np.add( np.multiply(u,np.cos(np.radians(29))) , np.multiply( v,np.sin(np.radians(29))) )
+
+                else:
+                    u = offset_data(p_h,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
 
                 if fluc_vel == True:
                     u = u - np.mean(u)
 
                 if normal != 1: #rotor plane
-                    u_plane = u.reshape(y,x) #needs fixing x and y lengths and number of points aren't consistent.
+                    u_plane = u.reshape(y,x)
                     X,Y = np.meshgrid(ys,zs)
                 else:
                     u_plane = u.reshape(x,y)
@@ -241,55 +276,72 @@ for velocity_comp in velocity_comps:
 
                 Z = u_plane
 
-                return X,Y,Z
+                T = Time[it]
+
+                fig = plt.figure(figsize=(50,30))
+                plt.rcParams['font.size'] = 40
+
+                cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+                if normal == "x":
+                    plt.xlabel("Y axis [m]")
+                    plt.ylabel("Z axis [m]")
+                elif normal == "y":
+                    plt.xlabel("X axis [m]")
+                    plt.ylabel("Z axis [m]")
+                elif normal == "z":
+                    plt.xlabel("X axis [m]")
+                    plt.ylabel("Y axis [m]")
+                else:
+                    plt.xlabel("Y' axis (rotor frame of reference) [m]")
+                    plt.ylabel("Z' axis (rotor frame of reference) [m]")
+
+                cb = plt.colorbar(cs)
+
+                Title = "{0}, Offset = {1}, Time = {2}[s]".format(ft,p_h.offsets[i],round(T,4))
+                plt.title(Title)
+                
+                #writer.grab_frame()
+                plt.savefig(dir+"{0}_{1}.png".format(filename,round(T,4)))
+                plt.cla()
+                cb.remove()
+                plt.close(fig)
+
+                return T
+
+            #with writer.saving(fig,dir+"{0}".format(filename),len(time_steps)):
+            with Pool() as pool:
+                for T in pool.imap(Update,time_steps):
+
+                    print(T,time.time()-start_time)
 
 
-            metadata = dict(title="Movie",artist="Jarred")
-            writer = PillowWriter(fps=5,metadata=metadata)
+            #sort files
+            def atoi(text):
+                return int(text) if text.isdigit() else text
 
-            if fluc_vel == True:
-                f = "Fluctuating"
-            else:
-                f = "Total"
+            def natural_keys(text):
 
-            ft = f + " Velocity {} [m/s]".format(velocity_comp[-1])
-            fn = f + "_vel{}".format(velocity_comp[-1])
+                return [ atoi(c) for c in re.split(r'(\d+)', text) ]
 
-            filename = "{0}_Offset={1}.gif".format(fn,p_h.offsets[i])
+            files = glob.glob(dir+filename+"*")
 
-            #find vmin and vmax for isocontour plots
-            cmin, cmax = vmin_vmax(p_h,velocity_comp,i,no_cells_offset)
-            levels = np.linspace(cmin,cmax,10,dtype=int)
-            print("line 262",time.time()-start_time)
-            with writer.saving(fig,dir+"{0}".format(filename),time_steps):
-                for it in time_steps:
-                    
-                    X,Y,Z = Update(it)
-                    print("line 267",time.time()-start_time)
-                    T = Time[it]
+            files.sort(key=natural_keys)
 
-                    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
-                    if normal == "x":
-                        plt.xlabel("Y axis [m]")
-                        plt.ylabel("Z axis [m]")
-                    elif normal == "y":
-                        plt.xlabel("X axis [m]")
-                        plt.ylabel("Z axis [m]")
-                    elif normal == "z":
-                        plt.xlabel("X axis [m]")
-                        plt.ylabel("Y axis [m]")
-
-                    cb = plt.colorbar(cs)
-                    
-                    Title = "{0}, Offset = {1}, Time = {2}[s]".format(ft,p_h.offsets[i],T)
-                    
-                    plt.title(Title)
-
-                    writer.grab_frame()
-
-                    plt.cla()
-                    cb.remove()
-                    print(it,start_time-time.time())
+            #write to video
+            img_array = []
+            for file in files:
+                print(file)
+                img = cv2.imread(file)
+                height, width, layers = img.shape
+                size = (width,height)
+                img_array.append(img)
+            
+            
+            out = cv2.VideoWriter(dir+filename+'.gif',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
+            
+            for i in range(len(img_array)):
+                out.write(img_array[i])
+            out.release()
 
     iv+=1 #velocity index
     print(velocity_comp,time.time()-start_time)
