@@ -337,8 +337,8 @@ for velocity_comp in velocity_comps:
                 size = (width,height)
                 img_array.append(img)
             
-            
-            out = cv2.VideoWriter(dir+filename+'.gif',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
+            #cv2.VideoWriter_fourcc(*'DIVX')
+            out = cv2.VideoWriter(dir+filename+'.avi',0, 15, size)
             
             for i in range(len(img_array)):
                 out.write(img_array[i])
