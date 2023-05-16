@@ -203,7 +203,7 @@ for velocity_comp in velocity_comps:
                 isocontourplot(u,x,y,normal,xs,ys,zs,Title,filename,dir)
 
 
-        print("line 227", time.time()-start_time)
+        print("line 206", time.time()-start_time)
         #generate movie for specific plane
         if movie_tot_vel_isocontour == True:
             
@@ -248,7 +248,7 @@ for velocity_comp in velocity_comps:
                     vmin_arr.append(vmin); vmax_arr.append(vmax)
 
             cmin = math.floor(np.min(vmin_arr)); cmax = math.ceil(np.max(vmax_arr))
-            print("line 268",time.time()-start_time)
+            print("line 251",time.time()-start_time)
             nlevs = (cmax-cmin)
             levels = np.linspace(cmin,cmax,nlevs,dtype=int)
 
@@ -326,7 +326,7 @@ for velocity_comp in velocity_comps:
                 return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
 
 
-            files = glob.glob(dir+filename+"*.png")
+            files = glob.glob(folder+filename+"*.png")
 
             files.sort(key=natural_keys)
 
@@ -337,14 +337,14 @@ for velocity_comp in velocity_comps:
                 height, width, layers = img.shape
                 size = (width,height)
                 img_array.append(img)
-                print("Line 343",time.time()-start_time)
+                print("Line 340",time.time()-start_time)
             
             #cv2.VideoWriter_fourcc(*'DIVX')
             out = cv2.VideoWriter(dir+filename+'.avi',0, 15, size)
             
             for i in range(len(img_array)):
                 out.write(img_array[i])
-                print("Line 350",time.time()-start_time)
+                print("Line 347",time.time()-start_time)
             out.release()
 
     iv+=1 #velocity index
