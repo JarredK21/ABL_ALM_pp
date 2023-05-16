@@ -14,6 +14,7 @@ from multiprocessing import Pool
 import cv2
 import re
 
+#this was updated 16/05
 
 def offset_data(p_h,velocity_comp, i, no_cells_offset,it):
 
