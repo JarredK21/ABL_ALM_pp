@@ -49,11 +49,13 @@ Var = "Ux_0.0"
 
 signal = df[Var]
 signal = remove_nan(signal)
+signal = signal - np.mean(signal)
 
 signal2 = dq[Var]
 signal2 = remove_nan(signal2)
 f = interpolate.interp1d(time2,signal2)
 signal2 = f(time)
+signal2 = signal2 - np.mean(signal2)
 
 vel_array = WTG01.variables["vel"]
 vel_x_array = np.array(vel_array[:,0:-1,0])
@@ -67,6 +69,7 @@ for velx_i,vely_i in zip(vel_x_array,vel_y_array):
 np.array(velx); np.array(vely)
 hvelmag = np.add( np.multiply(velx,np.cos(np.radians(29))) , np.multiply( vely,np.sin(np.radians(29))) )
 hvelmag = hvelmag[tstart_idx:tend_idx]
+hvelmag = hvelmag - np.mean(hvelmag)
 
 diff = abs(np.subtract(signal,hvelmag))
 
@@ -80,5 +83,5 @@ plt.xlabel("Time [s]")
 plt.ylabel("Ux' [m/s]")
 plt.legend(["OpenFAST Ux' sampling method","AMR-Wind Ux' sampling method- corr = {}".format(round(corr,3)),"actuator line sampling method"])
 plt.tight_layout()
-plt.savefig(dir+"Ux_signals.png")
+plt.savefig(dir+"Ux_signals_fluc.png")
 plt.close(fig)
