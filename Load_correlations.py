@@ -145,22 +145,41 @@ if compare_total_correlations == True:
                 f = interpolate.interp1d(time_sample,signal)
                 signal = f(time_OF)
 
+
+            if Var == "MR":
+                cutoff = 0.5*(12.1/60)
+                signal_LP = low_pass_filter2(signal,cutoff)
+            elif correlation_variable == "MR":
+                cutoff = 0.5*(12.1/60)
+                corr_signal_LP = low_pass_filter2(correlation_variable,cutoff)
+            else:
+                cutoff = 0.5*(12.1/60)*3
+                #signal_LP = low_pass_filter(signal,cutoff,dt)
+                signal_LP = low_pass_filter2(signal, cutoff)
+                corr_signal_LP = low_pass_filter2(correlation_variable,cutoff)
+                #LP_diff = signal_LP-signal_LP2
+
             signal_mean = np.mean(signal)
             corr_signal_mean = np.mean(correlation_variable)
             
             corr = correlation_coef(correlation_variable,signal)
+            ticks = np.arange(int(min(time_OF)), int(max(time_OF))+10,10)
 
             ax.plot(time_OF,signal,'-b')
+            ax.plot(time_OF,signal_LP,"-r")
+            ax.set_xticks(ticks)
             ax.axhline(signal_mean,color="b",linestyle="--")
             ax.set_ylabel("{0} {1}".format(Ylabel,unit),fontsize=16)
 
             ax2=ax.twinx()
             ax2.plot(time_OF,correlation_variable,"-k")
+            ax2.plot(time_OF,corr_signal_LP,"-y")
+            ax.set_xticks(ticks)
             ax2.axhline(corr_signal_mean,color="k",linestyle="--")
             ax2.set_ylabel("{}".format(Y2_label),fontsize=16)
             plt.title("Correlating {0} at {1}m from turbine, with {2}".format(Y2_label,offsets[2],Ylabel),fontsize=18)
-            ax.legend(["Total {}".format(Ylabel), "Mean {}".format(Ylabel)],loc="upper left")
-            ax2.legend(["Total {0} Correlation = {1}".format(Y2_label,round(corr,2)), "Mean {}".format(Y2_label)],loc="upper right")
+            ax.legend(["Total {}".format(Ylabel),"Low pass filtered {}".format(Ylabel), "Mean {}".format(Ylabel)],loc="upper left")
+            ax2.legend(["Total {0} Correlation = {1}".format(Y2_label,round(corr,2)),"Low pass filtered {}".format(Y2_label), "Mean {}".format(Y2_label)],loc="upper right")
 
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
@@ -223,11 +242,15 @@ if compare_LP_correlations == True:
             signal_mean = np.mean(signal)
             corr_signal_mean = np.mean(correlation_variable)
 
+            ticks = np.arange(int(min(time_OF)), int(max(time_OF))+10,10)
+
             ax.plot(time_OF,signal_LP,"-b")
+            ax.set_xticks(ticks)
             ax.set_ylabel("Low pass filtered {0} {1}".format(Ylabel,unit),fontsize=16)
 
             ax2=ax.twinx()
             ax2.plot(time_OF,corr_signal_LP,"-r")
+            ax.set_xticks(ticks)
             ax2.set_ylabel("Low pass filtered {}".format(Y2_label),fontsize=16)
             plt.title("Correlating {0} at {1}m from turbine, with {2}".format(Y2_label,offsets[2],Ylabel),fontsize=18)
             ax.legend(["Low pass filtered {}".format(Ylabel)],loc="upper left")
@@ -273,12 +296,14 @@ if compare_time_series == True:
         elif Var == "Theta":
             signal = np.multiply((180/np.pi),signal)
 
-        
+        ticks = np.arange(int(min(time_OF)), int(max(time_OF))+10,10)
+
         axs = axs.ravel()
 
         j=i-2
 
         axs[j].plot(time_OF,signal)
+        axs[j].set_xticks(ticks)
         axs[j].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
 
     fig.supxlabel("Time [s]")
