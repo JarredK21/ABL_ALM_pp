@@ -234,29 +234,35 @@ for velocity_comp in velocity_comps:
                 def natural_keys(text):
                     
                     return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
-
+                
+                
                 files = glob.glob(folder+filename+"*.png")
                 files.sort(key=natural_keys)
 
+                v = 0
+                V = 6
                 #write to video
-                it = 0
-                img_array = []
-                for file in files:
-                    img = cv2.imread(file)
-                    height, width, layers = img.shape
-                    size = (width,height)
-                    img_array.append(img)
-                    print(Time[time_steps[it]],time.time()-start_time)
-                    it+=1
-                
-                #cv2.VideoWriter_fourcc(*'DIVX')
-                out = cv2.VideoWriter(folder+filename+'.avi',0, 15, size)
-                it = 0
-                for i in range(len(img_array)):
-                    out.write(img_array[i])
-                    print(Time[time_steps[it]],time.time()-start_time)
-                    it+=1
-                out.release()
+                while v < V:
+                    it = 0
+                    img_array = []
+                    for file in files[int((v/V)*len(files)):int(((v+1)/V)*len(files))]:
+                        img = cv2.imread(file)
+                        height, width, layers = img.shape
+                        size = (width,height)
+                        img_array.append(img)
+                        print(Time[time_steps[it]],time.time()-start_time)
+                        it+=1
+                    
+                    #cv2.VideoWriter_fourcc(*'DIVX')
+                    out = cv2.VideoWriter(folder+filename+'{0}.avi'.format(v),0, 15, size)
+                    it = 0
+                    for i in range(len(img_array)):
+                        out.write(img_array[i])
+                        print(Time[time_steps[it]],time.time()-start_time)
+                        it+=1
+                    out.release()
+
+                    v+=1
 
             else:
                 folder = dir+"{}/".format(velocity_comp)
