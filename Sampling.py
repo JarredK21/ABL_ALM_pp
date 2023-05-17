@@ -246,7 +246,7 @@ for velocity_comp in velocity_comps:
                     height, width, layers = img.shape
                     size = (width,height)
                     img_array.append(img)
-                    print(Time[it],time.time()-start_time)
+                    print(Time[time_steps[it]],time.time()-start_time)
                     it+=1
                 
                 #cv2.VideoWriter_fourcc(*'DIVX')
@@ -254,7 +254,7 @@ for velocity_comp in velocity_comps:
                 it = 0
                 for i in range(len(img_array)):
                     out.write(img_array[i])
-                    print(Time[it],time.time()-start_time)
+                    print(Time[time_steps[it]],time.time()-start_time)
                     it+=1
                 out.release()
 
