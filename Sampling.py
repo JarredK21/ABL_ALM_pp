@@ -204,7 +204,7 @@ for velocity_comp in velocity_comps:
 
 
         print("line 206", time.time()-start_time)
-        folder_exists = True
+        folder_exists = False
         #generate movie for specific plane
         if movie_tot_vel_isocontour == True:
             
@@ -256,8 +256,8 @@ for velocity_comp in velocity_comps:
                     #cv2.VideoWriter_fourcc(*'DIVX')
                     out = cv2.VideoWriter(folder+filename+'_{0}.avi'.format(v),0, 15, size)
                     it = 0
-                    for i in range(len(img_array)):
-                        out.write(img_array[i])
+                    for im in range(len(img_array)):
+                        out.write(img_array[im])
                         print(Time[time_steps[it]],time.time()-start_time)
                         it+=1
                     out.release()
@@ -300,13 +300,14 @@ for velocity_comp in velocity_comps:
 
                 #find vmin and vmax for isocontour plots            
                 #min and max over data
-                vmin_arr = []; vmax_arr = []
-                with Pool() as pool:
-                    for vmin,vmax in pool.imap(vmin_vmax,time_steps):
+                # vmin_arr = []; vmax_arr = []
+                # with Pool() as pool:
+                #     for vmin,vmax in pool.imap(vmin_vmax,time_steps):
                         
-                        vmin_arr.append(vmin); vmax_arr.append(vmax)
+                #         vmin_arr.append(vmin); vmax_arr.append(vmax)
 
-                cmin = math.floor(np.min(vmin_arr)); cmax = math.ceil(np.max(vmax_arr))
+                # cmin = math.floor(np.min(vmin_arr)); cmax = math.ceil(np.max(vmax_arr))
+                cmin = 3; cmax = 18 #custom range
                 print("line 251",time.time()-start_time)
                 nlevs = (cmax-cmin)
                 levels = np.linspace(cmin,cmax,nlevs,dtype=int)
@@ -383,32 +384,35 @@ for velocity_comp in velocity_comps:
                 def natural_keys(text):
                     
                     return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
-
-
+                
+                #sort files
                 files = glob.glob(folder+filename+"*.png")
-
                 files.sort(key=natural_keys)
 
-
+                v = 0
+                V = 6
                 #write to video
-                it = 0
-                img_array = []
-                for file in files:
-                    img = cv2.imread(file)
-                    height, width, layers = img.shape
-                    size = (width,height)
-                    img_array.append(img)
-                    print(Time[it],time.time()-start_time)
-                    it+=1
-                
-                #cv2.VideoWriter_fourcc(*'DIVX')
-                out = cv2.VideoWriter(folder+filename+'.avi',0, 15, size)
-                it = 0
-                for i in range(len(img_array)):
-                    out.write(img_array[i])
-                    print(Time[it],time.time()-start_time)
-                    it+=1
-                out.release()
+                while v < V:
+                    it = 0
+                    img_array = []
+                    for file in files[int((v/V)*len(files)):int(((v+1)/V)*len(files))]:
+                        img = cv2.imread(file)
+                        height, width, layers = img.shape
+                        size = (width,height)
+                        img_array.append(img)
+                        print(Time[time_steps[it]],time.time()-start_time)
+                        it+=1
+                    
+                    #cv2.VideoWriter_fourcc(*'DIVX')
+                    out = cv2.VideoWriter(folder+filename+'_{0}.avi'.format(v),0, 15, size)
+                    it = 0
+                    for im in range(len(img_array)):
+                        out.write(img_array[im])
+                        print(Time[time_steps[it]],time.time()-start_time)
+                        it+=1
+                    out.release()
+                    print("Line 264",time.time()-start_time)
+                    v+=1
 
     iv+=1 #velocity index
     print(velocity_comp,time.time()-start_time)
