@@ -143,7 +143,7 @@ movie_tot_vel_isocontour = True
 plot_specific_offsets = True
 
 if plot_specific_offsets == True:    
-    spec_offsets = [2] #rotor plane
+    spec_offsets = [1] #rotor plane
 else:
     spec_offsets = np.arange(0,no_offsets, 1, dtype=int)
 
@@ -160,6 +160,10 @@ plane_data =  pd.DataFrame(data=None, columns=col_names)
 
 #specify time steps to plot instantaneous isocontours at
 it_array = [0]
+
+#colorbar options
+custom_colorbar = True
+cmin = 3; cmax = 18 #custom range
 
 
 start_time = time.time()
@@ -265,8 +269,8 @@ for velocity_comp in velocity_comps:
                     v+=1
 
             else:
-                folder = dir+"{}/".format(velocity_comp)
-                #need to delete folder if exists
+                folder = dir+"{0}_{1}/".format(velocity_comp,p_h.offsets[i])
+                #need to delete or change name of folder if folder exists
                 os.makedirs(folder)
 
                 if fluc_vel == True:
@@ -274,7 +278,7 @@ for velocity_comp in velocity_comps:
                 else:
                     f = "Total"
                 if velocity_comp == "Magnitude horizontal velocity":
-                    ft = f + " Velocity $<Ux'>$ [m/s]"
+                    ft = f + " Velocity - Ux' [m/s]"
                     fn = f + "_velHz"
                 else:
                     ft = f + " {} [m/s]".format(velocity_comp)
@@ -300,14 +304,16 @@ for velocity_comp in velocity_comps:
 
                 #find vmin and vmax for isocontour plots            
                 #min and max over data
-                # vmin_arr = []; vmax_arr = []
-                # with Pool() as pool:
-                #     for vmin,vmax in pool.imap(vmin_vmax,time_steps):
-                        
-                #         vmin_arr.append(vmin); vmax_arr.append(vmax)
+                if custom_colorbar == False:
+                    vmin_arr = []; vmax_arr = []
+                    with Pool() as pool:
+                        for vmin,vmax in pool.imap(vmin_vmax,time_steps):
+                            
+                            vmin_arr.append(vmin); vmax_arr.append(vmax)
 
-                # cmin = math.floor(np.min(vmin_arr)); cmax = math.ceil(np.max(vmax_arr))
-                cmin = 3; cmax = 18 #custom range
+                    cmin = math.floor(np.min(vmin_arr)); cmax = math.ceil(np.max(vmax_arr))
+                
+                #if custom_colorbar == True: specify cmain, cmax above
                 print("line 251",time.time()-start_time)
                 nlevs = (cmax-cmin)
                 levels = np.linspace(cmin,cmax,nlevs,dtype=int)
