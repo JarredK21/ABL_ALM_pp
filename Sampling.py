@@ -209,6 +209,20 @@ for velocity_comp in velocity_comps:
         if movie_tot_vel_isocontour == True:
             
             if folder_exists == True:
+                folder = dir+"{}/".format(velocity_comp)
+                if fluc_vel == True:
+                    f = "Fluctuating"
+                else:
+                    f = "Total"
+                if velocity_comp == "Magnitude horizontal velocity":
+                    ft = f + " Velocity $<Ux'>$ [m/s]"
+                    fn = f + "_velHz"
+                else:
+                    ft = f + " {} [m/s]".format(velocity_comp)
+                    fn = f + "_{}".format(velocity_comp)
+
+                filename = "{0}_Offset={1}".format(fn,p_h.offsets[i])
+                print(ft,fn)
                 #sort files
                 def atof(text):
                     try:
