@@ -342,10 +342,11 @@ for velocity_comp in velocity_comps:
             
             #cv2.VideoWriter_fourcc(*'DIVX')
             out = cv2.VideoWriter(folder+filename+'.avi',0, 15, size)
-            
+            it = 0
             for i in range(len(img_array)):
                 out.write(img_array[i])
-                print("Line 347",time.time()-start_time)
+                print(Time[it],time.time()-start_time)
+                it+=1
             out.release()
 
     iv+=1 #velocity index
