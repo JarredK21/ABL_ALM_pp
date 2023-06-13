@@ -68,7 +68,7 @@ twist = coriolis_twist(u,v)
 fig = plt.figure()
 plt.rcParams.update({'font.size': 12})
 twist_2 = coriolis_twist(u=u_2,v=v_2)
-plt.plot(twist_2,z,linewidth=2)
+plt.plot(twist_2*(180/np.pi),z,linewidth=2)
 plt.xlabel("$\Theta$ - twist induced by coriolis [deg]")
 plt.ylabel("Distance from the surface [m]")
 plt.grid()
@@ -116,7 +116,7 @@ plt.plot(a.variables["time"][t_start:t_end],hvelmag)
 u = np.average(mean_profiles.variables["u"][t_start:t_end][:],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:t_end][:],axis=0)
 
-twist = coriolis_twist()
+twist = coriolis_twist(u=u,v=v)
 
 hvelmag = []
 for i in np.arange(0,len(u),1):
@@ -130,6 +130,23 @@ w = np.average(mean_profiles.variables["w"][t_start:t_end][:],axis=0)
 theta = np.average(mean_profiles.variables["theta"][t_start:t_end][:],axis=0)
 
 u_w_r = np.average(mean_profiles.variables["u'w'_r"][t_start:t_end][:],axis=0)
+
+w_w_r = np.average(mean_profiles.variables["w'w'_r"][t_start:t_end][:],axis=0)
+
+
+fig = plt.figure()
+plt.rcParams.update({'font.size': 12})
+
+plt.plot(w_w_r,z,"b-")
+
+plt.xlabel("Ensemble averaged vertical velocity variance [m/s]")
+plt.ylabel("Distance from surface [m]") 
+plt.grid()
+plt.tight_layout()
+        
+path = dir + "w_w_r_avg.png"
+plt.savefig(path)
+plt.close(fig)
 
 
 fig = plt.figure()

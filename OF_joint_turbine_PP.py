@@ -10,15 +10,16 @@ import math
 
 
 #dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dt_study4/"
-dir = "../../gravity_study/plots/"
+#dir = "../../gravity_study/plots/"
+dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dr_study/"
 
-# cases = ["Ex1","Ex2","Ex3"]
-# act_stations_cases = [54,47,59]
-# dt_cases = [0.001,0.001,0.001]
+cases = ["Ex1","Ex2","Ex3"]
+act_stations_cases = [54,47,59]
+dt_cases = [0.001,0.001,0.001]
 
-# colors = ["red","blue","green"]
-# markers = ["o","D","s"]
-# trans = [1,0.5,0.25]
+colors = ["red","blue","green"]
+markers = ["o","D","s"]
+trans = [1,0.5,0.25]
 
 # cases = ["Ex1","Ex1_dblade_1.0","Ex1_dblade_2.0"]
 # act_stations_cases = [54,54,54]
@@ -28,24 +29,25 @@ dir = "../../gravity_study/plots/"
 # markers = ["o","D","s"]
 # trans = [1,0.5,0.25]
 
-cases = ["gravity_on", "gravity_off"]
-act_stations_cases = [54,54]
-dt_cases = [0.0039, 0.0039]
-colors = ["red","blue"]
-markers = ["o","D"]
-trans = [1,0.5]
 
-# legends = []
-# for i in np.arange(0,len(act_stations_cases)):
-#     legends.append("{0}: {1} actuator points".format(cases[i],act_stations_cases[i]))
+# cases = ["gravity_on", "gravity_off"]
+# act_stations_cases = [54,54]
+# dt_cases = [0.0039, 0.0039]
+# colors = ["red","blue"]
+# markers = ["o","D"]
+# trans = [1,0.5]
+
+legends = []
+for i in np.arange(0,len(act_stations_cases)):
+    legends.append("{0}: {1} actuator points".format(cases[i],act_stations_cases[i]))
 
 # legends = []
 # for i in np.arange(0,len(dt_cases)):
 #     legends.append("{0}: {1}s dt".format(cases[i],dt_cases[i]))
 
-legends = []
-for i in np.arange(0,len(cases)):
-    legends.append("{0}".format(cases[i]))
+# legends = []
+# for i in np.arange(0,len(cases)):
+#     legends.append("{0}".format(cases[i]))
 
 
 rad_variables = ["Vrel","Alpha", "Cl","Cd","Fn","Ft","Vx"]
@@ -57,8 +59,8 @@ number_rotor_rotations = 3
 plot_time_end = False
 
 
-time_start = [50,50,50] #time in seconds to remove from start of data - insert 0 if plot all time
-time_end = [150,150,150] #time in seconds to plot upto - insert False if plot all time
+time_start = [0,0,0] #time in seconds to remove from start of data - insert 0 if plot all time
+time_end = [25,25,25] #time in seconds to plot upto - insert False if plot all time
 
 int_variables = ["RotSpeed","BldPitch1","Wind1VelX","RotTorq","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh"]
 int_YLabel = ["Rotor speed","Blade pitch","Hub height Velocity", "Rotor Torque", "Rotor Force in X direction", "Rotor Force in Y direction", 
@@ -89,11 +91,11 @@ aero_blade_stations = [1,54,1,54]
 #plotting options
 plot_ints = False
 plot_spectra = False
-plot_radial = False
+plot_radial = True
 avg_difference = False
 plot_elastic_ints = False
 plot_elastic_spectra = False
-plot_aero_ints = True
+plot_aero_ints = False
 plot_aero_spectra = False
 
 
@@ -190,15 +192,15 @@ if plot_ints == True:
     #integrated plots
     for i in np.arange(0,len(int_variables),1):
 
-        # legends = []
-        # for j in np.arange(0,len(act_stations_cases)):
-        #     legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
+        legends = []
+        for j in np.arange(0,len(act_stations_cases)):
+            legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
         # legends = []
         # for j in np.arange(0,len(dt_cases)):
         #     legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
-        legends = []
-        for j in np.arange(0,len(cases)):
-            legends.append("{0}".format(cases[j]))
+        # legends = []
+        # for j in np.arange(0,len(cases)):
+        #     legends.append("{0}".format(cases[j]))
 
         Var = int_variables[i]
         unit = int_units[i]
@@ -211,8 +213,8 @@ if plot_ints == True:
         ix = 0 #case counter
         for case in cases:
 
-            #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-            df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            #df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
 
 
             time = df["Time_[s]"]
@@ -239,7 +241,7 @@ if plot_ints == True:
         plt.ylabel("{0} {1}".format(Ylabel,unit),fontsize=16)
         plt.xlabel("time [s]",fontsize=16)
         plt.legend(legends)
-        plt.title('{0} spectra, 5 levels of refinement, 54 actuator points'.format(Ylabel))
+        #plt.title('{0} spectra, 5 levels of refinement, 54 actuator points'.format(Ylabel))
         #plt.title("5 levels of refinement, 94 actuator points",fontsize=18)
         plt.tight_layout()
         plt.savefig(dir+"{0}.png".format(Var))
@@ -320,15 +322,15 @@ if plot_radial == True:
     #radial plots
     for i in np.arange(0,len(rad_variables),1):
 
-        # legends = []
-        # for j in np.arange(0,len(act_stations_cases)):
-        #     legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
+        legends = []
+        for j in np.arange(0,len(act_stations_cases)):
+            legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
         # legends = []
         # for j in np.arange(0,len(dt_cases)):
         #     legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
-        legends = []
-        for j in np.arange(0,len(cases)):
-            legends.append("{0}".format(cases[j]))
+        # legends = []
+        # for j in np.arange(0,len(cases)):
+        #     legends.append("{0}".format(cases[j]))
 
         Var = rad_variables[i]
         unit = rad_units[i]
@@ -342,8 +344,8 @@ if plot_radial == True:
         ix = 0 #case counter
         for case in cases:
 
-            #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-            df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            #df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
 
             # for col in df.columns:
             #     print(col)
@@ -412,15 +414,15 @@ if plot_radial == True:
         plt.savefig(dir+"{0}_rad_RMSE.png".format(Var))
         plt.close(fig)
 
-        # legends = []
-        # for j in np.arange(0,len(act_stations_cases)):
-        #     legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
+        legends = []
+        for j in np.arange(0,len(act_stations_cases)):
+            legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
         # legends = []
         # for j in np.arange(0,len(dt_cases)):
         #     legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
-        legends = []
-        for j in np.arange(0,len(cases)):
-            legends.append("{0}".format(cases[j]))
+        # legends = []
+        # for j in np.arange(0,len(cases)):
+        #     legends.append("{0}".format(cases[j]))
 
         for k in np.arange(1,len(cases)):
             legends[k] = legends[k] + "\nTotal Normalized Mean difference = {}".format(round(mean_diff[k-1],6))
