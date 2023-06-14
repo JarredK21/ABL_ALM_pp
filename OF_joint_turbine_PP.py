@@ -9,64 +9,63 @@ from scipy import interpolate
 import math
 
 
-#dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dt_study4/"
-#dir = "../../gravity_study/plots/"
-dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dr_study/"
-
-cases = ["Ex1","Ex2","Ex3"]
-act_stations_cases = [54,47,59]
-dt_cases = [0.001,0.001,0.001]
-
-colors = ["red","blue","green"]
-markers = ["o","D","s"]
-trans = [1,0.5,0.25]
-
-# cases = ["Ex1","Ex1_dblade_1.0","Ex1_dblade_2.0"]
-# act_stations_cases = [54,54,54]
-# dt_cases = [0.001,0.0039,0.0078]
-
-# colors = ["red","blue","green"]
-# markers = ["o","D","s"]
-# trans = [1,0.5,0.25]
+#study
+time_step_study = True
+delta_r_study = False
+gravity_study = False
 
 
-# cases = ["gravity_on", "gravity_off"]
-# act_stations_cases = [54,54]
-# dt_cases = [0.0039, 0.0039]
-# colors = ["red","blue"]
-# markers = ["o","D"]
-# trans = [1,0.5]
+if delta_r_study == True:
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dr_study/"
+    cases = ["Ex1","Ex2","Ex3"]
+    act_stations_cases = [54,47,59]
+    dt_cases = [0.001,0.001,0.001]
 
-legends = []
-for i in np.arange(0,len(act_stations_cases)):
-    legends.append("{0}: {1} actuator points".format(cases[i],act_stations_cases[i]))
-
-# legends = []
-# for i in np.arange(0,len(dt_cases)):
-#     legends.append("{0}: {1}s dt".format(cases[i],dt_cases[i]))
-
-# legends = []
-# for i in np.arange(0,len(cases)):
-#     legends.append("{0}".format(cases[i]))
+    colors = ["red","blue","green"]
+    markers = ["o","D","s"]
+    trans = [1,0.5,0.25]
 
 
+elif time_step_study == True:
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dt_study2/"
+    cases = ["Ex1","Ex1_dblade_0.5","Ex1_dblade_1.0","Ex1_dblade_2.0"]
+    act_stations_cases = [54,54,54,54]
+    dt_cases = [0.001,0.00195,0.0039,0.0078]
+
+    colors = ["red","blue","green","orange"]
+    markers = ["o","D","s","v"]
+    trans = [1,0.75,0.5,0.25]
+
+
+elif gravity_study == True:
+    dir = "../../gravity_study/plots/"
+    cases = ["gravity_on", "gravity_off"]
+    act_stations_cases = [54,54]
+    dt_cases = [0.0039, 0.0039]
+    colors = ["red","blue"]
+    markers = ["o","D"]
+    trans = [1,0.5]
+
+
+
+#variables
 rad_variables = ["Vrel","Alpha", "Cl","Cd","Fn","Ft","Vx"]
 rad_YLabel = ["Local Relative Velocity", "Local Angle of Attack", "Local Coeffcient of Lift", "Local Coefficient of Drag",
                 "Local Aerofoil Normal Force", "Local Aerofoil Tangential Force", "Local Axial Velocity"]
 rad_units = ["[m/s]","[deg]","[-]","[-]","[N/m]","[N/m]","[m/s]"]
 number_rotor_rotations = 3
 
+
 plot_time_end = False
 
+time_start = np.ones(len(cases))*5
+time_end = np.ones(len(cases))*24
 
-time_start = [0,0,0] #time in seconds to remove from start of data - insert 0 if plot all time
-time_end = [25,25,25] #time in seconds to plot upto - insert False if plot all time
-
-int_variables = ["RotSpeed","BldPitch1","Wind1VelX","RotTorq","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh"]
-int_YLabel = ["Rotor speed","Blade pitch","Hub height Velocity", "Rotor Torque", "Rotor Force in X direction", "Rotor Force in Y direction", 
+int_variables = ["Wind1VelX","RotTorq","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh"]
+int_YLabel = ["Hub height Velocity", "Rotor Torque", "Rotor Force in X direction", "Rotor Force in Y direction", 
                 "Rotor Force in Z direction", "Rotor Moment in X direction", "Rotor Moment in Y direction", 
                 "Rotor Moment in Z direction"]
-int_units = ["[rpm]","[deg]","[m/s]","[kN-m]","[N]","[N]","[N]","[N-m]","[N-m]","[N-m]"]
+int_units = ["[m/s]","[kN-m]","[N]","[N]","[N]","[N-m]","[N-m]","[N-m]"]
 
 
 elastic_variables = ["MLx","MLx","MLy","MLy","MLz","MLz","FLx","FLx","FLy","FLy","FLz","FLz"]
@@ -89,7 +88,7 @@ aero_blade_stations = [1,54,1,54]
 
 
 #plotting options
-plot_ints = False
+plot_ints = True
 plot_spectra = False
 plot_radial = True
 avg_difference = False
@@ -99,25 +98,10 @@ plot_aero_ints = False
 plot_aero_spectra = False
 
 
-def Root_mean_squared(data_set):
+def stats(data_set):
 
-    
-    RMSE = []
-    for l in np.arange(1,len(cases)):
-
-        MSE = np.square(np.subtract(data_set[0],data_set[l])).mean() 
- 
-        RMSE.append( math.sqrt(MSE)/np.average(data_set[0]) )
-
-    return RMSE
-
-
-
-def difference(data_set):
-
-    norm_diff = []
-    mean_diff = []
     perc_diff = []
+    RMSE = []
     for l in np.arange(1,len(cases)):
 
         diff = np.subtract(data_set[l],data_set[0])
@@ -126,13 +110,13 @@ def difference(data_set):
 
         perc_diff_i = [x for x in perc_diff_i if math.isnan(x) == False]
 
-        perc_diff.append( np.average(perc_diff_i) * 100 )
+        perc_diff.append( abs(np.average(perc_diff_i) * 100) )
+
+        MSE = np.square(np.subtract(data_set[0],data_set[l])).mean() 
  
-        norm_diff.append( diff/np.average(data_set[0]) )
+        RMSE.append( abs(math.sqrt(MSE)/np.average(data_set[0])) )
 
-        mean_diff.append( np.sum(abs(norm_diff[l-1]))/len(norm_diff[l-1]) )
-
-    return norm_diff, mean_diff, perc_diff
+    return perc_diff, RMSE
 
 
 def mean_difference(data_set):
@@ -155,52 +139,32 @@ def energy_contents_check(case,Var,e_fft,signal,dt):
     print(case, Var, E, E2, abs(E2/E))
 
 
-if avg_difference == True:
-    for i in np.arange(0,len(int_variables),1):
-
-        Var = int_variables[i]
-        unit = int_units[i]
-
-        fig = plt.figure(figsize=(14,8))
-
-        avg = []
-        ix = 0 #case counter
-        for case in cases:
-
-            df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-
-            time = df["Time_[s]"]
-            time = np.array(time)
-
-            txt = "{0}_{1}".format(Var,unit)
-
-            Var_int = df[txt][:]
-
-            tstart = np.searchsorted(time[:],time_start[ix])
-            tend = np.searchsorted(time[:],time_end[ix])
-
-            avg.append( np.average(Var_int[tstart:tend]) )
-        
-
-        avg_diff = [abs(avg[1] - avg[0])/avg[0] * 100 , abs(avg[2] - avg[0])/avg[0] * 100]
-        print(Var, avg_diff)
-
-
-
 
 if plot_ints == True:
     #integrated plots
-    for i in np.arange(0,len(int_variables),1):
 
-        legends = []
-        for j in np.arange(0,len(act_stations_cases)):
-            legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
-        # legends = []
-        # for j in np.arange(0,len(dt_cases)):
-        #     legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
-        # legends = []
-        # for j in np.arange(0,len(cases)):
-        #     legends.append("{0}".format(cases[j]))
+    if gravity_study == True:
+        dq = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
+    else:
+        dq = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
+        
+    tmax = np.arange(time_start[0],time_end[0],dt_cases[0])
+
+    for i in np.arange(0,len(int_variables),1):
+        
+        if delta_r_study == True:
+            legends = []
+            for j in np.arange(0,len(act_stations_cases)):
+                legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
+        elif time_step_study == True:
+            legends = []
+            for j in np.arange(0,len(dt_cases)):
+                legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
+        elif gravity_study == True:
+            legends = []
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}".format(cases[j]))
+
 
         Var = int_variables[i]
         unit = int_units[i]
@@ -212,39 +176,56 @@ if plot_ints == True:
 
         ix = 0 #case counter
         for case in cases:
-
-            df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-            #df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-
+            
+            if gravity_study == True:
+                df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            else:
+                df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            
 
             time = df["Time_[s]"]
             time = np.array(time)
 
             txt = "{0}_{1}".format(Var,unit)
 
-            Var_int = df[txt][:]
-
             tstart = np.searchsorted(time[:],time_start[ix])
             tend = np.searchsorted(time[:],time_end[ix])
 
-            data_set.append(np.mean(Var_int[tstart:tend]))
+            Var_int = df[txt][tstart:tend]
             
-            plt.plot(time[tstart:tend],Var_int[tstart:tend],color=colors[ix],alpha=trans[ix])
+            x = time[tstart:tend]
+            x[0] = time_start[ix]
+            x[-1] = time_end[ix]
+
+            data_set.append(interpolate.interp1d(x, Var_int,kind="linear")(tmax))
+            
+            plt.plot(time[tstart:tend],Var_int,color=colors[ix],alpha=trans[ix])
 
             ix+=1 #increase case counter
 
-
-        mean_diff = mean_difference(data_set)
+        perc_diff, RMSE = stats(data_set)
 
         for k in np.arange(1,len(cases)):
-            legends[k] = legends[k] + "\nmean difference = {}".format(round(mean_diff[k-1],6))
+            legends[k] = legends[k] + "\nRMSE = {0} \nAverage percentage difference = {1}%".format(round(RMSE[k-1],6), round(perc_diff[k-1],6))
         plt.ylabel("{0} {1}".format(Ylabel,unit),fontsize=16)
         plt.xlabel("time [s]",fontsize=16)
         plt.legend(legends)
-        #plt.title('{0} spectra, 5 levels of refinement, 54 actuator points'.format(Ylabel))
-        #plt.title("5 levels of refinement, 94 actuator points",fontsize=18)
+        plt.title('{0} spectra, 5 levels of refinement, 54 actuator points'.format(Ylabel))
         plt.tight_layout()
         plt.savefig(dir+"{0}.png".format(Var))
+        plt.close(fig)
+
+        fig, (ax1,ax2) = plt.subplots(2,1)
+        ax1.plot(cases[1:],RMSE)
+        ax1.set_ylabel("Root Mean \nSquared Normalized [-]")
+
+        ax2.plot(cases[1:],perc_diff)
+        ax2.set_ylabel("Average Percentage \ndifference [%]")
+        
+        fig.supxlabel("Experiment compared to",fontsize=16)
+        fig.suptitle("{0} \nResults compared against Ex1".format(Ylabel),fontsize=12)
+        fig.tight_layout()
+        plt.savefig(dir+"{0}_int_RMSE.png".format(Var))
         plt.close(fig)
 
 
@@ -322,33 +303,37 @@ if plot_radial == True:
     #radial plots
     for i in np.arange(0,len(rad_variables),1):
 
-        legends = []
-        for j in np.arange(0,len(act_stations_cases)):
-            legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
-        # legends = []
-        # for j in np.arange(0,len(dt_cases)):
-        #     legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
-        # legends = []
-        # for j in np.arange(0,len(cases)):
-        #     legends.append("{0}".format(cases[j]))
+        if delta_r_study == True:
+            legends = []
+            for j in np.arange(0,len(act_stations_cases)):
+                legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
+        elif time_step_study == True:
+            legends = []
+            for j in np.arange(0,len(dt_cases)):
+                legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
+        elif gravity_study == True:
+            legends = []
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}".format(cases[j]))
+
 
         Var = rad_variables[i]
         unit = rad_units[i]
         YLabel = rad_YLabel[i]
         no_rots = number_rotor_rotations
 
-        data_set =  pd.DataFrame(data=None, columns=cases)
+        data_set =  []
 
         fig = plt.figure()
 
         ix = 0 #case counter
         for case in cases:
 
-            df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-            #df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-
-            # for col in df.columns:
-            #     print(col)
+            if gravity_study == True:
+                df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            else:
+                df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            
 
             time = df["Time_[s]"]
             time = np.array(time)
@@ -366,76 +351,52 @@ if plot_radial == True:
                 elif i >= 10:
                     txt = "AB1N0{0}{1}_{2}".format(i,Var,unit)
 
-                tend = np.searchsorted(time[:],time_end[ix])
-                Az_0 = Az[tend] - no_rots * 360
-                tstart_ind = np.searchsorted(Az,Az_0)
+
+                time_end_idx = np.searchsorted(time,time_end[ix])
+                Az_0 = Az[time_end_idx] - no_rots * 360
+                tstart_idx = np.searchsorted(Az,Az_0)
 
                 if plot_time_end == True:
-                    time_end_idx = np.searchsorted(time,time_end[ix])
                     Var_dist = df[txt][time_end_idx]
                 else:
-                    Var_dist = np.average(df[txt][tstart_ind:])
+                    Var_dist = np.average(df[txt][tstart_idx:time_end_idx])
                 
                 Var_list.append(Var_dist)
 
-            data_set[ix] = interpolate.interp1d(x, Var_list,kind="linear")(x_max)            
+            data_set.append(interpolate.interp1d(x, Var_list,kind="linear")(x_max))            
 
             plt.plot(x,Var_list,color=colors[ix],marker=markers[ix],markersize=4,alpha=trans[ix])
 
             ix+=1
 
 
-        RMSE = Root_mean_squared(data_set)
-
-        norm_diff, mean_diff, percent_diff = difference(data_set)
+        perc_diff, RMSE = stats(data_set)
 
         for k in np.arange(1,len(cases)):
-            legends[k] = legends[k] + "\nRMS = {0} \nAverage Percentage difference = {1}%".format(round(RMSE[k-1],6),round(percent_diff[k-1],6))
+            legends[k] = legends[k] + "\nRMS = {0} \nAverage Percentage difference = {1}%".format(round(RMSE[k-1],6),round(perc_diff[k-1],6))
         plt.ylabel("{0} {1}".format(YLabel,unit),fontsize=16)
         plt.xlabel("Normalized blade radius [-]",fontsize=16)
         plt.legend(legends)
-        plt.title("Averaged over last {0} blade rotations\n5 levels of refinement".format(no_rots),fontsize=12)
-        #plt.title("Averaged over last {0} blade rotations\n5 levels of refinement, 94 actuator points".format(no_rots),fontsize=12)
+        if plot_time_end == True:
+            plt.title("Plotted at {0}".format(time_end[0]))
+        else:
+            plt.title("Averaged over last {0} blade rotations\n5 levels of refinement".format(no_rots),fontsize=12)
         plt.tight_layout()
         plt.savefig(dir+"{0}.png".format(Var))
         plt.close(fig)
 
 
-        fig, (ax1,ax2) = plt.subplots(1,2)
-        ax1.bar(cases[1:],RMSE)
-        ax1.set_ylabel("Root Mean Squared Normalized [-]",fontsize=16)
+        fig, (ax1,ax2) = plt.subplots(2,1)
+        ax1.plot(cases[1:],RMSE)
+        ax1.set_ylabel("Root Mean \nSquared Normalized [-]")
 
-        ax2.bar(cases[1:],percent_diff)
-        ax2.set_ylabel("Average Percentage difference [%]",fontsize=16)
+        ax2.plot(cases[1:],perc_diff)
+        ax2.set_ylabel("Average Percentage \ndifference [%]")
         
         fig.supxlabel("Experiment compared to",fontsize=16)
         fig.suptitle("{0} \nResults compared against Ex1".format(YLabel),fontsize=12)
         fig.tight_layout()
         plt.savefig(dir+"{0}_rad_RMSE.png".format(Var))
-        plt.close(fig)
-
-        legends = []
-        for j in np.arange(0,len(act_stations_cases)):
-            legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
-        # legends = []
-        # for j in np.arange(0,len(dt_cases)):
-        #     legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
-        # legends = []
-        # for j in np.arange(0,len(cases)):
-        #     legends.append("{0}".format(cases[j]))
-
-        for k in np.arange(1,len(cases)):
-            legends[k] = legends[k] + "\nTotal Normalized Mean difference = {}".format(round(mean_diff[k-1],6))
-
-        fig = plt.figure()
-        for norm_diff_i in norm_diff:
-            plt.plot(x_max,norm_diff_i)
-        plt.ylabel("Normalized difference [-]",fontsize=16)
-        plt.xlabel("Normalized blade radius [-]",fontsize=16)
-        plt.legend(legends[1:])
-        plt.title("{0} \nResults compared against Ex1".format(YLabel),fontsize=12)
-        plt.tight_layout()
-        plt.savefig(dir+"{0}_mean_diff.png".format(Var))
         plt.close(fig)
 
 
