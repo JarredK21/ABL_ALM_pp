@@ -10,9 +10,10 @@ import math
 
 
 #study
-time_step_study = True
+time_step_study = False
 delta_r_study = False
 gravity_study = False
+delta_x_study = True
 
 
 if delta_r_study == True:
@@ -47,6 +48,18 @@ elif gravity_study == True:
     trans = [1,0.5]
 
 
+elif delta_x_study == True:
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study/"
+    cases = ["Ex1_dblade_0.5","Ex4"]
+    dx_cases = [2,1]
+    act_stations_cases = [54,54]
+    dt_cases = [0.00195,0.0039]
+
+    colors = ["red","blue","green"]
+    markers = ["o","D","s"]
+    trans = [1,0.5,0.25]
+
+
 
 #variables
 rad_variables = ["Vrel","Alpha", "Cl","Cd","Fn","Ft","Vx"]
@@ -55,7 +68,8 @@ rad_YLabel = ["Local Relative Velocity", "Local Angle of Attack", "Local Coeffci
 rad_units = ["[m/s]","[deg]","[-]","[-]","[N/m]","[N/m]","[m/s]"]
 number_rotor_rotations = 3
 
-
+plot_radial_range = False
+LF = 0.4; RT = 0.8
 plot_time_end = False
 
 time_start = np.ones(len(cases))*5
@@ -152,18 +166,19 @@ if plot_ints == True:
 
     for i in np.arange(0,len(int_variables),1):
         
+        legends = []
         if delta_r_study == True:
-            legends = []
             for j in np.arange(0,len(act_stations_cases)):
                 legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
         elif time_step_study == True:
-            legends = []
             for j in np.arange(0,len(dt_cases)):
                 legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
         elif gravity_study == True:
-            legends = []
             for j in np.arange(0,len(cases)):
                 legends.append("{0}".format(cases[j]))
+        elif delta_x_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}: $\epsilon/dx$ = {1}".format(cases[j],dx_cases[j]))
 
 
         Var = int_variables[i]
@@ -210,7 +225,7 @@ if plot_ints == True:
         plt.ylabel("{0} {1}".format(Ylabel,unit),fontsize=16)
         plt.xlabel("time [s]",fontsize=16)
         plt.legend(legends)
-        plt.title('{0} spectra, 5 levels of refinement, 54 actuator points'.format(Ylabel))
+        plt.title('{0}, 5 levels of refinement, 54 actuator points'.format(Ylabel))
         plt.tight_layout()
         plt.savefig(dir+"{0}.png".format(Var))
         plt.close(fig)
@@ -233,16 +248,19 @@ if plot_ints == True:
 if plot_spectra == True:
     #spectral plots
     for i in np.arange(0,len(int_variables),1):
-
-        # legends = []
-        # for j in np.arange(0,len(act_stations_cases)):
-        #     legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
-        # legends = []
-        # for j in np.arange(0,len(dt_cases)):
-        #     legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
         legends = []
-        for j in np.arange(0,len(cases)):
-            legends.append("{0}".format(cases[j]))
+        if delta_r_study == True:
+            for j in np.arange(0,len(act_stations_cases)):
+                legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
+        elif time_step_study == True:
+            for j in np.arange(0,len(dt_cases)):
+                legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
+        elif gravity_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}".format(cases[j]))
+        elif delta_x_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}: $\epsilon/dx$ = {1}".format(cases[j],dx_cases[j]))
 
         Var = int_variables[i]
         unit = int_units[i]
@@ -253,9 +271,11 @@ if plot_spectra == True:
         ix = 0 #case counter
         for case in cases:
 
-            #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-            df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-
+            if gravity_study == True:
+                df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            else:
+                df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            
             time = df["Time_[s]"]
             time = np.array(time)
                 
@@ -275,7 +295,7 @@ if plot_spectra == True:
             else:
                 nhalf = int((n+1)/2)
             frq = np.arange(nhalf)*fs/n
-            Y   = np.fft.fft(signal-m) #Y = np.fft.fft(y) 
+            Y   = np.fft.fft(signal-m)
             PSD = abs(Y[range(nhalf)])**2 /(n*fs) # PSD
             PSD[1:-1] = PSD[1:-1]*2
 
@@ -290,7 +310,6 @@ if plot_spectra == True:
         plt.xlabel('Frequency (1/s)',fontsize=16)
         plt.ylabel('Power spectral density',fontsize=16)
         plt.legend(legends)
-        # plt.title('{0} spectra, 5 levels of refinement, dt = 0.001s'.format(Ylabel))
         plt.title('{0} spectra, 5 levels of refinement, 54 actuator points'.format(Ylabel))
         plt.grid()
         plt.tight_layout()
@@ -303,18 +322,19 @@ if plot_radial == True:
     #radial plots
     for i in np.arange(0,len(rad_variables),1):
 
+        legends = []
         if delta_r_study == True:
-            legends = []
             for j in np.arange(0,len(act_stations_cases)):
                 legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
         elif time_step_study == True:
-            legends = []
             for j in np.arange(0,len(dt_cases)):
                 legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
         elif gravity_study == True:
-            legends = []
             for j in np.arange(0,len(cases)):
                 legends.append("{0}".format(cases[j]))
+        elif delta_x_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}: $\epsilon/dx$ = {1}".format(cases[j],dx_cases[j]))
 
 
         Var = rad_variables[i]
@@ -366,6 +386,9 @@ if plot_radial == True:
             data_set.append(interpolate.interp1d(x, Var_list,kind="linear")(x_max))            
 
             plt.plot(x,Var_list,color=colors[ix],marker=markers[ix],markersize=4,alpha=trans[ix])
+
+            if plot_radial_range == True:
+                plt.xlim((LF,RT))
 
             ix+=1
 
