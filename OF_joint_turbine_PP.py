@@ -13,7 +13,8 @@ import math
 time_step_study = False
 delta_r_study = False
 gravity_study = False
-delta_x_study = True
+delta_x_study = False
+dt_BSR_study = True
 
 
 if delta_r_study == True:
@@ -55,6 +56,18 @@ elif delta_x_study == True:
     act_stations_cases = [54,54]
     dt_cases = [0.00195,0.00195]
     BSR = [0.25,0.5]
+
+    colors = ["red","blue","green"]
+    markers = ["o","D","s"]
+    trans = [1,0.5,0.25]
+
+elif dt_BSR_study == True:
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study3/"
+    cases = ["Ex1_dblade_0.5","Ex4","Ex6"]
+    act_stations_cases = [54,54,54]
+    dx_cases = [2,1,1]
+    dt_cases = [0.00195,0.0039,0.00195]
+    BSR = [0.5,0.5,0.25]
 
     colors = ["red","blue","green"]
     markers = ["o","D","s"]
@@ -104,8 +117,8 @@ aero_blade_stations = [1,54,1,54]
 
 #plotting options
 plot_ints = False
-plot_spectra = True
-plot_radial = False
+plot_spectra = False
+plot_radial = True
 avg_difference = False
 plot_elastic_ints = False
 plot_elastic_spectra = False
@@ -131,6 +144,31 @@ def stats(data_set):
         perc_diff.append( abs(np.average(perc_diff_i) * 100) )
 
         MSE = np.square(np.subtract(data_set[l+1],data_set[l])).mean() 
+ 
+        RMSE.append( abs(math.sqrt(MSE)/np.average(data_set[l])) )
+
+    return perc_diff, RMSE, rad_perc_diff
+
+
+
+def stats2(data_set):
+
+    perc_diff = []
+    RMSE = []
+    rad_perc_diff = []
+    for l in np.arange(1,len(cases)):
+
+        diff = np.subtract(data_set[0],data_set[l])
+
+        perc_diff_i = np.true_divide(abs(diff),data_set[l])
+
+        perc_diff_i[np.isnan(perc_diff_i)] = 0
+
+        rad_perc_diff.append(perc_diff_i)
+
+        perc_diff.append( abs(np.average(perc_diff_i) * 100) )
+
+        MSE = np.square(np.subtract(data_set[0],data_set[l])).mean() 
  
         RMSE.append( abs(math.sqrt(MSE)/np.average(data_set[l])) )
 
@@ -340,6 +378,9 @@ if plot_radial == True:
         elif delta_x_study == True:
             for j in np.arange(0,len(cases)):
                 legends.append("{0}: $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(cases[j],dx_cases[j],dt_cases[j],BSR[j]))
+        elif dt_BSR_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}: $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(cases[j],dx_cases[j],dt_cases[j],BSR[j]))
 
 
 
@@ -398,8 +439,10 @@ if plot_radial == True:
 
             ix+=1
 
-
-        perc_diff, RMSE, rad_perc_diff = stats(data_set)
+        if dt_BSR_study == True:
+            perc_diff, RMSE, rad_perc_diff = stats2(data_set)
+        else:
+            perc_diff, RMSE, rad_perc_diff = stats(data_set)
 
         for k in np.arange(1,len(cases)):
             legends[k] = legends[k] + "\nRMS = {0} \nAverage Percentage difference = {1}%".format(round(RMSE[k-1],6),round(perc_diff[k-1],6))
@@ -450,12 +493,14 @@ if plot_radial == True:
             plt.legend(dt_cases[1:])
         elif delta_x_study == True:
             plt.legend(dx_cases[1:])
+        elif dt_BSR_study == True:
+            plt.legend(dt_cases[1:])
 
 
         if plot_time_end == True:
-            plt.title("Plotted at {0}".format(time_end[0]))
+            plt.title("{0} Plotted at {1}".format(YLabel,time_end[0]))
         else:
-            plt.title("Averaged over last {0} blade rotations\n5 levels of refinement".format(no_rots),fontsize=12)
+            plt.title("{0} Averaged over last {1} blade rotations\n5 levels of refinement".format(YLabel,no_rots),fontsize=12)
         plt.tight_layout()
         plt.savefig(dir+"rad_perc_{0}.png".format(Var))
         plt.close(fig)
