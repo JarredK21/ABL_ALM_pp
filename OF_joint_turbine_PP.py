@@ -11,14 +11,14 @@ import math
 
 #study
 time_step_study = False
-delta_r_study = False
+delta_r_study = True
 gravity_study = False
 delta_x_study = False
-dt_BSR_study = True
+dt_BSR_study = False
 
 
 if delta_r_study == True:
-    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dr_study2/"
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dr_study4/"
     cases = ["Ex2","Ex1","Ex3"]
     act_stations_cases = [47,54,59]
     dt_cases = [0.001,0.001,0.001]
@@ -50,24 +50,38 @@ elif gravity_study == True:
 
 
 elif delta_x_study == True:
-    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study2/"
-    cases = ["Ex6","Ex1_dblade_0.5"]
-    dx_cases = [1,2]
-    act_stations_cases = [54,54]
-    dt_cases = [0.00195,0.00195]
-    BSR = [0.25,0.5]
+    # dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study/"
+    # cases = ["Ex4","Ex1_dblade_0.5","Ex5"]
+    # dx_cases = [1,2,4]
+    # act_stations_cases = [54,54,54]
+    # dt_cases = [0.0039,0.00195,0.001]
+    # BSR = [0.5,0.5,0.5]
+
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study3/"
+    cases = ["Ex6","Ex1_dblade_0.5","Ex7"]
+    dx_cases = [1,2,4]
+    act_stations_cases = [54,54,54]
+    dt_cases = [0.00195,0.00195,0.00195]
+    BSR = [0.25,0.5,1.0]
 
     colors = ["red","blue","green"]
     markers = ["o","D","s"]
     trans = [1,0.5,0.25]
 
 elif dt_BSR_study == True:
-    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study3/"
-    cases = ["Ex1_dblade_0.5","Ex4","Ex6"]
+    # dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/BSR_study/"
+    # cases = ["Ex1_dblade_0.5","Ex4","Ex6"]
+    # act_stations_cases = [54,54,54]
+    # dx_cases = [2,1,1]
+    # dt_cases = [0.00195,0.0039,0.00195]
+    # BSR = [0.5,0.5,0.25]
+
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/BSR_study2/"
+    cases = ["Ex1_dblade_0.5","Ex5","Ex7"]
     act_stations_cases = [54,54,54]
-    dx_cases = [2,1,1]
-    dt_cases = [0.00195,0.0039,0.00195]
-    BSR = [0.5,0.5,0.25]
+    dx_cases = [2,4,4]
+    dt_cases = [0.00195,0.001,0.00195]
+    BSR = [0.5,0.5,1.0]
 
     colors = ["red","blue","green"]
     markers = ["o","D","s"]
@@ -83,7 +97,7 @@ rad_units = ["[m/s]","[deg]","[-]","[-]","[N/m]","[N/m]","[m/s]"]
 number_rotor_rotations = 3
 
 plot_radial_range = False
-LF = 0.4; RT = 0.8
+LF = 0.5; RT = 0.7
 plot_time_end = False
 
 time_start = np.ones(len(cases))*5
@@ -119,7 +133,8 @@ aero_blade_stations = [1,54,1,54]
 plot_ints = False
 plot_spectra = False
 plot_radial = True
-avg_difference = False
+plot_stats = False
+
 plot_elastic_ints = False
 plot_elastic_spectra = False
 plot_aero_ints = False
@@ -170,7 +185,7 @@ def stats2(data_set):
 
         MSE = np.square(np.subtract(data_set[0],data_set[l])).mean() 
  
-        RMSE.append( abs(math.sqrt(MSE)/np.average(data_set[l])) )
+        RMSE.append( math.sqrt(MSE)/np.average(data_set[l]) )
 
     return perc_diff, RMSE, rad_perc_diff
 
@@ -187,6 +202,89 @@ def energy_contents_check(case,Var,e_fft,signal,dt):
     print(case, Var, E, E2, abs(E2/E))
 
 
+if plot_stats == True:
+    #mean variance plots
+
+    if gravity_study == True:
+        dq = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
+    else:
+        dq = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
+        
+    tmax = np.arange(time_start[-1],time_end[-1],dt_cases[-1])
+
+    for i in np.arange(0,len(int_variables),1):
+        
+        legends = []
+        if delta_r_study == True:
+            for j in np.arange(0,len(act_stations_cases)):
+                legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
+        elif time_step_study == True:
+            for j in np.arange(0,len(dt_cases)):
+                legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
+        elif gravity_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}".format(cases[j]))
+        elif delta_x_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}: $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(cases[j],dx_cases[j],dt_cases[j],BSR[j]))
+
+
+        Var = int_variables[i]
+        unit = int_units[i]
+        Ylabel = int_YLabel[i]
+
+        MEAN = []
+        VARIANCE = []
+        ix = 0 #case counter
+        for case in cases:
+            
+            if gravity_study == True:
+                df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            else:
+                df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            
+
+            time = df["Time_[s]"]
+            time = np.array(time)
+
+            txt = "{0}_{1}".format(Var,unit)
+
+            tstart = np.searchsorted(time[:],time_start[ix])
+            tend = np.searchsorted(time[:],time_end[ix])
+
+            Var_int = df[txt][tstart:tend]
+            
+            x = time[tstart:tend]
+            x[0] = time_start[ix]
+            x[-1] = time_end[ix]
+
+            MEAN.append(np.mean(Var_int))
+            VARIANCE.append( np.average(np.square((Var_int - np.mean(Var_int)))) )
+
+            ix+=1 #increase case counter
+
+        fig, (ax1,ax2) = plt.subplots(2,1)
+        if delta_r_study == True:
+            ax1.plot(act_stations_cases,MEAN,marker="o")
+            ax2.plot(act_stations_cases,VARIANCE,marker="o")
+            fig.supxlabel("Number of actuator points",fontsize=16)
+        elif time_step_study == True:
+            ax1.plot(dt_cases,MEAN,marker="o")
+            ax2.plot(dt_cases,VARIANCE,marker="o")   
+            fig.supxlabel("Time step [s]",fontsize=16)    
+        elif delta_x_study == True:
+            ax1.plot(dx_cases,MEAN,marker="o")
+            ax2.plot(dx_cases,VARIANCE,marker="o")   
+            fig.supxlabel("$\epsilon/dx$ [-]",fontsize=16)                     
+        
+        ax1.set_ylabel("Mean [{0}]".format(unit))
+        ax2.set_ylabel("Variance [{0}$^2$]".format(unit))
+        
+        fig.suptitle("{0}".format(Ylabel),fontsize=12)
+        fig.tight_layout()
+        plt.savefig(dir+"{0}_int_stats.png".format(Var))
+        plt.close(fig)
+
 
 if plot_ints == True:
     #integrated plots
@@ -196,7 +294,7 @@ if plot_ints == True:
     else:
         dq = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
         
-    tmax = np.arange(time_start[0],time_end[0],dt_cases[0])
+    tmax = np.arange(time_start[-1],time_end[-1],dt_cases[-1])
 
     for i in np.arange(0,len(int_variables),1):
         
@@ -266,16 +364,16 @@ if plot_ints == True:
 
         fig, (ax1,ax2) = plt.subplots(2,1)
         if delta_r_study == True:
-            ax1.plot(act_stations_cases[1:],RMSE)
-            ax2.plot(act_stations_cases[1:],perc_diff)
+            ax1.plot(act_stations_cases[1:],RMSE,marker="o")
+            ax2.plot(act_stations_cases[1:],perc_diff,marker="o")
             fig.supxlabel("Number of actuator points",fontsize=16)
         elif time_step_study == True:
-            ax1.plot(dt_cases[1:],RMSE)
-            ax2.plot(dt_cases[1:],perc_diff)   
+            ax1.plot(dt_cases[1:],RMSE,marker="o")
+            ax2.plot(dt_cases[1:],perc_diff,marker="o")   
             fig.supxlabel("Time step [s]",fontsize=16)    
         elif delta_x_study == True:
-            ax1.plot(dx_cases[1:],RMSE)
-            ax2.plot(dx_cases[1:],perc_diff)   
+            ax1.plot(dx_cases[1:],RMSE,marker="o")
+            ax2.plot(dx_cases[1:],perc_diff,marker="o")   
             fig.supxlabel("$\epsilon/dx$ [-]",fontsize=16)                     
         
         ax1.set_ylabel("Root Mean \nSquared Normalized [-]")
@@ -375,13 +473,9 @@ if plot_radial == True:
         elif gravity_study == True:
             for j in np.arange(0,len(cases)):
                 legends.append("{0}".format(cases[j]))
-        elif delta_x_study == True:
+        elif delta_x_study == True or dt_BSR_study == True:
             for j in np.arange(0,len(cases)):
                 legends.append("{0}: $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(cases[j],dx_cases[j],dt_cases[j],BSR[j]))
-        elif dt_BSR_study == True:
-            for j in np.arange(0,len(cases)):
-                legends.append("{0}: $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(cases[j],dx_cases[j],dt_cases[j],BSR[j]))
-
 
 
         Var = rad_variables[i]
@@ -409,7 +503,8 @@ if plot_radial == True:
 
             act_stations = act_stations_cases[ix]
             x = np.linspace(0,1,act_stations)
-            x_max = np.linspace(0,1,act_stations_cases[-1])
+            #x_max = np.linspace(0,1,act_stations_cases[-1])
+            x_min = np.linspace(0,1,act_stations_cases[0])
 
             Var_list = []
             for i in np.arange(1,act_stations+1):
@@ -430,12 +525,15 @@ if plot_radial == True:
                 
                 Var_list.append(Var_dist)
 
-            data_set.append(interpolate.interp1d(x, Var_list,kind="linear")(x_max))            
+            #data_set.append(interpolate.interp1d(x, Var_list,kind="linear")(x_max))    
+            data_set.append(interpolate.interp1d(x, Var_list,kind="linear")(x_min))            
+        
 
             plt.plot(x,Var_list,color=colors[ix],marker=markers[ix],markersize=4,alpha=trans[ix])
 
             if plot_radial_range == True:
                 plt.xlim((LF,RT))
+                plt.ylim((0,5))
 
             ix+=1
 
@@ -460,16 +558,16 @@ if plot_radial == True:
 
         fig, (ax1,ax2) = plt.subplots(2,1)
         if delta_r_study == True:
-            ax1.plot(act_stations_cases[1:],RMSE)
-            ax2.plot(act_stations_cases[1:],perc_diff)
+            ax1.plot(act_stations_cases[1:],RMSE,marker="o")
+            ax2.plot(act_stations_cases[1:],perc_diff,marker="o")
             fig.supxlabel("$Number of actuator points",fontsize=16)
         elif time_step_study == True:
-            ax1.plot(dt_cases[1:],RMSE)
-            ax2.plot(dt_cases[1:],perc_diff)  
+            ax1.plot(dt_cases[1:],RMSE,marker="o")
+            ax2.plot(dt_cases[1:],perc_diff,marker="o")  
             fig.supxlabel("Time step [s]",fontsize=16)
         elif delta_x_study == True:
-            ax1.plot(dx_cases[1:],RMSE)
-            ax2.plot(dx_cases[1:],perc_diff)   
+            ax1.plot(dx_cases[1:],RMSE,marker="o")
+            ax2.plot(dx_cases[1:],perc_diff,marker="o")   
             fig.supxlabel("$\epsilon/dx$ [-]",fontsize=16)   
 
         ax1.set_ylabel("Root Mean \nSquared Normalized [-]")
@@ -483,7 +581,7 @@ if plot_radial == True:
 
         fig = plt.figure()
         for j in np.arange(0,len(cases[1:])):
-            plt.plot(x,rad_perc_diff[j]*100,color=colors[j+1])
+            plt.plot(x_min,rad_perc_diff[j]*100,color=colors[j+1])
         plt.xlabel("Normalized blade radius [-]",fontsize=16)
         plt.ylabel("Percentage difference [%]",fontsize=16)
 
