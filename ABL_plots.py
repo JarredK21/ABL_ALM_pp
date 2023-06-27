@@ -876,8 +876,8 @@ def spec_props(case):
     stats = glob.glob("{0}/post_processing/abl_statistics*".format(case))
     a = Dataset("./{}".format(stats[0]))
 
-    t_spec = np.searchsorted(a.variables["time"],32500)
-    t_end = np.searchsorted(a.variables["time"],33100)
+    t_spec = np.searchsorted(a.variables["time"],32300)
+    t_end = np.searchsorted(a.variables["time"],33500)
 
     Zi = np.average(a.variables["zi"][t_spec:t_end])
     u_star = np.average(a.variables["ustar"][t_spec:t_end])
@@ -1237,4 +1237,4 @@ spec_props(case=cases[0])
 #Cosine_theta_z(dir, cases, scaling_zi, markerstyle, colors, linestyles)
 #theta_z(dir, cases, scaling_zi, markerstyle, colors, linestyles)
 
-plottingdvar_dt(cases, Titles, dir, linestyles, colors)
+#plottingdvar_dt(cases, Titles, dir, linestyles, colors)

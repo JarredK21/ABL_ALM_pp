@@ -11,14 +11,15 @@ import math
 
 #study
 time_step_study = False
-delta_r_study = True
+delta_r_study = False
 gravity_study = False
 delta_x_study = False
 dt_BSR_study = False
+eps_c_study = True
 
 
 if delta_r_study == True:
-    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dr_study4/"
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dr_study/"
     cases = ["Ex2","Ex1","Ex3"]
     act_stations_cases = [47,54,59]
     dt_cases = [0.001,0.001,0.001]
@@ -29,7 +30,7 @@ if delta_r_study == True:
 
 
 elif time_step_study == True:
-    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dt_study3/"
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dt_study/"
     cases = ["Ex1_dblade_2.0","Ex1_dblade_1.0","Ex1_dblade_0.5","Ex1"]
     act_stations_cases = [54,54,54,54]
     dt_cases = [0.0078, 0.0039, 0.00195, 0.001]
@@ -50,19 +51,19 @@ elif gravity_study == True:
 
 
 elif delta_x_study == True:
-    # dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study/"
-    # cases = ["Ex4","Ex1_dblade_0.5","Ex5"]
-    # dx_cases = [1,2,4]
-    # act_stations_cases = [54,54,54]
-    # dt_cases = [0.0039,0.00195,0.001]
-    # BSR = [0.5,0.5,0.5]
-
-    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study3/"
-    cases = ["Ex6","Ex1_dblade_0.5","Ex7"]
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study2/"
+    cases = ["Ex4","Ex1_dblade_0.5","Ex5"]
     dx_cases = [1,2,4]
     act_stations_cases = [54,54,54]
-    dt_cases = [0.00195,0.00195,0.00195]
-    BSR = [0.25,0.5,1.0]
+    dt_cases = [0.0039,0.00195,0.001]
+    BSR = [0.5,0.5,0.5]
+
+    # dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study/"
+    # cases = ["Ex6","Ex1_dblade_0.5","Ex7"]
+    # dx_cases = [1,2,4]
+    # act_stations_cases = [54,54,54]
+    # dt_cases = [0.00195,0.00195,0.00195]
+    # BSR = [0.25,0.5,1.0]
 
     colors = ["red","blue","green"]
     markers = ["o","D","s"]
@@ -82,6 +83,20 @@ elif dt_BSR_study == True:
     dx_cases = [2,4,4]
     dt_cases = [0.00195,0.001,0.00195]
     BSR = [0.5,0.5,1.0]
+
+    colors = ["red","blue","green"]
+    markers = ["o","D","s"]
+    trans = [1,0.5,0.25]
+
+elif eps_c_study == True:
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/eps_c/"
+    cases = ["Ex1_dblade_0.5","eps_c_0.5"]
+    eps_cases = ["Fixed 1m", "eps/c = 0.5"]
+    act_stations_cases = [54,74]
+    eps_dr = [0.85,0.85]
+    dx_cases = [2,3]
+    dt_cases = [0.00195,0.00195]
+    BSR = [0.5,0.5]
 
     colors = ["red","blue","green"]
     markers = ["o","D","s"]
@@ -134,6 +149,7 @@ plot_ints = False
 plot_spectra = False
 plot_radial = True
 plot_stats = False
+plot_mom_cont = True
 
 plot_elastic_ints = False
 plot_elastic_spectra = False
@@ -158,9 +174,9 @@ def stats(data_set):
 
         perc_diff.append( abs(np.average(perc_diff_i) * 100) )
 
-        MSE = np.square(np.subtract(data_set[l+1],data_set[l])).mean() 
+        MSE = np.mean(np.square(np.subtract(data_set[l+1],data_set[l])))
  
-        RMSE.append( abs(math.sqrt(MSE)/np.average(data_set[l])) )
+        RMSE.append( abs(np.sqrt(MSE)) )
 
     return perc_diff, RMSE, rad_perc_diff
 
@@ -183,12 +199,53 @@ def stats2(data_set):
 
         perc_diff.append( abs(np.average(perc_diff_i) * 100) )
 
-        MSE = np.square(np.subtract(data_set[0],data_set[l])).mean() 
+        MSE = np.mean(np.square(np.subtract(data_set[0],data_set[l])))
  
-        RMSE.append( math.sqrt(MSE)/np.average(data_set[l]) )
+        RMSE.append( abs(np.sqrt(MSE)) )
 
     return perc_diff, RMSE, rad_perc_diff
 
+
+def moment_contributions(data_set,no_rots,Var,dir):
+    L = 61.5
+    fig = plt.figure(figsize=(14,8))
+    MF_rc = [[],[]]
+    MF_r = [[],[]]
+    R = []
+    for j in np.arange(0,len(cases)):
+        MF = 0
+        R.append(np.linspace(0,L,act_stations_cases[j]))
+        dr = R[j][1]
+        for r in np.arange(0,act_stations_cases[j]):
+            MF_r[j].append(data_set[j][r]*R[j][r])
+            MF+=data_set[j][r]*R[j][r]
+            MF_rc[j].append(MF*dr)
+
+        R[j] = R[j]/L
+        plt.plot(R[j],MF_rc[j])
+        plt.plot(1.0,MF_rc[j][-1],"o")
+    
+    
+    plt.text(0.1,6e+06,"percentage change {0}%".format(abs(MF_rc[0][-1] - MF_rc[1][-1])/MF_rc[1][-1] *100))
+
+    plt.xlabel("Non-dimensional radial span [-]",fontsize=12)
+    plt.ylabel("Integrated moment contribution {0} to root moment [N-m]".format(Var))
+    plt.title("Averaged over last {0} blade rotations\n5 levels of refinement".format(no_rots),fontsize=12)
+    plt.legend(["Fixed eps 1m", "eps/c = 0.5"])
+    plt.tight_layout()
+    plt.savefig(dir+"Mom_cont_{0}.png".format(Var))
+    plt.close(fig)
+
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(R[0],MF_r[0])
+    plt.plot(R[1],MF_r[1])
+    plt.xlabel("Non-dimensional radial span [-]",fontsize=12)
+    plt.ylabel("Moment contribution {0} to root moment [N-m/m]".format(Var))
+    plt.title("Averaged over last {0} blade rotations\n5 levels of refinement".format(no_rots),fontsize=12)
+    plt.legend(["Fixed eps 1m", "eps/c = 0.5"])
+    plt.tight_layout()
+    plt.savefig(dir+"Mom_{0}.png".format(Var))
+    plt.close(fig)
 
 
 def energy_contents_check(case,Var,e_fft,signal,dt):
@@ -311,6 +368,9 @@ if plot_ints == True:
         elif delta_x_study == True:
             for j in np.arange(0,len(cases)):
                 legends.append("{0}: $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(cases[j],dx_cases[j],dt_cases[j],BSR[j]))
+        elif eps_c_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}: $\epsilon/dx$ = {1}, $\epsilon/\Delta r$ = {2}, dt = {3}".format(eps_cases[j],dx_cases[j],eps_dr[j],dt_cases[j]))
 
 
         Var = int_variables[i]
@@ -353,36 +413,48 @@ if plot_ints == True:
         perc_diff, RMSE, perc_diff_i = stats(data_set)
 
         for k in np.arange(1,len(cases)):
-            legends[k] = legends[k] + "\nRMSE = {0} \nAverage percentage difference = {1}%".format(round(RMSE[k-1],6), round(perc_diff[k-1],6))
+            legends[k] = legends[k] + "\nRMSE = {0} \nAverage percentage change = {1}%".format(round(RMSE[k-1],6), round(perc_diff[k-1],6))
+        
         plt.ylabel("{0} {1}".format(Ylabel,unit),fontsize=16)
         plt.xlabel("time [s]",fontsize=16)
         plt.legend(legends)
-        plt.title('{0}, 5 levels of refinement, 54 actuator points'.format(Ylabel))
+        if delta_r_study == True:
+            plt.title('{0}, 5 levels of refinement'.format(Ylabel))
+        elif time_step_study == True:
+            plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
+        elif gravity_study == True:
+            plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
+        elif delta_x_study == True:
+            plt.title('{0}, 54 actuator points'.format(Ylabel))
+        elif eps_c_study == True:
+            plt.title('{0}'.format(Ylabel))
+
         plt.tight_layout()
         plt.savefig(dir+"{0}.png".format(Var))
         plt.close(fig)
 
-        fig, (ax1,ax2) = plt.subplots(2,1)
-        if delta_r_study == True:
-            ax1.plot(act_stations_cases[1:],RMSE,marker="o")
-            ax2.plot(act_stations_cases[1:],perc_diff,marker="o")
-            fig.supxlabel("Number of actuator points",fontsize=16)
-        elif time_step_study == True:
-            ax1.plot(dt_cases[1:],RMSE,marker="o")
-            ax2.plot(dt_cases[1:],perc_diff,marker="o")   
-            fig.supxlabel("Time step [s]",fontsize=16)    
-        elif delta_x_study == True:
-            ax1.plot(dx_cases[1:],RMSE,marker="o")
-            ax2.plot(dx_cases[1:],perc_diff,marker="o")   
-            fig.supxlabel("$\epsilon/dx$ [-]",fontsize=16)                     
-        
-        ax1.set_ylabel("Root Mean \nSquared Normalized [-]")
-        ax2.set_ylabel("Average Percentage \ndifference [%]")
-        
-        fig.suptitle("{0} \nResults compared against Ex1".format(Ylabel),fontsize=12)
-        fig.tight_layout()
-        plt.savefig(dir+"{0}_int_RMSE.png".format(Var))
-        plt.close(fig)
+        if eps_c_study == False:
+            fig, (ax1,ax2) = plt.subplots(2,1)
+            if delta_r_study == True:
+                ax1.plot(act_stations_cases[1:],RMSE,marker="o")
+                ax2.plot(act_stations_cases[1:],perc_diff,marker="o")
+                fig.supxlabel("Number of actuator points",fontsize=16)
+            elif time_step_study == True:
+                ax1.plot(dt_cases[1:],RMSE,marker="o")
+                ax2.plot(dt_cases[1:],perc_diff,marker="o")   
+                fig.supxlabel("Time step [s]",fontsize=16)    
+            elif delta_x_study == True:
+                ax1.plot(dx_cases[1:],RMSE,marker="o")
+                ax2.plot(dx_cases[1:],perc_diff,marker="o")   
+                fig.supxlabel("$\epsilon/dx$ [-]",fontsize=16)                     
+            
+            ax1.set_ylabel("Root Mean \nSquared {0}".format(unit))
+            ax2.set_ylabel("Average Percentage \nchange [%]")
+            
+            fig.suptitle("{0}".format(Ylabel),fontsize=12)
+            fig.tight_layout()
+            plt.savefig(dir+"{0}_int_RMSE.png".format(Var))
+            plt.close(fig)
 
 
 
@@ -402,6 +474,10 @@ if plot_spectra == True:
         elif delta_x_study == True:
             for j in np.arange(0,len(cases)):
                 legends.append("{0}: $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(cases[j],dx_cases[j],dt_cases[j],BSR[j]))
+        elif eps_c_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}: $\epsilon/dx$ = {1}, $\epsilon/\Delta r$ = {2}, dt = {3}".format(eps_cases[j],dx_cases[j],eps_dr[j],dt_cases[j]))
+
 
         Var = int_variables[i]
         unit = int_units[i]
@@ -451,7 +527,18 @@ if plot_spectra == True:
         plt.xlabel('Frequency (1/s)',fontsize=16)
         plt.ylabel('Power spectral density',fontsize=16)
         plt.legend(legends)
-        plt.title('{0} spectra, 5 levels of refinement, 54 actuator points'.format(Ylabel))
+
+        if delta_r_study == True:
+            plt.title('{0}, 5 levels of refinement'.format(Ylabel))
+        elif time_step_study == True:
+            plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
+        elif gravity_study == True:
+            plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
+        elif delta_x_study == True:
+            plt.title('{0}, 54 actuator points'.format(Ylabel))
+        elif eps_c_study == True:
+            plt.title('{0}'.format(Ylabel))
+
         plt.grid()
         plt.tight_layout()
         plt.savefig(dir+"{0}_spectra.png".format(Var))
@@ -476,6 +563,9 @@ if plot_radial == True:
         elif delta_x_study == True or dt_BSR_study == True:
             for j in np.arange(0,len(cases)):
                 legends.append("{0}: $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(cases[j],dx_cases[j],dt_cases[j],BSR[j]))
+        elif eps_c_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}: $\epsilon/dx$ = {1}, $\epsilon/\Delta r$ = {2}, dt = {3}".format(eps_cases[j],dx_cases[j],eps_dr[j],dt_cases[j]))
 
 
         Var = rad_variables[i]
@@ -484,6 +574,7 @@ if plot_radial == True:
         no_rots = number_rotor_rotations
 
         data_set =  []
+        data_set_2 = []
 
         fig = plt.figure()
 
@@ -526,8 +617,8 @@ if plot_radial == True:
                 Var_list.append(Var_dist)
 
             #data_set.append(interpolate.interp1d(x, Var_list,kind="linear")(x_max))    
-            data_set.append(interpolate.interp1d(x, Var_list,kind="linear")(x_min))            
-        
+            data_set.append(interpolate.interp1d(x, Var_list,kind="linear")(x_min))
+            data_set_2.append(Var_list)
 
             plt.plot(x,Var_list,color=colors[ix],marker=markers[ix],markersize=4,alpha=trans[ix])
 
@@ -543,7 +634,8 @@ if plot_radial == True:
             perc_diff, RMSE, rad_perc_diff = stats(data_set)
 
         for k in np.arange(1,len(cases)):
-            legends[k] = legends[k] + "\nRMS = {0} \nAverage Percentage difference = {1}%".format(round(RMSE[k-1],6),round(perc_diff[k-1],6))
+            legends[k] = legends[k] + "\nRMS = {0} \nAverage Percentage change = {1}%".format(round(RMSE[k-1],6),round(perc_diff[k-1],6))
+    
         plt.ylabel("{0} {1}".format(YLabel,unit),fontsize=16)
         plt.xlabel("Normalized blade radius [-]",fontsize=16)
         plt.legend(legends)
@@ -556,52 +648,59 @@ if plot_radial == True:
         plt.close(fig)
 
 
-        fig, (ax1,ax2) = plt.subplots(2,1)
-        if delta_r_study == True:
-            ax1.plot(act_stations_cases[1:],RMSE,marker="o")
-            ax2.plot(act_stations_cases[1:],perc_diff,marker="o")
-            fig.supxlabel("$Number of actuator points",fontsize=16)
-        elif time_step_study == True:
-            ax1.plot(dt_cases[1:],RMSE,marker="o")
-            ax2.plot(dt_cases[1:],perc_diff,marker="o")  
-            fig.supxlabel("Time step [s]",fontsize=16)
-        elif delta_x_study == True:
-            ax1.plot(dx_cases[1:],RMSE,marker="o")
-            ax2.plot(dx_cases[1:],perc_diff,marker="o")   
-            fig.supxlabel("$\epsilon/dx$ [-]",fontsize=16)   
-
-        ax1.set_ylabel("Root Mean \nSquared Normalized [-]")
-        ax2.set_ylabel("Average Percentage \ndifference [%]")
-        
-        fig.suptitle("{0}".format(YLabel),fontsize=12)
-        fig.tight_layout()
-        plt.savefig(dir+"{0}_rad_RMSE.png".format(Var))
-        plt.close(fig)
+        if plot_mom_cont == True:
+            if Var == "Fn" or Var == "Ft":
+                moment_contributions(data_set_2,no_rots,Var,dir)
 
 
-        fig = plt.figure()
-        for j in np.arange(0,len(cases[1:])):
-            plt.plot(x_min,rad_perc_diff[j]*100,color=colors[j+1])
-        plt.xlabel("Normalized blade radius [-]",fontsize=16)
-        plt.ylabel("Percentage difference [%]",fontsize=16)
+        if eps_c_study == False:
+            fig, (ax1,ax2) = plt.subplots(2,1)
+            if delta_r_study == True:
+                ax1.plot(act_stations_cases[1:],RMSE,marker="o")
+                ax2.plot(act_stations_cases[1:],perc_diff,marker="o")
+                fig.supxlabel("Number of actuator points",fontsize=16)
+            elif time_step_study == True:
+                ax1.plot(dt_cases[1:],RMSE,marker="o")
+                ax2.plot(dt_cases[1:],perc_diff,marker="o")  
+                fig.supxlabel("Time step [s]",fontsize=16)
+            elif delta_x_study == True:
+                ax1.plot(dx_cases[1:],RMSE,marker="o")
+                ax2.plot(dx_cases[1:],perc_diff,marker="o")   
+                fig.supxlabel("$\epsilon/dx$ [-]",fontsize=16)   
 
-        if delta_r_study == True:
-            plt.legend(act_stations_cases[1:])
-        elif time_step_study == True:
-            plt.legend(dt_cases[1:])
-        elif delta_x_study == True:
-            plt.legend(dx_cases[1:])
-        elif dt_BSR_study == True:
-            plt.legend(dt_cases[1:])
+            ax1.set_ylabel("Root Mean \nSquared {0}".format(unit))
+            ax2.set_ylabel("Average Percentage \nchange [%]")
+            
+            fig.suptitle("{0}".format(YLabel),fontsize=12)
+            fig.tight_layout()
+            plt.savefig(dir+"{0}_rad_RMSE.png".format(Var))
+            plt.close(fig)
 
 
-        if plot_time_end == True:
-            plt.title("{0} Plotted at {1}".format(YLabel,time_end[0]))
-        else:
-            plt.title("{0} Averaged over last {1} blade rotations\n5 levels of refinement".format(YLabel,no_rots),fontsize=12)
-        plt.tight_layout()
-        plt.savefig(dir+"rad_perc_{0}.png".format(Var))
-        plt.close(fig)
+            fig = plt.figure()
+            for j in np.arange(0,len(cases[1:])):
+                plt.plot(x_min,rad_perc_diff[j]*100,color=colors[j+1])
+            plt.xlabel("Normalized blade radius [-]",fontsize=16)
+            plt.ylabel("Percentage change [%]",fontsize=16)
+
+            if delta_r_study == True:
+                plt.legend(act_stations_cases[1:])
+            elif time_step_study == True:
+                plt.legend(dt_cases[1:])
+            elif delta_x_study == True:
+                plt.legend(dx_cases[1:])
+            elif dt_BSR_study == True:
+                plt.legend(dt_cases[1:])
+
+
+            if plot_time_end == True:
+                plt.title("{0} Plotted at {1}".format(YLabel,time_end[0]))
+            else:
+                plt.title("{0} Averaged over last {1} blade rotations\n5 levels of refinement".format(YLabel,no_rots),fontsize=12)
+            plt.tight_layout()
+            plt.savefig(dir+"rad_perc_{0}.png".format(Var))
+            plt.close(fig)
+
 
 
 
