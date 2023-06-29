@@ -11,11 +11,11 @@ import math
 
 #study
 time_step_study = False
-delta_r_study = False
+delta_r_study = True
 gravity_study = False
 delta_x_study = False
 dt_BSR_study = False
-eps_c_study = True
+eps_c_study = False
 
 
 if delta_r_study == True:
@@ -51,19 +51,19 @@ elif gravity_study == True:
 
 
 elif delta_x_study == True:
-    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study2/"
-    cases = ["Ex4","Ex1_dblade_0.5","Ex5"]
-    dx_cases = [1,2,4]
-    act_stations_cases = [54,54,54]
-    dt_cases = [0.0039,0.00195,0.001]
-    BSR = [0.5,0.5,0.5]
-
-    # dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study/"
-    # cases = ["Ex6","Ex1_dblade_0.5","Ex7"]
+    # dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study2/"
+    # cases = ["Ex4","Ex1_dblade_0.5","Ex5"]
     # dx_cases = [1,2,4]
     # act_stations_cases = [54,54,54]
-    # dt_cases = [0.00195,0.00195,0.00195]
-    # BSR = [0.25,0.5,1.0]
+    # dt_cases = [0.0039,0.00195,0.001]
+    # BSR = [0.5,0.5,0.5]
+
+    dir = "../../../jarred/ALM_sensitivity_analysis/joint_plots/dx_study/"
+    cases = ["Ex6","Ex1_dblade_0.5","Ex7"]
+    dx_cases = [1,2,4]
+    act_stations_cases = [54,54,54]
+    dt_cases = [0.00195,0.00195,0.00195]
+    BSR = [0.25,0.5,1.0]
 
     colors = ["red","blue","green"]
     markers = ["o","D","s"]
@@ -149,7 +149,7 @@ plot_ints = False
 plot_spectra = False
 plot_radial = True
 plot_stats = False
-plot_mom_cont = True
+plot_mom_cont = False
 
 plot_elastic_ints = False
 plot_elastic_spectra = False
@@ -166,9 +166,19 @@ def stats(data_set):
 
         diff = np.subtract(data_set[l+1],data_set[l])
 
-        perc_diff_i = np.true_divide(abs(diff),data_set[l])
+        perc_diff_i = np.true_divide(abs(diff),abs(data_set[l]))
 
         perc_diff_i[np.isnan(perc_diff_i)] = 0
+
+        if plot_ints == True:
+            for k in np.arange(0,len(perc_diff_i)):
+                if perc_diff_i[k] > 1:
+                    perc_diff_i[k] = 1
+        elif plot_radial == True:
+            perc_diff_mean = np.mean(perc_diff_i)
+            for k in np.arange(0,len(perc_diff_i)):
+                if perc_diff_i[k] >= perc_diff_mean:
+                    perc_diff_i[k] = perc_diff_mean
 
         rad_perc_diff.append(perc_diff_i)
 
@@ -410,7 +420,7 @@ if plot_ints == True:
 
             ix+=1 #increase case counter
 
-        perc_diff, RMSE, perc_diff_i = stats(data_set)
+        perc_diff, RMSE, rad_perc_diff = stats(data_set)
 
         for k in np.arange(1,len(cases)):
             legends[k] = legends[k] + "\nRMSE = {0} \nAverage percentage change = {1}%".format(round(RMSE[k-1],6), round(perc_diff[k-1],6))
@@ -457,6 +467,30 @@ if plot_ints == True:
             plt.close(fig)
 
 
+            fig = plt.figure(figsize=(14,8))
+            for j in np.arange(0,len(cases[1:])):
+                plt.plot(tmax,rad_perc_diff[j]*100,color=colors[j+1])
+            plt.xlabel("Time [s]",fontsize=16)
+            plt.ylabel("Percentage change [%]",fontsize=16)
+
+            if delta_r_study == True:
+                plt.legend(act_stations_cases[1:])
+                plt.title('{0}, 5 levels of refinement'.format(Ylabel))
+            elif time_step_study == True:
+                plt.legend(dt_cases[1:])
+                plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
+            elif delta_x_study == True:
+                plt.legend(dx_cases[1:])
+                plt.title('{0}, 54 actuator points'.format(Ylabel))
+            elif dt_BSR_study == True:
+                plt.legend(dt_cases[1:])
+            elif eps_c_study == True:
+                plt.title('{0}'.format(Ylabel))                
+
+            plt.tight_layout()
+            plt.savefig(dir+"time_series_perc_{0}.png".format(Var))
+            plt.close(fig)
+
 
 if plot_spectra == True:
     #spectral plots
@@ -484,7 +518,7 @@ if plot_spectra == True:
         Ylabel = int_YLabel[i]
 
         fig = plt.figure(figsize=(14,8))
-
+        AA = []
         ix = 0 #case counter
         for case in cases:
 
@@ -522,6 +556,12 @@ if plot_spectra == True:
 
             plt.loglog(frq, PSD,color=colors[ix],alpha=trans[ix])
 
+            cutoff = np.searchsorted(frq,10)
+
+            AA.append(np.sum(PSD[:cutoff])*dt_cases[ix])
+
+            legends[ix] = legends[ix] + "\nArea under curve up to 10Hz = {0}".format(AA[ix])
+
             ix+=1
 
         plt.xlabel('Frequency (1/s)',fontsize=16)
@@ -544,6 +584,25 @@ if plot_spectra == True:
         plt.savefig(dir+"{0}_spectra.png".format(Var))
         plt.close(fig)
 
+        
+        perc_AA = []
+        for j in np.arange(0,len(AA)-1):
+            perc_AA.append( abs(AA[j+1]-AA[j])/AA[j] *100 )
+
+        fig = plt.figure()
+        plt.plot(dx_cases[1:],perc_AA,"b-o")
+        plt.ylabel("Percent change [%]",fontsize=16)
+        plt.title("{0} Spectra".format(Ylabel),fontsize=16)
+        if delta_r_study == True:
+            fig.supxlabel("Number of actuator points",fontsize=16)
+        elif time_step_study == True:
+            fig.supxlabel("Time step [s]",fontsize=16)    
+        elif delta_x_study == True:  
+            fig.supxlabel("$\epsilon/dx$ [-]",fontsize=16) 
+
+        plt.tight_layout()
+        plt.savefig(dir+"{0}_percent_spectra.png".format(Var))
+        plt.close(fig)
 
 
 if plot_radial == True:

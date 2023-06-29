@@ -10,11 +10,12 @@ import os, glob
 #Mean statistics
 plot_corliolis_twist = False
 plot_velmag = False
-plot_ww_r = False
+plot_ww_r = True
 plot_w = False
 plot_pot_temp = False
 plot_horz_vel = False
 plot_hub_height_horz_vel = False
+plot_u_w = True
 
 #HAZ analysis plots
 plot_weno_z_Re_LES = False
@@ -23,8 +24,8 @@ plot_weno_z_ppm_nolim_Re_LES = False
 plot_weno_z_ppm_nolim_phi_m = False
 plot_reduced_oneEq_Re_LES = False
 plot_reduced_oneEq_phi_m = False
-plot_uu_r_spectra = True
-plot_ww_r_spectra = True
+plot_uu_r_spectra = False
+plot_ww_r_spectra = False
 
 
 dir = "../../ABL_precursor/post_processing/plots/"
@@ -159,7 +160,7 @@ if plot_ww_r == True:
 
     plt.plot(w_w_r,z,"b-")
 
-    plt.xlabel("Ensemble averaged vertical velocity variance [m/s]")
+    plt.xlabel("Ensemble averaged vertical velocity variance $[m^2/s^2]$")
     plt.ylabel("Distance from surface [m]") 
     plt.grid()
     plt.tight_layout()
@@ -167,6 +168,23 @@ if plot_ww_r == True:
     path = dir + "w_w_r_avg.png"
     plt.savefig(path)
     plt.close(fig)
+
+
+if plot_u_w == True:
+    fig = plt.figure()
+    plt.rcParams.update({'font.size': 12})
+
+    plt.plot(u_w_r,z,"b-")
+
+    plt.xlabel("Ensemble averaged $<u'w'>$ covariance $[m^2/s^2]$")
+    plt.ylabel("Distance from surface [m]") 
+    plt.grid()
+    plt.tight_layout()
+            
+    path = dir + "u_w_r_avg.png"
+    plt.savefig(path)
+    plt.close(fig)
+
 
 if plot_w == True:
     fig = plt.figure()
