@@ -18,9 +18,9 @@ delta_x_study = False
 dt_BSR_study = False
 eps_c_study = False
 fllc_concept_study = False
-fllc_grid_study = False
+fllc_grid_study = True
 fixed_vs_fllc_study = False
-eps_c_comp_study = True
+eps_c_comp_study = False
 
 
 if eps_c_comp_study == True:
@@ -54,7 +54,7 @@ if fixed_vs_fllc_study == True:
     trans = [1,0.5,0.25]
 
 if fllc_grid_study == True:
-    dir = "../../../jarred/ALM_sensitivity_analysis_nhalf/joint_plots/fllc_grid_study/"
+    dir = "../../../jarred/ALM_sensitivity_analysis_nhalf/joint_plots_2/fllc_grid_study/"
     cases = ["fllc_Ex3","fllc_Ex2","fllc_Ex4"]
     act_stations_cases = [300,300,300]
     dt_cases = [0.0039,0.0039,0.0039]
@@ -217,7 +217,7 @@ aero_blade_stations = [1,54,1,54]
 
 #plotting options
 plot_ints = True
-plot_spectra = True
+plot_spectra = False
 plot_radial = True
 plot_stats = False
 plot_time_perc_change = False
@@ -227,6 +227,10 @@ plot_elastic_spectra = False
 plot_aero_ints = False
 plot_aero_spectra = False
 
+#statistics type
+percent_change = False #compare against previous case
+percent_difference = True #compare against best case
+
 
 def stats(data_set):
 
@@ -235,8 +239,11 @@ def stats(data_set):
     avg_diff = []
     Difference = []
     for l in np.arange(0,len(cases)-1):
-
-        diff = np.subtract(data_set[l+1],data_set[l])
+        
+        if percent_change == True:
+            diff = np.subtract(data_set[l+1],data_set[l])
+        elif percent_difference == True:
+            diff = np.subtract(data_set[-1],data_set[l])
 
         Difference.append(diff)
 
@@ -277,7 +284,10 @@ def stats2(data_set):
     Difference = []
     for l in np.arange(0,len(cases)-1):
 
-        diff = np.subtract(data_set[l+1],data_set[l])
+        if percent_change == True:
+            diff = np.subtract(data_set[l+1],data_set[l])
+        elif percent_difference == True:
+            diff = np.subtract(data_set[-1],data_set[l])
 
         Difference.append(diff)
 
