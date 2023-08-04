@@ -18,21 +18,37 @@ delta_x_study = False
 dt_BSR_study = False
 eps_c_study = False
 fllc_concept_study = False
-fllc_grid_study = True
+fllc_grid_study = False
 fixed_vs_fllc_study = False
 eps_c_comp_study = False
+fllc_best_case = True
+
+
+if fllc_best_case == True:
+    dir = "../../../jarred/ALM_sensitivity_analysis_nhalf/joint_plots/fllc_best_case/"
+    cases = ["fllc_Ex4","fllc_Ex1","fllc_Ex2"]
+    act_stations_cases = [300,74,300]
+    dt_cases = [0.0039,0.0039,0.0039]
+    dx_cases = [8.5,3.0,4.2]
+    eps_c_mod = [0.25,0.5,0.25]
+    eps_c_comp = [2.0,1.4,2.0]
+    level_ref = [6,5,5]
+
+    colors = ["red","blue","green"]
+    markers = ["o","D","s"]
+    trans = [1,0.5,0.25]
 
 
 if eps_c_comp_study == True:
-    dir = "../../../jarred/ALM_sensitivity_analysis_nhalf/joint_plots/eps_c_comp_dx_study/"
-    cases = ["fllc_Ex2", "fllc_Ex5"]
+    dir = "../../../jarred/ALM_sensitivity_analysis_nhalf/joint_plots/eps_c_comp_study/"
+    cases = ["fllc_Ex3", "fllc_Ex5"]
     act_stations_cases = [300,300]
     dt_cases = [0.0039,0.0039]
-    dx_cases = [4.2,6.4]
+    dx_cases = [2.1,6.4]
     eps_dr = [0.85,0.85,0.85]
     eps_c_mod = [0.25, 0.25]
     eps_c_comp = [2.0, 6.0]
-    level_ref = [5,4]
+    level_ref = [4,4]
 
     colors = ["red","blue","green"]
     markers = ["o","D","s"]
@@ -54,7 +70,7 @@ if fixed_vs_fllc_study == True:
     trans = [1,0.5,0.25]
 
 if fllc_grid_study == True:
-    dir = "../../../jarred/ALM_sensitivity_analysis_nhalf/joint_plots_2/fllc_grid_study/"
+    dir = "../../../jarred/ALM_sensitivity_analysis_nhalf/joint_plots/fllc_grid_study/"
     cases = ["fllc_Ex3","fllc_Ex2","fllc_Ex4"]
     act_stations_cases = [300,300,300]
     dt_cases = [0.0039,0.0039,0.0039]
@@ -69,17 +85,16 @@ if fllc_grid_study == True:
     trans = [1,0.5,0.25]
 
 if fllc_concept_study == True:
-    dir = "../../../jarred/ALM_sensitivity_analysis_nhalf/joint_plots/fllc_concept_study/"
-    cases = ["eps_c_0.5", "fllc_Ex1"]
-    act_stations_cases = [74,74,147]
-    dt_cases = [0.0039,0.0039,0.0039]
-    dx_cases = [3,3,4.2]
-    eps_dr = [0.85,0.85,0.85]
-    eps_c = [0.5,0.5,0.25]
+    dir = "../../../jarred/ALM_sensitivity_analysis_nhalf/joint_plots/eps_c_fllc_comp/"
+    cases = ["eps_c_0.5","fllc_Ex4"]
+    act_stations_cases = [74,300]
+    dt_cases = [0.0039,0.0039]
+    dx_cases = [3,8.5]
+    eps_c = [0.5,0.25]
 
-    colors = ["red","blue","green"]
-    markers = ["o","D","s"]
-    trans = [1,0.5,0.25]
+    colors = ["red","blue"]
+    markers = ["o","D"]
+    trans = [1,0.75]
 
 
 if delta_r_study == True:
@@ -135,6 +150,7 @@ elif delta_x_study == True:
     act_stations_cases = [54,54,54]
     dt_cases = [0.0039,0.0039,0.0039]
     BSR = [0.25,0.5,1.0]
+    refinement_lev = [4,5,6]
 
     colors = ["red","blue","green"]
     markers = ["o","D","s"]
@@ -217,10 +233,11 @@ aero_blade_stations = [1,54,1,54]
 
 #plotting options
 plot_ints = True
-plot_spectra = False
+plot_spectra = True
 plot_radial = True
 plot_stats = False
-plot_time_perc_change = False
+plot_time_difference = True
+plot_radial_difference = True
 
 plot_elastic_ints = False
 plot_elastic_spectra = False
@@ -238,14 +255,17 @@ def stats(data_set):
     rad_perc_diff = []
     avg_diff = []
     Difference = []
-    for l in np.arange(0,len(cases)-1):
+    scaled_difference = []
+    for l in np.arange(1,len(cases)):
         
         if percent_change == True:
             diff = np.subtract(data_set[l+1],data_set[l])
         elif percent_difference == True:
-            diff = np.subtract(data_set[-1],data_set[l])
+            diff = np.subtract(data_set[0],data_set[l])
 
         Difference.append(diff)
+
+        scaled_difference.append(Difference[l-1]/np.max(abs(data_set[l])))
 
         avg_diff.append(np.average(abs(diff)))
 
@@ -254,7 +274,7 @@ def stats(data_set):
         perc_diff_i[np.isnan(perc_diff_i)] = 0
         perc_diff_i[np.isinf(perc_diff_i)] = 0
 
-        if plot_ints == True or plot_time_perc_change == True:
+        if plot_ints == True:
             for k in np.arange(0,len(perc_diff_i)):
                 if np.min(data_set[l]) < 0:
                     if data_set[l][k] < (0.25*np.max(data_set[l])) and data_set[l][k] > (0.25*np.min(data_set[l])):
@@ -264,7 +284,7 @@ def stats(data_set):
 
         perc_diff.append( abs(np.average(perc_diff_i) * 100) )
 
-    return perc_diff, Difference, rad_perc_diff,avg_diff
+    return perc_diff, Difference, rad_perc_diff,avg_diff,scaled_difference
 
 
 def butter_lowpass_filter(data, cutoff, fs, order):
@@ -282,14 +302,17 @@ def stats2(data_set):
     rad_perc_diff = []
     avg_diff = []
     Difference = []
-    for l in np.arange(0,len(cases)-1):
+    scaled_difference = []
+    for l in np.arange(1,len(cases)):
 
         if percent_change == True:
             diff = np.subtract(data_set[l+1],data_set[l])
         elif percent_difference == True:
-            diff = np.subtract(data_set[-1],data_set[l])
+            diff = np.subtract(data_set[0],data_set[l])
 
         Difference.append(diff)
+
+        scaled_difference.append(Difference[l-1]/np.max(abs(data_set[l])))
 
         avg_diff.append(np.average(abs(diff)))
 
@@ -308,7 +331,7 @@ def stats2(data_set):
 
         perc_diff.append( abs(np.average(perc_diff_i) * 100) )
 
-    return perc_diff, Difference, rad_perc_diff,avg_diff
+    return perc_diff, Difference, rad_perc_diff,avg_diff,scaled_difference
 
 
 def energy_contents_check(case,Var,e_fft,signal,dt):
@@ -445,8 +468,8 @@ if plot_ints == True:
                 legends.append("{0}: $\epsilon/dx$ = {1}, $\epsilon/\Delta r$ = {2}, dt = {3}".format(eps_cases[j],dx_cases[j],eps_dr[j],dt_cases[j]))
         elif fllc_concept_study == True:
             for j in np.arange(0,len(cases)):
-                legends.append("$\epsilon/c$ = {0}: $\epsilon/dx$ = {1}, dt = {2}, $\epsilon/dr$ = {3}".format(eps_c[j],dx_cases[j],dt_cases[j],eps_dr[j]))
-        elif fllc_grid_study == True or fixed_vs_fllc_study == True or eps_c_comp_study == True:
+                legends.append("$\epsilon/c$ = {0}: $\epsilon/dx$ = {1}".format(eps_c[j],dx_cases[j]))
+        elif fllc_grid_study == True or fixed_vs_fllc_study == True or eps_c_comp_study == True or fllc_best_case == True:
             for j in np.arange(0,len(cases)):
                 legends.append("$[\epsilon/c]_{mod}$ = " + "{}".format(eps_c_mod[j]) + ", $[\epsilon/c]_{comp}$ = " + "{}".format(eps_c_comp[j]) + ", $\epsilon/dx$ = " + "{}".format(dx_cases[j]) + ", levels of ref = " + "{}".format(level_ref[j]))
 
@@ -495,7 +518,7 @@ if plot_ints == True:
 
             ix+=1 #increase case counter
 
-        perc_diff, diff, rad_perc_diff,avg_diff = stats(data_set)
+        perc_diff, diff, rad_perc_diff,avg_diff,scaled_difference = stats(data_set)
 
         for k in np.arange(1,len(cases)):
             legends[k] = legends[k] + "\nAverage difference = {0} \nAverage percentage change = {1}%".format(round(avg_diff[k-1],6), round(perc_diff[k-1],6))
@@ -594,7 +617,7 @@ if plot_ints == True:
         plt.close(fig)
 
 
-if plot_time_perc_change == True:
+if plot_time_difference == True:
     #integrated plots
 
     dq = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
@@ -606,23 +629,23 @@ if plot_time_perc_change == True:
         legends = []
         if delta_r_study == True:
             for j in np.arange(0,len(act_stations_cases)):
-                legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
+                legends.append("{0} actuator points".format(act_stations_cases[j]))
         elif time_step_study == True:
             for j in np.arange(0,len(dt_cases)):
-                legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
+                legends.append("{0}s dt".format(dt_cases[j]))
         elif gravity_study == True:
             for j in np.arange(0,len(cases)):
                 legends.append("{0}".format(cases[j]))
         elif delta_x_study == True:
             for j in np.arange(0,len(cases)):
-                legends.append("{0}: $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(cases[j],dx_cases[j],dt_cases[j],BSR[j]))
+                legends.append("{0} levels of refinement, $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(refinement_lev[j],dx_cases[j],dt_cases[j],BSR[j]))
         elif eps_c_study == True:
             for j in np.arange(0,len(cases)):
                 legends.append("{0}: $\epsilon/dx$ = {1}, $\epsilon/\Delta r$ = {2}, dt = {3}".format(eps_cases[j],dx_cases[j],eps_dr[j],dt_cases[j]))
         elif fllc_concept_study == True:
             for j in np.arange(0,len(cases)):
-                legends.append("$\epsilon/c$ = {0}: $\epsilon/dx$ = {1}, dt = {2}, $\epsilon/dr$ = {3}".format(eps_c[j],dx_cases[j],dt_cases[j],eps_dr[j]))
-        elif fllc_grid_study == True or fixed_vs_fllc_study == True:
+                legends.append("$\epsilon/c$ = {0}: $\epsilon/dx$ = {1}".format(eps_c[j],dx_cases[j]))
+        elif fllc_grid_study == True or fixed_vs_fllc_study == True or eps_c_comp_study == True or fllc_best_case == True:
             for j in np.arange(0,len(cases)):
                 legends.append("$[\epsilon/c]_{mod}$ = " + "{}".format(eps_c_mod[j]) + ", $[\epsilon/c]_{comp}$ = " + "{}".format(eps_c_comp[j]) + ", $\epsilon/dx$ = " + "{}".format(dx_cases[j]) + ", levels of ref = " + "{}".format(level_ref[j]))
 
@@ -668,22 +691,19 @@ if plot_time_perc_change == True:
 
             ix+=1 #increase case counter
 
-        plt.legend(legends)
+        ax1.legend(legends)
 
-        perc_diff, diff, rad_perc_diff,avg_diff = stats(data_set)
+        perc_diff, diff, rad_perc_diff,avg_diff,scaled_difference = stats(data_set)
 
         for j in np.arange(0,len(cases)-1):
-            ax2.plot(tmax,rad_perc_diff[j]*100,color=colors[j+1],linestyle="--")
+            ax2.plot(tmax,scaled_difference[j],color=colors[j+1],linestyle="--")
 
-        for k in np.arange(1,len(cases)):
-            legends[k] = legends[k] + "\nAverage difference = {0} \nAverage percentage change = {1}%".format(round(avg_diff[k-1],6), round(perc_diff[k-1],6))
-        
         ax1.set_ylabel("{0} {1}".format(Ylabel,unit),fontsize=16)
-        ax2.set_ylabel("Percentage change [%]",fontsize=16)
+        ax2.set_ylabel("Scaled Difference {0}".format(unit),fontsize=16)
         ax1.set_xlabel("Time [s]",fontsize=16)
         
         plt.tight_layout()
-        plt.savefig(dir+"time_series_plus_perc_change_{0}.png".format(Var))
+        plt.savefig(dir+"time_series_plus_difference_{0}.png".format(Var))
         plt.close(fig)
 
 
@@ -708,8 +728,8 @@ if plot_spectra == True:
                 legends.append("{0}: $\epsilon/dx$ = {1}, $\epsilon/\Delta r$ = {2}, dt = {3}".format(eps_cases[j],dx_cases[j],eps_dr[j],dt_cases[j]))
         elif fllc_concept_study == True:
             for j in np.arange(0,len(cases)):
-                legends.append("$\epsilon/c$ = {0}: $\epsilon/dx$ = {1}, dt = {2}, $\epsilon/dr$ = {3}".format(eps_c[j],dx_cases[j],dt_cases[j],eps_dr[j]))
-        elif fllc_grid_study == True or fixed_vs_fllc_study == True or eps_c_comp_study == True: 
+                legends.append("$\epsilon/c$ = {0}: $\epsilon/dx$ = {1}".format(eps_c[j],dx_cases[j]))
+        elif fllc_grid_study == True or fixed_vs_fllc_study == True or eps_c_comp_study == True or fllc_best_case == True: 
             for j in np.arange(0,len(cases)):
                 legends.append("$[\epsilon/c]_{mod}$ = " + "{}".format(eps_c_mod[j]) + ", $[\epsilon/c]_{comp}$ = " + "{}".format(eps_c_comp[j]) + ", $\epsilon/dx$ = " + "{}".format(dx_cases[j]) + ", levels of ref = " + "{}".format(level_ref[j]))
 
@@ -805,8 +825,8 @@ if plot_radial == True:
                 legends.append("{0}: $\epsilon/dx$ = {1}, $\epsilon/\Delta r$ = {2}, dt = {3}".format(eps_cases[j],dx_cases[j],eps_dr[j],dt_cases[j]))
         elif fllc_concept_study == True:
             for j in np.arange(0,len(cases)):
-                legends.append("$\epsilon/c$ = {0}: $\epsilon/dx$ = {1}, dt = {2}, $\epsilon/dr$ = {3}".format(eps_c[j],dx_cases[j],dt_cases[j],eps_dr[j]))
-        elif fllc_grid_study == True or fixed_vs_fllc_study == True or eps_c_comp_study == True:
+                legends.append("$\epsilon/c$ = {0}: $\epsilon/dx$ = {1}".format(eps_c[j],dx_cases[j]))
+        elif fllc_grid_study == True or fixed_vs_fllc_study == True or eps_c_comp_study == True or fllc_best_case == True:
             for j in np.arange(0,len(cases)):
                 legends.append("$[\epsilon/c]_{mod}$ = " + "{}".format(eps_c_mod[j]) + ", $[\epsilon/c]_{comp}$ = " + "{}".format(eps_c_comp[j]) + ", $\epsilon/dx$ = " + "{}".format(dx_cases[j]) + ", levels of ref = " + "{}".format(level_ref[j]))
 
@@ -817,6 +837,7 @@ if plot_radial == True:
         no_rots = number_rotor_rotations
 
         data_set =  []
+
 
         fig = plt.figure()
 
@@ -872,7 +893,7 @@ if plot_radial == True:
 
             ix+=1
 
-        perc_diff, diff, rad_perc_diff,avg_diff = stats2(data_set)
+        perc_diff, diff, rad_perc_diff,avg_diff,scaled_difference = stats2(data_set)
 
         for k in np.arange(1,len(cases)):
             legends[k] = legends[k] + "\nAverage difference = {0} \nAverage Percentage change = {1}%".format(round(avg_diff[k-1],6),round(perc_diff[k-1],6))
@@ -936,6 +957,108 @@ if plot_radial == True:
         plt.savefig(dir+"rad_perc_{0}.png".format(Var))
         plt.close(fig)
 
+
+if plot_radial_difference == True:
+    #radial plots
+    for i in np.arange(0,len(rad_variables),1):
+
+        legends = []
+        if delta_r_study == True:
+            for j in np.arange(0,len(act_stations_cases)):
+                legends.append("{0} actuator points".format(act_stations_cases[j]))
+        elif time_step_study == True:
+            for j in np.arange(0,len(dt_cases)):
+                legends.append("{0}s dt".format(dt_cases[j]))
+        elif gravity_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}".format(cases[j]))
+        elif delta_x_study == True or dt_BSR_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0} levels of refinement, $\epsilon/dx$ = {1}, dt = {2}, BSR = {3}".format(refinement_lev[j],dx_cases[j],dt_cases[j],BSR[j]))
+        elif eps_c_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("{0}: $\epsilon/dx$ = {1}, $\epsilon/\Delta r$ = {2}, dt = {3}".format(eps_cases[j],dx_cases[j],eps_dr[j],dt_cases[j]))
+        elif fllc_concept_study == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("$\epsilon/c$ = {0}: $\epsilon/dx$ = {1}".format(eps_c[j],dx_cases[j]))
+        elif fllc_grid_study == True or fixed_vs_fllc_study == True or eps_c_comp_study == True or fllc_best_case == True:
+            for j in np.arange(0,len(cases)):
+                legends.append("$[\epsilon/c]_{mod}$ = " + "{}".format(eps_c_mod[j]) + ", $[\epsilon/c]_{comp}$ = " + "{}".format(eps_c_comp[j]) + ", $\epsilon/dx$ = " + "{}".format(dx_cases[j]) + ", levels of ref = " + "{}".format(level_ref[j]))
+
+
+        Var = rad_variables[i]
+        unit = rad_units[i]
+        YLabel = rad_YLabel[i]
+        no_rots = number_rotor_rotations
+
+        data_set =  []
+
+
+        fig,ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+
+        ix = 0 #case counter
+        for case in cases:
+
+            if gravity_study == True:
+                df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            else:
+                #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+                df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+        
+
+            time = df["Time_[s]"]
+            time = np.array(time)
+            
+            Az = np.array(df["Azimuth_[deg]"])
+
+            act_stations = act_stations_cases[ix]
+            x = np.linspace(0,1,act_stations)
+            #x_max = np.linspace(0,1,act_stations_cases[-1])
+            x_min = np.linspace(0,1,act_stations_cases[0])
+
+            Var_list = []
+            for i in np.arange(1,act_stations+1):
+                if i < 10:
+                    txt = "AB1N00{0}{1}_{2}".format(i,Var,unit)
+                elif i >= 10 and i < 100:
+                    txt = "AB1N0{0}{1}_{2}".format(i,Var,unit)
+                elif i >= 100:
+                    txt = "AB1N{0}{1}_{2}".format(i,Var,unit)
+
+
+                time_end_idx = np.searchsorted(time,time_end[ix])
+                Az_0 = Az[time_end_idx] - no_rots * 360
+                tstart_idx = np.searchsorted(Az,Az_0)
+
+                if plot_time_end == True:
+                    Var_dist = df[txt][time_end_idx]
+                else:
+                    Var_dist = np.average(df[txt][tstart_idx:time_end_idx])
+                
+                Var_list.append(Var_dist)
+
+            #data_set.append(interpolate.interp1d(x, Var_list,kind="linear")(x_max))    
+            data_set.append(interpolate.interp1d(x, Var_list,kind="linear")(x_min))
+
+            ax1.plot(x,Var_list,color=colors[ix],marker=markers[ix],markersize=4,alpha=trans[ix])
+
+            ix+=1
+
+        ax1.legend(legends)
+
+        perc_diff, diff, rad_perc_diff,avg_diff,scaled_difference = stats2(data_set)
+
+        for j in np.arange(0,len(cases)-1):
+            ax2.plot(x_min,scaled_difference[j],color=colors[j+1],linestyle="--")
+
+        ax1.set_ylabel("{0} {1}".format(YLabel,unit),fontsize=16)
+        ax2.set_ylabel("Scaled Difference {0}".format(unit),fontsize=16)
+        ax1.set_xlabel("Normalized blade radius [-]",fontsize=16)
+        
+        plt.tight_layout()
+        plt.savefig(dir+"radial_plus_difference_{0}.png".format(Var))
+        plt.close(fig)
 
 
 
