@@ -871,6 +871,24 @@ def Ave_props(case):
     return Zi, u_star, w_star
 
 
+def spec_props(case):
+
+    stats = glob.glob("{0}/post_processing/abl_statistics*".format(case))
+    a = Dataset("./{}".format(stats[0]))
+
+    t_spec = np.searchsorted(a.variables["time"],32300)
+    t_end = np.searchsorted(a.variables["time"],33500)
+
+    Zi = np.average(a.variables["zi"][t_spec:t_end])
+    u_star = np.average(a.variables["ustar"][t_spec:t_end])
+    tau_u = Zi/u_star
+    w_star = np.average(a.variables["wstar"][t_spec:t_end])
+    tau_w = Zi/w_star
+    L = np.average(a.variables["L"][t_spec:t_end])
+
+    print(Zi, u_star, tau_u/60, w_star, tau_w/60,-L,-Zi/L)
+
+
 def AvePhi_m(dir, cases, Titles, markerstyle, scaling_zi, linestyles, colors):
 
     fig = plt.figure()
@@ -1065,7 +1083,7 @@ def R_Re_LES(dir, cases, markerstyle, colors):
     plt.close(fig)
 
 
-def plottingdvar_dt(dir):
+def plottingdvar_dt(cases, Titles, dir, linestyles, colors):
 
     variables = ["zi","ustar","wstar","Tsurf","zi","zi"]
     labels = ["$dz_i/dt$ [m/s]", "$du_*/dt [m/s^2]$", "$dw_*/dt [m/s^2]$", "$dT_0/dt [K m/s^2]$",
@@ -1092,6 +1110,7 @@ def plottingdvar_dt(dir):
                 d_var_dt = np.divide(d_var_dt,a.variables["ustar"][:-1])
 
             fig = plt.figure()
+            plt.rcParams.update({'font.size': 12})
 
             def plot_std(time, d_var_dt,colors):
                 #calculate bin edges using 3Tau
@@ -1147,7 +1166,8 @@ def plottingdvar_dt(dir):
             path = dir + "{0}.png".format(filenames[ic])
 
             #separate plots
-            plt.title('{0}'.format(Titles[cc]))
+            #plt.title('{0}'.format(Titles[cc]))
+            plt.tight_layout()
             plt.savefig(path)
             plt.close(fig)
 
@@ -1156,13 +1176,13 @@ def plottingdvar_dt(dir):
         ic += 1
 
 
-dir = "test9/post_processing/plots/"
+dir = "../../ABL_precursor/post_processing/plots/"
 
-cases = ["test9"]
-Titles = ["Ex1 restart ABL ALM"]
+cases = ["../../ABL_precursor"]
+Titles = ["ABL precursor"]
 markerstyle = ["o","s"]
 linestyles = ["solid","solid"]
-colors = ["r"]
+colors = ["k"]
 
 
 TimeVars = ["zi", "ustar", "zi_ustar","wstar","Tsurf", "zi_wstar","zi_L"]
@@ -1200,8 +1220,8 @@ else:
 plot_side_by_side = False
 plot_on_same_plot = True
 
-
-Main(dir, cases, Titles,rows,columns, scaling_zi, Ind, plot_on_same_plot, plot_side_by_side, linestyles, colors)
+spec_props(case=cases[0])
+# Main(dir, cases, Titles,rows,columns, scaling_zi, Ind, plot_on_same_plot, plot_side_by_side, linestyles, colors)
 
 # AvePhi_m(dir, cases, Titles, markerstyle, scaling_zi, linestyles, colors)
 
@@ -1212,7 +1232,7 @@ Main(dir, cases, Titles,rows,columns, scaling_zi, Ind, plot_on_same_plot, plot_s
 # for i in np.arange(0, len(TimeVars)):
 #    plottingTimeVars(cases, Titles, TimeVars, Timelabels, TimeFilenames, i, dir, linestyles, colors)
 
-# Main2(dir, cases, Titles,rows,columns, scaling_zi, Ind, plot_on_same_plot, plot_side_by_side, linestyles, colors)
+#Main2(dir, cases, Titles,rows,columns, scaling_zi, Ind, plot_on_same_plot, plot_side_by_side, linestyles, colors)
 
 #Cosine_theta_z(dir, cases, scaling_zi, markerstyle, colors, linestyles)
 #theta_z(dir, cases, scaling_zi, markerstyle, colors, linestyles)

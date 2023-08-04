@@ -9,11 +9,11 @@ import os, glob
 
 def TI(case):
 
-    a = Dataset("./{0}/post_processing/abl_statistics00000.nc".format(case))
+    a = Dataset("./{0}/post_processing/abl_statistics60000.nc".format(case))
 
     mean_profiles = a.groups["mean_profiles"] #create variable to hold mean profiles
 
-    tstart = np.searchsorted(a.variables['time'][:],15000.0)
+    tstart = np.searchsorted(a.variables['time'][:],35000.0)
 
     u_var = np.average(mean_profiles["u'u'_r"][tstart:][:],axis=0)
     v_var = np.average(mean_profiles["v'v'_r"][tstart:][:],axis=0)
@@ -45,9 +45,8 @@ def turbine_height_vars(dir, labels,cases, Vars, j, k, rows, columns, Titles, fi
         mean_profiles = a.groups["mean_profiles"] #create variable to hold mean profiles
 
         Var = Vars[j]
-
         kk = k[cc]
-        
+
         Time = floor(a.variables["time"][kk])
 
         z = mean_profiles["h"][:]
@@ -150,7 +149,7 @@ def TI_z(cases,Titles,rows,columns, WT_heights, WT_colors):
     fig.supxlabel('Height [m]')
     for case in cases:
 
-        a = Dataset("./{0}/post_processing/abl_statistics00000.nc".format(case))
+        a = Dataset("./{0}/post_processing/abl_statistics60000.nc".format(case))
 
         mean_profiles = a.groups["mean_profiles"] #create variable to hold mean profiles
 
@@ -186,34 +185,34 @@ def TI_z(cases,Titles,rows,columns, WT_heights, WT_colors):
 
 
 
-dir = './AR_0.66_120K_restart/post_processing/plots/'
+dir = '../../ABL_precursor/post_processing/plots/'
 
 
-cases = ["AR_0.66_120K_restart"]
-WT_heights = [85, 90, 150]
-WT_rotor_D = [77, 126, 240]
-WT_colors = ["b", "r", "g"]
-Titles = ["AR = 0.66 strong capping inv \nNz = 128 $\Delta \Theta$ = 120K/km \nQ0 = 0.15Km/s Ug = 15m/s"]
+cases = ["../../ABL_precursor"]
+WT_heights = [90]
+WT_rotor_D = [126]
+WT_colors = ["k", "r", "g"]
+Titles = ["ABL precursor"]
 
 Vars = ["u", "phi_m", "phi_h"]
 labels = ["Velocity x [m/s]", "$\Phi_m$ [-]", "$\Phi_h$ [-]"]
 filenames = ["WT_velocity_x", "WT_phi_m", "WT_phi_h"]
 
 
-a = Dataset("./{0}/post_processing/abl_statistics60000.nc".format(cases[0]))
+a = Dataset("{0}/post_processing/abl_statistics60000.nc".format(cases[0]))
 
-times = np.round(np.linspace(0, a.variables["time"][-1],num=6),-3)
+#times = np.round(np.linspace(a.variables["time"][0], a.variables["time"][-1],num=6),-3)
+times = [32500]
 Ind = []
 for time in times:
     Ind_row = []
     for case in cases:
     
-        a = Dataset("./{0}/post_processing/abl_statistics60000.nc".format(case))
+        a = Dataset("{0}/post_processing/abl_statistics60000.nc".format(case))
 
         Ind_row.append(np.searchsorted(a.variables['time'][:],time))
 
     Ind.append(Ind_row)
-
 
 if len(cases) < 4:
     rows = 1
