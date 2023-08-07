@@ -66,7 +66,42 @@ def isocontourplot(u,x,y,normal,xs,ys,zs,Title,filename,dir):
     plt.close(fig)
 
 
+def coriolis_twist(u,v):
+    twist = np.arctan(np.true_divide(v,u))
 
+    return twist
+
+
+def magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height):
+    if normal == "z":
+        h_idx = np.searchsorted(h,height)
+        mag_horz_vel = np.add( np.multiply(u,np.cos(twist[h_idx])) , np.multiply( v,np.sin(twist[h_idx])) )
+    else:
+        mag_horz_vel = []
+        for i in np.arange(0,len(zs)):
+            u_i = u[i*x:(i+1)*x]; v_i = v[i*x:(i+1)*x]
+            height = zs[i]
+            h_idx = np.searchsorted(h,height)
+            mag_horz_vel_i = np.add( np.multiply(u_i,np.cos(twist[h_idx])) , np.multiply( v_i,np.sin(twist[h_idx])) )
+            mag_horz_vel.append(mag_horz_vel_i)
+
+    return mag_horz_vel
+
+
+#defining twist angles with height from precursor
+a = Dataset("../../ABL_precursor/post_processing/abl_statistics60000.nc")
+
+mean_profiles = a.groups["mean_profiles"] #create variable to hold mean profiles
+
+t_start = np.searchsorted(a.variables["time"],32300)
+t_end = np.searchsorted(a.variables["time"],33500)
+
+u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
+v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
+
+h = mean_profiles["h"][:]
+
+twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 
 
 #directories
@@ -161,7 +196,7 @@ for plane in planes:
 
     #plotting option
     plot_isocontour = True
-    plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
+    plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
     velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
     #check if no velocity components selected
@@ -208,7 +243,7 @@ for plane in planes:
                 if velocity_comp == "Magnitude horizontal velocity":
                     u = offset_data(p,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
                     v = offset_data(p,velocity_comps[1], i, no_cells_offset,it)
-                    u = np.add( np.multiply(u,np.cos(np.radians(29))) , np.multiply( v,np.sin(np.radians(29))) ) #modify for twist with height
+                    u = magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
 
                 else:
                     u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
@@ -256,8 +291,7 @@ for plane in planes:
                         if velocity_comp == "Magnitude horizontal velocity":
                             u = offset_data(p,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
                             v = offset_data(p,velocity_comps[1], i, no_cells_offset,it)
-                            u = np.add( np.multiply(u,np.cos(np.radians(29))) , np.multiply( v,np.sin(np.radians(29))) ) #modify for twist with height
-
+                            u = magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
                         else:
                             u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
                         
@@ -289,8 +323,7 @@ for plane in planes:
                         if velocity_comp == "Magnitude horizontal velocity":
                             u = offset_data(p,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
                             v = offset_data(p,velocity_comps[1], i, no_cells_offset,it)
-                            u = np.add( np.multiply(u,np.cos(np.radians(29))) , np.multiply( v,np.sin(np.radians(29))) ) #modify for twist with height
-
+                            u = magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
                         else:
                             u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
 
