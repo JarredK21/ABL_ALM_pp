@@ -308,7 +308,7 @@ for plane in planes:
                                 
                                 vmin_arr.append(vmin); vmax_arr.append(vmax)
 
-                        if plane == "r" or plane == "t":
+                        if plane == "r" or plane == "t" and velocity_comp != "velocityz":
                             cmin = 0
                         else:
                             cmin = math.floor(np.min(vmin_arr))
@@ -334,13 +334,13 @@ for plane in planes:
                             u = u - np.mean(u)
 
                         if type(normal) == int: #rotor plane
-                            u_plane = u.reshape(y,x) #needs fixing x and y lengths and number of points aren't consistent.
+                            u_plane = u.reshape(y,x)
                             X,Y = np.meshgrid(ys,zs)
                         elif normal == "z":
                             u_plane = u.reshape(x,y)
                             X,Y = np.meshgrid(xs,ys)
                         elif normal == "x":
-                            u_plane = u.reshape(x,y)
+                            u_plane = u.reshape(y,x)
                             X,Y = np.meshgrid(ys,zs)
 
                         Z = u_plane
