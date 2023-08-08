@@ -83,13 +83,13 @@ def magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height):
             height = zs[i]
             h_idx = np.searchsorted(h,height)
             mag_horz_vel_i = np.add( np.multiply(u_i,np.cos(twist[h_idx])) , np.multiply( v_i,np.sin(twist[h_idx])) )
-            mag_horz_vel.append(mag_horz_vel_i)
-
+            mag_horz_vel.extend(mag_horz_vel_i)
+        mag_horz_vel = np.array(mag_horz_vel)
     return mag_horz_vel
 
 
 #defining twist angles with height from precursor
-a = Dataset("../../ABL_precursor/post_processing/abl_statistics60000.nc")
+a = Dataset("./abl_statistics60000.nc")
 
 mean_profiles = a.groups["mean_profiles"] #create variable to hold mean profiles
 
@@ -105,7 +105,7 @@ twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulat
 
 
 #directories
-in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+in_dir = "./"
 out_dir = in_dir + "plots/"
 
 #initalize variables
@@ -432,7 +432,7 @@ for plane in planes:
                     it+=1
                 
                 #cv2.VideoWriter_fourcc(*'DIVX')
-                out = cv2.VideoWriter(folder+filename+'.avi',0, 1, size)
+                out = cv2.VideoWriter(folder+filename+'.avi',0, 5, size)
                 it = 0
                 for im in range(len(img_array)):
                     out.write(img_array[im])
