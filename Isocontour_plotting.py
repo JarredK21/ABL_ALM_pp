@@ -221,10 +221,6 @@ for plane in planes:
     #specify time steps to plot instantaneous isocontours at
     it_array = [0,10]
 
-    #colorbar options
-    custom_colorbar = False
-    cmin = 0; cmax = 18 #custom range modify for each velocity?
-
 
     start_time = time.time()
     #loop over true velocity components
@@ -234,6 +230,10 @@ for plane in planes:
         if velocity_plot[iv] == False:
             iv+=1
             continue
+
+        #colorbar options
+        custom_colorbar = False
+        cmin = 0; cmax = 18
 
         #loop over offsets
         for i in np.arange(0,len(Offsets)):
@@ -300,6 +300,7 @@ for plane in planes:
 
                     #find vmin and vmax for isocontour plots            
                     #min and max over data
+                    #for rotor and transverse planes always set cmin = 0
                     if custom_colorbar == False:
                         vmin_arr = []; vmax_arr = []
                         with Pool() as pool:
@@ -307,10 +308,14 @@ for plane in planes:
                                 
                                 vmin_arr.append(vmin); vmax_arr.append(vmax)
 
-                        cmin = math.floor(np.min(vmin_arr)); cmax = math.ceil(np.max(vmax_arr))
+                        if plane == "r" or plane == "t":
+                            cmin = 0
+                        else:
+                            cmin = math.floor(np.min(vmin_arr))
+                        
+                        cmax = math.ceil(np.max(vmax_arr))
                     
                     #if custom_colorbar == True: specify cmain, cmax above
-                    print("line 292",time.time()-start_time)
                     nlevs = (cmax-cmin)
                     levels = np.linspace(cmin,cmax,nlevs,dtype=int)
 
@@ -432,7 +437,7 @@ for plane in planes:
                     it+=1
                 
                 #cv2.VideoWriter_fourcc(*'DIVX')
-                out = cv2.VideoWriter(folder+filename+'.avi',0, 5, size)
+                out = cv2.VideoWriter(folder+filename+'.avi',0, 1, size)
                 it = 0
                 for im in range(len(img_array)):
                     out.write(img_array[im])
