@@ -12,6 +12,8 @@ import pandas as pd
 from multiprocessing import Pool
 import time
 
+#review codes for load correlations
+
 start_time = time.time()
 
 def offset_data(p_rotor,no_cells_offset,it,i,velocity_comp):
