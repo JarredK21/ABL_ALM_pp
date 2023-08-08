@@ -81,7 +81,9 @@ def magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height):
         for i in np.arange(0,len(zs)):
             u_i = u[i*x:(i+1)*x]; v_i = v[i*x:(i+1)*x]
             height = zs[i]
-            h_idx = np.searchsorted(h,height)
+            h_idx = np.searchsorted(h,height,side="left")
+            if h_idx > 127:
+                h_idx = 127
             mag_horz_vel_i = np.add( np.multiply(u_i,np.cos(twist[h_idx])) , np.multiply( v_i,np.sin(twist[h_idx])) )
             mag_horz_vel.extend(mag_horz_vel_i)
         mag_horz_vel = np.array(mag_horz_vel)
@@ -308,7 +310,7 @@ for plane in planes:
                                 
                                 vmin_arr.append(vmin); vmax_arr.append(vmax)
 
-                        if plane == "r" or plane == "t" and velocity_comp != "velocityz":
+                        if plane == "r" and velocity_comp != "velocityz" or plane == "t" and velocity_comp != "velocityz":
                             cmin = 0
                         else:
                             cmin = math.floor(np.min(vmin_arr))
