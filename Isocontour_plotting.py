@@ -105,7 +105,7 @@ twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulat
 
 
 #directories
-in_dir = "../../NREL_5MW_MCBL_R_CRPM/test_post_processing/"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 out_dir = in_dir + "plots/"
 
 #initalize variables
@@ -115,11 +115,9 @@ a = Dataset("./{}".format(sampling[0]))
 #l - longitudinal xy
 #r - rotor 29deg yz
 #t - tranverse yz
-# planes = ["l", "r", "t"]
-# plane_label = ["Longitudinal", "Rotor","Transverse"]
+planes = ["l", "r", "t"]
+plane_label = ["Longitudinal", "Rotor","Transverse"]
 
-planes = ["l","r"]
-plane_label = ["Longitudinal","Rotor"]
 
 ip = 0
 for plane in planes:
@@ -195,7 +193,7 @@ for plane in planes:
 
 
     #plotting option
-    plot_isocontour = True
+    plot_isocontour = False
     plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
     velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
@@ -205,8 +203,8 @@ for plane in planes:
 
 
     fluc_vel = False
-    movie_tot_vel_isocontour = False
-    plot_specific_offsets = True
+    movie_tot_vel_isocontour = True
+    plot_specific_offsets = False
 
     #longitudinal offsets - 85m
     #rotor offsets - 0.0m, -63m, -126m
@@ -337,7 +335,7 @@ for plane in planes:
                             u_plane = u.reshape(x,y)
                             X,Y = np.meshgrid(xs,ys)
                         elif normal == "x":
-                            u_plane = u.reshape(y,x)
+                            u_plane = u.reshape(x,y)
                             X,Y = np.meshgrid(ys,zs)
 
                         Z = u_plane
@@ -434,7 +432,7 @@ for plane in planes:
                     it+=1
                 
                 #cv2.VideoWriter_fourcc(*'DIVX')
-                out = cv2.VideoWriter(folder+filename+'.avi',0, 15, size)
+                out = cv2.VideoWriter(folder+filename+'.avi',0, 1, size)
                 it = 0
                 for im in range(len(img_array)):
                     out.write(img_array[im])
