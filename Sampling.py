@@ -115,7 +115,7 @@ else:
 
 
 tstart = 50
-tend = 55
+tend = 350
 CFD_dt = 0.0039 #manual input
 Time = np.array(a.variables["time"])
 #Time = Time - Time[0]
@@ -143,7 +143,7 @@ movie_tot_vel_isocontour = True
 plot_specific_offsets = True
 
 if plot_specific_offsets == True:    
-    spec_offsets = [2] #rotor plane
+    spec_offsets = [1] #rotor plane
 else:
     spec_offsets = np.arange(0,no_offsets, 1, dtype=int)
 
@@ -162,6 +162,10 @@ plane_data =  pd.DataFrame(data=None, columns=col_names)
 
 #specify time steps to plot instantaneous isocontours at
 it_array = [0]
+
+#colorbar options
+custom_colorbar = True
+cmin = 3; cmax = 18 #custom range
 
 
 #coriolis twist calc
@@ -250,146 +254,218 @@ for velocity_comp in velocity_comps:
                 isocontourplot(u,x,y,normal,xs,ys,zs,Title,filename,dir)
 
 
-        print("line 227", time.time()-start_time)
+        print("line 206", time.time()-start_time)
+        folder_exists = False
         #generate movie for specific plane
         if movie_tot_vel_isocontour == True:
-
-
-            #metadata = dict(title="Movie",artist="Jarred")
-            #writer = PillowWriter(fps=25,metadata=metadata)
-
-            if fluc_vel == True:
-                f = "Fluctuating"
-            else:
-                f = "Total"
-            if velocity_comp == "Magnitude horizontal velocity":
-                ft = f + " Velocity $<Ux'>$ [m/s]"
-                fn = f + "_velHz"
-            else:
-                ft = f + " {} [m/s]".format(velocity_comp)
-                fn = f + "_{}".format(velocity_comp)
-
-            filename = "{0}_Offset={1}".format(fn,p_h.offsets[i])
-            print(ft,fn)
-
-            def vmin_vmax(it):
-                    
-                if velocity_comp == "Magnitude horizontal velocity":
-                    u = offset_data(p_h,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
-                    v = offset_data(p_h,velocity_comps[1], i, no_cells_offset,it)
-                    u = np.add( np.multiply(u,np.cos(np.radians(29))) , np.multiply( v,np.sin(np.radians(29))) )
-
-                else:
-                    u = offset_data(p_h,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
-                
+            
+            if folder_exists == True:
+                folder = dir+"{}/".format(velocity_comp)
                 if fluc_vel == True:
-                    u = u - np.mean(u)
-
-                return np.min(u), np.max(u)
-
-            #find vmin and vmax for isocontour plots            
-            #min and max over data
-            vmin_arr = []; vmax_arr = []
-            with Pool() as pool:
-                for vmin,vmax in pool.imap(vmin_vmax,time_steps):
-                    
-                    vmin_arr.append(vmin); vmax_arr.append(vmax)
-
-            cmin = math.floor(np.min(vmin_arr)); cmax = math.ceil(np.max(vmax_arr))
-            print("line 268",time.time()-start_time)
-            nlevs = (cmax-cmin)
-            levels = np.linspace(cmin,cmax,nlevs,dtype=int)
-
-
-
-            def Update(it):
-
-                if velocity_comp == "Magnitude horizontal velocity":
-                    u = offset_data(p_h,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
-                    v = offset_data(p_h,velocity_comps[1], i, no_cells_offset,it)
-                    u = np.add( np.multiply(u,np.cos(np.radians(29))) , np.multiply( v,np.sin(np.radians(29))) )
-
+                    f = "Fluctuating"
                 else:
-                    u = offset_data(p_h,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
+                    f = "Total"
+                if velocity_comp == "Magnitude horizontal velocity":
+                    ft = f + " Velocity $<Ux'>$ [m/s]"
+                    fn = f + "_velHz"
+                else:
+                    ft = f + " {} [m/s]".format(velocity_comp)
+                    fn = f + "_{}".format(velocity_comp)
+
+                filename = "{0}_Offset={1}".format(fn,p_h.offsets[i])
+                print(ft,fn)
+                #sort files
+                def atof(text):
+                    try:
+                        retval = float(text)
+                    except ValueError:
+                        retval = text
+                    return retval
+
+                def natural_keys(text):
+                    
+                    return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
+                
+                
+                files = glob.glob(folder+filename+"*.png")
+                files.sort(key=natural_keys)
+
+                v = 0
+                V = 6
+                #write to video
+                while v < V:
+                    it = 0
+                    img_array = []
+                    for file in files[int((v/V)*len(files)):int(((v+1)/V)*len(files))]:
+                        img = cv2.imread(file)
+                        height, width, layers = img.shape
+                        size = (width,height)
+                        img_array.append(img)
+                        print(Time[time_steps[it]],time.time()-start_time)
+                        it+=1
+                    
+                    #cv2.VideoWriter_fourcc(*'DIVX')
+                    out = cv2.VideoWriter(folder+filename+'_{0}.avi'.format(v),0, 15, size)
+                    it = 0
+                    for im in range(len(img_array)):
+                        out.write(img_array[im])
+                        print(Time[time_steps[it]],time.time()-start_time)
+                        it+=1
+                    out.release()
+                    print("Line 264",time.time()-start_time)
+                    v+=1
+
+            else:
+                folder = dir+"{0}_{1}/".format(velocity_comp,p_h.offsets[i])
+                #need to delete or change name of folder if folder exists
+                os.makedirs(folder)
 
                 if fluc_vel == True:
-                    u = u - np.mean(u)
-
-                if normal != 1: #rotor plane
-                    u_plane = u.reshape(y,x)
-                    X,Y = np.meshgrid(ys,zs)
+                    f = "Fluctuating"
                 else:
-                    u_plane = u.reshape(x,y)
-                    X,Y = np.meshgrid(xs,ys)
-
-                Z = u_plane
-
-                T = Time[it]
-
-                fig = plt.figure(figsize=(50,30))
-                plt.rcParams['font.size'] = 40
-
-                cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
-                if normal == "x":
-                    plt.xlabel("Y axis [m]")
-                    plt.ylabel("Z axis [m]")
-                elif normal == "y":
-                    plt.xlabel("X axis [m]")
-                    plt.ylabel("Z axis [m]")
-                elif normal == "z":
-                    plt.xlabel("X axis [m]")
-                    plt.ylabel("Y axis [m]")
+                    f = "Total"
+                if velocity_comp == "Magnitude horizontal velocity":
+                    ft = f + " Velocity - Ux' [m/s]"
+                    fn = f + "_velHz"
                 else:
-                    plt.xlabel("Y' axis (rotor frame of reference) [m]")
-                    plt.ylabel("Z' axis (rotor frame of reference) [m]")
+                    ft = f + " {} [m/s]".format(velocity_comp)
+                    fn = f + "_{}".format(velocity_comp)
 
-                cb = plt.colorbar(cs)
+                filename = "{0}_Offset={1}".format(fn,p_h.offsets[i])
+                print(ft,fn)
 
-                Title = "{0}, Offset = {1}, Time = {2}[s]".format(ft,p_h.offsets[i],round(T,4))
-                plt.title(Title)
+                def vmin_vmax(it):
+                        
+                    if velocity_comp == "Magnitude horizontal velocity":
+                        u = offset_data(p_h,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
+                        v = offset_data(p_h,velocity_comps[1], i, no_cells_offset,it)
+                        u = np.add( np.multiply(u,np.cos(np.radians(29))) , np.multiply( v,np.sin(np.radians(29))) )
+
+                    else:
+                        u = offset_data(p_h,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
+                    
+                    if fluc_vel == True:
+                        u = u - np.mean(u)
+
+                    return np.min(u), np.max(u)
+
+                #find vmin and vmax for isocontour plots            
+                #min and max over data
+                if custom_colorbar == False:
+                    vmin_arr = []; vmax_arr = []
+                    with Pool() as pool:
+                        for vmin,vmax in pool.imap(vmin_vmax,time_steps):
+                            
+                            vmin_arr.append(vmin); vmax_arr.append(vmax)
+
+                    cmin = math.floor(np.min(vmin_arr)); cmax = math.ceil(np.max(vmax_arr))
                 
-                #writer.grab_frame()
-                plt.savefig(dir+"{0}_{1}.png".format(filename,round(T,4)))
-                plt.cla()
-                cb.remove()
-                plt.close(fig)
-
-                return T
-
-            #with writer.saving(fig,dir+"{0}".format(filename),len(time_steps)):
-            with Pool() as pool:
-                for T in pool.imap(Update,time_steps):
-
-                    print(T,time.time()-start_time)
+                #if custom_colorbar == True: specify cmain, cmax above
+                print("line 251",time.time()-start_time)
+                nlevs = (cmax-cmin)
+                levels = np.linspace(cmin,cmax,nlevs,dtype=int)
 
 
-            #sort files
-            def atoi(text):
-                return int(text) if text.isdigit() else text
 
-            def natural_keys(text):
+                def Update(it):
 
-                return [ atoi(c) for c in re.split(r'(\d+)', text) ]
+                    if velocity_comp == "Magnitude horizontal velocity":
+                        u = offset_data(p_h,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
+                        v = offset_data(p_h,velocity_comps[1], i, no_cells_offset,it)
+                        u = np.add( np.multiply(u,np.cos(np.radians(29))) , np.multiply( v,np.sin(np.radians(29))) )
 
-            files = glob.glob(dir+filename+"*")
+                    else:
+                        u = offset_data(p_h,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
 
-            files.sort(key=natural_keys)
+                    if fluc_vel == True:
+                        u = u - np.mean(u)
 
-            #write to video
-            img_array = []
-            for file in files:
-                print(file)
-                img = cv2.imread(file)
-                height, width, layers = img.shape
-                size = (width,height)
-                img_array.append(img)
-            
-            
-            out = cv2.VideoWriter(dir+filename+'.gif',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
-            
-            for i in range(len(img_array)):
-                out.write(img_array[i])
-            out.release()
+                    if normal != 1: #rotor plane
+                        u_plane = u.reshape(y,x)
+                        X,Y = np.meshgrid(ys,zs)
+                    else:
+                        u_plane = u.reshape(x,y)
+                        X,Y = np.meshgrid(xs,ys)
+
+                    Z = u_plane
+
+                    T = Time[it]
+
+                    fig = plt.figure(figsize=(50,30))
+                    plt.rcParams['font.size'] = 40
+
+                    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+                    if normal == "x":
+                        plt.xlabel("Y axis [m]")
+                        plt.ylabel("Z axis [m]")
+                    elif normal == "y":
+                        plt.xlabel("X axis [m]")
+                        plt.ylabel("Z axis [m]")
+                    elif normal == "z":
+                        plt.xlabel("X axis [m]")
+                        plt.ylabel("Y axis [m]")
+                    else:
+                        plt.xlabel("Y' axis (rotor frame of reference) [m]")
+                        plt.ylabel("Z' axis (rotor frame of reference) [m]")
+
+                    cb = plt.colorbar(cs)
+
+                    Title = "{0}, Offset = {1}, Time = {2}[s]".format(ft,p_h.offsets[i],round(T,4))
+                    plt.title(Title)
+
+                    plt.savefig(folder+"{0}_{1}.png".format(filename,round(T,4)))
+                    plt.cla()
+                    cb.remove()
+                    plt.close(fig)
+
+                    return T
+
+                with Pool() as pool:
+                    for T in pool.imap(Update,time_steps):
+
+                        print(T,time.time()-start_time)
+
+
+                #sort files
+                def atof(text):
+                    try:
+                        retval = float(text)
+                    except ValueError:
+                        retval = text
+                    return retval
+
+                def natural_keys(text):
+                    
+                    return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
+                
+                #sort files
+                files = glob.glob(folder+filename+"*.png")
+                files.sort(key=natural_keys)
+
+                v = 0
+                V = 6
+                #write to video
+                while v < V:
+                    it = 0
+                    img_array = []
+                    for file in files[int((v/V)*len(files)):int(((v+1)/V)*len(files))]:
+                        img = cv2.imread(file)
+                        height, width, layers = img.shape
+                        size = (width,height)
+                        img_array.append(img)
+                        print(Time[time_steps[it]],time.time()-start_time)
+                        it+=1
+                    
+                    #cv2.VideoWriter_fourcc(*'DIVX')
+                    out = cv2.VideoWriter(folder+filename+'_{0}.avi'.format(v),0, 15, size)
+                    it = 0
+                    for im in range(len(img_array)):
+                        out.write(img_array[im])
+                        print(Time[time_steps[it]],time.time()-start_time)
+                        it+=1
+                    out.release()
+                    print("Line 264",time.time()-start_time)
+                    v+=1
 
     iv+=1 #velocity index
     print(velocity_comp,time.time()-start_time)
