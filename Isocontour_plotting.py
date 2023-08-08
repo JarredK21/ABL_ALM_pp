@@ -32,7 +32,7 @@ def offset_data(p,velocity_comp, i, no_cells_offset,it):
 def isocontourplot(u,x,y,normal,xs,ys,zs,Title,filename,dir):
     
     if type(normal) == int: #rotor plane
-        u_plane = u.reshape(y,x) #needs fixing x and y lengths and number of points aren't consistent.
+        u_plane = u.reshape(y,x)
         X,Y = np.meshgrid(ys,zs)
     elif normal == "z":
         u_plane = u.reshape(x,y)
