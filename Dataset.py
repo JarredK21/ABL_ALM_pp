@@ -218,7 +218,7 @@ for iv in np.arange(2,len(Variables)):
         with Pool() as pool:
             for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 Ux_it.append(Ux_i)
-                print(len(IA_it),time.time()-start_time)
+                print(len(Ux_it),time.time()-start_time)
         dq["Ux"] = Ux_it
 
     elif Variable == "IA":
