@@ -242,6 +242,6 @@ for iv in np.arange(2,len(Variables)):
 
 dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
 
-dw.to_csv("../post_processing/out.csv")
+dw.to_csv("out.csv")
 
 print("line 205",time.time() - start_time)
