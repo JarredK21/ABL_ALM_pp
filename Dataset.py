@@ -212,7 +212,13 @@ print("line 161",time.time() - start_time)
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
     if Variable == "Ux":
-        Ux_it = df["RtVAvgxh_[m/s]"][tstart_OF_idx:tend_OF_idx]
+        Ux_it = []
+        #Ux_it = df["RtVAvgxh_[m/s]"][tstart_OF_idx:tend_OF_idx]
+        print("Ux calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
+        with Pool() as pool:
+            for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
+                Ux_it.append(Ux_i)
+                print(len(IA_it),time.time()-start_time)
         dq["Ux"] = Ux_it
 
     elif Variable == "IA":
