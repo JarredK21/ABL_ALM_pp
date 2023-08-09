@@ -11,12 +11,12 @@ from netCDF4 import Dataset
 import pandas as pd
 import math
 
+in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+out_dir = in_dir + "plots/"
 
-dir = "../../../jarred/NAWEA_23/post_processing/plots/"
+#offsets = [-63.0, -31.5, 0.0]
 
-offsets = [-63.0, -31.5, 0.0]
-
-Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"IA_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
+Variables = ["Time_OF","Time_sample","Ux","IA","RtAeroFxh","RtAeroMxh","MR","Theta"]
 units = ["[s]","[s]", "[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[degrees]"]
 Ylabels = ["Time","Time","$<Ux'>_{rotor}$ rotor averaged velocity","Asymmery Parameter","Rotor Thrust", "Rotor Torque",
             "Out-of-plane bending moment","Angle Out-of-plane bending moment"]
@@ -28,7 +28,7 @@ compare_FFT = True
 
 
 
-def low_pass_filter2(signal, cutoff):  
+def low_pass_filter(signal, cutoff):  
 
     fs = 1/dt     # sample rate, Hz      
     nyq = 0.5 * fs  # Nyquist Frequency      
@@ -41,27 +41,6 @@ def low_pass_filter2(signal, cutoff):
     low_pass_signal = filtfilt(b, a, signal)
 
     return low_pass_signal
-
-
-#needs fixing fft.shift()
-def low_pass_filter(signal,cutoff,dt):
-    
-    fs =1/dt
-    n = len(signal) 
-    if n%2==0:
-        nhalf = int(n/2+1)
-    else:
-        nhalf = int((n+1)/2)
-    frq = np.arange(nhalf)*fs/n
-    Y   = np.fft.fft(signal)
-    m = np.searchsorted(frq,cutoff)
-    lc = nhalf-m; hc = nhalf+m
-    mask = np.concatenate(( np.zeros(lc-1),np.ones(hc-lc),np.zeros(n-hc+1) ))
-    Y_LP = np.multiply(Y,mask)
-    signal_LP = np.fft.ifft(Y_LP)
-    signal_LP = np.real(signal_LP)
-
-    return signal_LP
 
 
 def remove_nan(Var):
@@ -110,6 +89,8 @@ def correlation_coef(x,y):
 
     return r
 
+
+
 #compare total signal correlations
 if compare_total_correlations == True:
     for j in np.arange(2,len(Variables)-1,1):
@@ -122,7 +103,7 @@ if compare_total_correlations == True:
             corr_var = Variables[j]
             Y2_label = Ylabels[j]
 
-            df = pd.read_csv("../../../jarred/NAWEA_23/post_processing/out.csv")
+            df = pd.read_csv(in_dir+"out.csv")
 
             time_OF = remove_nan("Time_OF")
             time_sample = remove_nan("Time_sample")
@@ -137,27 +118,26 @@ if compare_total_correlations == True:
 
             signal = remove_nan(Var)
 
-            if corr_var[0:2] == "IA":
+            if corr_var == "IA" or corr_var == "Ux":
                 f = interpolate.interp1d(time_sample,correlation_variable)
                 correlation_variable = f(time_OF)
             
-            if Var[0:2] == "IA":
+            if Var == "IA" or Var == "Ux":
                 f = interpolate.interp1d(time_sample,signal)
                 signal = f(time_OF)
 
 
             if Var == "MR":
                 cutoff = 0.5*(12.1/60)
-                signal_LP = low_pass_filter2(signal,cutoff)
+                signal_LP = low_pass_filter(signal,cutoff)
             elif correlation_variable == "MR":
                 cutoff = 0.5*(12.1/60)
-                corr_signal_LP = low_pass_filter2(correlation_variable,cutoff)
+                corr_signal_LP = low_pass_filter(correlation_variable,cutoff)
             else:
                 cutoff = 0.5*(12.1/60)*3
-                #signal_LP = low_pass_filter(signal,cutoff,dt)
-                signal_LP = low_pass_filter2(signal, cutoff)
-                corr_signal_LP = low_pass_filter2(correlation_variable,cutoff)
-                #LP_diff = signal_LP-signal_LP2
+                signal_LP = low_pass_filter(signal, cutoff)
+                corr_signal_LP = low_pass_filter(correlation_variable,cutoff)
+
 
             signal_mean = np.mean(signal)
             corr_signal_mean = np.mean(correlation_variable)
@@ -177,13 +157,15 @@ if compare_total_correlations == True:
             ax.set_xticks(ticks)
             ax2.axhline(corr_signal_mean,color="k",linestyle="--")
             ax2.set_ylabel("{}".format(Y2_label),fontsize=16)
-            plt.title("Correlating {0} at {1}m from turbine, with {2}".format(Y2_label,offsets[2],Ylabel),fontsize=18)
+            #plt.title("Correlating {0} at {1}m from turbine, with {2}".format(Y2_label,offsets[2],Ylabel),fontsize=18)
+            plt.title("Correlating {0} with {1}".format(Y2_label,Ylabel),fontsize=18)
             ax.legend(["Total {}".format(Ylabel),"Low pass filtered {}".format(Ylabel), "Mean {}".format(Ylabel)],loc="upper left")
             ax2.legend(["Total {0} Correlation = {1}".format(Y2_label,round(corr,2)),"Low pass filtered {}".format(Y2_label), "Mean {}".format(Y2_label)],loc="upper right")
 
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
-            plt.savefig(dir+"corr_{0}_{1}_{2}.png".format(offsets[2],corr_var[0:2],Var))
+            #plt.savefig(dir+"corr_{0}_{1}_{2}.png".format(offsets[2],corr_var[0:2],Var))
+            plt.savefig(out_dir+"corr_{0}_{1}.png".format(corr_var,Var))
             plt.close(fig)
 
 
@@ -200,7 +182,7 @@ if compare_LP_correlations == True:
             corr_var = Variables[j]
             Y2_label = Ylabels[j]
 
-            df = pd.read_csv("../../../jarred/NAWEA_23/post_processing/out.csv")
+            df = pd.read_csv(in_dir+"out.csv")
 
             time_OF = remove_nan("Time_OF")
             time_sample = remove_nan("Time_sample")
@@ -215,27 +197,25 @@ if compare_LP_correlations == True:
 
             signal = remove_nan(Var)
 
-            if corr_var[0:2] == "IA":
+            if corr_var == "IA" or corr_var == "Ux":
                 f = interpolate.interp1d(time_sample,correlation_variable)
                 correlation_variable = f(time_OF)
             
-            if Var[0:2] == "IA":
+            if Var == "IA" or Var == "Ux":
                 f = interpolate.interp1d(time_sample,signal)
                 signal = f(time_OF)
 
 
             if Var == "MR":
                 cutoff = 0.5*(12.1/60)
-                signal_LP = low_pass_filter2(signal,cutoff)
+                signal_LP = low_pass_filter(signal,cutoff)
             elif correlation_variable == "MR":
                 cutoff = 0.5*(12.1/60)
-                corr_signal_LP = low_pass_filter2(correlation_variable,cutoff)
+                corr_signal_LP = low_pass_filter(correlation_variable,cutoff)
             else:
                 cutoff = 0.5*(12.1/60)*3
-                #signal_LP = low_pass_filter(signal,cutoff,dt)
-                signal_LP = low_pass_filter2(signal, cutoff)
-                corr_signal_LP = low_pass_filter2(correlation_variable,cutoff)
-                #LP_diff = signal_LP-signal_LP2
+                signal_LP = low_pass_filter(signal, cutoff)
+                corr_signal_LP = low_pass_filter(correlation_variable,cutoff)
             
             corr_LP = correlation_coef(corr_signal_LP,signal_LP)
 
@@ -252,18 +232,21 @@ if compare_LP_correlations == True:
             ax2.plot(time_OF,corr_signal_LP,"-r")
             ax.set_xticks(ticks)
             ax2.set_ylabel("Low pass filtered {}".format(Y2_label),fontsize=16)
-            plt.title("Correlating {0} at {1}m from turbine, with {2}".format(Y2_label,offsets[2],Ylabel),fontsize=18)
+            #plt.title("Correlating {0} at {1}m from turbine, with {2}".format(Y2_label,offsets[2],Ylabel),fontsize=18)
+            plt.title("Correlating {0} with {1}".format(Y2_label,Ylabel),fontsize=18)
             ax.legend(["Low pass filtered {}".format(Ylabel)],loc="upper left")
             ax2.legend(["Low pass filtered {0} Correlation = {1}".format(Y2_label,round(corr_LP,2))],loc="upper right")
 
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
-            plt.savefig(dir+"LPF_corr_{0}_{1}_{2}.png".format(offsets[2],corr_var[0:2],Var))
+            #plt.savefig(dir+"LPF_corr_{0}_{1}_{2}.png".format(offsets[2],corr_var[0:2],Var))#
+            plt.savefig(out_dir+"LPF_corr_{0}_{1}.png".format(corr_var,Var))
             plt.close(fig)
 
 
 
-Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","IA_{}".format(offsets[2]),"MR","Theta"]
+#Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","IA_{}".format(offsets[2]),"MR","Theta"]
+Variables = ["Time_OF","Time_sample","Ux","RtAeroFxh","RtAeroMxh","IA","MR","Theta"]
 units = ["[s]","[s]", "[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[degrees]"]
 Ylabels = ["Time","Time","$<Ux'>_{rotor}$ rotor averaged velocity","Rotor Thrust", "Rotor Torque","Asymmery Parameter",
             "Out-of-plane bending moment","Angle Out-of-plane bending moment"]
@@ -279,7 +262,7 @@ if compare_time_series == True:
         unit = units[i]
         Ylabel = Ylabels[i]
 
-        df = pd.read_csv("../../../jarred/NAWEA_23/post_processing/out.csv")
+        df = pd.read_csv(in_dir+"out.csv")
 
         time_OF = remove_nan("Time_OF")
         time_sample = remove_nan("Time_sample")
@@ -290,7 +273,7 @@ if compare_time_series == True:
 
         signal = remove_nan(Var)
 
-        if Var[0:2] == "IA":
+        if Var == "IA" or Var == "Ux":
             f = interpolate.interp1d(time_sample, signal)
             signal = f(time_OF)
         elif Var == "Theta":
@@ -308,7 +291,7 @@ if compare_time_series == True:
 
     fig.supxlabel("Time [s]")
     plt.tight_layout()
-    plt.savefig(dir+"joint_vars.png")
+    plt.savefig(out_dir+"joint_vars.png")
     plt.close(fig)
 
 
@@ -322,7 +305,7 @@ if compare_FFT == True:
         unit = units[i]
         Ylabel = Ylabels[i]
 
-        df = pd.read_csv("../../../jarred/NAWEA_23/post_processing/out.csv")
+        df = pd.read_csv(in_dir+"out.csv")
 
         time_OF = remove_nan("Time_OF")
         time_sample = remove_nan("Time_sample")
@@ -333,7 +316,7 @@ if compare_FFT == True:
 
         signal = remove_nan(Var)
 
-        if Var[0:2] == "IA":
+        if Var == "IA" or Var == "Ux":
             f = interpolate.interp1d(time_sample, signal)
             signal = f(time_OF)
         elif Var == "Theta":
@@ -364,5 +347,5 @@ if compare_FFT == True:
 
     fig.supxlabel("Frequency [Hz]")
     plt.tight_layout()
-    plt.savefig(dir+"joint_vars_FFT.png")
+    plt.savefig(out_dir+"joint_vars_FFT.png")
     plt.close(fig)
