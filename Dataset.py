@@ -28,14 +28,36 @@ def offset_data(p_rotor,no_cells_offset,it,i,velocity_comp):
     return u_slice
 
 
+def coriolis_twist(u,v):
+    twist = np.arctan(np.true_divide(v,u))
+
+    return twist
+
+
+def magnitude_horizontal_velocity(u,v,twist,x,zs,h):
+
+    mag_horz_vel = []
+    for i in np.arange(0,len(zs)):
+        u_i = u[i*x:(i+1)*x]; v_i = v[i*x:(i+1)*x]
+        height = zs[i]
+        h_idx = np.searchsorted(h,height,side="left")
+        if h_idx > 127:
+            h_idx = 127
+        mag_horz_vel_i = np.add( np.multiply(u_i,np.cos(twist[h_idx])) , np.multiply( v_i,np.sin(twist[h_idx])) )
+        mag_horz_vel.extend(mag_horz_vel_i)
+    mag_horz_vel = np.array(mag_horz_vel)
+
+    return mag_horz_vel
+
+
 def Ux_it_offset(it):
 
     velocityx = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityx")
     velocityy = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityy")
-    hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
+    hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
 
 
-    hvelmag = hvelmag.reshape((y,z))
+    hvelmag = hvelmag.reshape((y,x))
 
     Ux_rotor = []
     for j in np.arange(0,len(ys)):
@@ -49,13 +71,14 @@ def Ux_it_offset(it):
 
 def IA_it_offset(it):
 
-    velocityx = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityx")
-    velocityy = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityy")
-    hvelmag = np.add( np.multiply(velocityx,np.cos(np.radians(29))) , np.multiply( velocityy,np.sin(np.radians(29))) )
-    hvelmag_interp = hvelmag.reshape((z,y))
+    velocityx = offset_data(p_rotor, no_cells_offset,it,i=0,velocity_comp="velocityx")
+    velocityy = offset_data(p_rotor, no_cells_offset,it,i=0,velocity_comp="velocityy")
+    hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
+
+    hvelmag_interp = hvelmag.reshape((y,x))
     f = interpolate.interp2d(ys,zs,hvelmag_interp)
 
-    hvelmag = hvelmag.reshape((y,z))
+    hvelmag = hvelmag.reshape((y,x))
 
     IA = 0
     for j in np.arange(0,len(ys)):
@@ -101,17 +124,33 @@ def delta_Ux(r,j,k,f,hvelmag):
     return delta_Ux
 
 
+#defining twist angles with height from precursor
+a = Dataset("./abl_statistics60000.nc")
+
+mean_profiles = a.groups["mean_profiles"] #create variable to hold mean profiles
+
+t_start = np.searchsorted(a.variables["time"],32300)
+t_end = np.searchsorted(a.variables["time"],33500)
+
+u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
+v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
+
+h = mean_profiles["h"][:]
+
+twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
+
+
 #openfast data
 df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
 
 #sampling data
-sampling = glob.glob("../post_processing/sampling*")
+sampling = glob.glob("./sampling*")
 a = Dataset("./{}".format(sampling[0]))
-p_rotor = a.groups["p_sw1"]
+p_rotor = a.groups["p_r"]
 
 offsets = p_rotor.offsets
 
-Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"IA_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","MR","Theta"]
+Variables = ["Time_OF","Time_sample","Ux","IA","RtAeroFxh","RtAeroMxh","MR","Theta"]
 units = ["[s]","[s]", "[m/s]","[m^4/s]","[N]","[N-m]","[N-m]","[rads]"]
 
 
@@ -121,12 +160,19 @@ time_OF = np.array(df["Time_[s]"])
 time_sample = np.array(a.variables["time"])
 time_sample = time_sample - time_sample[0]
 
-tstart = 50
-tend = 350
-tstart_OF_idx = np.searchsorted(time_OF,tstart)
-tend_OF_idx = np.searchsorted(time_OF,tend)
-tstart_sample_idx = np.searchsorted(time_sample,tstart)
-tend_sample_idx = np.searchsorted(time_sample,tend)
+plot_all_times = True
+if plot_all_times == False:
+    tstart = 50
+    tend = 350
+    tstart_OF_idx = np.searchsorted(time_OF,tstart)
+    tend_OF_idx = np.searchsorted(time_OF,tend)
+    tstart_sample_idx = np.searchsorted(time_sample,tstart)
+    tend_sample_idx = np.searchsorted(time_sample,tend)
+else:
+    tstart_OF_idx = 0
+    tend_OF_idx = np.searchsorted(time_OF,time_OF[-1])
+    tstart_sample_idx = 0
+    tend_sample_idx = np.searchsorted(time_sample,time_sample[-1])
 
 
 dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
@@ -136,14 +182,14 @@ no_cells = len(p_rotor.variables["coordinates"])
 no_offsets = len(p_rotor.offsets)
 no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
 
-y = p_rotor.ijk_dims[0] #no. data points
-z = p_rotor.ijk_dims[1] #no. data points
+x = p_rotor.ijk_dims[0] #no. data points
+y = p_rotor.ijk_dims[1] #no. data points
 
-coordinates = offset_data(p_rotor,no_cells_offset,it=0,i=2,velocity_comp="coordinates")
+coordinates = offset_data(p_rotor,no_cells_offset,it=0,i=0,velocity_comp="coordinates")
 
-xo = coordinates[0:y,0]
-yo = coordinates[0:y,1]
-zo = np.linspace(p_rotor.origin[2],p_rotor.axis2[2],z)
+xo = coordinates[0:x,0]
+yo = coordinates[0:x,1]
+zo = np.linspace(p_rotor.origin[2],p_rotor.axis2[2],y)
 
 rotor_coordiates = [2560,2560,90]
 
@@ -162,22 +208,21 @@ dA = dy * dz
 
 print("line 161",time.time() - start_time)
 
+#modify to use sampling plane
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
-    if Variable[0:2] == "Ux":
-        i = 2
+    if Variable == "Ux":
         Ux_it = df["RtVAvgxh_[m/s]"][tstart_OF_idx:tend_OF_idx]
-        dq["Ux_{}".format(offsets[i])] = Ux_it
+        dq["Ux"] = Ux_it
 
-    elif Variable[0:2] == "IA":
-        i = 2
+    elif Variable == "IA":
         IA_it = []
         print("IA calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
         with Pool() as pool:
             for IA_i in pool.imap(IA_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 IA_it.append(IA_i)
                 print(len(IA_it),time.time()-start_time)
-        dq["IA_{}".format(offsets[i])] = IA_it
+        dq["IA"] = IA_it
 
     elif Variable == "MR" or Variable == "Theta":
         signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
