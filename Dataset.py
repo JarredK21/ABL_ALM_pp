@@ -52,8 +52,8 @@ def magnitude_horizontal_velocity(u,v,twist,x,zs,h):
 
 def Ux_it_offset(it):
 
-    velocityx = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityx")
-    velocityy = offset_data(p_rotor, no_cells_offset,it,i=2,velocity_comp="velocityy")
+    velocityx = offset_data(p_rotor, no_cells_offset,it,i,velocity_comp="velocityx")
+    velocityy = offset_data(p_rotor, no_cells_offset,it,i,velocity_comp="velocityy")
     hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
 
 
@@ -69,10 +69,27 @@ def Ux_it_offset(it):
     return np.average(Ux_rotor)
 
 
+def Uz_it_offset(it):
+
+    velocityz = offset_data(p_rotor, no_cells_offset,it,i,velocity_comp="velocityz")
+
+
+    velocityz = velocityz.reshape((y,x))
+
+    Uz_rotor = []
+    for j in np.arange(0,len(ys)):
+        for k in np.arange(0,len(zs)):
+            r = np.sqrt(ys[j]**2 + zs[k]**2)
+            if r <= 63 and r >= 1.5:
+                Uz_rotor.append(velocityz[j,k])
+
+    return np.average(Uz_rotor)
+
+
 def IA_it_offset(it):
 
-    velocityx = offset_data(p_rotor, no_cells_offset,it,i=0,velocity_comp="velocityx")
-    velocityy = offset_data(p_rotor, no_cells_offset,it,i=0,velocity_comp="velocityy")
+    velocityx = offset_data(p_rotor, no_cells_offset,it,i,velocity_comp="velocityx")
+    velocityy = offset_data(p_rotor, no_cells_offset,it,i,velocity_comp="velocityy")
     hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
 
     hvelmag_interp = hvelmag.reshape((y,x))
@@ -154,8 +171,8 @@ Variables = ["Time_OF","Time_sample","RtVAvgxh","RtAeroFxh","RtAeroMxh","MR","Th
 units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
 
 for offset in offsets:
-    txt = ["Ux_{0}".format(offset), "IA_{0}".format(offset)]
-    unit = ["[m/s]", "[$m^4/s$]"]
+    txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
+    unit = ["[m/s]", "[m/s]", "[$m^4/s$]"]
     Variables.extend(txt)
     units.extend(unit)
 
@@ -214,7 +231,6 @@ dA = dy * dz
 
 print("line 161",time.time() - start_time)
 
-#modify to use sampling plane
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
     print(Variable[0:2])
@@ -233,6 +249,15 @@ for iv in np.arange(2,len(Variables)):
                 Ux_it.append(Ux_i)
                 print(len(Ux_it),time.time()-start_time)
         dq[Variable] = Ux_it
+
+    elif Variable[0:2] == "Uz":
+        Uz_it = []
+        print("Uz calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
+        with Pool() as pool:
+            for Uz_i in pool.imap(Uz_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
+                Uz_it.append(Uz_i)
+                print(len(Uz_it),time.time()-start_time)
+        dq[Variable] = Uz_it
 
     elif Variable[0:2] == "IA":
         IA_it = []
