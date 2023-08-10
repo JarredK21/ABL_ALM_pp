@@ -451,7 +451,7 @@ for plane in planes:
                 out.release()
                 print("Line 264",time.time()-start_time)
 
-        print(plane_label[ip],velocity_comps[iv],Offsets[i],time.time()-start_time)
+            print(plane_label[ip],velocity_comps[iv],Offsets[i],time.time()-start_time)
 
-    iv+=1 #velocity index
-ip+=1 #planar index
+        iv+=1 #velocity index
+    ip+=1 #planar index
