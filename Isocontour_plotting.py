@@ -109,6 +109,7 @@ twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulat
 #directories
 in_dir = "./"
 out_dir = in_dir + "plots/"
+video_folder = in_dir + "videos/"
 
 #initalize variables
 sampling = glob.glob(in_dir + "sampling*")
@@ -280,11 +281,12 @@ for plane in planes:
                 else:
                     folder = out_dir+"{0}_Plane_Total_{1}_{2}/".format(plane_label[ip],velocity_comp,Offsets[i])
 
-
                 isExist = os.path.exists(folder)
+                isExist_v = os.path.exists(video_folder)
                 if isExist == False:
                     os.makedirs(folder)
-
+                if isExist_v == False:
+                    os.makedirs(video_folder)
 
                     def vmin_vmax(it):
                             
@@ -439,7 +441,7 @@ for plane in planes:
                     it+=1
                 
                 #cv2.VideoWriter_fourcc(*'DIVX')
-                out = cv2.VideoWriter(folder+filename+'.avi',0, 1, size)
+                out = cv2.VideoWriter(video_folder+filename+'.avi',0, 1, size)
                 it = 0
                 for im in range(len(img_array)):
                     out.write(img_array[im])
@@ -448,6 +450,7 @@ for plane in planes:
                 out.release()
                 print("Line 264",time.time()-start_time)
 
-    iv+=1 #velocity index
+        print(plane_label[ip],velocity_comps[iv],Offsets[i],time.time()-start_time)
+
+        iv+=1 #velocity index
     ip+=1 #planar index
-    print(velocity_comp,time.time()-start_time)
