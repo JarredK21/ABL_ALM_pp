@@ -52,16 +52,16 @@ def energy_contents_check(e_fft,signal,dt):
     print(E, E2, abs(E2/E))    
 
 
+dq = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+
+time_OF = dq["Time_[s]"]
+dt_OF = time_OF[1] - time_OF[0]
+Ux_it_OF = dq["RtVAvgxh_[m/s]"]
+
+
 df = pd.read_csv("out.csv")
 time_sample = remove_nan("Time_sample")
 dt_sample = time_sample[1] - time_sample[0]
-
-
-df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
-
-time_OF = df["Time_[s]"]
-dt_OF = time_OF[1] - time_OF[0]
-Ux_it_OF = df["RtVAvgxh_[m/s]"]
 
 Ux = remove_nan("Ux_0.0")
 
