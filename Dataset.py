@@ -155,10 +155,10 @@ Variables = ["Time_OF","Time_sample","RtVAvgxh","RtAeroFxh","RtAeroMxh","MR","Th
 units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
 
 for offset in offsets:
-    txt = ", Ux_{0}, IA_{0}".format(offset)
-    unit = ", [m/s], [$m^4/s$]"
-    Variables.append(txt)
-    units.append(unit)
+    txt = ["Ux_{0}".format(offset), "IA_{0}".format(offset)]
+    unit = ["[m/s]", "[$m^4/s$]"]
+    Variables + txt
+    units + unit
 
 print(Variables)
 print(units)
