@@ -148,10 +148,20 @@ sampling = glob.glob("./sampling*")
 a = Dataset("./{}".format(sampling[0]))
 p_rotor = a.groups["p_r"]
 
-offsets = p_rotor.offsets
+offsets = p_rotor.offsets[0:-1]
+print(offsets)
 
-Variables = ["Time_OF","Time_sample","Ux","IA","RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]", "[m/s]","[m^4/s]","[N]","[N-m]","[N-m]","[rads]"]
+Variables = ["Time_OF","Time_sample","RtVAvgxh","RtAeroFxh","RtAeroMxh","MR","Theta"]
+units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
+
+for offset in offsets:
+    txt = ", Ux_{0}, IA_{0}".format(offset)
+    unit = ", [m/s], [$m^4/s$]"
+    Variables.append(txt)
+    units.append(unit)
+
+print(Variables)
+print(units)
 
 
 dq = dict()
@@ -211,24 +221,23 @@ print("line 161",time.time() - start_time)
 #modify to use sampling plane
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
-    if Variable == "Ux":
+    if Variable[0:1] == "Ux":
         Ux_it = []
-        #Ux_it = df["RtVAvgxh_[m/s]"][tstart_OF_idx:tend_OF_idx]
         print("Ux calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
         with Pool() as pool:
             for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 Ux_it.append(Ux_i)
                 print(len(Ux_it),time.time()-start_time)
-        dq["Ux"] = Ux_it
+        dq[Variable] = Ux_it
 
-    elif Variable == "IA":
+    elif Variable[0:1] == "IA":
         IA_it = []
         print("IA calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
         with Pool() as pool:
             for IA_i in pool.imap(IA_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 IA_it.append(IA_i)
                 print(len(IA_it),time.time()-start_time)
-        dq["IA"] = IA_it
+        dq[Variable] = IA_it
 
     elif Variable == "MR" or Variable == "Theta":
         signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
