@@ -149,7 +149,6 @@ a = Dataset("./{}".format(sampling[0]))
 p_rotor = a.groups["p_r"]
 
 offsets = p_rotor.offsets[0:-1]
-print(offsets)
 
 Variables = ["Time_OF","Time_sample","RtVAvgxh","RtAeroFxh","RtAeroMxh","MR","Theta"]
 units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
@@ -159,9 +158,6 @@ for offset in offsets:
     unit = ["[m/s]", "[$m^4/s$]"]
     Variables.extend(txt)
     units.extend(unit)
-
-print(Variables)
-print(units)
 
 
 dq = dict()
@@ -221,6 +217,14 @@ print("line 161",time.time() - start_time)
 #modify to use sampling plane
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
+    print(Variable[0:1])
+    print(Variable[3:])
+    if Variable[3:] == "0.0":
+        i = 0
+    elif Variable[3:] == "-63.0":
+        i = 1
+    elif Variable[3:] == "-126.0":
+        i = 2
     if Variable[0:1] == "Ux":
         Ux_it = []
         print("Ux calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
