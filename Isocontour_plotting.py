@@ -240,6 +240,7 @@ for plane in planes:
 
         #loop over offsets
         for i in np.arange(0,len(Offsets)):
+            print(plane_label[ip],velocity_comps[iv],Offsets[i],time.time()-start_time)
             for it in it_array: #parallel
                 if velocity_comp == "Magnitude horizontal velocity":
                     u = offset_data(p,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
@@ -452,5 +453,5 @@ for plane in planes:
 
         print(plane_label[ip],velocity_comps[iv],Offsets[i],time.time()-start_time)
 
-        iv+=1 #velocity index
-    ip+=1 #planar index
+    iv+=1 #velocity index
+ip+=1 #planar index
