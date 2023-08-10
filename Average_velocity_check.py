@@ -64,7 +64,7 @@ signal = remove_nan("Ux")
 df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
 
 time_OF = df["Time_[s]"]
-dt_OF = time_OF[1] - time[0]
+dt_OF = time_OF[1] - time_OF[0]
 print(dt_OF)
 Ux_it_OF = df["RtVAvgxh_[m/s]"]
 
