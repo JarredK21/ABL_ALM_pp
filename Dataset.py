@@ -217,7 +217,7 @@ print("line 161",time.time() - start_time)
 #modify to use sampling plane
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]
-    print(Variable[0:1])
+    print(Variable[0:2])
     print(Variable[3:])
     if Variable[3:] == "0.0":
         i = 0
@@ -225,7 +225,7 @@ for iv in np.arange(2,len(Variables)):
         i = 1
     elif Variable[3:] == "-126.0":
         i = 2
-    if Variable[0:1] == "Ux":
+    if Variable[0:2] == "Ux":
         Ux_it = []
         print("Ux calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
         with Pool() as pool:
@@ -234,7 +234,7 @@ for iv in np.arange(2,len(Variables)):
                 print(len(Ux_it),time.time()-start_time)
         dq[Variable] = Ux_it
 
-    elif Variable[0:1] == "IA":
+    elif Variable[0:2] == "IA":
         IA_it = []
         print("IA calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
         with Pool() as pool:
