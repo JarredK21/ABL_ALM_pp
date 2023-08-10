@@ -110,6 +110,9 @@ twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulat
 in_dir = "./"
 out_dir = in_dir + "plots/"
 video_folder = in_dir + "videos/"
+isExist = os.path.exists(video_folder)
+if isExist == False:
+    os.makedirs(video_folder)
 
 #initalize variables
 sampling = glob.glob(in_dir + "sampling*")
@@ -273,7 +276,7 @@ for plane in planes:
 
 
 ############ isocontour movie script ################
-            print("line 239", time.time()-start_time)
+            print("line 279", time.time()-start_time)
             #generate movie for specific plane
             if movie_tot_vel_isocontour == True:
 
@@ -283,11 +286,8 @@ for plane in planes:
                     folder = out_dir+"{0}_Plane_Total_{1}_{2}/".format(plane_label[ip],velocity_comp,Offsets[i])
 
                 isExist = os.path.exists(folder)
-                isExist_v = os.path.exists(video_folder)
                 if isExist == False:
                     os.makedirs(folder)
-                if isExist_v == False:
-                    os.makedirs(video_folder)
 
                     def vmin_vmax(it):
                             
@@ -438,7 +438,7 @@ for plane in planes:
                     height, width, layers = img.shape
                     size = (width,height)
                     img_array.append(img)
-                    print("line 397)", Time[time_steps[it]],time.time()-start_time)
+                    print("line 441)", Time[time_steps[it]],time.time()-start_time)
                     it+=1
                 
                 #cv2.VideoWriter_fourcc(*'DIVX')
@@ -446,10 +446,10 @@ for plane in planes:
                 it = 0
                 for im in range(len(img_array)):
                     out.write(img_array[im])
-                    print(Time[time_steps[it]],time.time()-start_time)
+                    print("Line 449)",Time[time_steps[it]],time.time()-start_time)
                     it+=1
                 out.release()
-                print("Line 264",time.time()-start_time)
+                print("Line 452)",time.time()-start_time)
 
             print(plane_label[ip],velocity_comps[iv],Offsets[i],time.time()-start_time)
 
