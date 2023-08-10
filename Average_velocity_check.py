@@ -24,11 +24,13 @@ def remove_nan(Var):
 
 df = pd.read_csv("out.csv")
 
-time_OF = remove_nan("Time_OF")
 time_sample = remove_nan("Time_sample")
 
 signal = remove_nan("Ux")
 
+df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+
+time_OF = df["Time_[s]"]
 Ux_it_OF = df["RtVAvgxh_[m/s]"]
 
 fig = plt.figure()
