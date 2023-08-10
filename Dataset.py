@@ -157,8 +157,8 @@ units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
 for offset in offsets:
     txt = ["Ux_{0}".format(offset), "IA_{0}".format(offset)]
     unit = ["[m/s]", "[$m^4/s$]"]
-    Variables + txt
-    units + unit
+    Variables.extend(txt)
+    units.extend(unit)
 
 print(Variables)
 print(units)
