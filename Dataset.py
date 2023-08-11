@@ -173,20 +173,20 @@ units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
 for offset in offsets:
     txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
     unit = ["[m/s]", "[m/s]", "[$m^4/s$]"]
-    Variables.extend(txt)
-    units.extend(unit)
+    Variables.insert(len(Variables)-1,txt)
+    units.insert(len(units)-1,unit)
 
-
+print(Variables)
 dq = dict()
 
 time_OF = np.array(df["Time_[s]"])
 time_sample = np.array(a.variables["time"])
 time_sample = time_sample - time_sample[0]
 
-plot_all_times = True
+plot_all_times = False
 if plot_all_times == False:
     tstart = 50
-    tend = 350
+    tend = 150
     tstart_OF_idx = np.searchsorted(time_OF,tstart)
     tend_OF_idx = np.searchsorted(time_OF,tend)
     tstart_sample_idx = np.searchsorted(time_sample,tstart)

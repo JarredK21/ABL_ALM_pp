@@ -21,6 +21,21 @@ units = ["[s]","[s]", "[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[degrees]"]
 Ylabels = ["Time","Time","$<Ux'>_{rotor}$ rotor averaged velocity","Asymmery Parameter","Rotor Thrust", "Rotor Torque",
             "Out-of-plane bending moment","Angle Out-of-plane bending moment"]
 
+
+Variables = ["Time_OF","Time_sample","RtVAvgxh","RtAeroFxh","RtAeroMxh","MR","Theta"]
+units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
+Ylabels = ["Time","Time","$<Ux'>_{blade}$ blade averaged velocity","Rotor Thrust", "Rotor Torque",
+            "Out-of-plane bending moment","Angle Out-of-plane bending moment"]
+
+for offset in offsets:
+    txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
+    unit = ["[m/s]", "[m/s]", "[$m^4/s$]"]
+    Ylabel = ["$<Ux'>_{rotor}$ rotor averaged velocity at {0}m".format(offset), "Asymmetry parameter at {0}m".format(offset)]
+    Variables.extend(txt)
+    units.extend(unit)
+    Ylabels.extend(Ylabel)
+
+
 compare_total_correlations = True
 compare_LP_correlations = True
 compare_time_series = True
@@ -93,8 +108,8 @@ def correlation_coef(x,y):
 
 #compare total signal correlations
 if compare_total_correlations == True:
-    for j in np.arange(2,len(Variables)-1,1):
-        for i in np.arange(2,len(Variables)-1):
+    for j in np.arange(2,len(Variables)-6,1):
+        for i in np.arange(2,len(Variables)-6):
 
             fig,ax = plt.subplots(figsize=(14,8))
             Var = Variables[i]
