@@ -16,11 +16,6 @@ out_dir = in_dir + "plots/"
 
 offsets = [0.0, -63.0, -126.0]
 
-Variables = ["Time_OF","Time_sample","Ux","IA","RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]", "[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[degrees]"]
-Ylabels = ["Time","Time","$<Ux'>_{rotor}$ rotor averaged velocity","Asymmery Parameter","Rotor Thrust", "Rotor Torque",
-            "Out-of-plane bending moment","Angle Out-of-plane bending moment"]
-
 
 Variables = ["Time_OF","Time_sample","RtVAvgxh","RtAeroFxh","RtAeroMxh","MR","Theta"]
 units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
@@ -31,9 +26,9 @@ for offset in offsets:
     txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
     unit = ["[m/s]", "[m/s]", "[$m^4/s$]"]
     Ylabel = ["$<Ux'>_{rotor}$ rotor averaged velocity at {0}m".format(offset), "Asymmetry parameter at {0}m".format(offset)]
-    Variables.extend(txt)
-    units.extend(unit)
-    Ylabels.extend(Ylabel)
+    Variables.insert(len(Variables)-1,txt)
+    units.insert(len(units)-1,unit)
+    Ylabels.extend(len(Ylabels)-1,Ylabel)
 
 
 compare_total_correlations = True
@@ -108,8 +103,8 @@ def correlation_coef(x,y):
 
 #compare total signal correlations
 if compare_total_correlations == True:
-    for j in np.arange(2,len(Variables)-6,1):
-        for i in np.arange(2,len(Variables)-6):
+    for j in np.arange(2,len(Variables)-5,1):
+        for i in np.arange(2,len(Variables)-5,1):
 
             fig,ax = plt.subplots(figsize=(14,8))
             Var = Variables[i]
@@ -172,14 +167,12 @@ if compare_total_correlations == True:
             ax.set_xticks(ticks)
             ax2.axhline(corr_signal_mean,color="k",linestyle="--")
             ax2.set_ylabel("{}".format(Y2_label),fontsize=16)
-            #plt.title("Correlating {0} at {1}m from turbine, with {2}".format(Y2_label,offsets[2],Ylabel),fontsize=18)
             plt.title("Correlating {0} with {1}".format(Y2_label,Ylabel),fontsize=18)
             ax.legend(["Total {}".format(Ylabel),"Low pass filtered {}".format(Ylabel), "Mean {}".format(Ylabel)],loc="upper left")
             ax2.legend(["Total {0} Correlation = {1}".format(Y2_label,round(corr,2)),"Low pass filtered {}".format(Y2_label), "Mean {}".format(Y2_label)],loc="upper right")
 
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
-            #plt.savefig(dir+"corr_{0}_{1}_{2}.png".format(offsets[2],corr_var[0:2],Var))
             plt.savefig(out_dir+"corr_{0}_{1}.png".format(corr_var,Var))
             plt.close(fig)
 
@@ -187,8 +180,8 @@ if compare_total_correlations == True:
 
 #compare LPF signal correlations
 if compare_LP_correlations == True:
-    for j in np.arange(2,len(Variables)-1,1):
-        for i in np.arange(2,len(Variables)-1):
+    for j in np.arange(2,len(Variables)-5,1):
+        for i in np.arange(2,len(Variables)-5,1):
 
             fig,ax = plt.subplots(figsize=(14,8))
             Var = Variables[i]
@@ -247,31 +240,22 @@ if compare_LP_correlations == True:
             ax2.plot(time_OF,corr_signal_LP,"-r")
             ax.set_xticks(ticks)
             ax2.set_ylabel("Low pass filtered {}".format(Y2_label),fontsize=16)
-            #plt.title("Correlating {0} at {1}m from turbine, with {2}".format(Y2_label,offsets[2],Ylabel),fontsize=18)
             plt.title("Correlating {0} with {1}".format(Y2_label,Ylabel),fontsize=18)
             ax.legend(["Low pass filtered {}".format(Ylabel)],loc="upper left")
             ax2.legend(["Low pass filtered {0} Correlation = {1}".format(Y2_label,round(corr_LP,2))],loc="upper right")
 
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
-            #plt.savefig(dir+"LPF_corr_{0}_{1}_{2}.png".format(offsets[2],corr_var[0:2],Var))#
             plt.savefig(out_dir+"LPF_corr_{0}_{1}.png".format(corr_var,Var))
             plt.close(fig)
 
-
-
-#Variables = ["Time_OF","Time_sample","Ux_{}".format(offsets[2]),"RtAeroFxh","RtAeroMxh","IA_{}".format(offsets[2]),"MR","Theta"]
-Variables = ["Time_OF","Time_sample","Ux","RtAeroFxh","RtAeroMxh","IA","MR","Theta"]
-units = ["[s]","[s]", "[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[degrees]"]
-Ylabels = ["Time","Time","$<Ux'>_{rotor}$ rotor averaged velocity","Rotor Thrust", "Rotor Torque","Asymmery Parameter",
-            "Out-of-plane bending moment","Angle Out-of-plane bending moment"]
 
 
 if compare_time_series == True:
     #comparing time series
     fig, axs = plt.subplots(6,1,figsize=(32,24))
     plt.rcParams.update({'font.size': 16})
-    for i in np.arange(2,len(Variables)):
+    for i in np.arange(2,len(Variables)-5):
 
         Var = Variables[i]
         unit = units[i]
