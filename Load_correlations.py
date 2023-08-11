@@ -14,7 +14,7 @@ import math
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 out_dir = in_dir + "plots/"
 
-#offsets = [-63.0, -31.5, 0.0]
+offsets = [0.0, -63.0, -126.0]
 
 Variables = ["Time_OF","Time_sample","Ux","IA","RtAeroFxh","RtAeroMxh","MR","Theta"]
 units = ["[s]","[s]", "[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[degrees]"]

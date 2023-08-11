@@ -208,7 +208,7 @@ for plane in planes:
         sys.exit("error no velocity component selected")
 
 
-    fluc_vel = False
+    fluc_vel = True
     movie_tot_vel_isocontour = True
     plot_specific_offsets = False
 
@@ -312,11 +312,12 @@ for plane in planes:
                             for vmin,vmax in pool.imap(vmin_vmax,time_steps):
                                 
                                 vmin_arr.append(vmin); vmax_arr.append(vmax)
-
-                        if plane == "r" and velocity_comp != "velocityz" or plane == "t" and velocity_comp != "velocityz":
-                            cmin = 0
-                        else:
-                            cmin = math.floor(np.min(vmin_arr))
+                                
+                        if fluc_vel == False:
+                            if plane == "r" and velocity_comp != "velocityz" or plane == "t" and velocity_comp != "velocityz":
+                                cmin = 0
+                            else:
+                                cmin = math.floor(np.min(vmin_arr))
                         
                         cmax = math.ceil(np.max(vmax_arr))
                     
