@@ -167,8 +167,8 @@ p_rotor = a.groups["p_r"]
 
 offsets = p_rotor.offsets[0:-1]
 
-Variables = ["Time_OF","Time_sample","RtVAvgxh","RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
+Variables = ["Time_OF","Time_sample","RtAeroFxh","RtAeroMxh","MR","Theta"]
+units = ["[s]","[s]","[N]","[N-m]","[N-m]","[rads]"]
 
 for offset in offsets:
     txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
@@ -176,7 +176,6 @@ for offset in offsets:
     Variables.insert(len(Variables)-1,txt)
     units.insert(len(units)-1,unit)
 
-print(Variables)
 dq = dict()
 
 time_OF = np.array(df["Time_[s]"])

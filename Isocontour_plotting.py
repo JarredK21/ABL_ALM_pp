@@ -92,8 +92,12 @@ def Horizontal_velocity(u,v,twist,x,normal,zs,h,height):
 
 def blade_positions(it):
 
+    Time_it = Time[it]#find time from sampled data
+
+    it_OF = np.searchsorted(Time_OF,Time_it)#find index from openfast
+
     R = 63
-    Az = Azimuth[it]
+    Az = Azimuth[it_OF]
     Y = [2500]; Y2 = [2500]; Y3 = [2500]
     Z = [90]; Z2 = [90]; Z3 = [90]
 
@@ -117,14 +121,34 @@ def blade_positions(it):
     return Y, Z, Y2, Z2, Y3, Z3
 
 
+def mean_velocity(it,Var):
+    
+    Time_it = Time[it]#find time from sampled data
+
+    it_pre = np.searchsorted(Time_pre,Time_it)
+
+    print(Time_pre[it_pre])
+
+    if Var == "Horizontal velocity":
+        u = mean_profiles["velocityx"][it_pre][:]
+        v = mean_profiles["velocityy"][it_pre][:]
+        u = np.add( np.multiply(u,np.cos(twist)), np.multiply(v,np.sin(twist)) )
+    else:
+        u = mean_profiles["{}".format(Var)][it_pre][:]
+
+    return np.mean(u)
+
+
 
 #defining twist angles with height from precursor
-a = Dataset("./abl_statistics60000.nc")
+precursor = Dataset("./abl_statistics60000.nc")
 
-mean_profiles = a.groups["mean_profiles"] #create variable to hold mean profiles
+Time_pre = np.array(precursor.variables["time"])
 
-t_start = np.searchsorted(a.variables["time"],32300)
-t_end = np.searchsorted(a.variables["time"],33500)
+mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
+
+t_start = np.searchsorted(precursor.variables["time"],32300)
+t_end = np.searchsorted(precursor.variables["time"],33500)
 
 u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
@@ -135,7 +159,7 @@ twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulat
 
 #Azimuthal position for blade 1
 df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
-
+Time_OF = np.array(df["Time_[s]"]) #openfast time
 Azimuth = np.array(np.radians(df["Azimuth_[deg]"]))
 
 
@@ -147,9 +171,8 @@ isExist = os.path.exists(video_folder)
 if isExist == False:
     os.makedirs(video_folder)
 
-#initalize variables
-sampling = glob.glob(in_dir + "sampling*")
-a = Dataset("./{}".format(sampling[0]))
+#initalize variables manual input
+a = Dataset("./input path")
 
 #l - longitudinal xy
 #r - rotor 29deg yz
@@ -213,16 +236,13 @@ for plane in planes:
 
 
     #time options
-    CFD_dt = 0.0039 #manual input
     Time = np.array(a.variables["time"])
     Time = Time - Time[0]
-    dt = round(a.variables["time"][1] - a.variables["time"][0],4)
-    frequency = dt/CFD_dt
- 
+    
     plot_all_times = True
     if plot_all_times == False:
         tstart = 50
-        tend = 350
+        tend = 600
         tstart_idx = np.searchsorted(Time,tstart)
         tend_idx = np.searchsorted(Time,tend)
         time_steps = np.arange(tstart_idx,tend_idx)
@@ -233,6 +253,9 @@ for plane in planes:
 
     #plotting option
     plot_isocontour = False
+    fluc_vel = False
+    movie_tot_vel_isocontour = True
+    plot_specific_offsets = False
     plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
     velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
@@ -240,10 +263,6 @@ for plane in planes:
     if all(list(map(operator.not_, velocity_plot))) == True:
         sys.exit("error no velocity component selected")
 
-
-    fluc_vel = False
-    movie_tot_vel_isocontour = True
-    plot_specific_offsets = False
 
     #longitudinal offsets - 85m
     #rotor offsets - 0.0m, -63m, -126m
@@ -277,19 +296,23 @@ for plane in planes:
         #loop over offsets
         for i in np.arange(0,len(Offsets)):
             print(plane_label[ip],velocity_comps[iv],Offsets[i],time.time()-start_time)
-            for it in it_array: #parallel
-                if velocity_comp == "Horizontal velocity":
-                    u = offset_data(p,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
-                    v = offset_data(p,velocity_comps[1], i, no_cells_offset,it)
-                    u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+            for it in it_array:
 
-                else:
-                    u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
-
-                #plots it = time specified above
                 if plot_isocontour == True:
+                    #get velocity to plot for isocontour plots
+                    if velocity_comp == "Horizontal velocity":
+                        u = offset_data(p,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
+                        v = offset_data(p,velocity_comps[1], i, no_cells_offset,it)
+                        u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+                    else:
+                        u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
+                    
                     if fluc_vel == True:
-                        u = np.array(u) - np.mean(np.array(u)) #get mean from precursor
+                        mean_pre_velocity = mean_velocity(it,velocity_comp)
+                        u = np.array(u) - mean_pre_velocity #get mean from precursor
+
+                    #define titles and filenames for isocontour plots
+                    if fluc_vel == True:
                         if velocity_comp == "Horizontal velocity":
                             Title = "{0} Plane. \nFluctuating {1} [m/s]: Offset = {2}, Time = {3}s".format(plane_label[ip], velocity_comp[:],float(Offsets[i]),np.round(Time[it],2))
                             filename = "{0}_Fluc_{1}_{2}_{3}.png".format(plane_label[ip],velocity_comp[:],float(Offsets[i]),np.round(Time[it],2))
@@ -310,7 +333,6 @@ for plane in planes:
 
 ############ isocontour movie script ################
             print("line 279", time.time()-start_time)
-            #generate movie for specific plane
             if movie_tot_vel_isocontour == True:
 
                 if fluc_vel == True:
@@ -332,7 +354,8 @@ for plane in planes:
                             u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
                         
                         if fluc_vel == True:
-                            u = u - np.mean(u)
+                            mean_pre_velocity = mean_velocity(it,velocity_comp)
+                            u = u - mean_pre_velocity
 
                         return np.min(u), np.max(u)
 
@@ -370,7 +393,8 @@ for plane in planes:
                             u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
 
                         if fluc_vel == True:
-                            u = u - np.mean(u) #get mean from precursor
+                            mean_pre_velocity = mean_velocity(it,velocity_comp)
+                            u = u - mean_pre_velocity
 
                         if type(normal) == int: #rotor plane
                             u_plane = u.reshape(y,x)
@@ -411,7 +435,7 @@ for plane in planes:
                         plt.plot(YB2,ZB2,color="k",linewidth = 0.5)
                         plt.plot(YB3,ZB3,color="k",linewidth = 0.5)  
 
-
+                        #define titles and filenames for movie
                         if fluc_vel == True:
                             if velocity_comp == "Horizontal velocity":
                                 Title = "{0} Plane. \nFluctuating {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_label[ip], velocity_comp[:],float(Offsets[i]),round(T,4))
