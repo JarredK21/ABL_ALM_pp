@@ -13,6 +13,7 @@ import time
 from multiprocessing import Pool
 import cv2
 import re
+import pyFAST.input_output as io
 
 
 def offset_data(p,velocity_comp, i, no_cells_offset,it):
@@ -26,7 +27,6 @@ def offset_data(p,velocity_comp, i, no_cells_offset,it):
     u_slice = u[i*no_cells_offset:((i+1)*no_cells_offset)]
 
     return u_slice
-
 
 #isocontourplot
 def isocontourplot(u,x,y,normal,xs,ys,zs,Title,filename,dir):
@@ -72,7 +72,7 @@ def coriolis_twist(u,v):
     return twist
 
 
-def magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height):
+def Horizontal_velocity(u,v,twist,x,normal,zs,h,height):
     if normal == "z":
         h_idx = np.searchsorted(h,height)
         mag_horz_vel = np.add( np.multiply(u,np.cos(twist[h_idx])) , np.multiply( v,np.sin(twist[h_idx])) )
@@ -90,6 +90,34 @@ def magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height):
     return mag_horz_vel
 
 
+def blade_positions(it):
+
+    R = 63
+    Az = Azimuth[it]
+    Y = [2500]; Y2 = [2500]; Y3 = [2500]
+    Z = [90]; Z2 = [90]; Z3 = [90]
+
+    Y.append(Y[0]+R*np.sin(Az))
+    Z.append(Z[0]+R*np.cos(Az))
+
+    Az2 = Az+(2*np.pi)/3
+    if Az2 > 2*np.pi:
+        Az2 -= (2*np.pi)
+    
+    Az3 = Az-(2*np.pi)/3
+    if Az2 < 0:
+        Az2 += (2*np.pi)
+
+    Y2.append(Y2[0]+R*np.sin(Az2))
+    Z2.append(Z2[0]+R*np.cos(Az2))
+
+    Y3.append(Y3[0]+R*np.sin(Az3))
+    Z3.append(Z3[0]+R*np.cos(Az3))
+
+    return Y, Z, Y2, Z2, Y3, Z3
+
+
+
 #defining twist angles with height from precursor
 a = Dataset("./abl_statistics60000.nc")
 
@@ -104,6 +132,11 @@ v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
 h = mean_profiles["h"][:]
 
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
+
+#Azimuthal position for blade 1
+df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+
+Azimuth = np.array(np.radians(df["Azimuth_[deg]"]))
 
 
 #directories
@@ -208,7 +241,7 @@ for plane in planes:
         sys.exit("error no velocity component selected")
 
 
-    fluc_vel = True
+    fluc_vel = False
     movie_tot_vel_isocontour = True
     plot_specific_offsets = False
 
@@ -230,7 +263,7 @@ for plane in planes:
 
     start_time = time.time()
     #loop over true velocity components
-    velocity_comps = ["velocityx","velocityy","velocityz","Magnitude horizontal velocity"]
+    velocity_comps = ["velocityx","velocityy","velocityz","Horizontal velocity"]
     iv = 0
     for velocity_comp in velocity_comps:
         if velocity_plot[iv] == False:
@@ -245,10 +278,10 @@ for plane in planes:
         for i in np.arange(0,len(Offsets)):
             print(plane_label[ip],velocity_comps[iv],Offsets[i],time.time()-start_time)
             for it in it_array: #parallel
-                if velocity_comp == "Magnitude horizontal velocity":
+                if velocity_comp == "Horizontal velocity":
                     u = offset_data(p,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
                     v = offset_data(p,velocity_comps[1], i, no_cells_offset,it)
-                    u = magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+                    u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
 
                 else:
                     u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
@@ -256,8 +289,8 @@ for plane in planes:
                 #plots it = time specified above
                 if plot_isocontour == True:
                     if fluc_vel == True:
-                        u = np.array(u) - np.mean(np.array(u))
-                        if velocity_comp == "Magnitude horizontal velocity":
+                        u = np.array(u) - np.mean(np.array(u)) #get mean from precursor
+                        if velocity_comp == "Horizontal velocity":
                             Title = "{0} Plane. \nFluctuating {1} [m/s]: Offset = {2}, Time = {3}s".format(plane_label[ip], velocity_comp[:],float(Offsets[i]),np.round(Time[it],2))
                             filename = "{0}_Fluc_{1}_{2}_{3}.png".format(plane_label[ip],velocity_comp[:],float(Offsets[i]),np.round(Time[it],2))
                         else:
@@ -265,7 +298,7 @@ for plane in planes:
                             filename = "{0}_Fluc_vel{1}_{2}_{3}.png".format(plane_label[ip],velocity_comp[-1],float(Offsets[i]),np.round(Time[it],2))
                     else:
                         u = np.array(u)
-                        if velocity_comp == "Magnitude horizontal velocity":
+                        if velocity_comp == "Horizontal velocity":
                             Title = "{0} Plane. \n{1} [m/s]: Offset = {2}, Time = {3}s".format(plane_label[ip],velocity_comp[:],float(Offsets[i]),np.round(Time[it],2))
                             filename = "{0}_{1}_{2}_{3}.png".format(plane_label[ip],velocity_comp[:],float(Offsets[i]),np.round(Time[it],2))
                         else:
@@ -291,10 +324,10 @@ for plane in planes:
 
                     def vmin_vmax(it):
                             
-                        if velocity_comp == "Magnitude horizontal velocity":
+                        if velocity_comp == "Horizontal velocity":
                             u = offset_data(p,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
                             v = offset_data(p,velocity_comps[1], i, no_cells_offset,it)
-                            u = magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+                            u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
                         else:
                             u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
                         
@@ -329,15 +362,15 @@ for plane in planes:
 
                     def Update(it):
 
-                        if velocity_comp == "Magnitude horizontal velocity":
+                        if velocity_comp == "Horizontal velocity":
                             u = offset_data(p,velocity_comps[0], i, no_cells_offset,it) #slicing data into offset arrays
                             v = offset_data(p,velocity_comps[1], i, no_cells_offset,it)
-                            u = magnitude_horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+                            u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
                         else:
                             u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
 
                         if fluc_vel == True:
-                            u = u - np.mean(u)
+                            u = u - np.mean(u) #get mean from precursor
 
                         if type(normal) == int: #rotor plane
                             u_plane = u.reshape(y,x)
@@ -372,15 +405,22 @@ for plane in planes:
 
                         cb = plt.colorbar(cs)
 
+                        YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
+
+                        plt.plot(YB1,ZB1,color="k",linewidth = 0.5)
+                        plt.plot(YB2,ZB2,color="k",linewidth = 0.5)
+                        plt.plot(YB3,ZB3,color="k",linewidth = 0.5)  
+
+
                         if fluc_vel == True:
-                            if velocity_comp == "Magnitude horizontal velocity":
+                            if velocity_comp == "Horizontal velocity":
                                 Title = "{0} Plane. \nFluctuating {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_label[ip], velocity_comp[:],float(Offsets[i]),round(T,4))
                                 filename = "{0}_Fluc_{1}_{2}_{3}.png".format(plane_label[ip],velocity_comp[:],float(Offsets[i]),round(T,4))
                             else:
                                 Title = "{0} Plane. \nFluctuating velocity {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_label[ip],velocity_comp[-1],float(Offsets[i]),round(T,4))
                                 filename = "{0}_Fluc_vel{1}_{2}_{3}.png".format(plane_label[ip],velocity_comp[-1],float(Offsets[i]),round(T,4))
                         else:
-                            if velocity_comp == "Magnitude horizontal velocity":
+                            if velocity_comp == "Horizontal velocity":
                                 Title = "{0} Plane. \n{1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_label[ip],velocity_comp[:],float(Offsets[i]),round(T,4))
                                 filename = "{0}_{1}_{2}_{3}.png".format(plane_label[ip],velocity_comp[:],float(Offsets[i]),round(T,4))
                             else:
@@ -416,12 +456,12 @@ for plane in planes:
                 
                 print("line 372", time.time()-start_time)
                 if fluc_vel == True:
-                    if velocity_comp == "Magnitude horizontal velocity":
+                    if velocity_comp == "Horizontal velocity":
                         filename = "{0}_{1}_{2}.png".format(plane_label[ip],velocity_comp[:],float(Offsets[i]))
                     else:
                         filename = "{0}_Fluc_vel{1}_{2}.png".format(plane_label[ip],velocity_comp[-1],float(Offsets[i]))
                 else:
-                    if velocity_comp == "Magnitude horizontal velocity":
+                    if velocity_comp == "Horizontal velocity":
                         filename = "{0}_{1}_{2}.png".format(plane_label[ip],velocity_comp[:],float(Offsets[i]))
                     else:
                         filename = "{0}_Tot_vel{1}_{2}.png".format(plane_label[ip],velocity_comp[-1],float(Offsets[i]))
