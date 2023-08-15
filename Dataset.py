@@ -165,6 +165,8 @@ Time_OF = np.concatenate((Time_a_OF[0:restart_idx],Time_b_OF))
 #combine openFAST outputs
 df = pd.concat((da[:][0:restart_idx],db[:]))
 
+print("line 168",time.time()-start_time)
+
 #sampling data
 a = Dataset("./sampling.nc")
 p_rotor = a.groups["p_r"]
@@ -177,10 +179,9 @@ units = ["[s]","[s]","[N]","[N-m]","[N-m]","[rads]"]
 for offset in offsets:
     txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
     unit = ["[m/s]", "[m/s]", "[$m^4/s$]"]
-    Variables.insert(len(Variables)-1,txt)
-    units.insert(len(units)-1,unit)
-
-dq = dict()
+    for x,y in zip(txt,unit):
+        Variables.insert(len(Variables)-1,x)
+        units.insert(len(units)-1,y)
 
 #sampling time
 Time_sample = np.array(a.variables["time"])
@@ -200,6 +201,9 @@ else:
     tstart_sample_idx = 0
     tend_sample_idx = np.searchsorted(Time_sample,Time_sample[-1])
 
+print("line 203",time.time()-start_time)
+
+dq = dict()
 
 dq["Time_OF"] = Time_OF[tstart_OF_idx:tend_OF_idx]
 dq["Time_sample"] = Time_sample[tstart_sample_idx:tend_sample_idx]
@@ -232,7 +236,7 @@ dy = ys[1]-ys[0]
 dz = zs[1] - zs[0]
 dA = dy * dz
 
-print("line 161",time.time() - start_time)
+print("line 238",time.time()-start_time)
 
 for iv in np.arange(2,len(Variables)):
     Variable = Variables[iv]

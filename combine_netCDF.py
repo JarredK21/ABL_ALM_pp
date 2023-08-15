@@ -25,6 +25,7 @@ restart_idx = np.searchsorted(Time_a, restart_time); restart_idx-=1
 #combine time
 Time = np.concatenate((np.array(Time_a[0:restart_idx]),np.array(Time_b)))
 time[:] = Time; del Time; del Time_a; del Time_b
+print("line 28")
 
 
 planes = ["l", "r", "t"]
@@ -59,6 +60,7 @@ for plane in planes:
     group.axis2 = axis2; del axis2
     group.axis3 = axis3; del axis3
     group.offsets = offsets; del offsets
+    print("line 63")
 
 
     coordinates = group.createVariable("coordinates",np.float64,("num_points","ndims"),zlib=True)
@@ -67,13 +69,17 @@ for plane in planes:
     velocityz = group.createVariable("velocityz",np.float64,("num_time_steps","num_points"),zlib=True)
 
     coord = np.array(p_a.variables["coordinates"]); coordinates[:] = coord; del coord
+    print("line 72")
 
     velx = np.concatenate((np.array(p_a.variables["velocityx"][0:restart_idx]), np.array(p_b.variables["velocityx"])))
     velocityx[:] = velx; del velx
+    print("line 76")
     vely = np.concatenate((np.array(p_a.variables["velocityy"][0:restart_idx]), np.array(p_b.variables["velocityy"])))
     velocityy[:] = vely; del vely
+    print("line 79")
     velz = np.concatenate((np.array(p_a.variables["velocityz"][0:restart_idx]), np.array(p_b.variables["velocityz"])))
     velocityz[:] = velz; del velz
+    print("line 82")
 
 print(ncfile)
 print(ncfile.groups)
