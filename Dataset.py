@@ -231,8 +231,8 @@ for offset in offsets:
     txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
     unit = ["[m/s]", "[m/s]", "[$m^4/s$]"]
     for x,y in zip(txt,unit):
-        Variables.insert(x)
-        units.insert(y)
+        Variables.insert(-1,x)
+        units.insert(-1,y)
 
 
 if plot_all_times == False:
