@@ -169,6 +169,11 @@ print("line 168",time.time()-start_time)
 
 #sampling data
 a = Dataset("./sampling.nc")
+
+#sampling time
+Time_sample = np.array(a.variables["time"])
+Time_sample = Time_sample - Time_sample[0]
+
 p_rotor = a.groups["p_r"]; del a
 
 offsets = p_rotor.offsets[0:-1]
@@ -182,10 +187,6 @@ for offset in offsets:
     for x,y in zip(txt,unit):
         Variables.insert(len(Variables)-1,x)
         units.insert(len(units)-1,y)
-
-#sampling time
-Time_sample = np.array(a.variables["time"])
-Time_sample = Time_sample - Time_sample[0]
 
 plot_all_times = True
 if plot_all_times == False:
