@@ -167,6 +167,50 @@ df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
 
 print("line 168",time.time()-start_time)
 
+Variables = ["RtAeroFxh","RtAeroMxh","MR","Theta"]
+units = ["[N]","[N-m]","[N-m]","[rads]"]
+
+plot_all_times = True
+
+if plot_all_times == False:
+    tstart = 50
+    tend = 150
+    tstart_OF_idx = np.searchsorted(Time_OF,tstart)
+    tend_OF_idx = np.searchsorted(Time_OF,tend)
+else:
+    tstart_OF_idx = 0
+    tend_OF_idx = np.searchsorted(Time_OF,Time_OF[-1])
+
+print("line 203",time.time()-start_time)
+
+dq = dict()
+
+dq["Time_OF"] = Time_OF[tstart_OF_idx:tend_OF_idx]
+
+print("line 238",time.time()-start_time)
+
+for iv in np.arange(0,len(Variables)):
+    Variable = Variables[iv]
+
+    if Variable == "MR" or Variable == "Theta":
+        signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
+        signalz = df["RtAeroMzh_[N-m]"][tstart_OF_idx:tend_OF_idx]
+        
+        if Variable == "MR":
+            signal = np.sqrt( np.square(signaly) + np.square(signalz) ) 
+        elif Variable == "Theta": 
+            signal = np.arctan2(signalz,signaly)
+        dq[Variable] = signal  
+
+    else:
+        txt = "{0}_{1}".format(Variable,units[iv])
+        signal = df[txt][tstart_OF_idx:tend_OF_idx]
+        dq[Variable] = signal
+
+
+del df #remove OF data
+print("line 212",time.time()-start_time)
+
 #sampling data
 a = Dataset("./sampling.nc")
 
@@ -176,38 +220,33 @@ Time_sample = Time_sample - Time_sample[0]
 
 p_rotor = a.groups["p_r"]; del a
 
+print("line 223", time.time()-start_time)
+
 offsets = p_rotor.offsets[0:-1]
 
-Variables = ["Time_OF","Time_sample","RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]","[N]","[N-m]","[N-m]","[rads]"]
+Variables = []
+units = []
 
 for offset in offsets:
     txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
     unit = ["[m/s]", "[m/s]", "[$m^4/s$]"]
     for x,y in zip(txt,unit):
-        Variables.insert(len(Variables)-1,x)
-        units.insert(len(units)-1,y)
+        Variables.insert(x)
+        units.insert(y)
 
-plot_all_times = True
+
 if plot_all_times == False:
     tstart = 50
     tend = 150
-    tstart_OF_idx = np.searchsorted(Time_OF,tstart)
-    tend_OF_idx = np.searchsorted(Time_OF,tend)
     tstart_sample_idx = np.searchsorted(Time_sample,tstart)
     tend_sample_idx = np.searchsorted(Time_sample,tend)
 else:
-    tstart_OF_idx = 0
-    tend_OF_idx = np.searchsorted(Time_OF,Time_OF[-1])
     tstart_sample_idx = 0
     tend_sample_idx = np.searchsorted(Time_sample,Time_sample[-1])
 
-print("line 203",time.time()-start_time)
-
-dq = dict()
-
-dq["Time_OF"] = Time_OF[tstart_OF_idx:tend_OF_idx]
 dq["Time_sample"] = Time_sample[tstart_sample_idx:tend_sample_idx]
+
+print("line 249", time.time()-start_time)
 
 no_cells = len(p_rotor.variables["coordinates"])
 no_offsets = len(p_rotor.offsets)
@@ -237,9 +276,9 @@ dy = ys[1]-ys[0]
 dz = zs[1] - zs[0]
 dA = dy * dz
 
-print("line 238",time.time()-start_time)
+print("line 279",time.time()-start_time)
 
-for iv in np.arange(2,len(Variables)):
+for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
     print(Variable[0:2])
     print(Variable[3:])
@@ -276,20 +315,6 @@ for iv in np.arange(2,len(Variables)):
                 print(len(IA_it),time.time()-start_time)
         dq[Variable] = IA_it
 
-    elif Variable == "MR" or Variable == "Theta":
-        signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
-        signalz = df["RtAeroMzh_[N-m]"][tstart_OF_idx:tend_OF_idx]
-        
-        if Variable == "MR":
-            signal = np.sqrt( np.square(signaly) + np.square(signalz) ) 
-        elif Variable == "Theta": 
-            signal = np.arctan2(signalz,signaly)
-        dq[Variable] = signal  
-
-    else:
-        txt = "{0}_{1}".format(Variable,units[iv])
-        signal = df[txt][tstart_OF_idx:tend_OF_idx]
-        dq[Variable] = signal
 
 
 dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
