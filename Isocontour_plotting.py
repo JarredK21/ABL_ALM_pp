@@ -142,24 +142,30 @@ def mean_velocity(it,Var):
 
 #defining twist angles with height from precursor
 precursor = Dataset("./abl_statistics60000.nc")
-
 Time_pre = np.array(precursor.variables["time"])
-
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
-
 t_start = np.searchsorted(precursor.variables["time"],32300)
 t_end = np.searchsorted(precursor.variables["time"],33500)
-
 u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
-
 h = mean_profiles["h"][:]
-
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 
+
+#openfast data
+da = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+db = io.fast_output_file.FASTOutputFile("../../NREL_5MW_MCBL_R_CRPM_100320/NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+
+#combine time
+restart_time = 137.748
+Time_a_OF = np.array(da["Time_[s]"]); Time_b_OF = np.array(db["Time_[s]"]); Time_b_OF = Time_b_OF+restart_time
+restart_idx = np.searchsorted(Time_a_OF,restart_time); restart_idx-=1
+Time_OF = np.concatenate((Time_a_OF[0:restart_idx],Time_b_OF))
+
+#combine openFAST outputs
+df = pd.concat((da[:][0:restart_idx],db[:]))
+
 #Azimuthal position for blade 1
-df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
-Time_OF = np.array(df["Time_[s]"]) #openfast time
 Azimuth = np.array(np.radians(df["Azimuth_[deg]"]))
 
 
@@ -251,6 +257,10 @@ for plane in planes:
         time_steps = np.arange(0,tend_idx)
 
 
+    #specify time steps to plot instantaneous isocontours at
+    it_array = [0,10]
+
+
     #plotting option
     plot_isocontour = False
     fluc_vel = False
@@ -275,9 +285,6 @@ for plane in planes:
     else:
         Offsets = offsets
 
-
-    #specify time steps to plot instantaneous isocontours at
-    it_array = [0,10]
 
 
     start_time = time.time()
@@ -308,8 +315,8 @@ for plane in planes:
                         u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
                     
                     if fluc_vel == True:
-                        mean_pre_velocity = mean_velocity(it,velocity_comp)
-                        u = np.array(u) - mean_pre_velocity #get mean from precursor
+                        # mean_pre_velocity = mean_velocity(it,velocity_comp)
+                        u = np.array(u) - np.mean(np.array(u)) #get mean from precursor planes
 
                     #define titles and filenames for isocontour plots
                     if fluc_vel == True:
@@ -354,8 +361,8 @@ for plane in planes:
                             u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
                         
                         if fluc_vel == True:
-                            mean_pre_velocity = mean_velocity(it,velocity_comp)
-                            u = u - mean_pre_velocity
+                            # mean_pre_velocity = mean_velocity(it,velocity_comp)
+                            u = np.array(u) - np.mean(np.array(u))
 
                         return np.min(u), np.max(u)
 
@@ -393,8 +400,8 @@ for plane in planes:
                             u = offset_data(p,velocity_comp, i, no_cells_offset,it) #slicing data into offset arrays
 
                         if fluc_vel == True:
-                            mean_pre_velocity = mean_velocity(it,velocity_comp)
-                            u = u - mean_pre_velocity
+                            # mean_pre_velocity = mean_velocity(it,velocity_comp)
+                            u = np.array(u) - np.mean(np.array(u))
 
                         if type(normal) == int: #rotor plane
                             u_plane = u.reshape(y,x)
@@ -429,11 +436,12 @@ for plane in planes:
 
                         cb = plt.colorbar(cs)
 
-                        YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
+                        if plane == "r" and Offsets[i] == 0.0:
+                            YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
 
-                        plt.plot(YB1,ZB1,color="k",linewidth = 0.5)
-                        plt.plot(YB2,ZB2,color="k",linewidth = 0.5)
-                        plt.plot(YB3,ZB3,color="k",linewidth = 0.5)  
+                            plt.plot(YB1,ZB1,color="k",linewidth = 0.5)
+                            plt.plot(YB2,ZB2,color="k",linewidth = 0.5)
+                            plt.plot(YB3,ZB3,color="k",linewidth = 0.5)  
 
                         #define titles and filenames for movie
                         if fluc_vel == True:

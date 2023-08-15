@@ -1,7 +1,7 @@
 from netCDF4 import Dataset
 import numpy as np
 
-ncfile = Dataset("../../NREL_5MW_MCBL_R_CRPM/test/new.nc",mode="w",format='NETCDF4') #change name
+ncfile = Dataset("./sampling.nc",mode="w",format='NETCDF4') #change name
 
 ncfile.title = "AMR-Wind data sampling output combined"
 
@@ -13,12 +13,17 @@ dim_dim = ncfile.createDimension("ndims",3)
 time = ncfile.createVariable("time", np.float64, ('num_time_steps',))
 
 #open files to be combined
-restart_idx = 100320
 a = Dataset("./sampling65000.nc") #check
-b = Dataset("./sampling65000.nc") #check
+b = Dataset("./sampling100320.nc") #check
+
+#determine restart index
+Time_a = np.array(a.variables["time"]); Time_b = np.array(b.variables["time"])
+restart_time = Time_b[0]
+restart_idx = np.searchsorted(Time_a, restart_time); restart_idx-=1
+
 
 #combine time
-Time_a = np.array(a.variables["time"][0:restart_idx-1]); Time_b = np.array(b.variables["time"][restart_idx:]); Time = np.concatenate((Time_a,Time_b))
+Time = np.concatenate((np.array(Time_a[0:restart_idx]),np.array(Time_b)))
 time[:] = Time; del Time; del Time_a; del Time_b
 
 
@@ -63,12 +68,12 @@ for plane in planes:
 
     coord = np.array(p_a.variables["coordinates"]); coordinates[:] = coord; del coord
 
-    velx_a = np.array(p_a.variables["velocityx"][0:restart_idx-1]); velx_b = np.array(p_b.variables["velocityx"][restart_idx:]); velx = np.concatenate((velx_a,velx_b))
-    velocityx[:] = velx; del velx; del velx_a; del velx_b
-    vely_a = np.array(p_a.variables["velocityy"][0:restart_idx-1]); vely_b = np.array(p_b.variables["velocityy"][restart_idx:]); vely = np.concatenate((vely_a,vely_b))
-    velocityy[:] = vely; del vely; del vely_a; del vely_b
-    velz_a = np.array(p_a.variables["velocityz"][0:restart_idx-1]); velz_b = np.array(p_b.variables["velocityz"][restart_idx:]); velz = np.concatenate((velz_a,velz_b))
-    velocityz[:] = velz; del velz; del velz_a; del velz_b
+    velx = np.concatenate((np.array(p_a.variables["velocityx"][0:restart_idx]), np.array(p_b.variables["velocityx"])))
+    velocityx[:] = velx; del velx
+    vely = np.concatenate((np.array(p_a.variables["velocityy"][0:restart_idx]), np.array(p_b.variables["velocityy"])))
+    velocityy[:] = vely; del vely
+    velz = np.concatenate((np.array(p_a.variables["velocityz"][0:restart_idx]), np.array(p_b.variables["velocityz"])))
+    velocityz[:] = velz; del velz
 
 print(ncfile)
 print(ncfile.groups)

@@ -143,26 +143,30 @@ def delta_Ux(r,j,k,f,hvelmag):
 
 #defining twist angles with height from precursor
 a = Dataset("./abl_statistics60000.nc")
-
 mean_profiles = a.groups["mean_profiles"] #create variable to hold mean profiles
-
 t_start = np.searchsorted(a.variables["time"],32300)
 t_end = np.searchsorted(a.variables["time"],33500)
-
 u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
-
 h = mean_profiles["h"][:]
-
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 
 
 #openfast data
-df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+da = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+db = io.fast_output_file.FASTOutputFile("../../NREL_5MW_MCBL_R_CRPM_100320/NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+
+#combine time
+restart_time = 137.748
+Time_a_OF = np.array(da["Time_[s]"]); Time_b_OF = np.array(db["Time_[s]"]); Time_b_OF = Time_b_OF+restart_time
+restart_idx = np.searchsorted(Time_a_OF,restart_time); restart_idx-=1
+Time_OF = np.concatenate((Time_a_OF[0:restart_idx],Time_b_OF))
+
+#combine openFAST outputs
+df = pd.concat((da[:][0:restart_idx],db[:]))
 
 #sampling data
-sampling = glob.glob("./sampling*")
-a = Dataset("./{}".format(sampling[0]))
+a = Dataset("./sampling.nc")
 p_rotor = a.groups["p_r"]
 
 offsets = p_rotor.offsets[0:-1]
@@ -178,27 +182,27 @@ for offset in offsets:
 
 dq = dict()
 
-time_OF = np.array(df["Time_[s]"])
-time_sample = np.array(a.variables["time"])
-time_sample = time_sample - time_sample[0]
+#sampling time
+Time_sample = np.array(a.variables["time"])
+Time_sample = Time_sample - Time_sample[0]
 
-plot_all_times = False
+plot_all_times = True
 if plot_all_times == False:
     tstart = 50
     tend = 150
-    tstart_OF_idx = np.searchsorted(time_OF,tstart)
-    tend_OF_idx = np.searchsorted(time_OF,tend)
-    tstart_sample_idx = np.searchsorted(time_sample,tstart)
-    tend_sample_idx = np.searchsorted(time_sample,tend)
+    tstart_OF_idx = np.searchsorted(Time_OF,tstart)
+    tend_OF_idx = np.searchsorted(Time_OF,tend)
+    tstart_sample_idx = np.searchsorted(Time_sample,tstart)
+    tend_sample_idx = np.searchsorted(Time_sample,tend)
 else:
     tstart_OF_idx = 0
-    tend_OF_idx = np.searchsorted(time_OF,time_OF[-1])
+    tend_OF_idx = np.searchsorted(Time_OF,Time_OF[-1])
     tstart_sample_idx = 0
-    tend_sample_idx = np.searchsorted(time_sample,time_sample[-1])
+    tend_sample_idx = np.searchsorted(Time_sample,Time_sample[-1])
 
 
-dq["Time_OF"] = time_OF[tstart_OF_idx:tend_OF_idx]
-dq["Time_sample"] = time_sample[tstart_sample_idx:tend_sample_idx]
+dq["Time_OF"] = Time_OF[tstart_OF_idx:tend_OF_idx]
+dq["Time_sample"] = Time_sample[tstart_sample_idx:tend_sample_idx]
 
 no_cells = len(p_rotor.variables["coordinates"])
 no_offsets = len(p_rotor.offsets)
