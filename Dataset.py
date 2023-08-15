@@ -213,6 +213,7 @@ dw.to_csv("out_OF.csv")
 
 del df #remove OF data
 del dq #remove dict so far
+del dw #remove dataframe
 print("line 212",time.time()-start_time)
 
 #sampling data
@@ -252,6 +253,7 @@ dq = pd.DataFrame()
 
 dq["Time_sample"] = Time_sample[tstart_sample_idx:tend_sample_idx]
 dq.to_csv("out_time_sampling.csv")
+del dq
 
 print("line 249", time.time()-start_time)
 
@@ -305,6 +307,7 @@ for iv in np.arange(0,len(Variables)):
                 print(len(Ux_it),time.time()-start_time)
         dq[Variable] = Ux_it
         dq.to_csv("out_{0}.csv".format(Variable))
+        del Ux_it
 
     elif Variable[0:2] == "Uz":
         Uz_it = []
@@ -315,6 +318,7 @@ for iv in np.arange(0,len(Variables)):
                 print(len(Uz_it),time.time()-start_time)
         dq[Variable] = Uz_it
         dq.to_csv("out_{0}.csv".format(Variable))
+        del Uz_it
 
     elif Variable[0:2] == "IA":
         IA_it = []
@@ -325,5 +329,6 @@ for iv in np.arange(0,len(Variables)):
                 print(len(IA_it),time.time()-start_time)
         dq[Variable] = IA_it
         dq.to_csv("out_{0}.csv".format(Variable))
+        del IA_it
 
 print("line 205",time.time() - start_time)
