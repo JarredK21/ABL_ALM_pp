@@ -150,7 +150,7 @@ u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-
+del precursor
 
 #openfast data
 da = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
@@ -163,7 +163,7 @@ restart_idx = np.searchsorted(Time_a_OF,restart_time); restart_idx-=1
 Time_OF = np.concatenate((Time_a_OF[0:restart_idx],Time_b_OF))
 
 #combine openFAST outputs
-df = pd.concat((da[:][0:restart_idx],db[:]))
+df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
 
 #Azimuthal position for blade 1
 Azimuth = np.array(np.radians(df["Azimuth_[deg]"]))
@@ -190,7 +190,7 @@ plane_label = ["Longitudinal", "Rotor","Transverse"]
 ip = 0
 for plane in planes:
 
-    p = a.groups["p_{0}".format(plane)]
+    p = a.groups["p_{0}".format(plane)]; del a
     no_cells = len(p.variables["coordinates"])
     if isinstance(p.offsets,np.float64) == True:
         offsets = [p.offsets]
