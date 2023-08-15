@@ -150,7 +150,7 @@ u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-
+del a
 
 #openfast data
 da = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
@@ -163,13 +163,13 @@ restart_idx = np.searchsorted(Time_a_OF,restart_time); restart_idx-=1
 Time_OF = np.concatenate((Time_a_OF[0:restart_idx],Time_b_OF))
 
 #combine openFAST outputs
-df = pd.concat((da[:][0:restart_idx],db[:]))
+df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
 
 print("line 168",time.time()-start_time)
 
 #sampling data
 a = Dataset("./sampling.nc")
-p_rotor = a.groups["p_r"]
+p_rotor = a.groups["p_r"]; del a
 
 offsets = p_rotor.offsets[0:-1]
 
