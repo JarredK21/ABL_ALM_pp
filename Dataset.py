@@ -208,7 +208,11 @@ for iv in np.arange(0,len(Variables)):
         dq[Variable] = signal
 
 
+dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
+dw.to_csv("out_OF.csv")
+
 del df #remove OF data
+del dq #remove dict so far
 print("line 212",time.time()-start_time)
 
 #sampling data
@@ -244,7 +248,10 @@ else:
     tstart_sample_idx = 0
     tend_sample_idx = np.searchsorted(Time_sample,Time_sample[-1])
 
+dq = pd.DataFrame()
+
 dq["Time_sample"] = Time_sample[tstart_sample_idx:tend_sample_idx]
+dq.to_csv("out_time_sampling.csv")
 
 print("line 249", time.time()-start_time)
 
@@ -279,6 +286,7 @@ dA = dy * dz
 print("line 279",time.time()-start_time)
 
 for iv in np.arange(0,len(Variables)):
+    dq = pd.DataFrame()
     Variable = Variables[iv]
     print(Variable[0:2])
     print(Variable[3:])
@@ -296,6 +304,7 @@ for iv in np.arange(0,len(Variables)):
                 Ux_it.append(Ux_i)
                 print(len(Ux_it),time.time()-start_time)
         dq[Variable] = Ux_it
+        dq.to_csv("out_{0}.csv".format(Variable))
 
     elif Variable[0:2] == "Uz":
         Uz_it = []
@@ -305,6 +314,7 @@ for iv in np.arange(0,len(Variables)):
                 Uz_it.append(Uz_i)
                 print(len(Uz_it),time.time()-start_time)
         dq[Variable] = Uz_it
+        dq.to_csv("out_{0}.csv".format(Variable))
 
     elif Variable[0:2] == "IA":
         IA_it = []
@@ -314,11 +324,6 @@ for iv in np.arange(0,len(Variables)):
                 IA_it.append(IA_i)
                 print(len(IA_it),time.time()-start_time)
         dq[Variable] = IA_it
-
-
-
-dw = pd.DataFrame(dict([(key, pd.Series(value)) for key, value in dq.items()]))
-
-dw.to_csv("out.csv")
+        dq.to_csv("out_{0}.csv".format(Variable))
 
 print("line 205",time.time() - start_time)
