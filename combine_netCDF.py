@@ -17,10 +17,13 @@ ip = 0
 for plane in planes:
     if plane == "l":
         offsets = [85]
+        no_cells_offset = 262144
     elif plane == "r":
-        offsets = [0.0, -63.0, -126, 63]
+        offsets = [0.0, -63.0, -126, 126]
+        no_cells_offset = 1228800
     elif plane == "t":
         offsets = [1280, 1930, 3190, 3820]
+        no_cells_offset = 65536
     
     io = 0
     for offset in offsets:
@@ -55,15 +58,6 @@ for plane in planes:
         #open group
         p_a = a.groups["p_{0}".format(plane)]
         p_b = b.groups["p_{0}".format(plane)]
-
-
-        no_cells = len(p_a.variables["coordinates"])
-        if isinstance(p_a.offsets,np.float64) == True:
-            offsets = [p_a.offsets]
-        else:
-            offsets = p_a.offsets
-        no_offsets = len(offsets)
-        no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
 
 
         ijk_dims = np.array(p_a.ijk_dims)
