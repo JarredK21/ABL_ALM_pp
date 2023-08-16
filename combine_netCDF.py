@@ -50,7 +50,7 @@ for plane in planes:
 
 
         #combine time
-        Time = np.concatenate(Time_a[0:restart_idx],Time_b)
+        Time = np.concatenate((Time_a[0:restart_idx],Time_b))
         time[:] = Time; del Time; del Time_a; del Time_b
         print("line 52")
 
