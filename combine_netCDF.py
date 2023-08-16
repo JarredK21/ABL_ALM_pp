@@ -10,9 +10,9 @@ def offset_data(x, i, no_cells_offset):
 
     return u_slice
 
-planes = ["r", "t"]
-plane_labels = ["rotor", "transverse"]
-groups = ["group_r", "group_t"]
+planes = ["l","r", "t"]
+plane_labels = ["longitudinal","rotor", "transverse"]
+groups = ["group_l","group_r", "group_t"]
 
 ip = 0
 for plane in planes:
