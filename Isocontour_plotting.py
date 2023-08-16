@@ -178,7 +178,7 @@ if isExist == False:
     os.makedirs(video_folder)
 
 #initalize variables manual input
-a = Dataset("./input path")
+a = Dataset("./sampling.nc")
 
 #l - longitudinal xy
 #r - rotor 29deg yz
