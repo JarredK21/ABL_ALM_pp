@@ -4,7 +4,7 @@ import numpy as np
 
 def offset_data(x, i, no_cells_offset):
 
-
+    print(np.shape(x)); print(i), print(no_cells_offset)
     u_slice = x[:][(i*no_cells_offset):((i+1)*no_cells_offset)]
 
     return u_slice
