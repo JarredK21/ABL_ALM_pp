@@ -109,24 +109,6 @@ def blade_positions(it):
     return Y, Z, Y2, Z2, Y3, Z3
 
 
-def mean_velocity(it,Var):
-    
-    Time_it = Time[it]#find time from sampled data
-
-    it_pre = np.searchsorted(Time_pre,Time_it)
-
-    print(Time_pre[it_pre])
-
-    if Var == "Horizontal velocity":
-        u = mean_profiles["velocityx"][it_pre][:]
-        v = mean_profiles["velocityy"][it_pre][:]
-        u = np.add( np.multiply(u,np.cos(twist)), np.multiply(v,np.sin(twist)) )
-    else:
-        u = mean_profiles["{}".format(Var)][it_pre][:]
-
-    return np.mean(u)
-
-
 start_time = time.time()
 
 #defining twist angles with height from precursor
@@ -141,7 +123,7 @@ h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 del precursor
 
-print("line 144", time.time()-start_time)
+print("line 126", time.time()-start_time)
 
 #openfast data
 da = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
@@ -159,7 +141,7 @@ df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
 #Azimuthal position for blade 1
 Azimuth = np.array(np.radians(df["Azimuth_[deg]"])); del df
 
-print("line 162", time.time()-start_time)
+print("line 144", time.time()-start_time)
 
 #directories
 in_dir = "./"
@@ -312,7 +294,7 @@ for plane in planes:
 
 
 ############ isocontour movie script ################
-            print("line 316", time.time()-start_time)
+            print("line 297", time.time()-start_time)
             if movie_tot_vel_isocontour == True:
 
                 if fluc_vel == True:
@@ -324,126 +306,153 @@ for plane in planes:
                 if isExist == False:
                     os.makedirs(folder)
 
-                    def vmin_vmax(it):
+                #velocity field
+                if velocity_comp == "Horizontal velocity":
+                    u = np.array(p.variables["velocityx"])
+                    v = np.array(p.variables["velocityy"])
+                    u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+                else:
+                    u = np.array(p.variables[velocity_comp])
+
+                def mean_velocity(u):
+                    u_k = []
+                    for u_j in u:
+                        u_k.append(u_j - np.mean(u_j))
+                    return u_k
+                
+                if fluc_vel == True:
+                    # mean_pre_velocity = mean_velocity(it,velocity_comp)
+                    #u = u - np.mean(u)
+                    u = mean_velocity(u)
+
+                print("line 328",time.time()-start_time)
+                    # #max min velocity 
+                    # def vmin_vmax(it):
                             
-                        if velocity_comp == "Horizontal velocity":
-                            u = np.array(p.variables["velocityx"][it])
-                            v = np.array(p.variables["velocityy"][it])
-                            u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+                    #   # if velocity_comp == "Horizontal velocity":
+                        #     u = np.array(p.variables["velocityx"][it])
+                        #     v = np.array(p.variables["velocityy"][it])
+                        #     u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+                        # else:
+                        #     u = np.array(p.variables[velocity_comp][it])
+
+                        # if fluc_vel == True:
+                        #     # mean_pre_velocity = mean_velocity(it,velocity_comp)
+                        #     u = u - np.mean(u)
+
+                    #     return np.min(u), np.max(u)
+
+                #find vmin and vmax for isocontour plots            
+                #min and max over data
+                #for rotor and transverse planes always set cmin = 0
+                if custom_colorbar == False:
+                    # vmin_i = 100; vmax_i = 0
+                    # with Pool() as pool:
+                    #     for vmin,vmax in pool.imap(vmin_vmax,time_steps):
+                            
+                    #         if vmin < vmin_i:
+                    #             vmin_i = vmin 
+                            
+                    #         if vmax > vmax_i:
+                    #             vmax_i = vmax
+                            
+                    if fluc_vel == False:
+                        if plane == "r" and velocity_comp != "velocityz" or plane == "t" and velocity_comp != "velocityz":
+                            cmin = 0
                         else:
-                            u = np.array(p.variables[velocity_comp][it])
-                        
-                        if fluc_vel == True:
-                            # mean_pre_velocity = mean_velocity(it,velocity_comp)
-                            u = u - np.mean(u)
-
-                        return np.min(u), np.max(u)
-
-                    #find vmin and vmax for isocontour plots            
-                    #min and max over data
-                    #for rotor and transverse planes always set cmin = 0
-                    if custom_colorbar == False:
-                        vmin_arr = []; vmax_arr = []
-                        with Pool() as pool:
-                            for vmin,vmax in pool.imap(vmin_vmax,time_steps):
-                                
-                                vmin_arr.append(vmin); vmax_arr.append(vmax)
-                                
-                        if fluc_vel == False:
-                            if plane == "r" and velocity_comp != "velocityz" or plane == "t" and velocity_comp != "velocityz":
-                                cmin = 0
-                            else:
-                                cmin = math.floor(np.min(vmin_arr))
-                        
-                        cmax = math.ceil(np.max(vmax_arr)); del vmin_arr; del vmax_arr
+                            cmin = math.floor(np.min(u))
+                    
+                    cmax = math.ceil(np.max(u))
                     
                     #if custom_colorbar == True: specify cmain, cmax above
                     nlevs = (cmax-cmin)
                     levels = np.linspace(cmin,cmax,nlevs,dtype=int)
-                    print("line 363",cmin,cmax)
+                    print("line 370",cmin,cmax)
 
 
-                    def Update(it):
+                def Update(it):
 
+                    # if velocity_comp == "Horizontal velocity":
+                    #     u = np.array(p.variables["velocityx"][it])
+                    #     v = np.array(p.variables["velocityy"][it])
+                    #     u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+                    # else:
+                    #     u = np.array(p.variables[velocity_comp][it])
+
+                    # if fluc_vel == True:
+                    #     # mean_pre_velocity = mean_velocity(it,velocity_comp)
+                    #     u = u - np.mean(u)
+
+                    u = u[it] #velocity time step it
+
+                    if type(normal) == int: #rotor plane
+                        u_plane = u.reshape(y,x)
+                        X,Y = np.meshgrid(ys,zs)
+                    elif normal == "z":
+                        u_plane = u.reshape(x,y)
+                        X,Y = np.meshgrid(xs,ys)
+                    elif normal == "x":
+                        u_plane = u.reshape(y,x)
+                        X,Y = np.meshgrid(ys,zs)
+
+                    Z = u_plane
+
+                    T = Time[it]
+
+                    fig = plt.figure(figsize=(50,30))
+                    plt.rcParams['font.size'] = 40
+
+                    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+                    if normal == "x":
+                        plt.xlabel("Y axis [m]")
+                        plt.ylabel("Z axis [m]")
+                    elif normal == "y":
+                        plt.xlabel("X axis [m]")
+                        plt.ylabel("Z axis [m]")
+                    elif normal == "z":
+                        plt.xlabel("X axis [m]")
+                        plt.ylabel("Y axis [m]")
+                    else:
+                        plt.xlabel("Y' axis (rotor frame of reference) [m]")
+                        plt.ylabel("Z' axis (rotor frame of reference) [m]")
+
+                    cb = plt.colorbar(cs)
+
+                    if plane == "r" and offset == 0.0:
+                        YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
+
+                        plt.plot(YB1,ZB1,color="k",linewidth = 0.5)
+                        plt.plot(YB2,ZB2,color="k",linewidth = 0.5)
+                        plt.plot(YB3,ZB3,color="k",linewidth = 0.5)  
+
+                    #define titles and filenames for movie
+                    if fluc_vel == True:
                         if velocity_comp == "Horizontal velocity":
-                            u = np.array(p.variables["velocityx"][it])
-                            v = np.array(p.variables["velocityy"][it])
-                            u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+                            Title = "{0} Plane. \nFluctuating {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip], velocity_comp[:],float(offset),round(T,4))
+                            filename = "{0}_Fluc_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
                         else:
-                            u = np.array(p.variables[velocity_comp][it])
-
-                        if fluc_vel == True:
-                            # mean_pre_velocity = mean_velocity(it,velocity_comp)
-                            u = u - np.mean(u)
-
-                        if type(normal) == int: #rotor plane
-                            u_plane = u.reshape(y,x)
-                            X,Y = np.meshgrid(ys,zs)
-                        elif normal == "z":
-                            u_plane = u.reshape(x,y)
-                            X,Y = np.meshgrid(xs,ys)
-                        elif normal == "x":
-                            u_plane = u.reshape(y,x)
-                            X,Y = np.meshgrid(ys,zs)
-
-                        Z = u_plane
-
-                        T = Time[it]
-
-                        fig = plt.figure(figsize=(50,30))
-                        plt.rcParams['font.size'] = 40
-
-                        cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
-                        if normal == "x":
-                            plt.xlabel("Y axis [m]")
-                            plt.ylabel("Z axis [m]")
-                        elif normal == "y":
-                            plt.xlabel("X axis [m]")
-                            plt.ylabel("Z axis [m]")
-                        elif normal == "z":
-                            plt.xlabel("X axis [m]")
-                            plt.ylabel("Y axis [m]")
+                            Title = "{0} Plane. \nFluctuating velocity {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
+                            filename = "{0}_Fluc_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
+                    else:
+                        if velocity_comp == "Horizontal velocity":
+                            Title = "{0} Plane. \n{1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
+                            filename = "{0}_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
                         else:
-                            plt.xlabel("Y' axis (rotor frame of reference) [m]")
-                            plt.ylabel("Z' axis (rotor frame of reference) [m]")
+                            Title = "{0} Plane. \nTotal velocity {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
+                            filename = "{0}_Tot_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
 
-                        cb = plt.colorbar(cs)
+                    plt.title(Title)
+                    plt.savefig(folder+filename)
+                    plt.cla()
+                    cb.remove()
+                    plt.close(fig)
 
-                        if plane == "r" and offset == 0.0:
-                            YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
+                    return T
 
-                            plt.plot(YB1,ZB1,color="k",linewidth = 0.5)
-                            plt.plot(YB2,ZB2,color="k",linewidth = 0.5)
-                            plt.plot(YB3,ZB3,color="k",linewidth = 0.5)  
+                with Pool() as pool:
+                    for T in pool.imap(Update,time_steps):
 
-                        #define titles and filenames for movie
-                        if fluc_vel == True:
-                            if velocity_comp == "Horizontal velocity":
-                                Title = "{0} Plane. \nFluctuating {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip], velocity_comp[:],float(offset),round(T,4))
-                                filename = "{0}_Fluc_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
-                            else:
-                                Title = "{0} Plane. \nFluctuating velocity {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
-                                filename = "{0}_Fluc_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
-                        else:
-                            if velocity_comp == "Horizontal velocity":
-                                Title = "{0} Plane. \n{1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
-                                filename = "{0}_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
-                            else:
-                                Title = "{0} Plane. \nTotal velocity {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
-                                filename = "{0}_Tot_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
-
-                        plt.title(Title)
-                        plt.savefig(folder+filename)
-                        plt.cla()
-                        cb.remove()
-                        plt.close(fig)
-
-                        return T
-
-                    with Pool() as pool:
-                        for T in pool.imap(Update,time_steps):
-
-                            print(T,time.time()-start_time)
+                        print(T,time.time()-start_time)
 
 
                 #whether or not folder exists execute code
