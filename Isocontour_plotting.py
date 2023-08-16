@@ -86,7 +86,7 @@ def blade_positions(it):
 
     R = 63
     Az = Azimuth[it_OF]
-    Y = [2500]; Y2 = [2500]; Y3 = [2500]
+    Y = [2560]; Y2 = [2560]; Y3 = [2560]
     Z = [90]; Z2 = [90]; Z3 = [90]
 
     Y.append(Y[0]+R*np.sin(Az))
