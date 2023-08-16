@@ -4,8 +4,9 @@ import numpy as np
 
 def offset_data(x, i, no_cells_offset):
 
-    print(np.shape(x)); print(i), print(no_cells_offset)
+    print("shape x",np.shape(x)); print(i), print(no_cells_offset)
     u_slice = x[:][(i*no_cells_offset):((i+1)*no_cells_offset)]
+    print("shape u_slice",np.shape(u_slice))
 
     return u_slice
 
@@ -91,14 +92,13 @@ for plane in planes:
         velocityy = group.createVariable("velocityy",np.float64,("num_time_steps","num_points"),zlib=True)
         velocityz = group.createVariable("velocityz",np.float64,("num_time_steps","num_points"),zlib=True)
 
-        coord = np.array(p_a.variables["coordinates"]); print(np.shape(coord))
-        coord = offset_data(coord, io, no_cells_offset); print(np.shape(coord))
+        coord = np.array(p_a.variables["coordinates"])
+        coord = offset_data(coord, io, no_cells_offset)
         coordinates[:] = coord; del coord
         print("line 103")
 
         velx = np.concatenate((np.array(p_a.variables["velocityx"][0:restart_idx]), np.array(p_b.variables["velocityx"])))
-        print(np.shape(velx))
-        velx = offset_data(velx,io,no_cells_offset); print(np.shape(velx))
+        velx = offset_data(velx,io,no_cells_offset)
         velocityx[:] = velx; del velx
         print("line 109")
         vely = np.concatenate((np.array(p_a.variables["velocityy"][0:restart_idx]), np.array(p_b.variables["velocityy"])))
