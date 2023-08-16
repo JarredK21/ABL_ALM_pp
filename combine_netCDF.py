@@ -91,8 +91,8 @@ for plane in planes:
         velocityy = group.createVariable("velocityy",np.float64,("num_time_steps","num_points"),zlib=True)
         velocityz = group.createVariable("velocityz",np.float64,("num_time_steps","num_points"),zlib=True)
 
-        coord = np.array(p_a.variables["coordinates"])
-        coord = offset_data(coord, io, no_cells_offset)
+        coord = np.array(p_a.variables["coordinates"]); print(np.shape(coord))
+        coord = offset_data(coord, io, no_cells_offset); print(np.shape(coord))
         coordinates[:] = coord; del coord
         print("line 103")
 
