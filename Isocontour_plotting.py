@@ -190,7 +190,14 @@ plane_label = ["Longitudinal", "Rotor","Transverse"]
 ip = 0
 for plane in planes:
 
-    p = a.groups["p_{0}".format(plane)]; del a
+    p = a.groups["p_{0}".format(plane)]
+
+    #time options
+    Time = np.array(a.variables["time"])
+    Time = Time - Time[0]
+
+    del a
+
     no_cells = len(p.variables["coordinates"])
     if isinstance(p.offsets,np.float64) == True:
         offsets = [p.offsets]
@@ -240,10 +247,6 @@ for plane in planes:
         ys = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y)
         zs = 0
 
-
-    #time options
-    Time = np.array(a.variables["time"])
-    Time = Time - Time[0]
     
     plot_all_times = True
     if plot_all_times == False:
@@ -375,6 +378,7 @@ for plane in planes:
                             for vmin,vmax in pool.imap(vmin_vmax,time_steps):
                                 
                                 vmin_arr.append(vmin); vmax_arr.append(vmax)
+                                print("line 380", len(vmin))
                                 
                         if fluc_vel == False:
                             if plane == "r" and velocity_comp != "velocityz" or plane == "t" and velocity_comp != "velocityz":
@@ -382,7 +386,7 @@ for plane in planes:
                             else:
                                 cmin = math.floor(np.min(vmin_arr))
                         
-                        cmax = math.ceil(np.max(vmax_arr))
+                        cmax = math.ceil(np.max(vmax_arr)); del vmin_arr; del vmax_arr
                     
                     #if custom_colorbar == True: specify cmain, cmax above
                     nlevs = (cmax-cmin)
@@ -521,7 +525,7 @@ for plane in planes:
                     out.write(img_array[im])
                     print("Line 449)",Time[time_steps[it]],time.time()-start_time)
                     it+=1
-                out.release()
+                out.release(); del img_array
                 print("Line 452)",time.time()-start_time)
 
             print(plane_label[ip],velocity_comps[iv],Offsets[i],time.time()-start_time)
