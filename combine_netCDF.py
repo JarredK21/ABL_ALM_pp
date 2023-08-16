@@ -5,13 +5,13 @@ import numpy as np
 def offset_data(x, i, no_cells_offset):
 
 
-    u_slice = x[:][i*no_cells_offset:((i+1)*no_cells_offset)]
+    u_slice = x[:][(i*no_cells_offset):((i+1)*no_cells_offset)]
 
     return u_slice
 
-planes = ["l", "r", "t"]
-plane_labels = ["longitudinal", "rotor", "transverse"]
-groups = ["group_l", "group_r", "group_t"]
+planes = ["r", "t"]
+plane_labels = ["rotor", "transverse"]
+groups = ["group_r", "group_t"]
 
 ip = 0
 for plane in planes:
@@ -50,7 +50,7 @@ for plane in planes:
 
 
         #combine time
-        Time = np.concatenate((np.array(Time_a[0:restart_idx]),np.array(Time_b)))
+        Time = np.concatenate(Time_a[0:restart_idx],Time_b)
         time[:] = Time; del Time; del Time_a; del Time_b
         print("line 52")
 
