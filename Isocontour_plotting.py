@@ -270,7 +270,6 @@ for plane in planes:
                         u = np.array(p.variables[velocity_comp][it])
                     
                     if fluc_vel == True:
-                        # mean_pre_velocity = mean_velocity(it,velocity_comp)
                         u = u - np.mean(u) #get mean from precursor planes
 
                     #define titles and filenames for isocontour plots
@@ -321,41 +320,14 @@ for plane in planes:
                     return u_k
                 
                 if fluc_vel == True:
-                    # mean_pre_velocity = mean_velocity(it,velocity_comp)
-                    #u = u - np.mean(u)
                     u = mean_velocity(u)
 
                 print("line 328",time.time()-start_time)
-                    # #max min velocity 
-                    # def vmin_vmax(it):
-                            
-                    #   # if velocity_comp == "Horizontal velocity":
-                        #     u = np.array(p.variables["velocityx"][it])
-                        #     v = np.array(p.variables["velocityy"][it])
-                        #     u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
-                        # else:
-                        #     u = np.array(p.variables[velocity_comp][it])
-
-                        # if fluc_vel == True:
-                        #     # mean_pre_velocity = mean_velocity(it,velocity_comp)
-                        #     u = u - np.mean(u)
-
-                    #     return np.min(u), np.max(u)
 
                 #find vmin and vmax for isocontour plots            
                 #min and max over data
                 #for rotor and transverse planes always set cmin = 0
-                if custom_colorbar == False:
-                    # vmin_i = 100; vmax_i = 0
-                    # with Pool() as pool:
-                    #     for vmin,vmax in pool.imap(vmin_vmax,time_steps):
-                            
-                    #         if vmin < vmin_i:
-                    #             vmin_i = vmin 
-                            
-                    #         if vmax > vmax_i:
-                    #             vmax_i = vmax
-                            
+                if custom_colorbar == False:                            
                     if fluc_vel == False:
                         if plane == "r" and velocity_comp != "velocityz" or plane == "t" and velocity_comp != "velocityz":
                             cmin = 0
@@ -371,17 +343,6 @@ for plane in planes:
 
 
                 def Update(it):
-
-                    # if velocity_comp == "Horizontal velocity":
-                    #     u = np.array(p.variables["velocityx"][it])
-                    #     v = np.array(p.variables["velocityy"][it])
-                    #     u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
-                    # else:
-                    #     u = np.array(p.variables[velocity_comp][it])
-
-                    # if fluc_vel == True:
-                    #     # mean_pre_velocity = mean_velocity(it,velocity_comp)
-                    #     u = u - np.mean(u)
 
                     u = u[it] #velocity time step it
 
