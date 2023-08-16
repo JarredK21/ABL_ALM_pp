@@ -16,11 +16,11 @@ groups = ["group_l", "group_r", "group_t"]
 ip = 0
 for plane in planes:
     if plane == "l":
-        offsets = [-85]
+        offsets = [85]
     elif plane == "r":
         offsets = [0.0, -63.0, -126, 63]
     elif plane == "t":
-        offsets = []
+        offsets = [1280, 1930, 3190, 3820]
     
     io = 0
     for offset in offsets:
@@ -71,7 +71,6 @@ for plane in planes:
         axis1 = np.array(p_a.axis1)
         axis2 = np.array(p_a.axis2)
         axis3 = np.array(p_a.axis3)
-        offsets = np.array(p_a.offsets)
 
         if plane == "l":
             group = ncfile.createGroup("p_l")
@@ -89,7 +88,7 @@ for plane in planes:
         group.axis1 = axis1; del axis1
         group.axis2 = axis2; del axis2
         group.axis3 = axis3; del axis3
-        group.offsets = offsets; del offsets
+        group.offsets = offset; del offset
         print("line 92")
 
 
