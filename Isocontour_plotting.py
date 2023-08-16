@@ -348,7 +348,7 @@ for plane in planes:
                                 for vmin,vmax in pool.imap(vmin_vmax,time_steps):
                                     
                                     vmin_arr.append(vmin); vmax_arr.append(vmax)
-                                    print("line 380", len(vmin))
+                                    print("line 380", np.shape(vmin))
                                     
                             if fluc_vel == False:
                                 if plane == "r" and velocity_comp != "velocityz" or plane == "t" and velocity_comp != "velocityz":
