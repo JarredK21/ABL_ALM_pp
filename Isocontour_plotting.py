@@ -233,7 +233,7 @@ for plane in planes:
 
         #plotting option
         plot_isocontour = False
-        fluc_vel = False
+        fluc_vel = True
         movie_tot_vel_isocontour = True
         plot_specific_offsets = False
         plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
@@ -321,6 +321,7 @@ for plane in planes:
                 
                 if fluc_vel == True:
                     u = mean_velocity(u)
+                
 
                 print("line 328",time.time()-start_time)
 
@@ -333,6 +334,8 @@ for plane in planes:
                             cmin = 0
                         else:
                             cmin = math.floor(np.min(u))
+                    else:
+                        cmin = math.floor(np.min(u))
                     
                     cmax = math.ceil(np.max(u))
                     
@@ -344,16 +347,16 @@ for plane in planes:
 
                 def Update(it):
 
-                    u = u[it] #velocity time step it
+                    U = u[it] #velocity time step it
 
                     if type(normal) == int: #rotor plane
-                        u_plane = u.reshape(y,x)
+                        u_plane = U.reshape(y,x)
                         X,Y = np.meshgrid(ys,zs)
                     elif normal == "z":
-                        u_plane = u.reshape(x,y)
+                        u_plane = U.reshape(x,y)
                         X,Y = np.meshgrid(xs,ys)
                     elif normal == "x":
-                        u_plane = u.reshape(y,x)
+                        u_plane = U.reshape(y,x)
                         X,Y = np.meshgrid(ys,zs)
 
                     Z = u_plane
