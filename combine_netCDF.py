@@ -98,7 +98,7 @@ for plane in planes:
         print("line 103")
 
         velx = np.concatenate((np.array(p_a.variables["velocityx"][0:restart_idx]), np.array(p_b.variables["velocityx"])))
-        velx = offset_data(velx,io,no_cells_offset)
+        velx = offset_data(velx,io,no_cells_offset); print("shape velx", np.shape(velx))
         velocityx[:] = velx; del velx
         print("line 109")
         vely = np.concatenate((np.array(p_a.variables["velocityy"][0:restart_idx]), np.array(p_b.variables["velocityy"])))
