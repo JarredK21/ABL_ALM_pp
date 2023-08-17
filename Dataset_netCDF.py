@@ -152,7 +152,7 @@ Ux_1 = ncfile.createVariable("Ux_0.0", np.float64, ('sampling',),zlib=True)
 Uz_1 = ncfile.createVariable("Uz_0.0", np.float64, ('sampling',),zlib=True)
 IA_1 = ncfile.createVariable("IA_0.0", np.float64, ('sampling',),zlib=True)
 
-RtAeroVxh = ncfile.createVariable("Wind1VelX", np.float64, ('OF',),zlib=True)
+RtAeroVxh = ncfile.createVariable("RtAeroVxh", np.float64, ('OF',),zlib=True)
 RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
 RtAeroMrh = ncfile.createVariable("RtAeroMrh", np.float64, ('OF',),zlib=True)
@@ -190,7 +190,7 @@ df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
 
 print("line 205",time.time()-start_time)
 
-Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Theta"]
+Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","MR","Theta"]
 units = ["[m/s]","[N]","[N-m]","[N-m]","[rads]"]
 
 
