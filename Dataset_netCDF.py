@@ -103,7 +103,7 @@ def IA_it_offset(it):
     return IA
 
 
-def delta_Ux(r,j,k,f,hvelmag):
+def delta_Ux(r,j,k,f,Hvelmag):
 
     Y_0 = ys[j]
     Z_0 = zs[k]
@@ -127,7 +127,7 @@ def delta_Ux(r,j,k,f,hvelmag):
     Y_2 = r*np.cos(theta_2)
     Z_2 = r*np.sin(theta_2)
 
-    Ux_0 =  hvelmag[j][k]
+    Ux_0 =  Hvelmag[j][k]
     Ux_1 =  f(Y_1,Z_1)
     Ux_2 =  f(Y_2,Z_2)
 
