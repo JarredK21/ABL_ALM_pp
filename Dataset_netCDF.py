@@ -304,15 +304,16 @@ for offset in offsets:
 
 
     def velocity_field(it):
-        velocityx = p_rotor.variables["velocityx"][it]
-        velocityy = p_rotor.variables["velocityy"][it]
-        hvelmag_it = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
+        
+        hvelmag_it = magnitude_horizontal_velocity(velocityx[it],velocityy[it],twist,x,zs,h)
 
         return hvelmag_it
         
 
 
     #velocity field
+    velocityx = p_rotor.variables["velocityx"]
+    velocityy = p_rotor.variables["velocityy"]
     velocityz = p_rotor.variables["velocityz"]
     hvelmag = []
     with Pool() as pool:
