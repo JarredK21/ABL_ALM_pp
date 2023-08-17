@@ -251,14 +251,14 @@ print(tend_sample_idx)
 
 time_sampling[:] = Time_sample[tstart_sample_idx:tend_sample_idx]
 
+print("line 254", time.time()-start_time)
+
 offsets = [0.0, -63.0, -126.0]
 for offset in offsets:
 
     a = Dataset("./sampling_r_{}.nc".format(offset))
 
     group = ncfile.createGroup("{}".format(offset))
-
-    Ux_hh = ncfile.createVariable("Ux_hh", np.float64, ('sampling',),zlib=True)
 
     Ux = group.createVariable("Ux", np.float64, ('sampling'),zlib=True)
     Uz = group.createVariable("Uz", np.float64, ('sampling'),zlib=True)
@@ -369,7 +369,7 @@ for offset in offsets:
                 HV_it = np.array(HV_it)
                 HV[:] = HV_it; del HV_it
 
-
+    print(ncfile.groups)
 print(ncfile)
 ncfile.close()
 
