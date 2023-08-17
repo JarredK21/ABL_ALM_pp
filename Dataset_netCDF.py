@@ -48,6 +48,7 @@ def Ux_it_offset(it):
     # hvelmag = hvelmag.reshape((y,x))
 
     Hvelmag = hvelmag[it]
+    Hvelmag = np.reshape(Hvelmag,(y,x))
 
     Ux_rotor = []
     for j in np.arange(0,len(ys)):
@@ -66,6 +67,7 @@ def Uz_it_offset(it):
     # velocityz = velocityz.reshape((y,x))
 
     Velocityz = velocityz[it]
+    Velocityz = np.reshape(Velocityz,(y,x))
 
     Uz_rotor = []
     for j in np.arange(0,len(ys)):
@@ -86,9 +88,11 @@ def IA_it_offset(it):
     # hvelmag_interp = hvelmag.reshape((y,x))
 
     hvelmag_interp = hvelmag[it]
+    hvelmag_interp = np.reshape(hvelmag_interp,(y,x))
     f = interpolate.interp2d(ys,zs,hvelmag_interp)
 
     Hvelmag = hvelmag[it]
+    Hvelmag = np.reshape(Hvelmag,(y,x))
 
     #hvelmag = hvelmag.reshape((y,x))
 
@@ -304,24 +308,27 @@ dA = dy * dz
 print("line 295",time.time()-start_time)
 
 
-#velocity field
-velocityz = p_rotor.variables["velocityz"]
-hvelmag = []
-for it in np.arange(tstart_sample_idx,tend_sample_idx):
+def velocity_field(it):
     velocityx = p_rotor.variables["velocityx"][it]
     velocityy = p_rotor.variables["velocityy"][it]
     hvelmag_it = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
-    hvelmag.append(hvelmag_it)
-    hvelmag = np.array(hvelmag)
 
-    hvelmag = hvelmag.reshape((y,x))
+    return hvelmag_it
+    
 
-# Traceback (most recent call last):
-#   File "/lustre/eaglefs/scratch/jkenworthy/NREL_5MW_MCBL_R_CRPM/post_processing/Dataset_netCDF.py", line 316, in <module>
-#     hvelmag = hvelmag.reshape((y,x))
-# AttributeError: 'list' object has no attribute 'reshape'
 
-print("line 311",np.shape(hvelmag))
+#velocity field
+velocityz = p_rotor.variables["velocityz"]
+hvelmag = []
+with Pool() as pool:
+    for hvelmag_it in pool.imap(velocity_field,np.arange(tstart_sample_idx,tend_sample_idx)):
+        
+        hvelmag.append(hvelmag_it)
+        print("line 319",time.time()-start_time)
+
+np.array(hvelmag)
+
+print("line 323",np.shape(hvelmag))
 
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
@@ -378,7 +385,6 @@ for iv in np.arange(0,len(Variables)):
             IA_3[:] = IA_it; del IA_it
 
 print(ncfile)
-print(ncfile.groups)
 ncfile.close()
 
 print("line 352",time.time() - start_time)
