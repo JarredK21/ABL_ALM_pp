@@ -435,16 +435,17 @@ for plane in planes:
                 
                 print("line 464", time.time()-start_time)
 
-                # if fluc_vel == True:
-                #     if velocity_comp == "Horizontal velocity":
-                #         s_filename = "{0}_Fluc_{1}_{2}_".format(plane_labels[ip],velocity_comp[:],float(offset))
-                #     else:
-                #         s_filename = "{0}_Fluc_vel{1}_{2}_".format(plane_labels[ip],velocity_comp[-1],float(offset))
-                # else:
-                #     if velocity_comp == "Horizontal velocity":
-                #         s_filename = "{0}_{1}_{2}_".format(plane_labels[ip],velocity_comp[:],float(offset))
-                #     else:
-                #         s_filename = "{0}_Tot_vel{1}_{2}_".format(plane_labels[ip],velocity_comp[-1],float(offset))
+                #define titles and filenames for movie
+                if fluc_vel == True:
+                    if velocity_comp == "Horizontal velocity":
+                        filename = "{0}_Fluc_{1}_{2}.png".format(plane_labels[ip],velocity_comp[:],float(offset))
+                    else:
+                        filename = "{0}_Fluc_vel{1}_{2}.png".format(plane_labels[ip],velocity_comp[-1],float(offset))
+                else:
+                    if velocity_comp == "Horizontal velocity":
+                        filename = "{0}_{1}_{2}.png".format(plane_labels[ip],velocity_comp[:],float(offset))
+                    else:
+                        filename = "{0}_Tot_vel{1}_{2}.png".format(plane_labels[ip],velocity_comp[-1],float(offset))
 
                     
                 #sort files
