@@ -224,7 +224,7 @@ for iv in np.arange(0,len(Variables)):
         elif Variable == "RtAeroMxh":
             RtAeroMxh[:] = signal; del signal
         elif Variable == "RtAeroVxh":
-            RtAeroVxh = signal; del signal
+            RtAeroVxh[:] = signal; del signal
 
 del df
 
