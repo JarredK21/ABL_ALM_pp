@@ -40,34 +40,28 @@ def magnitude_horizontal_velocity(u,v,twist,x,zs,h):
 
 def Ux_it_offset(it):
 
-    # velocityx = p_rotor.variables["velocityx"][it]
-    # velocityy = p_rotor.variables["velocityy"][it]
-    # hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
+    Velocityx = velocityx[it]
+    Velocityy = velocityy[it]
+    hvelmag = magnitude_horizontal_velocity(Velocityx,Velocityy,twist,x,zs,h)
 
 
-    # hvelmag = hvelmag.reshape((y,x))
-
-    Hvelmag = hvelmag[it]
-    Hvelmag = np.reshape(Hvelmag,(y,x))
+    hvelmag = hvelmag.reshape((y,x))
 
     Ux_rotor = []
     for j in np.arange(0,len(ys)):
         for k in np.arange(0,len(zs)):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
             if r <= 63 and r >= 1.5:
-                Ux_rotor.append(Hvelmag[j,k])
+                Ux_rotor.append(hvelmag[j,k])
 
     return np.average(Ux_rotor)
 
 
 def Uz_it_offset(it):
 
-    # velocityz = p_rotor.variables["velocityz"][it]
-
-    # velocityz = velocityz.reshape((y,x))
-
     Velocityz = velocityz[it]
-    Velocityz = np.reshape(Velocityz,(y,x))
+
+    Velocityz = Velocityz.reshape((y,x))
 
     Uz_rotor = []
     for j in np.arange(0,len(ys)):
@@ -81,20 +75,14 @@ def Uz_it_offset(it):
 
 def IA_it_offset(it):
 
-    # velocityx = p_rotor.variables["velocityx"][it]
-    # velocityy = p_rotor.variables["velocityy"][it]
-    # hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
+    Velocityx = velocityx[it]
+    Velocityy = velocityy[it]
+    hvelmag = magnitude_horizontal_velocity(Velocityx,Velocityy,twist,x,zs,h)
 
-    # hvelmag_interp = hvelmag.reshape((y,x))
-
-    hvelmag_interp = hvelmag[it]
-    hvelmag_interp = np.reshape(hvelmag_interp,(y,x))
+    hvelmag_interp = hvelmag.reshape((y,x))
     f = interpolate.interp2d(ys,zs,hvelmag_interp)
 
-    Hvelmag = hvelmag[it]
-    Hvelmag = np.reshape(Hvelmag,(y,x))
-
-    #hvelmag = hvelmag.reshape((y,x))
+    hvelmag = np.reshape(hvelmag,(y,x))
 
     IA = 0
     for j in np.arange(0,len(ys)):
@@ -102,7 +90,7 @@ def IA_it_offset(it):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
             if r <= 63 and r >= 1.5:
 
-                delta_Ux_i = delta_Ux(r,j,k,f,Hvelmag)
+                delta_Ux_i = delta_Ux(r,j,k,f,hvelmag)
                 IA += r * delta_Ux_i * dA
     return IA
 
@@ -167,17 +155,18 @@ time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
 time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
 
 Ux_1 = ncfile.createVariable("Ux_0.0", np.float64, ('sampling',),zlib=True)
-Ux_2 = ncfile.createVariable("Ux_-63.0", np.float64, ('sampling',),zlib=True)
-Ux_3 = ncfile.createVariable("Ux_-126.0", np.float64, ('sampling',),zlib=True)
+# Ux_2 = ncfile.createVariable("Ux_-63.0", np.float64, ('sampling',),zlib=True)
+# Ux_3 = ncfile.createVariable("Ux_-126.0", np.float64, ('sampling',),zlib=True)
 
 Uz_1 = ncfile.createVariable("Uz_0.0", np.float64, ('sampling',),zlib=True)
-Uz_2 = ncfile.createVariable("Uz_-63.0", np.float64, ('sampling',),zlib=True)
-Uz_3 = ncfile.createVariable("Uz_-126.0", np.float64, ('sampling',),zlib=True)
+# Uz_2 = ncfile.createVariable("Uz_-63.0", np.float64, ('sampling',),zlib=True)
+# Uz_3 = ncfile.createVariable("Uz_-126.0", np.float64, ('sampling',),zlib=True)
 
 IA_1 = ncfile.createVariable("IA_0.0", np.float64, ('sampling',),zlib=True)
-IA_2 = ncfile.createVariable("IA_-63.0", np.float64, ('sampling',),zlib=True)
-IA_3 = ncfile.createVariable("IA_-126.0", np.float64, ('sampling',),zlib=True)
+# IA_2 = ncfile.createVariable("IA_-63.0", np.float64, ('sampling',),zlib=True)
+# IA_3 = ncfile.createVariable("IA_-126.0", np.float64, ('sampling',),zlib=True)
 
+RtAeroVxh = ncfile.createVariable("RtAeroVxh", np.float64, ('OF',),zlib=True)
 RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
 RtAeroMrh = ncfile.createVariable("RtAeroMrh", np.float64, ('OF',),zlib=True)
@@ -215,8 +204,8 @@ df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
 
 print("line 205",time.time()-start_time)
 
-Variables = ["RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[N]","[N-m]","[N-m]","[rads]"]
+Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","MR","Theta"]
+units = ["[m/s]","[N]","[N-m]","[N-m]","[rads]"]
 
 
 for iv in np.arange(0,len(Variables)):
@@ -240,6 +229,8 @@ for iv in np.arange(0,len(Variables)):
             RtAeroFxh[:] = signal; del signal
         elif Variable == "RtAeroMxh":
             RtAeroMxh[:] = signal; del signal
+        elif Variable == "Wind1VelX":
+            RtAeroVxh[:] = signal; del signal
 
 del df
 
@@ -305,30 +296,12 @@ dy = ys[1]-ys[0]
 dz = zs[1] - zs[0]
 dA = dy * dz
 
-print("line 295",time.time()-start_time)
-
-
-def velocity_field(it):
-    velocityx = p_rotor.variables["velocityx"][it]
-    velocityy = p_rotor.variables["velocityy"][it]
-    hvelmag_it = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
-
-    return hvelmag_it
-    
-
-
 #velocity field
+velocityx = p_rotor.variables["velocityx"]
+velocityy = p_rotor.variables["velocityy"]
 velocityz = p_rotor.variables["velocityz"]
-hvelmag = []
-with Pool() as pool:
-    for hvelmag_it in pool.imap(velocity_field,np.arange(tstart_sample_idx,tend_sample_idx)):
-        
-        hvelmag.append(hvelmag_it)
-        print("line 319",time.time()-start_time)
 
-np.array(hvelmag)
-
-print("line 323",np.shape(hvelmag))
+print("line 323")
 
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
@@ -350,10 +323,10 @@ for iv in np.arange(0,len(Variables)):
             Ux_it = np.array(Ux_it)
         if Variable[3:] == "0.0":
             Ux_1[:] = Ux_it; del Ux_it
-        elif Variable[3:] == "-63.0":
-            Ux_2[:] = Ux_it; del Ux_it
-        elif Variable[3:] == "-126.0":
-            Ux_3[:] = Ux_it; del Ux_it
+        # elif Variable[3:] == "-63.0":
+        #     Ux_2[:] = Ux_it; del Ux_it
+        # elif Variable[3:] == "-126.0":
+        #     Ux_3[:] = Ux_it; del Ux_it
 
     elif Variable[0:2] == "Uz":
         Uz_it = []
@@ -365,10 +338,10 @@ for iv in np.arange(0,len(Variables)):
             Uz_it = np.array(Uz_it)
         if Variable[3:] == "0.0":
             Uz_1[:] = Uz_it; del Uz_it
-        elif Variable[3:] == "-63.0":
-            Uz_2[:] = Uz_it; del Uz_it
-        elif Variable[3:] == "-126.0":
-            Uz_3[:] = Uz_it; del Uz_it
+        # elif Variable[3:] == "-63.0":
+        #     Uz_2[:] = Uz_it; del Uz_it
+        # elif Variable[3:] == "-126.0":
+        #     Uz_3[:] = Uz_it; del Uz_it
     elif Variable[0:2] == "IA":
         IA_it = []
         print("IA calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
@@ -379,10 +352,10 @@ for iv in np.arange(0,len(Variables)):
             IA_it = np.array(IA_it)
         if Variable[3:] == "0.0":
             IA_1[:] = IA_it; del IA_it
-        elif Variable[3:] == "-63.0":
-            IA_2[:] = IA_it; del IA_it
-        elif Variable[3:] == "-126.0":
-            IA_3[:] = IA_it; del IA_it
+        # elif Variable[3:] == "-63.0":
+        #     IA_2[:] = IA_it; del IA_it
+        # elif Variable[3:] == "-126.0":
+        #     IA_3[:] = IA_it; del IA_it
 
 print(ncfile)
 ncfile.close()

@@ -12,25 +12,64 @@ import pandas as pd
 import math
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
-out_dir = in_dir + "plots/"
+out_dir = in_dir + "plots2/"
 
-offsets = [0.0, -63.0, -126.0]
+offsets = [0.0]
 
+a = Dataset(in_dir+"Dataset.nc")
 
-Variables = ["Time_OF","Time_sample","RtVAvgxh","RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]", "[m/s]","[N]","[N-m]","[N-m]","[rads]"]
-Ylabels = ["Time","Time","$<Ux'>_{blade}$ blade averaged velocity","Rotor Thrust", "Rotor Torque",
-            "Out-of-plane bending moment","Angle Out-of-plane bending moment"]
-
-for offset in offsets:
-    txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
-    unit = ["[m/s]", "[m/s]", "[$m^4/s$]"]
-    Ylabel = ["$<Ux'>_{rotor}$ rotor averaged velocity at {0}m".format(offset), "Asymmetry parameter at {0}m".format(offset)]
-    Variables.insert(len(Variables)-1,txt)
-    units.insert(len(units)-1,unit)
-    Ylabels.extend(len(Ylabels)-1,Ylabel)
+offset = offsets[0]
 
 
+Time_start = 90
+
+Time_OF = np.array(a.variables["time_OF"])
+Time_sampling = np.array(a.variables["time_sampling"])
+Time_sampling[0] = Time_OF[0]
+Time_sampling[-1] = Time_OF[-1]
+dt = Time_OF[1] - Time_OF[0]
+
+Time_start_idx = np.searchsorted(Time_OF,Time_start)
+
+RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:])
+RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:])
+MR = np.array(a.variables["RtAeroMrh"][Time_start_idx:])
+Theta = np.array(a.variables["Theta"][Time_start_idx:])
+
+Ux = np.array(a.variables["Ux_{0}".format(offset)])
+Uz = np.array(a.variables["Uz_{0}".format(offset)])
+IA = np.array(a.variables["IA_{0}".format(offset)])
+
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_sampling,Ux)
+ax2=ax.twinx()
+ax2.plot(Time_OF[Time_start_idx:],RtAeroFxh)
+plt.show()
+
+f = interpolate.interp1d(Time_sampling,Ux)
+Ux = f(Time_OF)
+Ux = Ux[Time_start_idx:]
+
+f = interpolate.interp1d(Time_sampling,Uz)
+Uz = f(Time_OF)
+Uz = Uz[Time_start_idx:]
+
+f = interpolate.interp1d(Time_sampling,IA)
+IA = f(Time_OF)
+IA = IA[Time_start_idx:]
+
+Time_OF = Time_OF[Time_start_idx:]
+
+h_vars = [RtAeroFxh, RtAeroMxh, MR, Ux, Uz, IA]
+
+
+Variables = ["RtAeroFxh","RtAeroMxh","MR","Ux","Uz","IA"]
+units = ["[N]","[N-m]","[N-m]","[m/s]", "[m/s]", "[$m^4/s$]"]
+Ylabels = ["Rotor Thrust", "Rotor Torque","Out-of-plane bending moment","$<Ux'>_{rotor}$ rotor averaged horizontal velocity", 
+          "$<Uz'>_{rotor}$ rotor averaged vertical velocity", "Asymmetry parameter"]
+
+
+#plotting options
 compare_total_correlations = True
 compare_LP_correlations = True
 compare_time_series = True
@@ -51,16 +90,6 @@ def low_pass_filter(signal, cutoff):
     low_pass_signal = filtfilt(b, a, signal)
 
     return low_pass_signal
-
-
-def remove_nan(Var):
-
-    signal = df[Var]
-    new_signal = list()
-    for element in signal:
-        if not math.isnan(element):
-            new_signal.append(element)
-    return new_signal
 
 
 def energy_contents_check(Var,e_fft,signal,dt):
@@ -103,8 +132,8 @@ def correlation_coef(x,y):
 
 #compare total signal correlations
 if compare_total_correlations == True:
-    for j in np.arange(2,len(Variables)-5,1):
-        for i in np.arange(2,len(Variables)-5,1):
+    for j in np.arange(0,len(h_vars),1):
+        for i in np.arange(0,len(h_vars),1):
 
             fig,ax = plt.subplots(figsize=(14,8))
             Var = Variables[i]
@@ -112,35 +141,15 @@ if compare_total_correlations == True:
             Ylabel = Ylabels[i]
             corr_var = Variables[j]
             Y2_label = Ylabels[j]
-
-            df = pd.read_csv(in_dir+"out.csv")
-
-            time_OF = remove_nan("Time_OF")
-            time_sample = remove_nan("Time_sample")
-            time_sample[0] = time_OF[0]
-            time_sample[-1] = time_OF[-1]
-
-            dt = time_OF[1] - time_OF[0]
-
-            correlation_variable = remove_nan(Var = corr_var)
-
-            Theta = remove_nan(Var = "Theta")
-
-            signal = remove_nan(Var)
-
-            if corr_var == "IA" or corr_var == "Ux":
-                f = interpolate.interp1d(time_sample,correlation_variable)
-                correlation_variable = f(time_OF)
             
-            if Var == "IA" or Var == "Ux":
-                f = interpolate.interp1d(time_sample,signal)
-                signal = f(time_OF)
+            correlation_variable = h_vars[j]
+            signal = h_vars[i]
 
 
             if Var == "MR":
                 cutoff = 0.5*(12.1/60)
                 signal_LP = low_pass_filter(signal,cutoff)
-            elif correlation_variable == "MR":
+            elif corr_var == "MR":
                 cutoff = 0.5*(12.1/60)
                 corr_signal_LP = low_pass_filter(correlation_variable,cutoff)
             else:
@@ -153,17 +162,17 @@ if compare_total_correlations == True:
             corr_signal_mean = np.mean(correlation_variable)
             
             corr = correlation_coef(correlation_variable,signal)
-            ticks = np.arange(int(min(time_OF)), int(max(time_OF))+10,10)
+            ticks = np.arange(int(min(Time_OF)), int(max(Time_OF))+10,10)
 
-            ax.plot(time_OF,signal,'-b')
-            ax.plot(time_OF,signal_LP,"-r")
+            ax.plot(Time_OF,signal,'-b')
+            ax.plot(Time_OF,signal_LP,"-r")
             ax.set_xticks(ticks)
             ax.axhline(signal_mean,color="b",linestyle="--")
             ax.set_ylabel("{0} {1}".format(Ylabel,unit),fontsize=16)
 
             ax2=ax.twinx()
-            ax2.plot(time_OF,correlation_variable,"-k")
-            ax2.plot(time_OF,corr_signal_LP,"-y")
+            ax2.plot(Time_OF,correlation_variable,"-k")
+            ax2.plot(Time_OF,corr_signal_LP,"-y")
             ax.set_xticks(ticks)
             ax2.axhline(corr_signal_mean,color="k",linestyle="--")
             ax2.set_ylabel("{}".format(Y2_label),fontsize=16)
@@ -180,8 +189,8 @@ if compare_total_correlations == True:
 
 #compare LPF signal correlations
 if compare_LP_correlations == True:
-    for j in np.arange(2,len(Variables)-5,1):
-        for i in np.arange(2,len(Variables)-5,1):
+    for j in np.arange(0,len(h_vars),1):
+        for i in np.arange(0,len(h_vars),1):
 
             fig,ax = plt.subplots(figsize=(14,8))
             Var = Variables[i]
@@ -190,34 +199,14 @@ if compare_LP_correlations == True:
             corr_var = Variables[j]
             Y2_label = Ylabels[j]
 
-            df = pd.read_csv(in_dir+"out.csv")
 
-            time_OF = remove_nan("Time_OF")
-            time_sample = remove_nan("Time_sample")
-            time_sample[0] = time_OF[0]
-            time_sample[-1] = time_OF[-1]
-
-            dt = time_OF[1] - time_OF[0]
-
-            correlation_variable = remove_nan(Var = corr_var)
-
-            Theta = remove_nan(Var = "Theta")
-
-            signal = remove_nan(Var)
-
-            if corr_var == "IA" or corr_var == "Ux":
-                f = interpolate.interp1d(time_sample,correlation_variable)
-                correlation_variable = f(time_OF)
-            
-            if Var == "IA" or Var == "Ux":
-                f = interpolate.interp1d(time_sample,signal)
-                signal = f(time_OF)
-
+            correlation_variable = h_vars[j]
+            signal = h_vars[i]
 
             if Var == "MR":
                 cutoff = 0.5*(12.1/60)
                 signal_LP = low_pass_filter(signal,cutoff)
-            elif correlation_variable == "MR":
+            elif corr_var == "MR":
                 cutoff = 0.5*(12.1/60)
                 corr_signal_LP = low_pass_filter(correlation_variable,cutoff)
             else:
@@ -230,14 +219,14 @@ if compare_LP_correlations == True:
             signal_mean = np.mean(signal)
             corr_signal_mean = np.mean(correlation_variable)
 
-            ticks = np.arange(int(min(time_OF)), int(max(time_OF))+10,10)
+            ticks = np.arange(int(min(Time_OF)), int(max(Time_OF))+10,10)
 
-            ax.plot(time_OF,signal_LP,"-b")
+            ax.plot(Time_OF,signal_LP,"-b")
             ax.set_xticks(ticks)
             ax.set_ylabel("Low pass filtered {0} {1}".format(Ylabel,unit),fontsize=16)
 
             ax2=ax.twinx()
-            ax2.plot(time_OF,corr_signal_LP,"-r")
+            ax2.plot(Time_OF,corr_signal_LP,"-r")
             ax.set_xticks(ticks)
             ax2.set_ylabel("Low pass filtered {}".format(Y2_label),fontsize=16)
             plt.title("Correlating {0} with {1}".format(Y2_label,Ylabel),fontsize=18)
@@ -249,44 +238,31 @@ if compare_LP_correlations == True:
             plt.savefig(out_dir+"LPF_corr_{0}_{1}.png".format(corr_var,Var))
             plt.close(fig)
 
+h_vars = [Ux,RtAeroFxh, RtAeroMxh,IA,MR,Theta]
+units = ["[m/s]","[N]","[N-m]","[$m^4/s$]","[N-m]","[rads]"]
+Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque", "Asymmetry Parameter",
+            "Out-of-plane bending moment","Angle Out-of-plane bending moment"]
 
 
 if compare_time_series == True:
     #comparing time series
     fig, axs = plt.subplots(6,1,figsize=(32,24))
     plt.rcParams.update({'font.size': 16})
-    for i in np.arange(2,len(Variables)-5):
+    for i in np.arange(0,len(h_vars)):
 
         Var = Variables[i]
         unit = units[i]
         Ylabel = Ylabels[i]
 
-        df = pd.read_csv(in_dir+"out.csv")
+        signal = h_vars[i]
 
-        time_OF = remove_nan("Time_OF")
-        time_sample = remove_nan("Time_sample")
-        time_sample[0] = time_OF[0]
-        time_sample[-1] = time_OF[-1]
-
-        dt = time_OF[1] - time_OF[0]
-
-        signal = remove_nan(Var)
-
-        if Var == "IA" or Var == "Ux":
-            f = interpolate.interp1d(time_sample, signal)
-            signal = f(time_OF)
-        elif Var == "Theta":
-            signal = np.multiply((180/np.pi),signal)
-
-        ticks = np.arange(int(min(time_OF)), int(max(time_OF))+10,10)
+        ticks = np.arange(int(min(Time_OF)), int(max(Time_OF))+10,10)
 
         axs = axs.ravel()
 
-        j=i-2
-
-        axs[j].plot(time_OF,signal)
-        axs[j].set_xticks(ticks)
-        axs[j].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
+        axs[i].plot(Time_OF,signal)
+        axs[i].set_xticks(ticks)
+        axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
 
     fig.supxlabel("Time [s]")
     plt.tight_layout()
@@ -298,40 +274,22 @@ if compare_time_series == True:
 if compare_FFT == True:
     fig, axs = plt.subplots(3,2,figsize=(32,24))
     plt.rcParams.update({'font.size': 16})
-    for i in np.arange(2,len(Variables)):
+    for i in np.arange(0,len(h_vars)):
 
         Var = Variables[i]
         unit = units[i]
         Ylabel = Ylabels[i]
 
-        df = pd.read_csv(in_dir+"out.csv")
-
-        time_OF = remove_nan("Time_OF")
-        time_sample = remove_nan("Time_sample")
-        time_sample[0] = time_OF[0]
-        time_sample[-1] = time_OF[-1]
-
-        dt = time_OF[1] - time_OF[0]
-
-        signal = remove_nan(Var)
-
-        if Var == "IA" or Var == "Ux":
-            f = interpolate.interp1d(time_sample, signal)
-            signal = f(time_OF)
-        elif Var == "Theta":
-            signal = np.multiply((180/np.pi),signal)
-
+        signal = h_vars[i]
         
         frq, FFT_signal = temporal_spectra(signal,dt,Var)
         
         axs = axs.ravel()
 
-        j=i-2
-
-        axs[j].plot(frq,FFT_signal)
-        axs[j].set_yscale('log')
-        axs[j].set_xscale('log')
-        axs[j].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
+        axs[i].plot(frq,FFT_signal)
+        axs[i].set_yscale('log')
+        axs[i].set_xscale('log')
+        axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
 
         frq_int = [1/60, 1/30, 12.1/60, (12.1/60)*3]
         frq_label = ["60s", "30s", "1P", "3P"]
@@ -340,8 +298,8 @@ if compare_FFT == True:
         else:
             y_FFT = FFT_signal[0]+1e+03
         for l in np.arange(0,len(frq_int)):
-            axs[j].axvline(frq_int[l])
-            axs[j].text(frq_int[l],y_FFT, frq_label[l])
+            axs[i].axvline(frq_int[l])
+            axs[i].text(frq_int[l],y_FFT, frq_label[l])
 
 
     fig.supxlabel("Frequency [Hz]")
