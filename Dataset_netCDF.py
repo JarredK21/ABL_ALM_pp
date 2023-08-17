@@ -130,15 +130,17 @@ def delta_Ux(r,j,k,f,hvelmag):
 
 
 #defining twist angles with height from precursor
-a = Dataset("./abl_statistics60000.nc")
-mean_profiles = a.groups["mean_profiles"] #create variable to hold mean profiles
-t_start = np.searchsorted(a.variables["time"],32300)
-t_end = np.searchsorted(a.variables["time"],33500)
+precursor = Dataset("./abl_statistics60000.nc")
+mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
+t_start = np.searchsorted(precursor.variables["time"],32300)
+t_end = np.searchsorted(precursor.variables["time"],33500)
 u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
+del precursor
 
+print("line 143",time.time()-start_time)
 
 
 #create netcdf file
@@ -170,7 +172,7 @@ RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
 RtAeroMrh = ncfile.createVariable("RtAeroMrh", np.float64, ('OF',),zlib=True)
 Theta = ncfile.createVariable("Theta", np.float64, ('OF',),zlib=True)
 
-print("line 185",time.time()-start_time)
+print("line 175",time.time()-start_time)
 
 
 #openfast data
@@ -183,9 +185,6 @@ Time_a_OF = np.array(da["Time_[s]"]); Time_b_OF = np.array(db["Time_[s]"]); Time
 restart_idx = np.searchsorted(Time_a_OF,restart_time); restart_idx-=1
 Time_OF = np.concatenate((Time_a_OF[0:restart_idx],Time_b_OF))
 
-#sampling time
-Time_sample = np.array(a.variables["time"])
-Time_sample = Time_sample - Time_sample[0]
 
 plot_all_times = True
 if plot_all_times == False:
@@ -193,22 +192,17 @@ if plot_all_times == False:
     tend = 150
     tstart_OF_idx = np.searchsorted(Time_OF,tstart)
     tend_OF_idx = np.searchsorted(Time_OF,tend)
-    tstart_sample_idx = np.searchsorted(Time_sample,tstart)
-    tend_sample_idx = np.searchsorted(Time_sample,tend)
 else:
     tstart_OF_idx = 0
     tend_OF_idx = np.searchsorted(Time_OF,Time_OF[-1])
-    tstart_sample_idx = 0
-    tend_sample_idx = np.searchsorted(Time_sample,Time_sample[-1])
 
 time_OF[:] = Time_OF[tstart_OF_idx:tend_OF_idx]; del Time_OF
-time_sampling[:] = Time_sample[tstart_sample_idx:tend_sample_idx]; del Time_sample
 
 
 #combine openFAST outputs
 df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
 
-print("line 223",time.time()-start_time)
+print("line 205",time.time()-start_time)
 
 Variables = ["RtAeroFxh","RtAeroMxh","MR","Theta"]
 units = ["[N]","[N-m]","[N-m]","[rads]"]
@@ -238,10 +232,29 @@ for iv in np.arange(0,len(Variables)):
 
 del df
 
-print("line 241")
+print("line 235",time.time()-start_time)
 
 #sampling data
 a = Dataset("./sampling_r_0.0.nc")
+
+#sampling time
+Time_sample = np.array(a.variables["time"])
+Time_sample = Time_sample - Time_sample[0]
+
+plot_all_times = True
+if plot_all_times == False:
+    tstart = 50
+    tend = 150
+    tstart_sample_idx = np.searchsorted(Time_sample,tstart)
+    tend_sample_idx = np.searchsorted(Time_sample,tend)
+else:
+    tstart_sample_idx = 0
+    tend_sample_idx = np.searchsorted(Time_sample,Time_sample[-1])
+
+print(tend_sample_idx)
+
+time_sampling[:] = Time_sample[tstart_sample_idx:tend_sample_idx]
+
 p_rotor = a.groups["p_r"]
 
 offsets = [0.0] #only rotor plane for now
