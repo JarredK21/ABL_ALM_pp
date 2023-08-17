@@ -233,7 +233,7 @@ for plane in planes:
 
         #plotting option
         plot_isocontour = False
-        fluc_vel = True
+        fluc_vel = False
         movie_tot_vel_isocontour = True
         plot_specific_offsets = False
         plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
