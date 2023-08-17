@@ -312,8 +312,14 @@ for it in np.arange(tstart_sample_idx,tend_sample_idx):
     velocityy = p_rotor.variables["velocityy"][it]
     hvelmag_it = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
     hvelmag.append(hvelmag_it)
+    hvelmag = np.array(hvelmag)
 
     hvelmag = hvelmag.reshape((y,x))
+
+# Traceback (most recent call last):
+#   File "/lustre/eaglefs/scratch/jkenworthy/NREL_5MW_MCBL_R_CRPM/post_processing/Dataset_netCDF.py", line 316, in <module>
+#     hvelmag = hvelmag.reshape((y,x))
+# AttributeError: 'list' object has no attribute 'reshape'
 
 print("line 311",np.shape(hvelmag))
 
@@ -334,6 +340,7 @@ for iv in np.arange(0,len(Variables)):
             for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 Ux_it.append(Ux_i)
                 print(len(Ux_it),time.time()-start_time)
+            Ux_it = np.array(Ux_it)
         if Variable[3:] == "0.0":
             Ux_1[:] = Ux_it; del Ux_it
         elif Variable[3:] == "-63.0":
@@ -348,6 +355,7 @@ for iv in np.arange(0,len(Variables)):
             for Uz_i in pool.imap(Uz_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 Uz_it.append(Uz_i)
                 print(len(Uz_it),time.time()-start_time)
+            Uz_it = np.array(Uz_it)
         if Variable[3:] == "0.0":
             Uz_1[:] = Uz_it; del Uz_it
         elif Variable[3:] == "-63.0":
@@ -361,6 +369,7 @@ for iv in np.arange(0,len(Variables)):
             for IA_i in pool.imap(IA_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
                 IA_it.append(IA_i)
                 print(len(IA_it),time.time()-start_time)
+            IA_it = np.array(IA_it)
         if Variable[3:] == "0.0":
             IA_1[:] = IA_it; del IA_it
         elif Variable[3:] == "-63.0":
