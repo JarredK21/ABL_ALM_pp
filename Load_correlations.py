@@ -12,7 +12,7 @@ import pandas as pd
 import math
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
-out_dir = in_dir + "plots2/"
+out_dir = in_dir + "plots3/"
 
 offsets = [0.0]
 
@@ -70,10 +70,10 @@ Ylabels = ["Rotor Thrust", "Rotor Torque","Out-of-plane bending moment","$<Ux'>_
 
 
 #plotting options
-compare_total_correlations = True
-compare_LP_correlations = True
+compare_total_correlations = False
+compare_LP_correlations = False
 compare_time_series = True
-compare_FFT = True
+compare_FFT = False
 
 
 
@@ -122,12 +122,17 @@ def temporal_spectra(signal,dt,Var):
     return frq, PSD
 
 
+# def correlation_coef(x,y):
+    
+#     r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
+
+#     return r
+
 def correlation_coef(x,y):
     
-    r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
+    r = (np.sum(((x)*(y))))/(np.sqrt(np.sum(np.square(x)*np.sum(np.square(y)))))
 
     return r
-
 
 
 #compare total signal correlations
@@ -261,6 +266,10 @@ if compare_time_series == True:
         axs = axs.ravel()
 
         axs[i].plot(Time_OF,signal)
+        if i == 2:
+            axs[i].set_ylim([3e+06,8e+06])
+        elif i == 1:
+            axs[i].set_ylim([6e+05,10e+05])
         axs[i].set_xticks(ticks)
         axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
 
