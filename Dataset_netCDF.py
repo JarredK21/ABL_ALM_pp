@@ -16,18 +16,6 @@ import time
 
 start_time = time.time()
 
-def offset_data(p_rotor,no_cells_offset,it,i,velocity_comp):
-
-    if velocity_comp == "coordinates":
-        u = np.array(p_rotor.variables[velocity_comp]) #only time step
-    else:
-        u = np.array(p_rotor.variables[velocity_comp][it]) #only time step
-
-    u_slice = u[i*no_cells_offset:((i+1)*no_cells_offset)]
-
-    return u_slice
-
-
 def coriolis_twist(u,v):
     twist = np.arctan(np.true_divide(v,u))
 
@@ -52,8 +40,8 @@ def magnitude_horizontal_velocity(u,v,twist,x,zs,h):
 
 def Ux_it_offset(it):
 
-    velocityx = offset_data(p_rotor, no_cells_offset,it,i,velocity_comp="velocityx")
-    velocityy = offset_data(p_rotor, no_cells_offset,it,i,velocity_comp="velocityy")
+    velocityx = p_rotor.variables["velocityx"][it]
+    velocityy = p_rotor.variables["velocityy"][it]
     hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
 
 
@@ -71,7 +59,7 @@ def Ux_it_offset(it):
 
 def Uz_it_offset(it):
 
-    velocityz = offset_data(p_rotor, no_cells_offset,it,i,velocity_comp="velocityz")
+    velocityz = p_rotor.variables["velocityz"][it]
 
 
     velocityz = velocityz.reshape((y,x))
@@ -88,8 +76,8 @@ def Uz_it_offset(it):
 
 def IA_it_offset(it):
 
-    velocityx = offset_data(p_rotor, no_cells_offset,it,i,velocity_comp="velocityx")
-    velocityy = offset_data(p_rotor, no_cells_offset,it,i,velocity_comp="velocityy")
+    velocityx = p_rotor.variables["velocityx"][it]
+    velocityy = p_rotor.variables["velocityy"][it]
     hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
 
     hvelmag_interp = hvelmag.reshape((y,x))
@@ -152,6 +140,39 @@ h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 
 
+
+#create netcdf file
+ncfile = Dataset("./Dataset.nc",mode="w",format='NETCDF4') #change name
+ncfile.title = "AMR-Wind data sampling output combined"
+
+#create global dimensions
+OF_dim = ncfile.createDimension("OF",None)
+sampling_dim = ncfile.createDimension("sampling",None)
+
+#create variables
+time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
+time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
+
+Ux_1 = ncfile.createVariable("Ux_0.0", np.float64, ('sampling',),zlib=True)
+Ux_2 = ncfile.createVariable("Ux_-63.0", np.float64, ('sampling',),zlib=True)
+Ux_3 = ncfile.createVariable("Ux_-126.0", np.float64, ('sampling',),zlib=True)
+
+Uz_1 = ncfile.createVariable("Uz_0.0", np.float64, ('sampling',),zlib=True)
+Uz_2 = ncfile.createVariable("Uz_-63.0", np.float64, ('sampling',),zlib=True)
+Uz_3 = ncfile.createVariable("Uz_-126.0", np.float64, ('sampling',),zlib=True)
+
+IA_1 = ncfile.createVariable("IA_0.0", np.float64, ('sampling',),zlib=True)
+IA_2 = ncfile.createVariable("IA_-63.0", np.float64, ('sampling',),zlib=True)
+IA_3 = ncfile.createVariable("IA_-126.0", np.float64, ('sampling',),zlib=True)
+
+RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
+RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
+RtAeroMrh = ncfile.createVariable("RtAeroMrh", np.float64, ('OF',),zlib=True)
+Theta = ncfile.createVariable("Theta", np.float64, ('OF',),zlib=True)
+
+print("line 185",time.time()-start_time)
+
+
 #openfast data
 da = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
 db = io.fast_output_file.FASTOutputFile("../../NREL_5MW_MCBL_R_CRPM_100320/NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
@@ -161,27 +182,6 @@ restart_time = 137.748
 Time_a_OF = np.array(da["Time_[s]"]); Time_b_OF = np.array(db["Time_[s]"]); Time_b_OF = Time_b_OF+restart_time
 restart_idx = np.searchsorted(Time_a_OF,restart_time); restart_idx-=1
 Time_OF = np.concatenate((Time_a_OF[0:restart_idx],Time_b_OF))
-
-#combine openFAST outputs
-df = pd.concat((da[:][0:restart_idx],db[:]))
-
-print("line 168",time.time()-start_time)
-
-#sampling data
-a = Dataset("./sampling.nc")
-p_rotor = a.groups["p_r"]
-
-offsets = p_rotor.offsets[0] #only rotor plane for now
-
-Variables = ["Time_OF","Time_sample","RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[s]","[s]","[N]","[N-m]","[N-m]","[rads]"]
-
-for offset in offsets:
-    txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
-    unit = ["[m/s]", "[m/s]", "[$m^4/s$]"]
-    for x,y in zip(txt,unit):
-        Variables.insert(len(Variables)-1,x)
-        units.insert(len(units)-1,y)
 
 #sampling time
 Time_sample = np.array(a.variables["time"])
@@ -201,51 +201,65 @@ else:
     tstart_sample_idx = 0
     tend_sample_idx = np.searchsorted(Time_sample,Time_sample[-1])
 
-print("line 203",time.time()-start_time)
-
-
-#create netcdf file
-ncfile = Dataset("./Dataset.nc",mode="w",format='NETCDF4') #change name
-ncfile.title = "AMR-Wind data sampling output combined"
-
-#create global dimensions
-OF_dim = ncfile.createDimension("OF",None)
-sampling_dim = ncfile.createDimension("sampling",None)
-
-#create variables
-time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
 time_OF[:] = Time_OF[tstart_OF_idx:tend_OF_idx]; del Time_OF
-time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
 time_sampling[:] = Time_sample[tstart_sample_idx:tend_sample_idx]; del Time_sample
 
-Ux_1 = ncfile.createVariable("Ux_0.0", np.float64, ('sampling',),zlib=True)
-Ux_2 = ncfile.createVariable("Ux_-63.0", np.float64, ('sampling',),zlib=True)
-Ux_3 = ncfile.createVariable("Ux_-126.0", np.float64, ('sampling',),zlib=True)
 
-Uz_1 = ncfile.createVariable("Uz_0.0", np.float64, ('sampling',),zlib=True)
-Uz_2 = ncfile.createVariable("Uz_-63.0", np.float64, ('sampling',),zlib=True)
-Uz_3 = ncfile.createVariable("Uz_-126.0", np.float64, ('sampling',),zlib=True)
+#combine openFAST outputs
+df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
 
-IA_1 = ncfile.createVariable("IA_0.0", np.float64, ('sampling',),zlib=True)
-IA_2 = ncfile.createVariable("IA_-63.0", np.float64, ('sampling',),zlib=True)
-IA_3 = ncfile.createVariable("IA_-126.0", np.float64, ('sampling',),zlib=True)
+print("line 223",time.time()-start_time)
 
-RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
-RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
-RtAeroMrh = ncfile.createVariable("RtAeroMrh", np.float64, ('OF',),zlib=True)
-Theta = ncfile.createVariable("Theta", np.float64, ('OF',),zlib=True)
-
-print("line 238",time.time()-start_time)
+Variables = ["RtAeroFxh","RtAeroMxh","MR","Theta"]
+units = ["[N]","[N-m]","[N-m]","[rads]"]
 
 
-no_cells = len(p_rotor.variables["coordinates"])
-no_offsets = len(p_rotor.offsets)
-no_cells_offset = int(no_cells/no_offsets) #Number of points per offset
+for iv in np.arange(0,len(Variables)):
+    Variable = Variables[iv]
+
+    if Variable == "MR" or Variable == "Theta":
+        signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
+        signalz = df["RtAeroMzh_[N-m]"][tstart_OF_idx:tend_OF_idx]
+        
+        if Variable == "MR":
+            signal = np.sqrt( np.square(signaly) + np.square(signalz) ) 
+            RtAeroMrh[:] = signal; del signal
+        elif Variable == "Theta": 
+            signal = np.arctan2(signalz,signaly)
+            Theta[:] = signal; del signal
+
+    else:
+        txt = "{0}_{1}".format(Variable,units[iv])
+        signal = df[txt][tstart_OF_idx:tend_OF_idx]
+        if Variable == "RtAeroFxh":
+            RtAeroFxh[:] = signal; del signal
+        elif Variable == "RtAeroMxh":
+            RtAeroMxh[:] = signal; del signal
+
+del df
+
+
+#sampling data
+a = Dataset("./sampling_r_0.0.nc")
+p_rotor = a.groups["p_r"]
+
+offsets = [0.0] #only rotor plane for now
+
+Variables = []
+units = []
+
+for offset in offsets:
+    txt = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset)]
+    unit = ["[m/s]", "[m/s]", "[$m^4/s$]"]
+    for x,y in zip(txt,unit):
+        Variables.append(x)
+        units.append(y)
+
 
 x = p_rotor.ijk_dims[0] #no. data points
 y = p_rotor.ijk_dims[1] #no. data points
 
-coordinates = offset_data(p_rotor,no_cells_offset,it=0,i=0,velocity_comp="coordinates")
+coordinates = p_rotor.variables["coordinates"]
 
 xo = coordinates[0:x,0]
 yo = coordinates[0:x,1]
@@ -266,9 +280,9 @@ dy = ys[1]-ys[0]
 dz = zs[1] - zs[0]
 dA = dy * dz
 
-print("line 269",time.time()-start_time)
+print("line 295",time.time()-start_time)
 
-for iv in np.arange(2,len(Variables)):
+for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
     print(Variable[0:2])
     print(Variable[3:])
@@ -319,27 +333,8 @@ for iv in np.arange(2,len(Variables)):
         elif Variable[3:] == "-126.0":
             IA_3[:] = IA_it; del IA_it
 
-    elif Variable == "MR" or Variable == "Theta":
-        signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
-        signalz = df["RtAeroMzh_[N-m]"][tstart_OF_idx:tend_OF_idx]
-        
-        if Variable == "MR":
-            signal = np.sqrt( np.square(signaly) + np.square(signalz) ) 
-            RtAeroMrh[:] = signal; del signal
-        elif Variable == "Theta": 
-            signal = np.arctan2(signalz,signaly)
-            Theta[:] = signal; del signal
-
-    else:
-        txt = "{0}_{1}".format(Variable,units[iv])
-        signal = df[txt][tstart_OF_idx:tend_OF_idx]
-        if Variable == "RtAeroFxh":
-            RtAeroFxh[:] = signal; del signal
-        elif Variable == "RtAeroMxh":
-            RtAeroMxh[:] = signal; del signal
-
 print(ncfile)
 print(ncfile.groups)
 ncfile.close()
 
-print("line 205",time.time() - start_time)
+print("line 352",time.time() - start_time)
