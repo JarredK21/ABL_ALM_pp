@@ -220,7 +220,6 @@ for offset in offsets:
         units.append(y)
 
 print(Variables)
-
 #sampling time
 Time_sample = np.array(a.variables["time"])
 Time_sample = Time_sample - Time_sample[0]

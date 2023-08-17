@@ -418,7 +418,8 @@ for plane in planes:
 
                         print(T,time.time()-start_time)
 
-
+                time.sleep(120)
+                
                 #whether or not folder exists execute code
                 #sort files
                 def atof(text):

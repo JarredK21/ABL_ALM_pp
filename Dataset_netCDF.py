@@ -40,50 +40,57 @@ def magnitude_horizontal_velocity(u,v,twist,x,zs,h):
 
 def Ux_it_offset(it):
 
-    velocityx = p_rotor.variables["velocityx"][it]
-    velocityy = p_rotor.variables["velocityy"][it]
-    hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
+    # velocityx = p_rotor.variables["velocityx"][it]
+    # velocityy = p_rotor.variables["velocityy"][it]
+    # hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
 
 
-    hvelmag = hvelmag.reshape((y,x))
+    # hvelmag = hvelmag.reshape((y,x))
+
+    Hvelmag = hvelmag[it]
 
     Ux_rotor = []
     for j in np.arange(0,len(ys)):
         for k in np.arange(0,len(zs)):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
             if r <= 63 and r >= 1.5:
-                Ux_rotor.append(hvelmag[j,k])
+                Ux_rotor.append(Hvelmag[j,k])
 
     return np.average(Ux_rotor)
 
 
 def Uz_it_offset(it):
 
-    velocityz = p_rotor.variables["velocityz"][it]
+    # velocityz = p_rotor.variables["velocityz"][it]
 
+    # velocityz = velocityz.reshape((y,x))
 
-    velocityz = velocityz.reshape((y,x))
+    Velocityz = velocityz[it]
 
     Uz_rotor = []
     for j in np.arange(0,len(ys)):
         for k in np.arange(0,len(zs)):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
             if r <= 63 and r >= 1.5:
-                Uz_rotor.append(velocityz[j,k])
+                Uz_rotor.append(Velocityz[j,k])
 
     return np.average(Uz_rotor)
 
 
 def IA_it_offset(it):
 
-    velocityx = p_rotor.variables["velocityx"][it]
-    velocityy = p_rotor.variables["velocityy"][it]
-    hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
+    # velocityx = p_rotor.variables["velocityx"][it]
+    # velocityy = p_rotor.variables["velocityy"][it]
+    # hvelmag = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
 
-    hvelmag_interp = hvelmag.reshape((y,x))
+    # hvelmag_interp = hvelmag.reshape((y,x))
+
+    hvelmag_interp = hvelmag[it]
     f = interpolate.interp2d(ys,zs,hvelmag_interp)
 
-    hvelmag = hvelmag.reshape((y,x))
+    Hvelmag = hvelmag[it]
+
+    #hvelmag = hvelmag.reshape((y,x))
 
     IA = 0
     for j in np.arange(0,len(ys)):
@@ -91,7 +98,7 @@ def IA_it_offset(it):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
             if r <= 63 and r >= 1.5:
 
-                delta_Ux_i = delta_Ux(r,j,k,f,hvelmag)
+                delta_Ux_i = delta_Ux(r,j,k,f,Hvelmag)
                 IA += r * delta_Ux_i * dA
     return IA
 
@@ -295,6 +302,20 @@ dz = zs[1] - zs[0]
 dA = dy * dz
 
 print("line 295",time.time()-start_time)
+
+
+#velocity field
+velocityz = p_rotor.variables["velocityz"]
+hvelmag = []
+for it in np.arange(tstart_sample_idx,tend_sample_idx):
+    velocityx = p_rotor.variables["velocityx"][it]
+    velocityy = p_rotor.variables["velocityy"][it]
+    hvelmag_it = magnitude_horizontal_velocity(velocityx,velocityy,twist,x,zs,h)
+    hvelmag.append(hvelmag_it)
+
+    hvelmag = hvelmag.reshape((y,x))
+
+print("line 311",np.shape(hvelmag))
 
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
