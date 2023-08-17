@@ -238,6 +238,7 @@ for iv in np.arange(0,len(Variables)):
 
 del df
 
+print("line 241")
 
 #sampling data
 a = Dataset("./sampling_r_0.0.nc")

@@ -433,16 +433,17 @@ for plane in planes:
                     return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
                 
                 print("line 464", time.time()-start_time)
+
                 if fluc_vel == True:
                     if velocity_comp == "Horizontal velocity":
-                        filename = "{0}_{1}_{2}.png".format(plane_labels[ip],velocity_comp[:],float(offset))
+                        filename = "{0}_Fluc_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
                     else:
-                        filename = "{0}_Fluc_vel{1}_{2}.png".format(plane_labels[ip],velocity_comp[-1],float(offset))
+                        filename = "{0}_Fluc_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
                 else:
                     if velocity_comp == "Horizontal velocity":
-                        filename = "{0}_{1}_{2}.png".format(plane_labels[ip],velocity_comp[:],float(offset))
+                        filename = "{0}_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
                     else:
-                        filename = "{0}_Tot_vel{1}_{2}.png".format(plane_labels[ip],velocity_comp[-1],float(offset))
+                        filename = "{0}_Tot_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
 
                     
                 #sort files
