@@ -418,8 +418,8 @@ for plane in planes:
 
                         print(T,time.time()-start_time)
 
-                time.sleep(120)
-                
+                time.sleep(60)
+
                 #whether or not folder exists execute code
                 #sort files
                 def atof(text):
@@ -435,20 +435,20 @@ for plane in planes:
                 
                 print("line 464", time.time()-start_time)
 
-                if fluc_vel == True:
-                    if velocity_comp == "Horizontal velocity":
-                        filename = "{0}_Fluc_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
-                    else:
-                        filename = "{0}_Fluc_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
-                else:
-                    if velocity_comp == "Horizontal velocity":
-                        filename = "{0}_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
-                    else:
-                        filename = "{0}_Tot_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
+                # if fluc_vel == True:
+                #     if velocity_comp == "Horizontal velocity":
+                #         s_filename = "{0}_Fluc_{1}_{2}_".format(plane_labels[ip],velocity_comp[:],float(offset))
+                #     else:
+                #         s_filename = "{0}_Fluc_vel{1}_{2}_".format(plane_labels[ip],velocity_comp[-1],float(offset))
+                # else:
+                #     if velocity_comp == "Horizontal velocity":
+                #         s_filename = "{0}_{1}_{2}_".format(plane_labels[ip],velocity_comp[:],float(offset))
+                #     else:
+                #         s_filename = "{0}_Tot_vel{1}_{2}_".format(plane_labels[ip],velocity_comp[-1],float(offset))
 
                     
                 #sort files
-                files = glob.glob(folder+filename[0:-4]+"*.png")
+                files = glob.glob(folder+"*.png")
                 files.sort(key=natural_keys)
 
                 #write to video
