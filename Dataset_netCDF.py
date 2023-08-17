@@ -253,7 +253,7 @@ time_sampling[:] = Time_sample[tstart_sample_idx:tend_sample_idx]
 
 print("line 254", time.time()-start_time)
 
-offsets = [0.0, -63.0, -126.0]
+offsets = [0.0, 63.0, 126.0]
 for offset in offsets:
 
     a = Dataset("./sampling_r_{}.nc".format(offset))
@@ -290,11 +290,6 @@ for offset in offsets:
     ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
     zs = zo - rotor_coordiates[2]
 
-    print(ys[:])
-    print(zs[:])
-
-    time.sleep(30)
-
 
     dy = ys[1]-ys[0]
     dz = zs[1] - zs[0]
@@ -304,7 +299,7 @@ for offset in offsets:
 
 
     def velocity_field(it):
-        
+
         hvelmag_it = magnitude_horizontal_velocity(velocityx[it],velocityy[it],twist,x,zs,h)
 
         return hvelmag_it
