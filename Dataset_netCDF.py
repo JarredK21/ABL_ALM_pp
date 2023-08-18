@@ -253,7 +253,7 @@ time_sampling[:] = Time_sample[tstart_sample_idx:tend_sample_idx]
 
 print("line 254", time.time()-start_time)
 
-offsets = [0.0, -63.0, -126.]
+offsets = [0.0, -63.0, -126]
 group_label = [0.0, 63.0, 126.0]
 
 ic = 0

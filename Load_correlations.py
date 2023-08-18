@@ -13,14 +13,14 @@ import math
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
-offsets = [0.0, 63.0]
+offsets = [0.0]
 
 a = Dataset(in_dir+"Dataset.nc")
 
 ic = 1
 for offset in offsets:
 
-    Time_start = 90
+    Time_start = 250
 
     Time_OF = np.array(a.variables["time_OF"])
     Time_sampling = np.array(a.variables["time_sampling"])
@@ -30,7 +30,6 @@ for offset in offsets:
 
     Time_start_idx = np.searchsorted(Time_OF,Time_start)
 
-    #RtAeroVxh = np.array(a.variables["RtAeroVxh"][Time_start_idx:])
     RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:])
     RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:])
     MR = np.array(a.variables["RtAeroMrh"][Time_start_idx:])
@@ -42,7 +41,6 @@ for offset in offsets:
     Ux = np.array(group.variables["Ux"])
     Uz = np.array(group.variables["Uz"])
     IA = np.array(group.variables["IA"])
-    Uh = np.array(group.variables["HV"])
 
     f = interpolate.interp1d(Time_sampling,Ux)
     Ux = f(Time_OF)
@@ -56,34 +54,22 @@ for offset in offsets:
     IA = f(Time_OF)
     IA = IA[Time_start_idx:]
 
-    f = interpolate.interp1d(Time_sampling,Uh)
-    Uh = f(Time_OF)
-    Uh = Uh[Time_start_idx:]
-
     Time_OF = Time_OF[Time_start_idx:]
 
-    h_vars = [RtAeroFxh, RtAeroMxh, MR, Ux, Uz, IA, Uh]
-
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(Time_OF,Ux)
-    plt.xlabel("Time [s]")
-    plt.ylabel("$<Ux'>_{rotor}$ rotor averaged horizontal velocity")
-    plt.savefig(in_dir+"velocity_comp.png")
+    h_vars = [RtAeroFxh, RtAeroMxh, MR, Ux, IA]
 
 
-    Variables = ["RtAeroFxh","RtAeroMxh","MR","Ux","Uz","IA", "Uh"]
-    units = ["[N]","[N-m]","[N-m]","[m/s]", "[m/s]", "[$m^4/s$]", "[m/s]"]
+    Variables = ["RtAeroFxh","RtAeroMxh","MR","Ux","IA"]
+    units = ["[N]","[N-m]","[N-m]","[m/s]", "[$m^4/s$]"]
     Ylabels = ["Rotor Thrust", "Rotor Torque","Out-of-plane bending moment",
-               "$<Ux'>_{rotor}$ rotor averaged horizontal velocity", "$<Uz'>_{rotor}$ rotor averaged vertical velocity", 
-               "Asymmetry parameter", "Local hub height velocity"]
+               "$<Ux'>_{rotor}$ rotor averaged horizontal velocity","Asymmetry parameter"]
 
 
     #plotting options
-    compare_total_correlations = False
-    compare_LP_correlations = False
-    compare_time_series = False
-    compare_FFT = False
-    velocity_comp = True
+    compare_total_correlations = True
+    compare_LP_correlations = True
+    compare_time_series = True
+    compare_FFT = True
 
     out_dir = in_dir + "plots{}/".format(ic)
     os.makedirs(out_dir)
@@ -260,7 +246,6 @@ for offset in offsets:
         plt.rcParams.update({'font.size': 16})
         for i in np.arange(0,len(h_vars)):
 
-            Var = Variables[i]
             unit = units[i]
             Ylabel = Ylabels[i]
 
@@ -290,7 +275,6 @@ for offset in offsets:
         plt.rcParams.update({'font.size': 16})
         for i in np.arange(0,len(h_vars)):
 
-            Var = Variables[i]
             unit = units[i]
             Ylabel = Ylabels[i]
 
