@@ -223,7 +223,7 @@ for iv in np.arange(0,len(Variables)):
             RtAeroFxh[:] = signal; del signal
         elif Variable == "RtAeroMxh":
             RtAeroMxh[:] = signal; del signal
-        elif Variable == "RtAeroVxh":
+        elif Variable == "Wind1VelX":
             RtAeroVxh[:] = signal; del signal
 
 del df
@@ -253,7 +253,7 @@ time_sampling[:] = Time_sample[tstart_sample_idx:tend_sample_idx]
 
 print("line 254", time.time()-start_time)
 
-offsets = [0.0, -63.0, -126.0]
+offsets = [0.0, -63.0, -126.]
 group_label = [0.0, 63.0, 126.0]
 
 ic = 0
