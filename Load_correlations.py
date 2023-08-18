@@ -11,16 +11,24 @@ from netCDF4 import Dataset
 import pandas as pd
 import math
 
+def correlation_coef(x,y):
+    
+    r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
+
+    return r
+
+
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 offsets = [0.0]
 
 a = Dataset(in_dir+"Dataset.nc")
 
-ic = 1
+ic = 2
 for offset in offsets:
 
-    Time_start = 250
+    Time_start = 155
+    Time_end = 590
 
     Time_OF = np.array(a.variables["time_OF"])
     Time_sampling = np.array(a.variables["time_sampling"])
@@ -29,11 +37,13 @@ for offset in offsets:
     dt = Time_OF[1] - Time_OF[0]
 
     Time_start_idx = np.searchsorted(Time_OF,Time_start)
+    Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
-    RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:])
-    RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:])
-    MR = np.array(a.variables["RtAeroMrh"][Time_start_idx:])
-    Theta = np.array(a.variables["Theta"][Time_start_idx:])
+    RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:Time_end_idx])
+    RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:Time_end_idx])
+    MR = np.array(a.variables["RtAeroMrh"][Time_start_idx:Time_end_idx])
+    Theta = np.array(a.variables["Theta"][Time_start_idx:Time_end_idx])
+    RtAeroVxh = np.array(a.variables["RtAeroVxh"][Time_start_idx:Time_end_idx])
 
 
     group = a.groups["{}".format(offset)]
@@ -44,24 +54,24 @@ for offset in offsets:
 
     f = interpolate.interp1d(Time_sampling,Ux)
     Ux = f(Time_OF)
-    Ux = Ux[Time_start_idx:]
+    Ux = Ux[Time_start_idx:Time_end_idx]
 
     f = interpolate.interp1d(Time_sampling,Uz)
     Uz = f(Time_OF)
-    Uz = Uz[Time_start_idx:]
+    Uz = Uz[Time_start_idx:Time_end_idx]
 
     f = interpolate.interp1d(Time_sampling,IA)
     IA = f(Time_OF)
-    IA = IA[Time_start_idx:]
+    IA = IA[Time_start_idx:Time_end_idx]
 
-    Time_OF = Time_OF[Time_start_idx:]
+    Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
-    h_vars = [RtAeroFxh, RtAeroMxh, MR, Ux, IA]
+    h_vars = [RtAeroVxh, RtAeroFxh, RtAeroMxh, MR, Ux, IA]
 
 
-    Variables = ["RtAeroFxh","RtAeroMxh","MR","Ux","IA"]
-    units = ["[N]","[N-m]","[N-m]","[m/s]", "[$m^4/s$]"]
-    Ylabels = ["Rotor Thrust", "Rotor Torque","Out-of-plane bending moment",
+    Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Ux","IA"]
+    units = ["[m/s]","[N]","[N-m]","[N-m]","[m/s]", "[$m^4/s$]"]
+    Ylabels = ["$<Ux'>_{blade}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque","Out-of-plane bending moment",
                "$<Ux'>_{rotor}$ rotor averaged horizontal velocity","Asymmetry parameter"]
 
 

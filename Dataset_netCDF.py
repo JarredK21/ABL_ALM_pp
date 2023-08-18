@@ -37,7 +37,10 @@ def magnitude_horizontal_velocity(u,v,twist,x,zs,h):
 
     return mag_horz_vel
 
-
+#loop over coordinates with counter
+#calc range of y and z coordinates rotor falls into
+#if true sum velocity
+#divide by len
 def Ux_it_offset(it):
 
     Hvelmag = hvelmag[it]
