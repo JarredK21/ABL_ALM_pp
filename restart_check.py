@@ -191,11 +191,12 @@ for iv in np.arange(0,len(Variables)):
             signal = np.array(da[txt])
 
         plt.plot(Time_OF,signal)
-        plt.xlabel("Time [s]")
-        plt.ylabel("{0} {1}".format(Variable,unit))
-        plt.xlim([120,160])
-        plt.savefig("./{0}".format(Variable))
-        plt.close(fig)
+        
+    plt.xlabel("Time [s]")
+    plt.ylabel("{0} {1}".format(Variable,unit))
+    plt.xlim([120,160])
+    plt.savefig("./{0}".format(Variable))
+    plt.close(fig)
 
         
 
