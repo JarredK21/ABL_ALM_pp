@@ -165,15 +165,16 @@ for iv in np.arange(0,len(Variables)):
 
     fig = plt.figure(figsize=(14,8))
 
-    for i in np.arange(0,1):
+    ic = 0
+    for file in OF_files:
 
 
         #openfast data
-        da = io.fast_output_file.FASTOutputFile(OF_files[i]).toDataFrame()
+        da = io.fast_output_file.FASTOutputFile(file).toDataFrame()
 
         restart_time = 137.748
         Time_OF = np.array(da["Time_[s]"])
-        if i == 1:
+        if ic == 1:
             Time_OF = Time_OF+restart_time
 
 
@@ -191,7 +192,9 @@ for iv in np.arange(0,len(Variables)):
             signal = np.array(da[txt])
 
         plt.plot(Time_OF,signal)
-        
+
+        ic+=1
+
     plt.xlabel("Time [s]")
     plt.ylabel("{0} {1}".format(Variable,unit))
     plt.xlim([120,160])
