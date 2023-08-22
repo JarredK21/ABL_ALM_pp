@@ -148,8 +148,6 @@ start_time = time.time()
 # twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 # del precursor
 
-print("line 143",time.time()-start_time)
-
 OF_files = ["../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out",
              "../../NREL_5MW_MCBL_R_CRPM_100320/NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out"]
 
@@ -194,6 +192,7 @@ for iv in np.arange(0,len(Variables)):
         plt.plot(Time_OF,signal)
 
         ic+=1
+        print("line 195",time.time()-start_time)
 
     plt.xlabel("Time [s]")
     plt.ylabel("{0} {1}".format(Variable,unit))
