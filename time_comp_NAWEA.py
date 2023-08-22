@@ -30,7 +30,7 @@ in_dir = "../../NAWEA_23/post_processing/"
 
 a = pd.read_csv(in_dir+'out.csv')
 
-Time_starts = np.arange(50,350,10)
+Time_starts = np.arange(50,300,10)
 
 corr_Ux_torq = []
 corr_torq_MR = []
