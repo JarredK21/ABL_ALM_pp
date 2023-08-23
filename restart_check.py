@@ -63,5 +63,6 @@ for iv in np.arange(0,len(Variables)):
     plt.xlabel("Time [s]")
     plt.ylabel("{0} {1}".format(Variable,unit))
     plt.xlim([120,160])
+    plt.legend(["(1)", "(2a)", "(2b)"])
     plt.savefig("./{0}".format(Variable))
     plt.close(fig)
