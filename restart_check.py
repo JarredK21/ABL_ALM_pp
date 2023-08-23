@@ -56,14 +56,18 @@ for iv in np.arange(0,len(Variables)):
             txt = "{0}_{1}".format(Variable,units[iv])
             signal = np.array(da[txt])
 
-        plt.plot(Time_OF,signal,color=colors[ic])
-
+        if ic == 1:
+            plt.plot(Time_OF,signal+(0.1*np.max(signal)),color=colors[ic])
+        elif ic == 2:
+            plt.plot(Time_OF,signal+(0.2*np.max(signal)),color=colors[ic])
+        else:
+            plt.plot(Time_OF,signal,color=colors[ic])
         ic+=1
         print("line 195",time.time()-start_time)
 
     plt.xlabel("Time [s]")
     plt.ylabel("{0} {1}".format(Variable,unit))
     plt.xlim([120,160])
-    plt.legend(["(1)", "(2a)", "(2b)"])
+    plt.legend(["(1)", "(2a)+20%max", "(2b)"])
     plt.savefig("./{0}".format(Variable))
     plt.close(fig)
