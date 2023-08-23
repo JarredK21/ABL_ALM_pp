@@ -21,6 +21,7 @@ OF_files = ["../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out",
 
 Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","MR"]
 units = ["[m/s]","[N]","[N-m]","[N-m]"]
+colors = ["r", "b", "g"]
 
 
 for iv in np.arange(0,len(Variables)):
@@ -55,7 +56,7 @@ for iv in np.arange(0,len(Variables)):
             txt = "{0}_{1}".format(Variable,units[iv])
             signal = np.array(da[txt])
 
-        plt.plot(Time_OF,signal)
+        plt.plot(Time_OF,signal,color=colors[ic])
 
         ic+=1
         print("line 195",time.time()-start_time)
