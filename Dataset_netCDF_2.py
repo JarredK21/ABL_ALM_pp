@@ -23,7 +23,6 @@ OF_dim = ncfile.createDimension("OF",None)
 
 #create variables
 time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
-time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
 
 RtAeroVxh = ncfile.createVariable("RtAeroVxh", np.float64, ('OF',),zlib=True)
 RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
