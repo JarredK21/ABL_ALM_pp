@@ -71,17 +71,14 @@ for iv in np.arange(0,len(Variables)):
         elif Variable == "Wind1VelX":
             RtAeroVxh[:] = signal; del signal
         elif Variable == "LSShftFya":
-            print(np.shape(signal))
             LSShftFya[:] = signal[:,0]; del signal
         elif Variable == "LSShftFza":
-            print(np.shape(signal))
             LSShftFza[:] = signal[:,0]; del signal
         elif Variable == "LSShftFys":
-            print(np.shape(signal))
             LSShftFys[:] = signal[:,0]; del signal
         elif Variable == "LSShftFzs":
             print(np.shape(signal))
-            LSShftFzs[:] = signal[:,0]; del signal
+            LSShftFzs[:] = signal; del signal
         elif Variable == "LSShftMya":
             print(np.shape(signal))
             LSShftMya[:] = signal[:,0]; del signal
