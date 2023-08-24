@@ -81,13 +81,13 @@ for iv in np.arange(0,len(Variables)):
             LSShftFzs[:] = signal; del signal
         elif Variable == "LSSGagMya":
             print(np.shape(signal))
-            LSShftMya[:] = signal[:,0]; del signal
+            LSShftMya[:] = signal; del signal
         elif Variable == "LSSGagMza":
             print(np.shape(signal))
             LSShftMza[:] = signal; del signal
         elif Variable == "LSSGagMys":
             print(np.shape(signal))
-            LSShftMys[:] = signal[:,0]; del signal
+            LSShftMys[:] = signal; del signal
         elif Variable == "LSSGagMzs":
             print(np.shape(signal))
             LSShftMzs[:] = signal; del signal
