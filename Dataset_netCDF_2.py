@@ -43,7 +43,7 @@ df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/N
 time_OF[:] = np.array(df["Time_[s]"])
 
 Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","MR","Theta","LSShftFya","LSShftFza","LSShftFys","LSShftFzs",
-             "LSShftMya","LSShftMza","LSShftMys","LSShftMzs"]
+             "LSSGagMya","LSSGagMza","LSSGagMys","LSSGagMzs"]
 units = ["[m/s]","[N]","[N-m]","[N-m]","[rads]","[kN]","[kN]","[kN]","[kN]","[kN-m]","[kN-m]","[kN-m]","[kN-m]"]
 
 
@@ -79,15 +79,15 @@ for iv in np.arange(0,len(Variables)):
         elif Variable == "LSShftFzs":
             print(np.shape(signal))
             LSShftFzs[:] = signal; del signal
-        elif Variable == "LSShftMya":
+        elif Variable == "LSSGagMya":
             print(np.shape(signal))
             LSShftMya[:] = signal[:,0]; del signal
-        elif Variable == "LSShftMza":
+        elif Variable == "LSSGagMza":
             print(np.shape(signal))
             LSShftMza[:] = signal; del signal
-        elif Variable == "LSShftMys":
+        elif Variable == "LSSGagMys":
             print(np.shape(signal))
             LSShftMys[:] = signal[:,0]; del signal
-        elif Variable == "LSShftMzs":
+        elif Variable == "LSSGagMzs":
             print(np.shape(signal))
             LSShftMzs[:] = signal; del signal
