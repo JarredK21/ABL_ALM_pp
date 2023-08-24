@@ -20,7 +20,6 @@ ncfile.title = "OpenFast data sampling output combined"
 
 #create global dimensions
 OF_dim = ncfile.createDimension("OF",None)
-sampling_dim = ncfile.createDimension("sampling",None)
 
 #create variables
 time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
@@ -73,6 +72,7 @@ for iv in np.arange(0,len(Variables)):
         elif Variable == "Wind1VelX":
             RtAeroVxh[:] = signal; del signal
         elif Variable == "LSShftFya":
+            print(signal)
             LSShftFya[:] = signal; del signal
         elif Variable == "LSShftFza":
             LSShftFza[:] = signal; del signal
