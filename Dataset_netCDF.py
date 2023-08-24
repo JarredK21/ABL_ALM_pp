@@ -168,6 +168,14 @@ RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
 RtAeroMrh = ncfile.createVariable("RtAeroMrh", np.float64, ('OF',),zlib=True)
 Theta = ncfile.createVariable("Theta", np.float64, ('OF',),zlib=True)
+LSShftFya = ncfile.createVariable("LSShftFya", np.float64, ('OF',),zlib=True)
+LSShftFza = ncfile.createVariable("LSShftFza", np.float64, ('OF',),zlib=True)
+LSShftFys = ncfile.createVariable("LSShftFys", np.float64, ('OF',),zlib=True)
+LSShftFzs = ncfile.createVariable("LSShftFzs", np.float64, ('OF',),zlib=True)
+LSShftMya = ncfile.createVariable("LSShftMya", np.float64, ('OF',),zlib=True)
+LSShftMza = ncfile.createVariable("LSShftMza", np.float64, ('OF',),zlib=True)
+LSShftMys = ncfile.createVariable("LSShftMys", np.float64, ('OF',),zlib=True)
+LSShftMzs = ncfile.createVariable("LSShftMzs", np.float64, ('OF',),zlib=True)
 
 print("line 175",time.time()-start_time)
 
@@ -201,8 +209,9 @@ df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
 
 print("line 205",time.time()-start_time)
 
-Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","MR","Theta"]
-units = ["[m/s]","[N]","[N-m]","[N-m]","[rads]"]
+Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","MR","Theta","LSShftFya","LSShftFza","LSShftFys","LSShftFzs",
+             "LSShftMya","LSShftMza","LSShftMys","LSShftMzs"]
+units = ["[m/s]","[N]","[N-m]","[N-m]","[rads]","[kN]","[kN]","[kN]","[kN]","[kN-m]","[kN-m]","[kN-m]","[kN-m]"]
 
 
 for iv in np.arange(0,len(Variables)):
@@ -228,6 +237,22 @@ for iv in np.arange(0,len(Variables)):
             RtAeroMxh[:] = signal; del signal
         elif Variable == "Wind1VelX":
             RtAeroVxh[:] = signal; del signal
+        elif Variable == "LSShftFya":
+            LSShftFya[:] = signal; del signal
+        elif Variable == "LSShftFza":
+            LSShftFza[:] = signal; del signal
+        elif Variable == "LSShftFys":
+            LSShftFys[:] = signal; del signal
+        elif Variable == "LSShftFzs":
+            LSShftFzs[:] = signal; del signal
+        elif Variable == "LSShftMya":
+            LSShftMya[:] = signal; del signal
+        elif Variable == "LSShftMza":
+            LSShftMza[:] = signal; del signal
+        elif Variable == "LSShftMys":
+            LSShftMys[:] = signal; del signal
+        elif Variable == "LSShftMzs":
+            LSShftMzs[:] = signal; del signal
 
 del df
 
