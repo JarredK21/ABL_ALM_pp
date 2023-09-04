@@ -167,7 +167,7 @@ for iv in np.arange(0,len(Variables)):
         signalz = np.array(df["RtAeroMzh_[N-m]"])
         
         if Variable == "MR":
-            signal = np.sqrt( np.square(signaly) + np.square(signalz) ) 
+            signal = np.sqrt( np.add(np.square(signaly), np.square(signalz)) ) 
             RtAeroMrh[:] = signal; del signal
         elif Variable == "Theta": 
             signal = np.arctan2(signalz,signaly)
