@@ -2,13 +2,13 @@ from netCDF4 import Dataset
 import numpy as np
 
 
-def offset_data(x, i, no_cells_offset,var):
+def offset_data(i, no_cells_offset,var):
 
-    print("shape {}".format(var),np.shape(x)); print(i), print(no_cells_offset)
+    print("shape {}".format(var)); print(i), print(no_cells_offset)
     if var == "coordinates":
-        u_slice = x[(i*no_cells_offset):((i+1)*no_cells_offset)]
+        u_slice = np.array(p.variables["coordinates"][(i*no_cells_offset):((i+1)*no_cells_offset)])
     else:
-        u_slice = x[:,(i*no_cells_offset):((i+1)*no_cells_offset)]
+        u_slice = np.array(p.variables["{}".format(var)][:,(i*no_cells_offset):((i+1)*no_cells_offset)])
     print("shape u_slice",np.shape(u_slice))
 
     return u_slice
@@ -86,21 +86,21 @@ for plane in planes:
         velocityy = group.createVariable("velocityy",np.float64,("num_time_steps","num_points"),zlib=True)
         velocityz = group.createVariable("velocityz",np.float64,("num_time_steps","num_points"),zlib=True)
 
-        coord = np.array(p.variables["coordinates"])
-        coord = offset_data(coord, io, no_cells_offset,var="coordinates"); print("shape coord", np.shape(coord))
+        #coord = np.array(p.variables["coordinates"])
+        coord = offset_data(io, no_cells_offset,var="coordinates"); print("shape coord", np.shape(coord))
         coordinates[:] = coord; del coord
         print("line 103")
 
-        velx = np.array(p.variables["velocityx"])
-        velx = offset_data(velx,io,no_cells_offset,var="velx"); print("shape velx", np.shape(velx))
+        #velx = np.array(p.variables["velocityx"])
+        velx = offset_data(io,no_cells_offset,var="velocityx"); print("shape velx", np.shape(velx))
         velocityx[:] = velx; del velx
         print("line 109")
-        vely = np.array(p.variables["velocityy"])
-        vely = offset_data(vely, io,no_cells_offset,var="vely"); print("shape vely", np.shape(vely))
+        #vely = np.array(p.variables["velocityy"])
+        vely = offset_data(io,no_cells_offset,var="velocityy"); print("shape vely", np.shape(vely))
         velocityy[:] = vely; del vely
         print("line 113")
-        velz = np.array(p.variables["velocityz"])
-        velz = offset_data(velz,io,no_cells_offset,var="velz"); print("shape velz", np.shape(velz))
+        #velz = np.array(p.variables["velocityz"])
+        velz = offset_data(io,no_cells_offset,var="velocityz"); print("shape velz", np.shape(velz))
         velocityz[:] = velz; del velz
         print("line 117")
 
