@@ -111,7 +111,7 @@ def delta_Ux(r,j,k,f,Hvelmag):
 
 
 #defining twist angles with height from precursor
-precursor = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/abl_statistics60000.nc")
+precursor = Dataset("./abl_statistics60000.nc")
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
 t_start = np.searchsorted(precursor.variables["time"],32300)
 t_end = np.searchsorted(precursor.variables["time"],33500)
@@ -125,7 +125,7 @@ print("line 124",time.time()-start_time)
 
 
 #create netcdf file
-ncfile = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/Dataset.nc",mode="w",format='NETCDF4') #change name
+ncfile = Dataset("./Dataset.nc",mode="w",format='NETCDF4')
 ncfile.title = "AMR-Wind data sampling output combined"
 
 #create global dimensions
@@ -149,7 +149,7 @@ print("line 148",time.time()-start_time)
 
 
 #openfast data
-df = io.fast_output_file.FASTOutputFile("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/NREL_5MW_Main.out").toDataFrame()
+df = io.fast_output_file.FASTOutputFile("./NREL_5MW_Main.out").toDataFrame()
 
 time_OF[:] = np.array(df["Time_[s]"])
 
@@ -191,7 +191,7 @@ del df
 print("line 193",time.time()-start_time)
 
 #sampling data
-a = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/sampling_r_0.0.nc")
+a = Dataset("./sampling_r_0.0.nc")
 
 #sampling time
 Time_sample = np.array(a.variables["time"])
@@ -205,7 +205,7 @@ group_label = [0.0]
 ic = 0
 for offset in offsets:
 
-    a = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/sampling_r_{}.nc".format(offset))
+    a = Dataset("./sampling_r_{}.nc".format(offset))
 
     group = ncfile.createGroup("{}".format(group_label[ic]))
 
