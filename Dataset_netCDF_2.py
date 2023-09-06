@@ -80,7 +80,6 @@ def IA_it_offset(it):
 def delta_Ux(r,j,k,f,Hvelmag):
 
     Y_0 = ys[j]
-    Z_0 = zs[k]
 
     theta = np.arccos(Y_0/r)
 
@@ -126,7 +125,7 @@ print("line 143",time.time()-start_time)
 
 
 #create netcdf file
-ncfile = Dataset("./Dataset.nc",mode="w",format='NETCDF4') #change name
+ncfile = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/Dataset.nc",mode="w",format='NETCDF4') #change name
 ncfile.title = "AMR-Wind data sampling output combined"
 
 #create global dimensions
@@ -140,7 +139,8 @@ time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',)
 RtAeroVxh = ncfile.createVariable("RtAeroVxh", np.float64, ('OF',),zlib=True)
 RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
-RtAeroMrh = ncfile.createVariable("RtAeroMrh", np.float64, ('OF',),zlib=True)
+RtAeroMyh = ncfile.createVariable("RtAeroMyh", np.float64, ('OF',),zlib=True)
+RtAeroMzh = ncfile.createVariable("RtAeroMzh", np.float64, ('OF',),zlib=True)
 Theta = ncfile.createVariable("Theta", np.float64, ('OF',),zlib=True)
 LSShftMys = ncfile.createVariable("LSShftMys", np.float64, ('OF',),zlib=True)
 LSShftMzs = ncfile.createVariable("LSShftMzs", np.float64, ('OF',),zlib=True)
@@ -149,29 +149,25 @@ print("line 175",time.time()-start_time)
 
 
 #openfast data
-df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+df = io.fast_output_file.FASTOutputFile("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/NREL_5MW_Main.out").toDataFrame()
 
 time_OF[:] = np.array(df["Time_[s]"])
 
 print("line 156",time.time()-start_time)
 
-Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","MR","Theta","LSSGagMys","LSSGagMzs"]
-units = ["[m/s]","[N]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]"]
+Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","Theta","LSSGagMys","LSSGagMzs"]
+units = ["[m/s]","[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]"]
 
 
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
 
-    if Variable == "MR" or Variable == "Theta":
+    if Variable == "Theta":
         signaly = np.array(df["RtAeroMyh_[N-m]"])
         signalz = np.array(df["RtAeroMzh_[N-m]"])
         
-        if Variable == "MR":
-            signal = np.sqrt( np.add(np.square(signaly), np.square(signalz)) ) 
-            RtAeroMrh[:] = signal; del signal
-        elif Variable == "Theta": 
-            signal = np.arctan2(signalz,signaly)
-            Theta[:] = signal; del signal
+        signal = np.arctan2(signalz,signaly)
+        Theta[:] = signal; del signal
 
     else:
         txt = "{0}_{1}".format(Variable,units[iv])
@@ -180,6 +176,10 @@ for iv in np.arange(0,len(Variables)):
             RtAeroFxh[:] = signal; del signal
         elif Variable == "RtAeroMxh":
             RtAeroMxh[:] = signal; del signal
+        elif Variable == "RtAeroMyh":
+            RtAeroMyh[:] = signal; del signal
+        elif Variable == "RtAeroMzh":
+            RtAeroMzh[:] = signal; del signal
         elif Variable == "Wind1VelX":
             RtAeroVxh[:] = signal; del signal
         elif Variable == "LSSGagMys":
@@ -193,13 +193,11 @@ del df
 print("line 193",time.time()-start_time)
 
 #sampling data
-a = Dataset("./sampling_r_0.0.nc")
+a = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/sampling_r_0.0.nc")
 
 #sampling time
 Time_sample = np.array(a.variables["time"])
-Time_sample = Time_sample - Time_sample[0]
-
-time_sampling[:] = Time_sample
+time_sampling[:] = Time_sample; del Time_sample
 
 print("line 254", time.time()-start_time)
 
@@ -209,7 +207,7 @@ group_label = [0.0]
 ic = 0
 for offset in offsets:
 
-    a = Dataset("./sampling_r_{}.nc".format(offset))
+    a = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/sampling_r_{}.nc".format(offset))
 
     group = ncfile.createGroup("{}".format(group_label[ic]))
 
@@ -260,15 +258,15 @@ for offset in offsets:
     #velocity field
     velocityx = p_rotor.variables["velocityx"]
     velocityy = p_rotor.variables["velocityy"]
-    velocityz = p_rotor.variables["velocityz"]
+    del p_rotor
     hvelmag = []
     with Pool() as pool:
-        for hvelmag_it in pool.imap(velocity_field,np.arange(0,len(Time_sample))):
+        for hvelmag_it in pool.imap(velocity_field,np.arange(0,len(velocityx))):
             
             hvelmag.append(hvelmag_it)
             print(len(hvelmag),time.time()-start_time)
 
-    np.array(hvelmag)
+    np.array(hvelmag); del velocityx; del velocityy
 
     print("line 323",np.shape(hvelmag))
 
@@ -280,7 +278,7 @@ for offset in offsets:
             Ux_it = []
             print("Ux calcs",len(Time_sample))
             with Pool() as pool:
-                for Ux_i in pool.imap(Ux_it_offset, np.arange(0,len(Time_sample))):
+                for Ux_i in pool.imap(Ux_it_offset, np.arange(0,len(hvelmag))):
                     Ux_it.append(Ux_i)
                     print(len(Ux_it),time.time()-start_time)
                 Ux_it = np.array(Ux_it)
@@ -290,7 +288,7 @@ for offset in offsets:
             IA_it = []
             print("IA calcs",len(Time_sample))
             with Pool() as pool:
-                for IA_i in pool.imap(IA_it_offset, np.arange(0,len(Time_sample))):
+                for IA_i in pool.imap(IA_it_offset, np.arange(0,len(hvelmag))):
                     IA_it.append(IA_i)
                     print(len(IA_it),time.time()-start_time)
                 IA_it = np.array(IA_it)
