@@ -111,7 +111,7 @@ def delta_Ux(r,j,k,f,Hvelmag):
 
 
 #defining twist angles with height from precursor
-precursor = Dataset("./abl_statistics60000.nc")
+precursor = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/abl_statistics60000.nc")
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
 t_start = np.searchsorted(precursor.variables["time"],32300)
 t_end = np.searchsorted(precursor.variables["time"],33500)
@@ -121,7 +121,7 @@ h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 del precursor
 
-print("line 143",time.time()-start_time)
+print("line 124",time.time()-start_time)
 
 
 #create netcdf file
@@ -145,7 +145,7 @@ Theta = ncfile.createVariable("Theta", np.float64, ('OF',),zlib=True)
 LSShftMys = ncfile.createVariable("LSShftMys", np.float64, ('OF',),zlib=True)
 LSShftMzs = ncfile.createVariable("LSShftMzs", np.float64, ('OF',),zlib=True)
 
-print("line 175",time.time()-start_time)
+print("line 148",time.time()-start_time)
 
 
 #openfast data
@@ -157,8 +157,6 @@ print("line 156",time.time()-start_time)
 
 Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","Theta","LSSGagMys","LSSGagMzs"]
 units = ["[m/s]","[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]"]
-
-
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
 
