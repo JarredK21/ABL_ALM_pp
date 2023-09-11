@@ -188,16 +188,17 @@ for iv in np.arange(0,len(Variables)):
 
 del df
 
-print("line 193",time.time()-start_time)
+print("line 191",time.time()-start_time)
 
 #sampling data
 a = Dataset("./sampling_r_0.0.nc")
 
 #sampling time
 Time_sample = np.array(a.variables["time"])
+time_idx = len(Time_sample)
 time_sampling[:] = Time_sample; del Time_sample
 
-print("line 254", time.time()-start_time)
+print("line 201", time_idx, time.time()-start_time)
 
 offsets = [0.0]
 group_label = [0.0]
@@ -259,14 +260,16 @@ for offset in offsets:
     del p_rotor
     hvelmag = []
     with Pool() as pool:
-        for hvelmag_it in pool.imap(velocity_field,np.arange(0,len(velocityx))):
+        ih = 1
+        for hvelmag_it in pool.imap(velocity_field,np.arange(0,time_idx)):
             
             hvelmag.append(hvelmag_it)
-            print(len(hvelmag),time.time()-start_time)
+            print(ih,time.time()-start_time)
+            ih+=1
 
     np.array(hvelmag); del velocityx; del velocityy
 
-    print("line 323",np.shape(hvelmag))
+    print("line 272",np.shape(hvelmag))
 
     for iv in np.arange(0,len(Variables)):
         Variable = Variables[iv]
@@ -274,21 +277,25 @@ for offset in offsets:
 
         if Variable[0:2] == "Ux":
             Ux_it = []
-            print("Ux calcs",len(Time_sample))
+            print("Ux calcs")
             with Pool() as pool:
-                for Ux_i in pool.imap(Ux_it_offset, np.arange(0,len(hvelmag))):
+                i_Ux = 1
+                for Ux_i in pool.imap(Ux_it_offset, np.arange(0,time_idx)):
                     Ux_it.append(Ux_i)
-                    print(len(Ux_it),time.time()-start_time)
+                    print(i_Ux,time.time()-start_time)
+                    i_Ux+=1
                 Ux_it = np.array(Ux_it)
                 Ux[:] = Ux_it; del Ux_it
 
         elif Variable[0:2] == "IA":
             IA_it = []
-            print("IA calcs",len(Time_sample))
+            print("IA calcs")
             with Pool() as pool:
-                for IA_i in pool.imap(IA_it_offset, np.arange(0,len(hvelmag))):
+                i_IA = 1
+                for IA_i in pool.imap(IA_it_offset, np.arange(0,time_idx)):
                     IA_it.append(IA_i)
-                    print(len(IA_it),time.time()-start_time)
+                    print(i_IA,time.time()-start_time)
+                    i_IA+=1
                 IA_it = np.array(IA_it)
                 IA[:] = IA_it; del IA_it
 
@@ -298,4 +305,4 @@ for offset in offsets:
 print(ncfile)
 ncfile.close()
 
-print("line 352",time.time() - start_time)
+print("line 308",time.time() - start_time)
