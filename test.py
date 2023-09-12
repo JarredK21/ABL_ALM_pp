@@ -40,6 +40,7 @@ def IA_it_offset(it):
                 delta_Ux_i = delta_Ux(it,r,ijk,j)
                 IA += r * delta_Ux_i * dA
             ijk+=1
+            print(ijk)
     return IA
 
 
@@ -67,10 +68,13 @@ def delta_Ux(it,r,ijk,j):
     Z_2 = r*np.sin(theta_2)
 
     Ux_0 =  velocityx[it,ijk]
+    print("line 70")
     Ux_1_idx = search_coordintes(Y_1,Z_1)
     Ux_1 = velocityx[it,Ux_1_idx]
+    print("line 73")
     Ux_2_idx = search_coordintes(Y_2,Z_2)
     Ux_2 = velocityx[it,Ux_2_idx]
+    print("line 76")
 
     delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
