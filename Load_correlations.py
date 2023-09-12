@@ -57,7 +57,7 @@ def temporal_spectra(signal,dt,Var):
     return frq, PSD
 
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
 
 offsets = [0.0]
 
@@ -66,23 +66,29 @@ a = Dataset(in_dir+"Dataset.nc")
 ic = 2
 for offset in offsets:
 
-    Time_start = 155
-
     Time_OF = np.array(a.variables["time_OF"])
     Time_sampling = np.array(a.variables["time_sampling"])
-    Time_sampling[0] = Time_OF[0]
-    Time_sampling[-1] = Time_OF[-1]
+    Time_sampling = Time_sampling - Time_sampling[0]
+
+    Time_start = 100
+    Time_end = Time_sampling[-1]
+
     dt = Time_OF[1] - Time_OF[0]
 
     Time_start_idx = np.searchsorted(Time_OF,Time_start)
+    Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
-    RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:])
-    RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:])
-    MR = np.array(a.variables["RtAeroMrh"][Time_start_idx:])
-    Theta = np.array(a.variables["Theta"][Time_start_idx:])
-    RtAeroVxh = np.array(a.variables["RtAeroVxh"][Time_start_idx:])
-    LSShftMys = np.array(a.variables["LSShftMys"][Time_start_idx:])
-    LSShftMzs = np.array(a.variables["LSShftMzs"][Time_start_idx:])
+    Time_OF = Time_OF[Time_start_idx:Time_end_idx]
+
+    RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:Time_end_idx])
+    RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:Time_end_idx])
+    RtAeroMyh = np.array(a.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
+    RtAeroMzh = np.array(a.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
+    MR = np.sqrt( np.add(np.square(RtAeroMyh), np.square(RtAeroMzh)) ) 
+    Theta = np.array(a.variables["Theta"][Time_start_idx:Time_end_idx])
+    RtAeroVxh = np.array(a.variables["RtAeroVxh"][Time_start_idx:Time_end_idx])
+    LSShftMys = np.array(a.variables["LSShftMys"][Time_start_idx:Time_end_idx])
+    LSShftMzs = np.array(a.variables["LSShftMzs"][Time_start_idx:Time_end_idx])
     LSSMR = np.sqrt( np.add(np.square(LSShftMys), np.square(LSShftMzs)) ) 
 
 
@@ -93,23 +99,19 @@ for offset in offsets:
 
     f = interpolate.interp1d(Time_sampling,Ux)
     Ux = f(Time_OF)
-    Ux = Ux[Time_start_idx:]
 
     f = interpolate.interp1d(Time_sampling,IA)
     IA = f(Time_OF)
-    IA = IA[Time_start_idx:]
-
-    Time_OF = Time_OF[Time_start_idx:]
 
 
     #plotting options
     plot_variabes = True
     compare_total_correlations = True
     compare_LP_correlations = True
-    compare_time_series = True
-    compare_FFT = True
+    compare_time_series = False
+    compare_FFT = False
 
-    out_dir = in_dir + "lineplots{}/".format(ic)
+    out_dir = in_dir + "lineplots_{}/".format(offset)
 
 
     #plot variables#
@@ -127,9 +129,9 @@ for offset in offsets:
             fig = plt.figure(figsize=(14,8))
             plt.plot(Time_OF,h_vars[i],"-b")
             plt.plot(Time_OF,signal_LP,"-r")
-            plt.axhline(np.mean(h_vars[i]),"--k")
-            plt.xlabel("Time [s]")
-            plt.ylabel("{0}".format(Ylabels[i]))
+            plt.axhline(np.mean(h_vars[i]),linestyle="--",color="k")
+            plt.xlabel("Time [s]",fontsize=16)
+            plt.ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=16)
             plt.legend(["total signal", "Low pass filtered signal","mean signal"])
             plt.tight_layout()
             plt.savefig(out_dir+"{0}".format(Variables[i]))
@@ -151,16 +153,16 @@ for offset in offsets:
                 fig,ax = plt.subplots(figsize=(14,8))
                 
                 corr = correlation_coef(h_vars[j],h_vars[i])
+                corr = round(corr,2)
 
                 ax.plot(Time_OF,h_vars[j],'-b')
-                ax.set_xticks(ticks)
-                ax.set_ylabel("{0} {1}".format(Ylabels[j],units[j]),fontsize=16)
+                ax.set_ylabel("{0} {1}".format(Ylabels[j],units[j]),fontsize=14)
 
                 ax2=ax.twinx()
                 ax2.plot(Time_OF,h_vars[i],"-r")
-                ax2.set_ylabel("{}".format(Ylabels[i]),fontsize=16)
+                ax2.set_ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=14)
 
-                plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=18)
+                plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
                 ax.set_xlabel("Time [s]",fontsize=16)
                 plt.tight_layout()
                 plt.savefig(out_dir+"corr_{0}_{1}.png".format(Variables[j],Variables[i]))
@@ -187,16 +189,16 @@ for offset in offsets:
                 signal_LP_i = low_pass_filter(h_vars[i],cutoff)
                 
                 corr_LP = correlation_coef(signal_LP_j,signal_LP_i)
+                corr_LP = round(corr_LP,2)
 
                 ax.plot(Time_OF,signal_LP_j,"-b")
-                ax.set_ylabel("Low pass filtered {0} {1}".format(Ylabels[j],units[j]),fontsize=16)
+                ax.set_ylabel("Low pass filtered {0} {1}".format(Ylabels[j],units[j]),fontsize=14)
 
                 ax2=ax.twinx()
                 ax2.plot(Time_OF,signal_LP_i,"-r")
-                ax2.set_ylabel("Low pass filtered {0} {1}".format(Ylabels[i], units[i]),fontsize=16)
+                ax2.set_ylabel("Low pass filtered {0} {1}".format(Ylabels[i], units[i]),fontsize=14)
 
-                plt.title("Correlating {0} with {1}".format(Ylabels[j],Ylabel),fontsize=18)
-                plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=18)
+                plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr_LP),fontsize=16)
 
                 ax.set_xlabel("Time [s]",fontsize=16)
                 plt.tight_layout()
