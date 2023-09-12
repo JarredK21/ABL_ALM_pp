@@ -122,7 +122,7 @@ for k in zs:
     for j in ys:
         coords.append([j, k])
 
-velocityx = p_rotor.variables["velocityx"]; del p_rotor
+velocityx = np.array(p_rotor.variables["velocityx"]); del p_rotor
 
 print("line 117",time.time()-start_time)
 
