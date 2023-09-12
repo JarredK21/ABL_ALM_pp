@@ -16,15 +16,13 @@ import pandas as pd
 
 def Ux_it_offset(it):
 
-    #Velocityx = velocityx[it]
-
     Ux_rotor = []
     ijk = 0
     for k in np.arange(0,len(zs)):
         for j in np.arange(0,len(ys)):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
             if r <= 63 and r > 1.5:
-                Ux_rotor.append(velocityx[it,ijk])
+                Ux_rotor.append(velocityx[it,ijk]*np.cos(np.radians(29))+velocityy[it,ijk]*np.sin(np.radians(29)))
             ijk+=1
     return np.average(Ux_rotor)
 
@@ -125,7 +123,7 @@ coords = []
 for k in zs:
     for j in ys:
         coords.append([j, k])
-np.array(coords)
+coords = np.array(coords)
 
 velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"]); del p_rotor
 
