@@ -16,7 +16,7 @@ import pandas as pd
 
 def Ux_it_offset(it):
 
-    Velocityx = velocityx[it]
+    #Velocityx = velocityx[it]
 
     Ux_rotor = []
     ijk = 0
@@ -24,28 +24,30 @@ def Ux_it_offset(it):
         for j in np.arange(0,len(ys)):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
             if r <= 63 and r > 1.5:
-                Ux_rotor.append(Velocityx[ijk])
+                Ux_rotor.append(velocityx[it,ijk])
             ijk+=1
     return np.average(Ux_rotor)
 
 
 def IA_it_offset(it):
 
-    Velocityx = velocityx[it]
+    #Velocityx = velocityx[it]
 
     IA = 0
     ijk = 0
-    for co in coords:
-        r = np.sqrt(co[0]**2 + co[1]**2)
-        if r <= 63 and r > 1.5:
-            delta_Ux_i = delta_Ux(r,ijk, Velocityx)
-            IA += r * delta_Ux_i * dA
+    for k in np.arange(0,len(zs)):
+        for j in np.arange(0,len(ys)):
+            r = np.sqrt(ys[j]**2 + zs[k]**2)
+            if r <= 63 and r > 1.5:
+                delta_Ux_i = delta_Ux(it,r,ijk,j)
+                IA += r * delta_Ux_i * dA
+            ijk+=1
     return IA
 
 
-def delta_Ux(r,ijk,Velocityx):
+def delta_Ux(it,r,ijk,j):
 
-    Y_0 = coords[ijk][0]
+    Y_0 = ys[j]
 
     theta = np.arccos(Y_0/r)
 
@@ -66,11 +68,11 @@ def delta_Ux(r,ijk,Velocityx):
     Y_2 = r*np.cos(theta_2)
     Z_2 = r*np.sin(theta_2)
 
-    Ux_0 =  Velocityx[ijk]
+    Ux_0 =  velocityx[it,ijk]
     Ux_1_idx = search_coordintes(Y_1,Z_1)
-    Ux_1 = Velocityx[Ux_1_idx]
+    Ux_1 = velocityx[it,Ux_1_idx]
     Ux_2_idx = search_coordintes(Y_2,Z_2)
-    Ux_2 = Velocityx[Ux_2_idx]
+    Ux_2 = velocityx[it,Ux_2_idx]
 
     delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
@@ -78,7 +80,7 @@ def delta_Ux(r,ijk,Velocityx):
 
 def search_coordintes(y,z):
     for ico in np.arange(0,len(coords)):
-        if y >= coords[ico][0] and y <= coords[ico+1][0] and z >= coords[ico][1] and z <= coords[ico+1][1]:
+        if y >= coords[ico,0] and y <= coords[(ico+1),0] and z >= coords[ico,1] and z <= coords[(ico+1),1]:
             break
     return ico
 
@@ -113,6 +115,8 @@ xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
 ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
 zs = zo - rotor_coordiates[2]
 
+del coordinates
+
 dy = ys[1]-ys[0]
 dz = zs[1] - zs[0]
 dA = dy * dz
@@ -121,8 +125,9 @@ coords = []
 for k in zs:
     for j in ys:
         coords.append([j, k])
+np.array(coords)
 
-velocityx = np.array(p_rotor.variables["velocityx"]); del p_rotor
+velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"]); del p_rotor
 
 print("line 117",time.time()-start_time)
 
