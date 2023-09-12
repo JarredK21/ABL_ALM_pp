@@ -24,7 +24,7 @@ Time_OF = np.array(a.variables["time_OF"])
 Time_sampling = np.array(a.variables["time_sampling"])
 Time_sampling = Time_sampling - Time_sampling[0]
 
-Time_start = 0
+Time_start = 100
 Time_end = Time_sampling[-1]
 
 dt = Time_OF[1] - Time_OF[0]
@@ -64,4 +64,5 @@ plt.title("Correlation = {0}".format(corr),fontsize=16)
 
 ax.set_xlabel("Time [s]",fontsize=16)
 plt.tight_layout()
-plt.savefig(in_dir+"velocityx_Mx.png")
+plt.show()
+#plt.savefig(in_dir+"velocityx_Mx.png")
