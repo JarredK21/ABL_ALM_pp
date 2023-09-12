@@ -8,6 +8,12 @@ from multiprocessing import Pool
 import time
 import pandas as pd
 
+
+def horizontal_velocity(it):
+    hvelmag = np.add( np.multiply(velocityx[it],np.cos(np.radians(29))) , np.multiply( velocityy[it],np.sin(np.radians(29))) )
+    return hvelmag
+
+
 def Ux_it_offset(it):
 
     Ux_rotor = []
@@ -15,8 +21,7 @@ def Ux_it_offset(it):
     for co in coords:
         r = np.sqrt(co[0]**2 + co[1]**2)
         if r <= 63 and r > 1.5:
-            hvelmag = velocityx[it,ijk]*np.cos(np.radians(29)) + velocityy[it,ijk]*np.sin(np.radians(29))
-            Ux_rotor.append(hvelmag)
+            Ux_rotor.append(hvelmag[it,ijk])
         ijk+=1
     return np.average(Ux_rotor)
 
@@ -56,11 +61,11 @@ def delta_Ux(it,r,ijk):
     Y_2 = r*np.cos(theta_2)
     Z_2 = r*np.sin(theta_2)
 
-    Ux_0 =  velocityx[it,ijk]*np.cos(np.radians(29)) + velocityy[it,ijk]*np.sin(np.radians(29))
+    Ux_0 =  hvelmag[it,ijk]
     Ux_1_idx = search_coordintes(Y_1,Z_1)
-    Ux_1 = velocityx[it,Ux_1_idx]*np.cos(np.radians(29)) + velocityy[it,Ux_1_idx]*np.sin(np.radians(29))
+    Ux_1 = hvelmag[it,Ux_1_idx]
     Ux_2_idx = search_coordintes(Y_2,Z_2)
-    Ux_2 = velocityx[it,Ux_2_idx]*np.cos(np.radians(29)) + velocityy[it,Ux_2_idx]*np.sin(np.radians(29))
+    Ux_2 = hvelmag[it,Ux_2_idx]
 
     delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
@@ -75,7 +80,7 @@ def search_coordintes(y,z):
 
 start_time = time.time()
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
+in_dir = "./"
 
 a = Dataset(in_dir+"sampling_r_0.0.nc")
 
@@ -115,6 +120,17 @@ for k in zs:
 velocityx = p_rotor.variables["velocityx"]; velocityy = np.array(p_rotor.variables["velocityx"]); del p_rotor
 
 print("line 117",time.time()-start_time)
+
+
+hvelmag = []
+print("hvelmag calcs")
+with Pool() as pool:
+    it = 1
+    for hvelmag_it in pool.imap(horizontal_velocity, np.arange(0,time_idx)):
+        hvelmag.append(hvelmag_it)
+        print(it,time.time()-start_time)
+        it+=1
+    hvelmag = np.array(hvelmag); del velocityx; del velocityy
 
 
 Ux = []
