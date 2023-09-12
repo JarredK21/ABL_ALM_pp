@@ -16,29 +16,34 @@ import pandas as pd
 
 def Ux_it_offset(it):
 
+    Velocityx = velocityx[it]
+
     Ux_rotor = []
     ijk = 0
-    for co in coords:
-        r = np.sqrt(co[0]**2 + co[1]**2)
-        if r <= 63 and r > 1.5:
-            Ux_rotor.append(velocityx[it,ijk])
-        ijk+=1
+    for k in np.arange(0,len(zs)):
+        for j in np.arange(0,len(ys)):
+            r = np.sqrt(ys[j]**2 + zs[k]**2)
+            if r <= 63 and r > 1.5:
+                Ux_rotor.append(Velocityx[ijk])
+            ijk+=1
     return np.average(Ux_rotor)
 
 
 def IA_it_offset(it):
+
+    Velocityx = velocityx[it]
 
     IA = 0
     ijk = 0
     for co in coords:
         r = np.sqrt(co[0]**2 + co[1]**2)
         if r <= 63 and r > 1.5:
-            delta_Ux_i = delta_Ux(it,r,ijk)
+            delta_Ux_i = delta_Ux(r,ijk, Velocityx)
             IA += r * delta_Ux_i * dA
     return IA
 
 
-def delta_Ux(it,r,ijk):
+def delta_Ux(r,ijk,Velocityx):
 
     Y_0 = coords[ijk][0]
 
@@ -61,11 +66,11 @@ def delta_Ux(it,r,ijk):
     Y_2 = r*np.cos(theta_2)
     Z_2 = r*np.sin(theta_2)
 
-    Ux_0 =  velocityx[it,ijk]
+    Ux_0 =  Velocityx[ijk]
     Ux_1_idx = search_coordintes(Y_1,Z_1)
-    Ux_1 = velocityx[it,Ux_1_idx]
+    Ux_1 = Velocityx[Ux_1_idx]
     Ux_2_idx = search_coordintes(Y_2,Z_2)
-    Ux_2 = velocityx[it,Ux_2_idx]
+    Ux_2 = Velocityx[Ux_2_idx]
 
     delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
