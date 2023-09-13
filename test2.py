@@ -39,9 +39,9 @@ RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:Time_end_idx])
 
  
 # reading the CSV file
-csvFile = pandas.read_csv(in_dir+'velocityx.csv')
+csvFile = pandas.read_csv(in_dir+'Ux.csv')
 print(csvFile)
-velocityx = csvFile["velocityx"].to_list()
+velocityx = csvFile["Ux"].to_list()
 
 
 f = interpolate.interp1d(Time_sampling,velocityx)

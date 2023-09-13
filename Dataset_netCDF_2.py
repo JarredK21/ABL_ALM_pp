@@ -43,16 +43,14 @@ def magnitude_horizontal_velocity(u,v,twist,x,zs,h):
 #divide by len
 def Ux_it_offset(it):
 
-    Hvelmag = hvelmag[it]
-    Hvelmag = np.reshape(Hvelmag,(y,x))
-
     Ux_rotor = []
-    for j in np.arange(0,len(ys)):
-        for k in np.arange(0,len(zs)):
+    ijk = 0
+    for k in np.arange(0,len(zs)):
+        for j in np.arange(0,len(ys)):
             r = np.sqrt(ys[j]**2 + zs[k]**2)
-            if r <= 63:
-                Ux_rotor.append(Hvelmag[j,k])
-
+            if r <= 63 and r > 1.5:
+                Ux_rotor.append(velocityx[it,ijk]*np.cos(np.radians(29))+velocityy[it,ijk]*np.sin(np.radians(29)))
+            ijk+=1
     return np.average(Ux_rotor)
 
 
@@ -108,20 +106,6 @@ def delta_Ux(r,j,k,f,Hvelmag):
 
     return delta_Ux
 
-
-
-#defining twist angles with height from precursor
-precursor = Dataset("./abl_statistics60000.nc")
-mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
-t_start = np.searchsorted(precursor.variables["time"],32300)
-t_end = np.searchsorted(precursor.variables["time"],33500)
-u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
-v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
-h = mean_profiles["h"][:]
-twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-del precursor
-
-print("line 124",time.time()-start_time)
 
 
 #create netcdf file
@@ -215,6 +199,8 @@ for offset in offsets:
 
     p_rotor = a.groups["p_r"]; del a
 
+    velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"])
+
     Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset)]
     units = ["[m/s]", "[$m^4/s$]"]
 
@@ -243,33 +229,9 @@ for offset in offsets:
     dz = zs[1] - zs[0]
     dA = dy * dz
 
-    print("line 249",time.time()-start_time)
-
-
-    def velocity_field(it):
-
-        hvelmag_it = magnitude_horizontal_velocity(velocityx[it],velocityy[it],twist,x,zs,h)
-
-        return hvelmag_it
-        
-
-
-    #velocity field
-    velocityx = p_rotor.variables["velocityx"]
-    velocityy = p_rotor.variables["velocityy"]
     del p_rotor
-    hvelmag = []
-    with Pool() as pool:
-        ih = 1
-        for hvelmag_it in pool.imap(velocity_field,np.arange(0,time_idx)):
-            
-            hvelmag.append(hvelmag_it)
-            print(ih,time.time()-start_time)
-            ih+=1
 
-    np.array(hvelmag); del velocityx; del velocityy
-
-    print("line 272",np.shape(hvelmag))
+    print("line 249",time.time()-start_time)
 
     for iv in np.arange(0,len(Variables)):
         Variable = Variables[iv]
