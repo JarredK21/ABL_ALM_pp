@@ -134,28 +134,28 @@ with Pool() as pool:
     Ux = np.array(Ux)
 
 
-IA = []
-print("IA calcs")
-with Pool() as pool:
-    it = 1
-    for IA_it in pool.imap(IA_it_offset, np.arange(0,time_idx)):
-        IA.append(IA_it)
-        print(it,time.time()-start_time)
-        it+=1
-    IA = np.array(IA_it)
+# IA = []
+# print("IA calcs")
+# with Pool() as pool:
+#     it = 1
+#     for IA_it in pool.imap(IA_it_offset, np.arange(0,time_idx)):
+#         IA.append(IA_it)
+#         print(it,time.time()-start_time)
+#         it+=1
+#     IA = np.array(IA_it)
     
 
 # name of csv file 
-filename = in_dir+"test.csv"
+filename = in_dir+"Ux.csv"
     
 dq = dict()
 
 dq["Ux"] = Ux
 
-dq["IA"] = IA
+#dq["IA"] = IA
 
 df = pd.DataFrame(dq)
 
 df.to_csv(filename)
 
-print("line 102",time.time()-start_time)
+print("line 161",time.time()-start_time)
