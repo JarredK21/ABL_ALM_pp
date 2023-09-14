@@ -79,7 +79,7 @@ def search_coordintes(y,z):
 
 start_time = time.time()
 
-in_dir = "./"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
 
 a = Dataset(in_dir+"sampling_r_0.0.nc")
 

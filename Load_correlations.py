@@ -4,6 +4,7 @@ from scipy import interpolate
 from scipy.signal import butter,filtfilt
 from scipy import interpolate
 from netCDF4 import Dataset
+import pandas
 
 def correlation_coef(x,y):
     
@@ -93,35 +94,42 @@ for offset in offsets:
 
 
     group = a.groups["{}".format(offset)]
+    csvFile = pandas.read_csv(in_dir+'Ux.csv')
 
-    Ux = np.array(group.variables["Ux"])
-    IA = np.array(group.variables["IA"])
+    Ux = np.array(csvFile["Ux"].to_list())
+    #IA = np.array(group.variables["IA"])
 
     f = interpolate.interp1d(Time_sampling,Ux)
     Ux = f(Time_OF)
 
-    f = interpolate.interp1d(Time_sampling,IA)
-    IA = f(Time_OF)
+    #f = interpolate.interp1d(Time_sampling,IA)
+    #IA = f(Time_OF)
 
 
     #plotting options
-    plot_variabes = True
-    compare_total_correlations = True
-    compare_LP_correlations = True
+    plot_variabes = False
+    compare_total_correlations = False
+    compare_LP_correlations = False
     compare_time_series = False
-    compare_FFT = False
+    compare_FFT = True
 
     out_dir = in_dir + "lineplots_{}/".format(offset)
 
 
     #plot variables#
     if plot_variabes == True:
-        Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Ux","IA","LSSMR"]
-        units = ["[m/s]","[N]","[N-m]","[N-m]","[m/s]", "[$m^4/s$]","[kN-m]"]
+        # Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Ux","IA","LSSMR"]
+        # units = ["[m/s]","[N]","[N-m]","[N-m]","[m/s]", "[$m^4/s$]","[kN-m]"]
+        # Ylabels = ["$<Ux'>_{blade}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
+        #            "Rotor Out-of-plane bending moment","$<Ux'>_{rotor}$ rotor averaged horizontal velocity",
+        #            "Asymmetry parameter", "Low-speed shaft Out-of-plane bending moment"]
+        # h_vars = [RtAeroVxh, RtAeroFxh, RtAeroMxh, MR, Ux, IA, LSSMR]
+        Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Ux","LSSMR"]
+        units = ["[m/s]","[N]","[N-m]","[N-m]","[m/s]","[kN-m]"]
         Ylabels = ["$<Ux'>_{blade}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
                    "Rotor Out-of-plane bending moment","$<Ux'>_{rotor}$ rotor averaged horizontal velocity",
-                   "Asymmetry parameter", "Low-speed shaft Out-of-plane bending moment"]
-        h_vars = [RtAeroVxh, RtAeroFxh, RtAeroMxh, MR, Ux, IA, LSSMR]
+                   "Low-speed shaft Out-of-plane bending moment"]
+        h_vars = [RtAeroVxh, RtAeroFxh, RtAeroMxh, MR, Ux, LSSMR]
 
         for i in np.arange(0,len(h_vars)):
             cutoff = 0.5*(12.1/60)*3
@@ -140,12 +148,18 @@ for offset in offsets:
 
     #compare total signal correlations
     if compare_total_correlations == True:
-        Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Ux","IA","LSSMR"]
-        units = ["[m/s]","[N]","[N-m]","[N-m]","[m/s]", "[$m^4/s$]","[kN-m]"]
+        # Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Ux","IA","LSSMR"]
+        # units = ["[m/s]","[N]","[N-m]","[N-m]","[m/s]", "[$m^4/s$]","[kN-m]"]
+        # Ylabels = ["$<Ux'>_{blade}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
+        #            "Rotor Out-of-plane bending moment","$<Ux'>_{rotor}$ rotor averaged horizontal velocity",
+        #            "Asymmetry parameter", "Low-speed shaft Out-of-plane bending moment"]
+        # h_vars = [RtAeroVxh, RtAeroFxh, RtAeroMxh, MR, Ux, IA, LSSMR]
+        Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Ux","LSSMR"]
+        units = ["[m/s]","[N]","[N-m]","[N-m]","[m/s]","[kN-m]"]
         Ylabels = ["$<Ux'>_{blade}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
                    "Rotor Out-of-plane bending moment","$<Ux'>_{rotor}$ rotor averaged horizontal velocity",
-                   "Asymmetry parameter", "Low-speed shaft Out-of-plane bending moment"]
-        h_vars = [RtAeroVxh, RtAeroFxh, RtAeroMxh, MR, Ux, IA, LSSMR]
+                   "Low-speed shaft Out-of-plane bending moment"]
+        h_vars = [RtAeroVxh, RtAeroFxh, RtAeroMxh, MR, Ux, LSSMR]
 
         for j in np.arange(0,len(h_vars)):
             for i in np.arange(0,len(h_vars)):
@@ -172,12 +186,18 @@ for offset in offsets:
 
     #compare LPF signal correlations
     if compare_LP_correlations == True:
-        Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Ux","IA","LSSMR"]
-        units = ["[m/s]","[N]","[N-m]","[N-m]","[m/s]", "[$m^4/s$]","[kN-m]"]
+        # Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Ux","IA","LSSMR"]
+        # units = ["[m/s]","[N]","[N-m]","[N-m]","[m/s]", "[$m^4/s$]","[kN-m]"]
+        # Ylabels = ["$<Ux'>_{blade}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
+        #         "Rotor Out-of-plane bending moment","$<Ux'>_{rotor}$ rotor averaged horizontal velocity",
+        #         "Asymmetry parameter", "Low-speed shaft Out-of-plane bending moment"]
+        # h_vars = [RtAeroVxh, RtAeroFxh, RtAeroMxh, MR, Ux, IA, LSSMR]
+        Variables = ["RtAeroVxh","RtAeroFxh","RtAeroMxh","MR","Ux","LSSMR"]
+        units = ["[m/s]","[N]","[N-m]","[N-m]","[m/s]","[kN-m]"]
         Ylabels = ["$<Ux'>_{blade}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
-                "Rotor Out-of-plane bending moment","$<Ux'>_{rotor}$ rotor averaged horizontal velocity",
-                "Asymmetry parameter", "Low-speed shaft Out-of-plane bending moment"]
-        h_vars = [RtAeroVxh, RtAeroFxh, RtAeroMxh, MR, Ux, IA, LSSMR]
+                   "Rotor Out-of-plane bending moment","$<Ux'>_{rotor}$ rotor averaged horizontal velocity",
+                   "Low-speed shaft Out-of-plane bending moment"]
+        h_vars = [RtAeroVxh, RtAeroFxh, RtAeroMxh, MR, Ux, LSSMR]
 
         for j in np.arange(0,len(h_vars),1):
             for i in np.arange(0,len(h_vars),1):
@@ -208,11 +228,16 @@ for offset in offsets:
 
 
     if compare_time_series == True:
-        Variables = ["Ux","RtAeroFxh","RtAeroMxh","MR","LSSMR""IA"]
-        h_vars = [Ux,RtAeroFxh, RtAeroMxh,MR,LSSMR,IA]
-        units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]","[$m^4/s$]"]
+        # Variables = ["Ux","RtAeroFxh","RtAeroMxh","MR","LSSMR","IA"]
+        # h_vars = [Ux,RtAeroFxh, RtAeroMxh,MR,LSSMR,IA]
+        # units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]","[$m^4/s$]"]
+        # Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
+        #             "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment","Asymmetry parameter"]
+        Variables = ["Ux","RtAeroFxh","RtAeroMxh","MR","LSSMR"]
+        h_vars = [Ux,RtAeroFxh, RtAeroMxh,MR,LSSMR]
+        units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]"]
         Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
-                    "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment","Asymmetry parameter"]
+                    "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment"]
         
         #comparing time series
         fig, axs = plt.subplots(6,1,figsize=(32,24))
@@ -224,16 +249,16 @@ for offset in offsets:
 
             signal = h_vars[i]
 
-            ticks = np.arange(int(min(Time_OF)), int(max(Time_OF))+10,10)
+            #ticks = np.arange(int(min(Time_OF)), int(max(Time_OF))+10,10)
 
             axs = axs.ravel()
 
             axs[i].plot(Time_OF,signal)
-            if i == 2:
-                axs[i].set_ylim([3e+06,8e+06])
-            elif i == 1:
-                axs[i].set_ylim([6e+05,10e+05])
-            axs[i].set_xticks(ticks)
+            # if i == 2:
+            #     axs[i].set_ylim([3e+06,8e+06])
+            # elif i == 1:
+            #     axs[i].set_ylim([6e+05,10e+05])
+            #axs[i].set_xticks(ticks)
             axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
 
         fig.supxlabel("Time [s]")
@@ -244,11 +269,16 @@ for offset in offsets:
 
     #comparing spectra
     if compare_FFT == True:
-        Variables = ["Ux","RtAeroFxh","RtAeroMxh","MR","LSSMR","IA"]
-        h_vars = [Ux,RtAeroFxh,RtAeroMxh,MR,LSSMR,IA]
-        units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]","[$m^4/s$]"]
+        # Variables = ["Ux","RtAeroFxh","RtAeroMxh","MR","LSSMR","IA"]
+        # h_vars = [Ux,RtAeroFxh,RtAeroMxh,MR,LSSMR,IA]
+        # units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]","[$m^4/s$]"]
+        # Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
+        #             "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment","Asymmetry parameter"]
+        Variables = ["Ux","RtAeroFxh","RtAeroMxh","MR","LSSMR"]
+        h_vars = [Ux,RtAeroFxh, RtAeroMxh,MR,LSSMR]
+        units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]"]
         Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
-                    "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment","Asymmetry parameter"]
+                    "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment"]
         
         fig, axs = plt.subplots(3,2,figsize=(32,24))
         plt.rcParams.update({'font.size': 16})

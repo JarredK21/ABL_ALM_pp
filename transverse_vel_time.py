@@ -8,30 +8,44 @@ import time
 def average_velocity(it):
     
     avg_velx_it = []
-    for i in heights:
-        avg_velx_it.append(np.average(velocityx[it,(i*ys):((i+1)*ys)]))
+    for idx in height_idx:
+        if plane == "t":
+            avg_velx_it.append(np.average(velocityx[it,idx:(idx+ys)]))
+        elif plane == "r":
+            hvelmag = np.add(np.multiply(velocityx[it,idx:(idx+ys)], np.cos(np.radians(29))) ,np.multiply(velocityy[it,idx:(idx+ys)], np.sin(np.radians(29))))
+            avg_velx_it.append(np.average(hvelmag))
     return avg_velx_it
 
 start_time = time.time()
 
-heights = [1,4,9,50,100,150]
+in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
+out_dir = in_dir+"Quasi-stationarity/"
 
-offsets = [1280, 3820]
+heights = [10,40,90,500,1000,1200]
 
-for offset in offsets:
+planes = ["t", "t", "r", "r","r","r"]
+offsets = [1280, 3820,0.0,126,-63,-126]
 
-    a = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/sampling_t_{}.nc".format(offset))
+for offset,plane in zip(offsets,planes):
+
+    a = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/sampling_{}_{}.nc".format(offset,plane))
     Time_sample = np.array(a.variables["time"])
     Time_sample = Time_sample - Time_sample[0]
     time_idx = len(Time_sample)
 
-    p_t = a.groups["p_t"]
+    p = a.groups["p_{}".format(plane)]
 
-    ys = p_t.ijk_dims[0]; zs = p_t.ijk_dims[1]
+    ys = p.ijk_dims[0]; zs = p.ijk_dims[1]
 
-    coordinates = np.array(p_t.variables["coordinates"])
+    z = np.array(p.variables["coordinates"][:,2])
+    
+    height_idx = []
+    for height in heights:
+        height_idx.append(np.searchsorted(z,height))
 
-    velocityx = np.array(p_t.variables["velocityx"])
+    velocityx = np.array(p.variables["velocityx"])
+    if plane == "r":
+        velocityy = np.array(p.varaibles["velocityy"])
 
     avg_velx = []
     with Pool() as pool:
@@ -42,10 +56,18 @@ for offset in offsets:
             print(ic,time.time()-start_time)
             ic+=1
     
+
     fig = plt.figure(figsize=(14,8))
     plt.plot(Time_sample,avg_velx)
-    plt.xlabel("Time [s]")
-    plt.ylabel("Average velocity x direction [m/s]")
+    plt.xlabel("Time [s]",fontsize=16)
+    if plane == "t":
+        plt.ylabel("Ux averaged in the y direction [m/s]",fontsize=16)
+        plt.title("Ux averaged in the y direction at {}m from inlet".format(offset),fontsize=18)
+    elif plane == "r":
+        plt.ylabel("Ux' averaged in the y' direction [m/s]",fontsize=16)
+        plt.title("Ux' averaged in the y' direction at {}m from tower centerline".format(offset),fontsize=18)
+    plt.legend(heights)
+    plt.grid()
     plt.tight_layout()
-    plt.savefig("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/avg_velocityx_{}.png".format(offset))
+    plt.savefig(out_dir+"avg_velocityx_{}.png".format(offset))
     plt.close(fig)
