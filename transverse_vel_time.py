@@ -24,7 +24,7 @@ out_dir = in_dir+"Quasi-stationarity/"
 heights = [10,40,90,500,1000,1200]
 
 planes = ["t", "t", "r", "r","r","r"]
-offsets = [1280, 3820,0.0,126,-63,-126]
+offsets = [1280, 3820,0.0,126,-63.0,-126]
 
 for offset,plane in zip(offsets,planes):
 
