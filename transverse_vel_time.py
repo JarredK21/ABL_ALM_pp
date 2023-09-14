@@ -18,7 +18,7 @@ def average_velocity(it):
 
 start_time = time.time()
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
+in_dir = "./"
 out_dir = in_dir+"Quasi-stationarity/"
 
 heights = [10,40,90,500,1000,1200]
@@ -69,5 +69,5 @@ for offset,plane in zip(offsets,planes):
     plt.legend(heights)
     plt.grid()
     plt.tight_layout()
-    plt.savefig(out_dir+"avg_velocityx_{}.png".format(offset))
+    plt.savefig(out_dir+"avg_velocityx_{}_{}.png".format(plane,offset))
     plt.close(fig)
