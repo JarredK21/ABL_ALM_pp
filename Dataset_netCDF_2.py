@@ -16,27 +16,6 @@ import time
 
 start_time = time.time()
 
-def coriolis_twist(u,v):
-    twist = np.arctan(np.true_divide(v,u))
-
-    return twist
-
-
-def magnitude_horizontal_velocity(u,v,twist,x,zs,h):
-
-    mag_horz_vel = []
-    for i in np.arange(0,len(zs)):
-        u_i = u[i*x:(i+1)*x]; v_i = v[i*x:(i+1)*x]
-        height = zs[i]
-        h_idx = np.searchsorted(h,height,side="left")
-        if h_idx > 127:
-            h_idx = 127
-        mag_horz_vel_i = np.add( np.multiply(u_i,np.cos(twist[h_idx])) , np.multiply( v_i,np.sin(twist[h_idx])) )
-        mag_horz_vel.extend(mag_horz_vel_i)
-    mag_horz_vel = np.array(mag_horz_vel)
-
-    return mag_horz_vel
-
 #loop over coordinates with counter
 #calc range of y and z coordinates rotor falls into
 #if true sum velocity

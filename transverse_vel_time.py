@@ -45,7 +45,7 @@ for offset,plane in zip(offsets,planes):
 
     velocityx = np.array(p.variables["velocityx"])
     if plane == "r":
-        velocityy = np.array(p.varaibles["velocityy"])
+        velocityy = np.array(p.variables["velocityy"])
 
     avg_velx = []
     with Pool() as pool:
