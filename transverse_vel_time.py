@@ -28,7 +28,7 @@ offsets = [1280, 3820,0.0,126,-63,-126]
 
 for offset,plane in zip(offsets,planes):
 
-    a = Dataset("../../NREL_5MW_MCBL_R_CRPM_2/post_processing/sampling_{}_{}.nc".format(offset,plane))
+    a = Dataset(in_dir+"sampling_{}_{}.nc".format(plane,offset))
     Time_sample = np.array(a.variables["time"])
     Time_sample = Time_sample - Time_sample[0]
     time_idx = len(Time_sample)

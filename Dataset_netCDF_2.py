@@ -54,57 +54,57 @@ def Ux_it_offset(it):
     return np.average(Ux_rotor)
 
 
-def IA_it_offset(it):
+# def IA_it_offset(it):
 
 
-    hvelmag_interp = hvelmag[it]
-    hvelmag_interp = np.reshape(hvelmag_interp,(y,x))
-    f = interpolate.interp2d(ys,zs,hvelmag_interp)
+#     hvelmag_interp = hvelmag[it]
+#     hvelmag_interp = np.reshape(hvelmag_interp,(y,x))
+#     f = interpolate.interp2d(ys,zs,hvelmag_interp)
 
-    Hvelmag = hvelmag[it]
-    Hvelmag = np.reshape(Hvelmag,(y,x))
+#     Hvelmag = hvelmag[it]
+#     Hvelmag = np.reshape(Hvelmag,(y,x))
 
-    IA = 0
-    for j in np.arange(0,len(ys)):
-        for k in np.arange(0,len(zs)):
-            r = np.sqrt(ys[j]**2 + zs[k]**2)
-            if r <= 63 and r >= 1.5:
+#     IA = 0
+#     for j in np.arange(0,len(ys)):
+#         for k in np.arange(0,len(zs)):
+#             r = np.sqrt(ys[j]**2 + zs[k]**2)
+#             if r <= 63 and r >= 1.5:
 
-                delta_Ux_i = delta_Ux(r,j,k,f,Hvelmag)
-                IA += r * delta_Ux_i * dA
-    return IA
-
-
-def delta_Ux(r,j,k,f,Hvelmag):
-
-    Y_0 = ys[j]
-
-    theta = np.arccos(Y_0/r)
-
-    if theta + ((2*np.pi)/3) > (2*np.pi):
-        theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
-    else:
-        theta_1 = theta + (2*np.pi)/3
-
-    Y_1 = r*np.cos(theta_1)
-    Z_1 = r*np.sin(theta_1)
+#                 delta_Ux_i = delta_Ux(r,j,k,f,Hvelmag)
+#                 IA += r * delta_Ux_i * dA
+#     return IA
 
 
-    if theta - ((2*np.pi)/3) < 0:
-        theta_2 = theta - ((2*np.pi)/3) + (2*np.pi)
-    else:
-        theta_2 = theta - ((2*np.pi)/3)
+# def delta_Ux(r,j,k,f,Hvelmag):
 
-    Y_2 = r*np.cos(theta_2)
-    Z_2 = r*np.sin(theta_2)
+#     Y_0 = ys[j]
 
-    Ux_0 =  Hvelmag[j][k]
-    Ux_1 =  f(Y_1,Z_1)
-    Ux_2 =  f(Y_2,Z_2)
+#     theta = np.arccos(Y_0/r)
 
-    delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
+#     if theta + ((2*np.pi)/3) > (2*np.pi):
+#         theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
+#     else:
+#         theta_1 = theta + (2*np.pi)/3
 
-    return delta_Ux
+#     Y_1 = r*np.cos(theta_1)
+#     Z_1 = r*np.sin(theta_1)
+
+
+#     if theta - ((2*np.pi)/3) < 0:
+#         theta_2 = theta - ((2*np.pi)/3) + (2*np.pi)
+#     else:
+#         theta_2 = theta - ((2*np.pi)/3)
+
+#     Y_2 = r*np.cos(theta_2)
+#     Z_2 = r*np.sin(theta_2)
+
+#     Ux_0 =  Hvelmag[j][k]
+#     Ux_1 =  f(Y_1,Z_1)
+#     Ux_2 =  f(Y_2,Z_2)
+
+#     delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
+
+#     return delta_Ux
 
 
 
@@ -128,6 +128,10 @@ RtAeroMzh = ncfile.createVariable("RtAeroMzh", np.float64, ('OF',),zlib=True)
 Theta = ncfile.createVariable("Theta", np.float64, ('OF',),zlib=True)
 LSShftMys = ncfile.createVariable("LSShftMys", np.float64, ('OF',),zlib=True)
 LSShftMzs = ncfile.createVariable("LSShftMzs", np.float64, ('OF',),zlib=True)
+LSSTipMys = ncfile.createVariable("LSSTipMys", np.float64, ('OF',),zlib=True)
+LSSTipMzs = ncfile.createVariable("LSSTipMzs", np.float64, ('OF',),zlib=True)
+LSShftFys = ncfile.createVariable("LSShftFys", np.float64, ('OF',),zlib=True)
+LSShftFzs = ncfile.createVariable("LSShftFzs", np.float64, ('OF',),zlib=True)
 
 print("line 148",time.time()-start_time)
 
@@ -139,8 +143,9 @@ time_OF[:] = np.array(df["Time_[s]"])
 
 print("line 156",time.time()-start_time)
 
-Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","Theta","LSSGagMys","LSSGagMzs"]
-units = ["[m/s]","[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]"]
+Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","Theta","LSSGagMys","LSSGagMzs","LSSTipMys","LSSTipMzs",
+             "LSShftFys","LSShftFzs"]
+units = ["[m/s]","[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]"]
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
 
@@ -168,6 +173,14 @@ for iv in np.arange(0,len(Variables)):
             LSShftMys[:] = signal; del signal
         elif Variable == "LSSGagMzs":
             LSShftMzs[:] = signal; del signal
+        elif Variable == "LSSTipMys":
+            LSSTipMys[:] = signal; del signal
+        elif LSSTipMzs == "LSSTipMzs":
+            LSSTipMzs[:] = signal; del signal
+        elif LSShftFys == "LSShftFys":
+            LSShftFys = signal; del signal
+        elif LSShftFzs == "LSShftFzs":
+            LSShftFzs = signal; del signal
 
 
 del df
@@ -195,14 +208,16 @@ for offset in offsets:
     group = ncfile.createGroup("{}".format(group_label[ic]))
 
     Ux = group.createVariable("Ux", np.float64, ('sampling'),zlib=True)
-    IA = group.createVariable("IA", np.float64, ('sampling'),zlib=True)
+    #IA = group.createVariable("IA", np.float64, ('sampling'),zlib=True)
 
     p_rotor = a.groups["p_r"]; del a
 
     velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"])
 
-    Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset)]
-    units = ["[m/s]", "[$m^4/s$]"]
+    # Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset)]
+    # units = ["[m/s]", "[$m^4/s$]"]
+    Variables = ["Ux_{0}".format(offset)]
+    units = ["[m/s]"]
 
 
     x = p_rotor.ijk_dims[0] #no. data points
@@ -249,17 +264,17 @@ for offset in offsets:
                 Ux_it = np.array(Ux_it)
                 Ux[:] = Ux_it; del Ux_it
 
-        elif Variable[0:2] == "IA":
-            IA_it = []
-            print("IA calcs")
-            with Pool() as pool:
-                i_IA = 1
-                for IA_i in pool.imap(IA_it_offset, np.arange(0,time_idx)):
-                    IA_it.append(IA_i)
-                    print(i_IA,time.time()-start_time)
-                    i_IA+=1
-                IA_it = np.array(IA_it)
-                IA[:] = IA_it; del IA_it
+        # elif Variable[0:2] == "IA":
+        #     IA_it = []
+        #     print("IA calcs")
+        #     with Pool() as pool:
+        #         i_IA = 1
+        #         for IA_i in pool.imap(IA_it_offset, np.arange(0,time_idx)):
+        #             IA_it.append(IA_i)
+        #             print(i_IA,time.time()-start_time)
+        #             i_IA+=1
+        #         IA_it = np.array(IA_it)
+        #         IA[:] = IA_it; del IA_it
 
 
     print(ncfile.groups)
