@@ -87,19 +87,22 @@ for offset in offsets:
     RtAeroMzh = np.array(a.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
     MR = np.sqrt( np.add(np.square(RtAeroMyh), np.square(RtAeroMzh)) ) 
     Theta = np.array(a.variables["Theta"][Time_start_idx:Time_end_idx])
-    # RtAeroVxh = np.array(a.variables["RtAeroVxh"][Time_start_idx:Time_end_idx])
-    LSShftMys = np.array(a.variables["LSShftMys"][Time_start_idx:Time_end_idx])#LSSGag
-    LSShftMzs = np.array(a.variables["LSShftMzs"][Time_start_idx:Time_end_idx])#LSSGag
-    LSSMR = np.sqrt( np.add(np.square(LSShftMys), np.square(LSShftMzs)) ) #LSSGag
+
+    LSSGagMys = np.array(a.variables["LSSGagMys"][Time_start_idx:Time_end_idx])
+    LSSGagMzs = np.array(a.variables["LSSGagMzs"][Time_start_idx:Time_end_idx])
+    LSSGagMR = np.sqrt( np.add(np.square(LSSGagMys), np.square(LSSGagMzs)) )
+
     LSSTipMys = np.array(a.variables["LSSTipMys"][Time_start_idx:Time_end_idx])
     LSSTipMzs = np.array(a.variables["LSSTipMzs"][Time_start_idx:Time_end_idx])
-    LSSTipMR = np.sqrt( np.add(np.square(LSSTipMys), np.square(LSSTipMzs)) ) 
+    LSSTipMR = np.sqrt( np.add(np.square(LSSTipMys), np.square(LSSTipMzs)) )
+
     LSShftFys = np.array(a.variables["LSShftFys"][Time_start_idx:Time_end_idx])
     LSShftFzs = np.array(a.variables["LSShftFzs"][Time_start_idx:Time_end_idx])
+
     L = 1.912
-    LSSGagMys = np.add(LSSTipMys, (L*LSShftFzs))
-    LSSGagMzs = np.add(LSSTipMzs, (L*LSShftFys))
-    LSSGagMR = np.sqrt( np.add(np.square(LSSGagMys), np.square(LSSGagMzs)) ) 
+    C_LSSGagMys = np.add(LSSTipMys, (L*LSShftFzs))
+    C_LSSGagMzs = np.add(LSSTipMzs, (L*LSShftFys))
+    C_LSSGagMR = np.sqrt( np.add(np.square(C_LSSGagMys), np.square(C_LSSGagMzs)) ) 
 
 
     group = a.groups["{}".format(offset)]
@@ -122,23 +125,24 @@ for offset in offsets:
     compare_FFT = False
     compare_OOPBM_time = True
     compare_OOPBM_FFT = True
+    compare_total_OOPBM_correlations = True
 
     out_dir = in_dir + "lineplots_{}/".format(offset)
 
 
     #plot variables#
     if plot_variabes == True:
-        Variables = ["Ux","RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","MR","LSShftFys","LSShftFzs","LSShftMys","LSShftMzs",
-                     "LSSMR","LSSTipMys","LSSTipMzs","LSSTipMR","LSSGagMys","LSSGagMzs","LSSGagMR"]
+        Variables = ["Ux","RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","MR","LSShftFys","LSShftFzs",
+                     "LSSTipMys","LSSTipMzs","LSSTipMR","LSSGagMys","LSSGagMzs","LSSGagMR", "C_LSSGagMys","C_LSSGagMzs","C_LSSGagMR"]
         units = ["[m/s]","[N]","[N-m]","[N-m]","[N-m]","[N-m]","[kN]","[kN]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]",
                  "[kN-m]","[kN-m]","[kN-m]","[kN-m]"]
         Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque", "Rotor Aerodyn My",
                    "Rotor Aerodyn Mz", "Rotor Aerodyn Out-of-plane bending moment", "Rotor Elastodyn Fy", "Rotor Elastodyn Fz",
                    "Rotor Elastodyn My", "Rotor Elastodyn Mz","Rotor Elastodyn Rotor Out-of-plane bending moment",
-                   "Calculated LSS Elastodyn My", "Calculated LSS Elastodyn Mz", "Calculated LSS Elastodyn Out-of-plane bending moment",
-                   "LSS Elastodyn My", "LSS Elastodyn Mz","LSS Elastodyn Out-of-plane bending moment"]
+                   "LSS Elastodyn My", "LSS Elastodyn Mz", "LSS Elastodyn Out-of-plane bending moment",
+                   "Calculated LSS Elastodyn My", "Calculated LSS Elastodyn Mz","Calcualted LSS Elastodyn Out-of-plane bending moment"]
         h_vars = [Ux, RtAeroFxh, RtAeroMxh, RtAeroMyh, RtAeroMzh, MR, LSShftFys, LSShftFzs, 
-                  LSSTipMys, LSSTipMzs, LSSTipMR, LSSGagMys, LSSGagMzs,LSSGagMR, LSShftMys, LSShftMzs ,LSSMR]
+                  LSSTipMys, LSSTipMzs, LSSTipMR, LSSGagMys, LSSGagMzs,LSSGagMR, C_LSSGagMys, C_LSSGagMzs, C_LSSGagMR]
 
         for i in np.arange(0,len(h_vars)):
             cutoff = 0.5*(12.1/60)*3
@@ -160,9 +164,9 @@ for offset in offsets:
         Variables = ["Ux","RtAeroFxh","RtAeroMxh","MR","LSSMR","LSSTipMR","LSSGagMR"]
         units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]","[kN-m]","[kN-m]"]
         Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
-                   "Rotor Aerodyn Out-of-plane bending moment","Low-speed shaft Elastodyn Out-of-plane bending moment",
-                   "Rotor Elastodyn Out-of-plane bending moment","Calculated LSS Elastodyn Out-of-plane bending moment"]
-        h_vars = [Ux, RtAeroFxh, RtAeroMxh, MR, LSSMR, LSSTipMR, LSSGagMR]
+                   "Rotor Aerodyn Out-of-plane bending moment","Rotor Elastodyn Out-of-plane bending moment",
+                   "LSS Elastodyn Out-of-plane bending momnent","Calculated LSS Elastodyn Out-of-plane bending moment"]
+        h_vars = [Ux, RtAeroFxh, RtAeroMxh, MR, LSSTipMR, LSSGagMR, C_LSSGagMR]
 
         for j in np.arange(0,len(h_vars)):
             for i in np.arange(0,len(h_vars)):
@@ -192,9 +196,9 @@ for offset in offsets:
         Variables = ["Ux","RtAeroFxh","RtAeroMxh","MR","LSSMR","LSSTipMR","LSSGagMR"]
         units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]","[kN-m]","[kN-m]"]
         Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
-                   "Rotor Aerodyn Out-of-plane bending moment","Low-speed shaft Elastodyn Out-of-plane bending moment",
-                   "Rotor Elastodyn Out-of-plane bending moment","Calculated LSS Elastodyn Out-of-plane bending moment"]
-        h_vars = [Ux, RtAeroFxh, RtAeroMxh, MR, LSSMR, LSSTipMR, LSSGagMR]
+                   "Rotor Aerodyn Out-of-plane bending moment","Rotor Elastodyn Out-of-plane bending moment",
+                   "LSS Elastodyn Out-of-plane bending momnent","Calculated LSS Elastodyn Out-of-plane bending moment"]
+        h_vars = [Ux, RtAeroFxh, RtAeroMxh, MR, LSSTipMR, LSSGagMR, C_LSSGagMR]
 
         for j in np.arange(0,len(h_vars),1):
             for i in np.arange(0,len(h_vars),1):
@@ -231,7 +235,7 @@ for offset in offsets:
         # Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
         #             "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment","Asymmetry parameter"]
         Variables = ["Ux","RtAeroFxh","RtAeroMxh","MR","LSSMR"]
-        h_vars = [Ux,RtAeroFxh, RtAeroMxh,MR,LSSMR]
+        h_vars = [Ux,RtAeroFxh, RtAeroMxh,MR,LSSGagMR]
         units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]"]
         Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
                     "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment"]
@@ -272,7 +276,7 @@ for offset in offsets:
         # Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
         #             "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment","Asymmetry parameter"]
         Variables = ["Ux","RtAeroFxh","RtAeroMxh","MR","LSSMR"]
-        h_vars = [Ux,RtAeroFxh, RtAeroMxh,MR,LSSMR]
+        h_vars = [Ux,RtAeroFxh, RtAeroMxh,MR,LSSGagMR]
         units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]"]
         Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
                     "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment"]
@@ -307,10 +311,10 @@ for offset in offsets:
 
     if compare_OOPBM_time == True:
         Variables = ["MR","LSSTipMR","LSSGagMR","LSSMR"]
-        h_vars = [MR/1000,LSSTipMR,LSSGagMR,LSSMR]
+        h_vars = [MR/1000,LSSTipMR,LSSGagMR,C_LSSGagMR]
         units = ["[kN-m]","[kN-m]","[kN-m]","[kN-m]"]
         Ylabels = ["Rotor Aerodyn Out-of-plane bending moment","Rotor Elastodyn Out-of-plane bending moment", 
-                   "Calculated LSS Out-of-plane bending moment","LSS Elastodyn Out-of-plane bending moment"]
+                   "LSS Out-of-plane bending moment","Calculated LSS Elastodyn Out-of-plane bending moment"]
         
         #comparing time series
         fig, axs = plt.subplots(4,1,figsize=(32,24))
@@ -343,12 +347,12 @@ for offset in offsets:
     #comparing spectra
     if compare_OOPBM_FFT == True:
         Variables = ["MR","LSSTipMR","LSSGagMR","LSSMR"]
-        h_vars = [MR/1000,LSSTipMR,LSSGagMR,LSSMR]
+        h_vars = [MR/1000,LSSTipMR,LSSGagMR,C_LSSGagMR]
         units = ["[kN-m]","[kN-m]","[kN-m]","[kN-m]"]
         Ylabels = ["Rotor Aerodyn Out-of-plane bending moment","Rotor Elastodyn Out-of-plane bending moment", 
-                   "Calculated LSS Out-of-plane bending moment","LSS Elastodyn Out-of-plane bending moment"]
+                   "LSS Out-of-plane bending moment","Calculated LSS Elastodyn Out-of-plane bending moment"]
         
-        fig, axs = plt.subplots(3,2,figsize=(32,24))
+        fig, axs = plt.subplots(2,2,figsize=(32,24))
         plt.rcParams.update({'font.size': 16})
         for i in np.arange(0,len(h_vars)):
             
@@ -372,7 +376,42 @@ for offset in offsets:
 
         fig.supxlabel("Frequency [Hz]")
         plt.tight_layout()
-        plt.savefig(out_dir+"joint_vars_FFT.png")
+        plt.savefig(out_dir+"OOPBM_FFT.png")
         plt.close(fig)
 
+
+    #compare total signal correlations
+    if compare_total_OOPBM_correlations == True:
+        Variables = ["RtAeroMyh","RtAeroMzh","MR","LSShftFys","LSShftFzs",
+                     "LSSTipMys","LSSTipMzs","LSSTipMR","LSSGagMys","LSSGagMzs","LSSGagMR", "C_LSSGagMys","C_LSSGagMzs","C_LSSGagMR"]
+        units = ["[N-m]","[N-m]","[N-m]","[kN]","[kN]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]"]
+        Ylabels = ["Rotor Aerodyn My","Rotor Aerodyn Mz", "Rotor Aerodyn Out-of-plane bending moment", "Rotor Elastodyn Fy", "Rotor Elastodyn Fz",
+                   "Rotor Elastodyn My", "Rotor Elastodyn Mz","Rotor Elastodyn Rotor Out-of-plane bending moment",
+                   "LSS Elastodyn My", "LSS Elastodyn Mz", "LSS Elastodyn Out-of-plane bending moment",
+                   "Calculated LSS Elastodyn My", "Calculated LSS Elastodyn Mz","Calcualted LSS Elastodyn Out-of-plane bending moment"]
+        h_vars = [RtAeroMyh, RtAeroMzh, MR, LSShftFys, LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, LSSGagMys, LSSGagMzs,LSSGagMR, 
+                  C_LSSGagMys, C_LSSGagMzs, C_LSSGagMR]
+
+        for j in np.arange(0,len(h_vars)):
+            for i in np.arange(0,len(h_vars)):
+
+                fig,ax = plt.subplots(figsize=(14,8))
+                
+                corr = correlation_coef(h_vars[j],h_vars[i])
+                corr = round(corr,2)
+
+                ax.plot(Time_OF,h_vars[j],'-b')
+                ax.set_ylabel("{0} {1}".format(Ylabels[j],units[j]),fontsize=14)
+
+                ax2=ax.twinx()
+                ax2.plot(Time_OF,h_vars[i],"-r")
+                ax2.set_ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=14)
+
+                plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
+                ax.set_xlabel("Time [s]",fontsize=16)
+                plt.tight_layout()
+                plt.savefig(out_dir+"OOPMB_corr_{0}_{1}.png".format(Variables[j],Variables[i]))
+                plt.close(fig)
+
     ic+=1
+

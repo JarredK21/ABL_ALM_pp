@@ -175,7 +175,7 @@ time_sampling[:] = Time_sample; del Time_sample
 print("line 201", time_idx, time.time()-start_time)
 
 offsets = [0.0,-63.0]
-group_label = [0.0,-63.0]
+group_label = [0.0,63.0]
 
 ic = 0
 for offset in offsets:
