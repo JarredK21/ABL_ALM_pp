@@ -118,7 +118,7 @@ for offset in offsets:
 
 
     #plotting options
-    plot_variabes = True
+    plot_variables = True
     compare_total_correlations = True
     compare_LP_correlations = True
     compare_time_series = False
@@ -131,7 +131,7 @@ for offset in offsets:
 
 
     #plot variables#
-    if plot_variabes == True:
+    if plot_variables == True:
         Variables = ["Ux","RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","MR","LSShftFys","LSShftFzs",
                      "LSSTipMys","LSSTipMzs","LSSTipMR","LSSGagMys","LSSGagMzs","LSSGagMR", "C_LSSGagMys","C_LSSGagMzs","C_LSSGagMR"]
         units = ["[m/s]","[N]","[N-m]","[N-m]","[N-m]","[N-m]","[kN]","[kN]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]",

@@ -99,7 +99,6 @@ sampling_dim = ncfile.createDimension("sampling",None)
 time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
 time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
 
-RtAeroVxh = ncfile.createVariable("RtAeroVxh", np.float64, ('OF',),zlib=True)
 RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
 RtAeroMyh = ncfile.createVariable("RtAeroMyh", np.float64, ('OF',),zlib=True)
@@ -155,9 +154,9 @@ for iv in np.arange(0,len(Variables)):
         elif Variable == "LSSTipMzs":
             LSSTipMzs[:] = signal; del signal
         elif Variable == "LSShftFys":
-            LSShftFys = signal; del signal
+            LSShftFys[:] = signal; del signal
         elif Variable == "LSShftFzs":
-            LSShftFzs = signal; del signal
+            LSShftFzs[:] = signal; del signal
 
 
 del df
