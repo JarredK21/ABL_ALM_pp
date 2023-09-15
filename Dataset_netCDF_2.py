@@ -105,8 +105,8 @@ RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
 RtAeroMyh = ncfile.createVariable("RtAeroMyh", np.float64, ('OF',),zlib=True)
 RtAeroMzh = ncfile.createVariable("RtAeroMzh", np.float64, ('OF',),zlib=True)
 Theta = ncfile.createVariable("Theta", np.float64, ('OF',),zlib=True)
-LSShftMys = ncfile.createVariable("LSShftMys", np.float64, ('OF',),zlib=True)
-LSShftMzs = ncfile.createVariable("LSShftMzs", np.float64, ('OF',),zlib=True)
+LSSGagMys = ncfile.createVariable("LSSGagMys", np.float64, ('OF',),zlib=True)
+LSSGagMzs = ncfile.createVariable("LSSGagMzs", np.float64, ('OF',),zlib=True)
 LSSTipMys = ncfile.createVariable("LSSTipMys", np.float64, ('OF',),zlib=True)
 LSSTipMzs = ncfile.createVariable("LSSTipMzs", np.float64, ('OF',),zlib=True)
 LSShftFys = ncfile.createVariable("LSShftFys", np.float64, ('OF',),zlib=True)
@@ -122,9 +122,9 @@ time_OF[:] = np.array(df["Time_[s]"])
 
 print("line 156",time.time()-start_time)
 
-Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","Theta","LSSGagMys","LSSGagMzs","LSSTipMys","LSSTipMzs",
-             "LSShftFys","LSShftFzs"]
-units = ["[m/s]","[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]"]
+Variables = ["RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","Theta","LSSGagMys","LSSGagMzs",
+             "LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs"]
+units = ["[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]"]
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
 
@@ -146,19 +146,17 @@ for iv in np.arange(0,len(Variables)):
             RtAeroMyh[:] = signal; del signal
         elif Variable == "RtAeroMzh":
             RtAeroMzh[:] = signal; del signal
-        elif Variable == "Wind1VelX":
-            RtAeroVxh[:] = signal; del signal
         elif Variable == "LSSGagMys":
-            LSShftMys[:] = signal; del signal
+            LSSGagMys[:] = signal; del signal
         elif Variable == "LSSGagMzs":
-            LSShftMzs[:] = signal; del signal
+            LSSGagMzs[:] = signal; del signal
         elif Variable == "LSSTipMys":
             LSSTipMys[:] = signal; del signal
-        elif LSSTipMzs == "LSSTipMzs":
+        elif Variable == "LSSTipMzs":
             LSSTipMzs[:] = signal; del signal
-        elif LSShftFys == "LSShftFys":
+        elif Variable == "LSShftFys":
             LSShftFys = signal; del signal
-        elif LSShftFzs == "LSShftFzs":
+        elif Variable == "LSShftFzs":
             LSShftFzs = signal; del signal
 
 
@@ -176,8 +174,8 @@ time_sampling[:] = Time_sample; del Time_sample
 
 print("line 201", time_idx, time.time()-start_time)
 
-offsets = [0.0]
-group_label = [0.0]
+offsets = [0.0,-63.0]
+group_label = [0.0,-63.0]
 
 ic = 0
 for offset in offsets:
