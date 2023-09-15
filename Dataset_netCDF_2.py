@@ -154,7 +154,7 @@ for iv in np.arange(0,len(Variables)):
         elif Variable == "LSSTipMzs":
             LSSTipMzs[:] = signal; del signal
         elif Variable == "LSShftFys":
-            LSShftFys[:] = signal; del signal
+            LSShftFys[:] = signal[:,0]; del signal
         elif Variable == "LSShftFzs":
             LSShftFzs[:] = signal; del signal
 
