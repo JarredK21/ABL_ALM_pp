@@ -120,11 +120,11 @@ for offset in offsets:
     #plotting options
     plot_variables = True
     compare_total_correlations = True
-    compare_LP_correlations = True
+    compare_LP_correlations = False
     compare_time_series = False
     compare_FFT = False
-    compare_OOPBM_time = True
-    compare_OOPBM_FFT = True
+    compare_OOPBM_time = False
+    compare_OOPBM_FFT = False
     compare_total_OOPBM_correlations = True
 
     out_dir = in_dir + "lineplots_{}/".format(offset)

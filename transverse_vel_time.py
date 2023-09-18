@@ -26,6 +26,9 @@ heights = [10,40,90,500,1000,1200]
 planes = ["t", "t", "r", "r","r","r"]
 offsets = [1280, 3820,0.0,126,-63.0,-126]
 
+plot_average_y = False
+plot_hub_height = True
+
 for offset,plane in zip(offsets,planes):
 
     a = Dataset(in_dir+"sampling_{}_{}.nc".format(plane,offset))
@@ -37,37 +40,47 @@ for offset,plane in zip(offsets,planes):
 
     ys = p.ijk_dims[0]; zs = p.ijk_dims[1]
 
-    z = np.array(p.variables["coordinates"][:,2])
-    
-    height_idx = []
-    for height in heights:
-        height_idx.append(np.searchsorted(z,height))
+    coordinates = np.array(p.variables["coordiantes"])
+    #transform coordiates into rotor frame
+    z = coordinates[:,2]
 
-    velocityx = np.array(p.variables["velocityx"])
-    if plane == "r":
-        velocityy = np.array(p.variables["velocityy"])
+    if plot_average_y == True:
+        height_idx = []
+        for height in heights:
+            height_idx.append(np.searchsorted(z,height))
 
-    avg_velx = []
-    with Pool() as pool:
-        ic = 1
-        for avg_velx_it in pool.imap(average_velocity,np.arange(0,time_idx)):
-            
-            avg_velx.append(avg_velx_it)
-            print(ic,time.time()-start_time)
-            ic+=1
-    
+        velocityx = np.array(p.variables["velocityx"])
+        if plane == "r":
+            velocityy = np.array(p.variables["velocityy"])
 
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(Time_sample,avg_velx)
-    plt.xlabel("Time [s]",fontsize=16)
-    if plane == "t":
-        plt.ylabel("Ux averaged in the y direction [m/s]",fontsize=16)
-        plt.title("Ux averaged in the y direction at {}m from inlet".format(offset),fontsize=18)
-    elif plane == "r":
-        plt.ylabel("Ux' averaged in the y' direction [m/s]",fontsize=16)
-        plt.title("Ux' averaged in the y' direction at {}m from tower centerline".format(offset),fontsize=18)
-    plt.legend(heights)
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(out_dir+"avg_velocityx_{}_{}.png".format(plane,offset))
-    plt.close(fig)
+        avg_velx = []
+        with Pool() as pool:
+            ic = 1
+            for avg_velx_it in pool.imap(average_velocity,np.arange(0,time_idx)):
+                
+                avg_velx.append(avg_velx_it)
+                print(ic,time.time()-start_time)
+                ic+=1
+        
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time_sample,avg_velx)
+        plt.xlabel("Time [s]",fontsize=16)
+        if plane == "t":
+            plt.ylabel("Ux averaged in the y direction [m/s]",fontsize=16)
+            plt.title("Ux averaged in the y direction at {}m from inlet".format(offset),fontsize=18)
+        elif plane == "r":
+            plt.ylabel("Ux' averaged in the y' direction [m/s]",fontsize=16)
+            plt.title("Ux' averaged in the y' direction at {}m from tower centerline".format(offset),fontsize=18)
+        plt.legend(heights)
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"avg_velocityx_{}_{}.png".format(plane,offset))
+        plt.close(fig)
+
+    if plot_hub_height == True:
+        height = 90
+        trans = 2555
+        height_idx = np.searchsorted(z,height)
+        coord_idx = np.searchsorted(coordinates[height_idx:(height_idx+ys),1],trans)
+        print(coordinates[coord_idx])
