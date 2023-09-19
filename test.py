@@ -23,7 +23,9 @@ def Ux_it_offset(it):
 
 def Ux_it_offset_2(it):
 
-    fx = interpolate.interp2d(ys,zs,velocityx[it],kind="linear"); fy = interpolate.interp2d(ys,zs,velocityy[it],kind="linear")
+    velx = np.reshape(velocityx[it],(x,y)); vely = np.reshape(velocityy[it],(x,y))
+
+    fx = interpolate.interp2d(ys,zs,velx,kind="linear"); fy = interpolate.interp2d(ys,zs,vely,kind="linear")
     Ux_rotor = []
     for j,k in zip(ys,zs):
         r = np.sqrt(j**2 + k**2)
@@ -117,6 +119,9 @@ phi = np.radians(-29)
 xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
 ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
 zs = zo - rotor_coordiates[2]
+
+ys = np.linspace(round(np.min(ys),0), round(np.max(ys),0),x )
+zs = np.linspace(round(np.min(zs),0), round(np.max(zs),0),y )
 
 del coordinates
 
