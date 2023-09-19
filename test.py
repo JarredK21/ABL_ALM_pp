@@ -23,7 +23,7 @@ def Ux_it_offset(it):
 
 def Ux_it_offset_2(it):
 
-    velx = np.reshape(velocityx[it],(x,y)); vely = np.reshape(velocityy[it],(x,y))
+    velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
 
     fx = interpolate.interp2d(ys,zs,velx,kind="linear"); fy = interpolate.interp2d(ys,zs,vely,kind="linear")
     Ux_rotor = []
