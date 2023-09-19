@@ -36,12 +36,21 @@ Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
 RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:Time_end_idx])
  
-
+group = a.groups["0.0"]
+Ux = np.array(group.variables["Ux"])
  
 # reading the CSV file
 csvFile = pandas.read_csv(in_dir+'Ux.csv')
 print(csvFile)
-velocityx = csvFile["Ux"].to_list()
+velocityx_1 = csvFile["Ux"].to_list()
+
+velocityx_2 = csvFile["Ux_2"].to_list()
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_sampling,Ux,"-r")
+plt.plot(Time_sampling,velocityx_1,"-b")
+#plt.plot(Time_sampling,"-g")
+plt.show()
 
 
 f = interpolate.interp1d(Time_sampling,velocityx)
