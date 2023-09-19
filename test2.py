@@ -49,7 +49,7 @@ velocityx_2 = csvFile["Ux_2"].to_list()
 fig = plt.figure(figsize=(14,8))
 plt.plot(Time_sampling,Ux,"-r")
 plt.plot(Time_sampling,velocityx_1,"-b")
-#plt.plot(Time_sampling,"-g")
+plt.plot(Time_sampling,velocityx_2,"-g")
 plt.show()
 
 
