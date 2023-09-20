@@ -24,12 +24,11 @@ def Ux_it_offset(it):
 
     Ux_rotor = []
     ijk = 0
-    for k in np.arange(0,len(zs)):
-        for j in np.arange(0,len(ys)):
-            r = np.sqrt(ys[j]**2 + zs[k]**2)
-            if r <= 63 and r > 1.5:
-                Ux_rotor.append(velocityx[it,ijk]*np.cos(np.radians(29))+velocityy[it,ijk]*np.sin(np.radians(29)))
-            ijk+=1
+    for j,k in zip(ys,zs):
+        r = np.sqrt(j**2 + k**2)
+        if r <= 63 and r > 1.5:
+            Ux_rotor.append(velocityx[it,ijk]*np.cos(np.radians(29))+velocityy[it,ijk]*np.sin(np.radians(29)))
+        ijk+=1
     return np.average(Ux_rotor)
 
 
@@ -195,15 +194,15 @@ for offset in offsets:
     Variables = ["Ux_{0}".format(offset)]
     units = ["[m/s]"]
 
-
     x = p_rotor.ijk_dims[0] #no. data points
     y = p_rotor.ijk_dims[1] #no. data points
 
-    coordinates = p_rotor.variables["coordinates"]
 
-    xo = coordinates[0:x,0]
-    yo = coordinates[0:x,1]
-    zo = np.linspace(p_rotor.origin[2],p_rotor.axis2[2],y)
+    coordinates = np.array(p_rotor.variables["coordinates"])
+
+    xo = coordinates[:,0]
+    yo = coordinates[:,1]
+    zo = coordinates[:,2]
 
     rotor_coordiates = [2560,2560,90]
 
@@ -214,6 +213,9 @@ for offset in offsets:
     xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
     ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
     zs = zo - rotor_coordiates[2]
+
+    Y = np.linspace(round(np.min(ys),0), round(np.max(ys),0),x )
+    Z = np.linspace(round(np.min(zs),0), round(np.max(zs),0),y )
 
 
     dy = ys[1]-ys[0]

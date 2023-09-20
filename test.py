@@ -28,7 +28,6 @@ def IA_it_offset(it):
     fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
 
     IA = 0
-
     for j,k in zip(ys,zs):
         r = np.sqrt(j**2 + k**2)
         if r <= 63 and r > 1.5:
@@ -134,7 +133,7 @@ with Pool() as pool:
         IA.append(IA_it)
         print(it,time.time()-start_time)
         it+=1
-    IA = np.array(IA_it)
+    IA = np.array(IA)
     
 
 # name of csv file 
