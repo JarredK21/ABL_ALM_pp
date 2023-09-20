@@ -72,7 +72,8 @@ def delta_Ux(j,k,r,fx,fy):
 
 start_time = time.time()
 
-in_dir = "./"
+#in_dir = "./"#
+in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
 
 a = Dataset(in_dir+"sampling_r_0.0.nc")
 
@@ -105,8 +106,8 @@ Z = np.linspace(round(np.min(zs),0), round(np.max(zs),0),y )
 
 del coordinates
 
-dy = ys[1]-ys[0]
-dz = zs[1] - zs[0]
+dy = (max(Y) - min(Y))/x
+dz = (max(Z) - min(Z))/y
 dA = dy * dz
 
 velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"]); del p_rotor
@@ -141,7 +142,7 @@ for it in np.arange(0,time_idx):
     IA_it = IA_it_offset(it)
     IA.append(IA_it)
     print(it,IA[it],time.time()-start_time)
-    IA = np.array(IA)
+IA = np.array(IA)
     
 
 # name of csv file 
