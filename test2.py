@@ -35,43 +35,76 @@ Time_end_idx = np.searchsorted(Time_OF,Time_end)
 Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
 RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:Time_end_idx])
+RtAeroMyh = np.array(a.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
+RtAeroMzh = np.array(a.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
+RtAeroMR = np.sqrt( np.add(np.square(RtAeroMyh), np.square(RtAeroMzh)) ) 
  
 group = a.groups["0.0"]
 Ux = np.array(group.variables["Ux"])
  
 # reading the CSV file
-csvFile = pandas.read_csv(in_dir+'Ux.csv')
+csvFile = pandas.read_csv(in_dir+'IA.csv')
 print(csvFile)
-velocityx_1 = csvFile["Ux"].to_list()
-
-velocityx_2 = csvFile["Ux_2"].to_list()
-
-fig = plt.figure(figsize=(14,8))
-plt.plot(Time_sampling,Ux,"-r")
-plt.plot(Time_sampling,velocityx_1,"-b")
-plt.plot(Time_sampling,velocityx_2,"-g")
-plt.show()
+IA = csvFile["IA"].to_list()
 
 
-f = interpolate.interp1d(Time_sampling,velocityx)
+f = interpolate.interp1d(Time_sampling,IA)
+IA = f(Time_OF)
+
+f = interpolate.interp1d(Time_sampling,Ux)
 Ux = f(Time_OF)
 
 fig,ax = plt.subplots(figsize=(14,8))
 
-
-corr = correlation_coef(RtAeroMxh,Ux)
+corr = correlation_coef(RtAeroMxh,IA)
 corr = round(corr,2)
 
 ax.plot(Time_OF,RtAeroMxh,"-b")
 ax.set_ylabel("Mx",fontsize=14)
 
 ax2=ax.twinx()
-ax2.plot(Time_OF,Ux,"-r")
-ax2.set_ylabel("x velocity",fontsize=14)
+ax2.plot(Time_OF,IA,"-r")
+ax2.set_ylabel("IA",fontsize=14)
 
 plt.title("Correlation = {0}".format(corr),fontsize=16)
 
 ax.set_xlabel("Time [s]",fontsize=16)
 plt.tight_layout()
+
+
+fig,ax = plt.subplots(figsize=(14,8))
+
+corr = correlation_coef(RtAeroMR,IA)
+corr = round(corr,2)
+
+ax.plot(Time_OF,RtAeroMR,"-b")
+ax.set_ylabel("MR",fontsize=14)
+
+ax2=ax.twinx()
+ax2.plot(Time_OF,IA,"-r")
+ax2.set_ylabel("IA",fontsize=14)
+
+plt.title("Correlation = {0}".format(corr),fontsize=16)
+
+ax.set_xlabel("Time [s]",fontsize=16)
+plt.tight_layout()
+
+
+fig,ax = plt.subplots(figsize=(14,8))
+
+corr = correlation_coef(Ux,IA)
+corr = round(corr,2)
+
+ax.plot(Time_OF,Ux,"-b")
+ax.set_ylabel("Ux",fontsize=14)
+
+ax2=ax.twinx()
+ax2.plot(Time_OF,IA,"-r")
+ax2.set_ylabel("IA",fontsize=14)
+
+plt.title("Correlation = {0}".format(corr),fontsize=16)
+
+ax.set_xlabel("Time [s]",fontsize=16)
+plt.tight_layout()
+
 plt.show()
-#plt.savefig(in_dir+"velocityx_Mx.png")
