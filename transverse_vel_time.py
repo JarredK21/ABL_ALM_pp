@@ -28,7 +28,7 @@ heights = [10,40,90,500,1000,1200]
 planes = ["t", "t", "r", "r","r","r"]
 offsets = [1280, 3820,0.0,126,-63.0,-126]
 
-plot_average_y = False
+plot_average_y = True
 plot_hub_height = True
 
 for offset,plane in zip(offsets,planes):
@@ -42,6 +42,8 @@ for offset,plane in zip(offsets,planes):
 
     coordinates = np.array(p.variables["coordinates"])
 
+    rotor_coordinates = [2560,2560,90]
+
     if plane == "r":
         y = p.ijk_dims[0] #no. data points
         z = p.ijk_dims[1] #no. data points
@@ -49,8 +51,6 @@ for offset,plane in zip(offsets,planes):
         xo = coordinates[:,0]
         yo = coordinates[:,1]
         zo = coordinates[:,2]
-
-        rotor_coordinates = [2560,2560,90]
 
         x_trans = xo - rotor_coordinates[0]
         y_trans = yo - rotor_coordinates[1]
