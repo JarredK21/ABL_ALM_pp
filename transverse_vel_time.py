@@ -19,8 +19,8 @@ def average_velocity(it):
 
 start_time = time.time()
 
-#in_dir = "./"
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
+in_dir = "./"
+#in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
 out_dir = in_dir+"Quasi-stationarity/"
 
 heights = [10,40,90,500,1000,1200]
@@ -77,9 +77,6 @@ for offset,plane in zip(offsets,planes):
         for height in heights:
             height_idx.append(np.searchsorted(zs,height))
 
-    for idx in height_idx:
-        print(coordinates[idx:(idx+z)])
-
     if plot_average_y == True:
 
         velocityx = np.array(p.variables["velocityx"])
@@ -115,7 +112,7 @@ for offset,plane in zip(offsets,planes):
         height = 90
         trans = 2560
         hub_height_vel = []
-        for it in np.arange(0,len(time_idx)):
+        for it in np.arange(0,time_idx):
 
             velx = np.reshape(velocityx[it],(z,y))
             fx = interpolate.interp2d(Y,Z,velx,kind="linear")
@@ -128,6 +125,7 @@ for offset,plane in zip(offsets,planes):
                 hub_height_vel.append(Ux*np.cos(np.radians(29))+Uy*np.sin(np.radians(29)))
             else:
                 hub_height_vel.append(Ux)
+            print(it,time.time()-start_time)
 
         fig = plt.figure(figsize=(14,8))
         plt.plot(Time_sample,hub_height_vel)
@@ -141,5 +139,5 @@ for offset,plane in zip(offsets,planes):
         plt.legend(heights)
         plt.grid()
         plt.tight_layout()
-        plt.savefig(out_dir+"avg_velocityx_{}_{}.png".format(plane,offset))
+        plt.savefig(out_dir+"hub_height_velocityx_{}_{}.png".format(plane,offset))
         plt.close(fig)
