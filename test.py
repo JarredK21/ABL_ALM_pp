@@ -30,11 +30,9 @@ def IA_it_offset(it):
     IA = 0
     for j,k in zip(ys,zs):
         r = np.sqrt(j**2 + k**2)
-        print("r = ",r)
         if r <= 63 and r > 1.5:
             delta_Ux_i = delta_Ux(j,k,r,fx,fy)
             IA += r * delta_Ux_i * dA
-            print("delta_Ux_i = ",delta_Ux_i)
     return IA
 
 
@@ -66,7 +64,6 @@ def delta_Ux(j,k,r,fx,fy):
     Ux_0 = vx*np.cos(np.radians(29))+vy*np.sin(np.radians(29))
     Ux_1 = vx_1*np.cos(np.radians(29))+vy_1*np.sin(np.radians(29))
     Ux_2 = vx_2*np.cos(np.radians(29))+vy_2*np.sin(np.radians(29))
-    print("Ux_0 = ",Ux_0, "Ux_1 = ",Ux_1, "Ux_2 = ",Ux_2)
 
     delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
@@ -75,7 +72,7 @@ def delta_Ux(j,k,r,fx,fy):
 
 start_time = time.time()
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
+in_dir = "./"
 
 a = Dataset(in_dir+"sampling_r_0.0.nc")
 
@@ -143,7 +140,7 @@ print("IA calcs")
 for it in np.arange(0,time_idx):
     IA_it = IA_it_offset(it)
     IA.append(IA_it)
-    print(it,time.time()-start_time)
+    print(it,IA[it],time.time()-start_time)
     IA = np.array(IA)
     
 
