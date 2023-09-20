@@ -72,8 +72,7 @@ def delta_Ux(j,k,r,fx,fy):
 
 start_time = time.time()
 
-#in_dir = "./"#
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
+in_dir = "./"
 
 a = Dataset(in_dir+"sampling_r_0.0.nc")
 
@@ -126,23 +125,15 @@ print("line 117",time.time()-start_time)
 #     Ux = np.array(Ux)
 
 
-# IA = []
-# print("IA calcs")
-# with Pool() as pool:
-#     it = 1
-#     for IA_it in pool.imap(IA_it_offset, np.arange(0,time_idx)):
-#         IA.append(IA_it)
-#         print(it,time.time()-start_time)
-#         it+=1
-#     IA = np.array(IA)
-
 IA = []
 print("IA calcs")
-for it in np.arange(0,time_idx):
-    IA_it = IA_it_offset(it)
-    IA.append(IA_it)
-    print(it,IA[it],time.time()-start_time)
-IA = np.array(IA)
+with Pool() as pool:
+    it = 1
+    for IA_it in pool.imap(IA_it_offset, np.arange(0,time_idx)):
+        IA.append(IA_it)
+        print(it,time.time()-start_time)
+        it+=1
+    IA = np.array(IA)
     
 
 # name of csv file 
