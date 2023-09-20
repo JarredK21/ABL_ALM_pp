@@ -125,19 +125,10 @@ del precursor
 
 print("line 126", time.time()-start_time)
 
-#openfast data
-da = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
-db = io.fast_output_file.FASTOutputFile("../../NREL_5MW_MCBL_R_CRPM_100320/NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
-
-#combine time
-restart_time = 137.748
-Time_a_OF = np.array(da["Time_[s]"]); Time_b_OF = np.array(db["Time_[s]"]); Time_b_OF = Time_b_OF+restart_time
-restart_idx = np.searchsorted(Time_a_OF,restart_time); restart_idx-=1
-Time_OF = np.concatenate((Time_a_OF[0:restart_idx],Time_b_OF))
-
-#combine openFAST outputs
-df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
-
+#Openfast data
+df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+#Openfast time
+Time_OF = df["Time_[s]"]
 #Azimuthal position for blade 1
 Azimuth = np.array(np.radians(df["Azimuth_[deg]"])); del df
 
@@ -145,7 +136,7 @@ print("line 144", time.time()-start_time)
 
 #directories
 in_dir = "./"
-out_dir = in_dir + "plots/"
+out_dir = in_dir + "ISOplots/"
 video_folder = in_dir + "videos/"
 isExist = os.path.exists(video_folder)
 if isExist == False:
@@ -217,8 +208,8 @@ for plane in planes:
         
         plot_all_times = True
         if plot_all_times == False:
-            tstart = 50
-            tend = 600
+            tstart = 0
+            tend = 1200
             tstart_idx = np.searchsorted(Time,tstart)
             tend_idx = np.searchsorted(Time,tend)
             time_steps = np.arange(tstart_idx,tend_idx)

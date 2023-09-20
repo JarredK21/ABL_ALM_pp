@@ -20,6 +20,7 @@ def correlation_coef(x,y):
     return r
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
+out_dir = in_dir+"time vs correlation/"
 
 offsets = [0.0]
 
@@ -39,6 +40,9 @@ corr_torq_MR = []
 corr_torq_LSSMR = []
 corr_Ux_MR = []
 corr_Ux_LSS_MR = []
+corr_IA_MR = []
+corr_IA_Mx = []
+corr_IA_Ux = []
 for Time_start in Time_starts:
 
     Time_OF = np.array(a.variables["time_OF"])
@@ -56,32 +60,38 @@ for Time_start in Time_starts:
     RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:Time_end_idx])
     RtAeroMyh = np.array(a.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
     RtAeroMzh = np.array(a.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
-    MR = np.sqrt( np.add(np.square(RtAeroMyh), np.square(RtAeroMzh)) ) 
-    LSShftMys = np.array(a.variables["LSShftMys"][Time_start_idx:Time_end_idx])
-    LSShftMzs = np.array(a.variables["LSShftMzs"][Time_start_idx:Time_end_idx])
-    LSSMR = np.sqrt( np.add(np.square(LSShftMys), np.square(LSShftMzs)) ) 
+    RtAeroMR = np.sqrt( np.add(np.square(RtAeroMyh), np.square(RtAeroMzh)) ) 
+    LSSTipMys = np.array(a.variables["LSSTipMys"][Time_start_idx:Time_end_idx])
+    LSSTipMzs = np.array(a.variables["LSSTipMzs"][Time_start_idx:Time_end_idx])
+    LSSMR = np.sqrt( np.add(np.square(LSSTipMys), np.square(LSSTipMzs)) ) 
 
     group = a.groups["0.0"]
 
-    csvFile = pandas.read_csv(in_dir+'Ux.csv')
+    Ux = np.array(group.variables["Ux"])
 
-    Ux = np.array(csvFile["Ux"].to_list())
+    IA = np.array(group.variables["IA"])
 
     f = interpolate.interp1d(Time_sampling,Ux)
     Ux = f(Time_OF)
 
+    f = interpolate.interp1d(Time_sampling,IA)
+    IA = f(Time_OF)
+
     corr_Ux_torq.append(correlation_coef(Ux,RtAeroMxh))
-    corr_torq_MR.append(correlation_coef(RtAeroMxh, MR))
+    corr_torq_MR.append(correlation_coef(RtAeroMxh, RtAeroMR))
     corr_torq_LSSMR.append(correlation_coef(RtAeroMxh,LSSMR))
-    corr_Ux_MR.append(correlation_coef(Ux,MR))
+    corr_Ux_MR.append(correlation_coef(Ux,RtAeroMR))
     corr_Ux_LSS_MR.append(correlation_coef(Ux,LSSMR))
+    corr_IA_MR.append(correlation_coef(IA,RtAeroMR))
+    corr_IA_Mx.append(correlation_coef(IA,RtAeroMxh))
+    corr_IA_Ux.append(correlation_coef(IA,Ux))
 
 fig = plt.figure()
 plt.plot(Time_starts, corr_Ux_torq)
 plt.xlabel("Start time [s]")
 plt.ylabel("correlation between rotor averaged velocity and Torque")
 plt.tight_layout()
-plt.savefig(in_dir+"start_time_corr1.png")
+plt.savefig(out_dir+"start_time_corr1.png")
 plt.close()
 
 
@@ -90,7 +100,7 @@ plt.plot(Time_starts, corr_torq_MR)
 plt.xlabel("Start time [s]")
 plt.ylabel("correlation between Torque and rotor OOPBM")
 plt.tight_layout()
-plt.savefig(in_dir+"start_time_corr2.png")
+plt.savefig(out_dir+"start_time_corr2.png")
 plt.close()
 
 fig = plt.figure()
@@ -98,7 +108,7 @@ plt.plot(Time_starts, corr_torq_LSSMR)
 plt.xlabel("Start time [s]")
 plt.ylabel("correlation between Torque and LSS OOPBM")
 plt.tight_layout()
-plt.savefig(in_dir+"start_time_corr3.png")
+plt.savefig(out_dir+"start_time_corr3.png")
 plt.close()
 
 
@@ -107,13 +117,37 @@ plt.plot(Time_starts, corr_Ux_MR)
 plt.xlabel("Start time [s]")
 plt.ylabel("correlation between Rotor averaged velocity and rotor OOPBM")
 plt.tight_layout()
-plt.savefig(in_dir+"start_time_corr4.png")
+plt.savefig(out_dir+"start_time_corr4.png")
 plt.close()
 
 fig = plt.figure()
 plt.plot(Time_starts, corr_Ux_LSS_MR)
 plt.xlabel("Start time [s]")
-plt.ylabel("correlation between rotor averaged velocuty and LSS OOPBM")
+plt.ylabel("correlation between rotor averaged velocity and LSS OOPBM")
 plt.tight_layout()
-plt.savefig(in_dir+"start_time_corr5.png")
+plt.savefig(out_dir+"start_time_corr5.png")
+plt.close()
+
+fig = plt.figure()
+plt.plot(Time_starts, corr_IA_MR)
+plt.xlabel("Start time [s]")
+plt.ylabel("correlation between Asymmetry parameter and Rotor OOPBM")
+plt.tight_layout()
+plt.savefig(out_dir+"start_time_corr6.png")
+plt.close()
+
+fig = plt.figure()
+plt.plot(Time_starts, corr_IA_Mx)
+plt.xlabel("Start time [s]")
+plt.ylabel("correlation between Asymmetry parameter and Rotor Torque")
+plt.tight_layout()
+plt.savefig(out_dir+"start_time_corr7.png")
+plt.close()
+
+fig = plt.figure()
+plt.plot(Time_starts, corr_IA_Ux)
+plt.xlabel("Start time [s]")
+plt.ylabel("correlation between Asymmetry parameter and Rotor averaged velocity")
+plt.tight_layout()
+plt.savefig(out_dir+"start_time_corr8.png")
 plt.close()
