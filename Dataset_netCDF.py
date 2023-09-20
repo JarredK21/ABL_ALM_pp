@@ -16,88 +16,40 @@ import time
 
 start_time = time.time()
 
-def coriolis_twist(u,v):
-    twist = np.arctan(np.true_divide(v,u))
-
-    return twist
-
-
-def magnitude_horizontal_velocity(u,v,twist,x,zs,h):
-
-    mag_horz_vel = []
-    for i in np.arange(0,len(zs)):
-        u_i = u[i*x:(i+1)*x]; v_i = v[i*x:(i+1)*x]
-        height = zs[i]
-        h_idx = np.searchsorted(h,height,side="left")
-        if h_idx > 127:
-            h_idx = 127
-        mag_horz_vel_i = np.add( np.multiply(u_i,np.cos(twist[h_idx])) , np.multiply( v_i,np.sin(twist[h_idx])) )
-        mag_horz_vel.extend(mag_horz_vel_i)
-    mag_horz_vel = np.array(mag_horz_vel)
-
-    return mag_horz_vel
-
 #loop over coordinates with counter
 #calc range of y and z coordinates rotor falls into
 #if true sum velocity
 #divide by len
 def Ux_it_offset(it):
 
-    Hvelmag = hvelmag[it]
-    Hvelmag = np.reshape(Hvelmag,(y,x))
-
     Ux_rotor = []
-    for j in np.arange(0,len(ys)):
-        for k in np.arange(0,len(zs)):
-            r = np.sqrt(ys[j]**2 + zs[k]**2)
-            if r <= 63:
-                Ux_rotor.append(Hvelmag[j,k])
-
+    ijk = 0
+    for j,k in zip(ys,zs):
+        r = np.sqrt(j**2 + k**2)
+        if r <= 63 and r > 1.5:
+            Ux_rotor.append(velocityx[it,ijk]*np.cos(np.radians(29))+velocityy[it,ijk]*np.sin(np.radians(29)))
+        ijk+=1
     return np.average(Ux_rotor)
-
-
-def Uz_it_offset(it):
-
-    Velocityz = velocityz[it]
-    Velocityz = np.reshape(Velocityz,(y,x))
-
-    Uz_rotor = []
-    for j in np.arange(0,len(ys)):
-        for k in np.arange(0,len(zs)):
-            r = np.sqrt(ys[j]**2 + zs[k]**2)
-            if r <= 63 and r >= 1.5:
-                Uz_rotor.append(Velocityz[j,k])
-
-    return np.average(Uz_rotor)
 
 
 def IA_it_offset(it):
 
+    velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
 
-    hvelmag_interp = hvelmag[it]
-    hvelmag_interp = np.reshape(hvelmag_interp,(y,x))
-    f = interpolate.interp2d(ys,zs,hvelmag_interp)
-
-    Hvelmag = hvelmag[it]
-    Hvelmag = np.reshape(Hvelmag,(y,x))
+    fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
 
     IA = 0
-    for j in np.arange(0,len(ys)):
-        for k in np.arange(0,len(zs)):
-            r = np.sqrt(ys[j]**2 + zs[k]**2)
-            if r <= 63 and r >= 1.5:
-
-                delta_Ux_i = delta_Ux(r,j,k,f,Hvelmag)
-                IA += r * delta_Ux_i * dA
+    for j,k in zip(ys,zs):
+        r = np.sqrt(j**2 + k**2)
+        if r <= 63 and r > 1.5:
+            delta_Ux_i = delta_Ux(j,k,r,fx,fy)
+            IA += r * delta_Ux_i * dA
     return IA
 
 
-def delta_Ux(r,j,k,f,Hvelmag):
+def delta_Ux(j,k,r,fx,fy):
 
-    Y_0 = ys[j]
-    Z_0 = zs[k]
-
-    theta = np.arccos(Y_0/r)
+    theta = np.arccos(j/r)
 
     if theta + ((2*np.pi)/3) > (2*np.pi):
         theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
@@ -116,43 +68,22 @@ def delta_Ux(r,j,k,f,Hvelmag):
     Y_2 = r*np.cos(theta_2)
     Z_2 = r*np.sin(theta_2)
 
-    Ux_0 =  Hvelmag[j][k]
-    Ux_1 =  f(Y_1,Z_1)
-    Ux_2 =  f(Y_2,Z_2)
+    vx = fx(j,k); vy = fy(j,k)
+    vx_1 = fx(Y_1,Z_1); vy_1 = fy(Y_1,Z_1)
+    vx_2 = fx(Y_2,Z_2); vy_2 = fy(Y_2,Z_2)
+
+    Ux_0 = vx*np.cos(np.radians(29))+vy*np.sin(np.radians(29))
+    Ux_1 = vx_1*np.cos(np.radians(29))+vy_1*np.sin(np.radians(29))
+    Ux_2 = vx_2*np.cos(np.radians(29))+vy_2*np.sin(np.radians(29))
 
     delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
 
     return delta_Ux
 
 
-def HV_it_offset(it):
-
-    hvelmag_interp = hvelmag[it]
-    hvelmag_interp = np.reshape(hvelmag_interp,(y,x))
-    f = interpolate.interp2d(ys,zs,hvelmag_interp)
-
-    HV = f(rotor_coordiates[1],rotor_coordiates[2])
-
-    return HV
-
-
-
-#defining twist angles with height from precursor
-precursor = Dataset("./abl_statistics60000.nc")
-mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
-t_start = np.searchsorted(precursor.variables["time"],32300)
-t_end = np.searchsorted(precursor.variables["time"],33500)
-u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
-v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
-h = mean_profiles["h"][:]
-twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-del precursor
-
-print("line 143",time.time()-start_time)
-
 
 #create netcdf file
-ncfile = Dataset("./Dataset.nc",mode="w",format='NETCDF4') #change name
+ncfile = Dataset("./Dataset.nc",mode="w",format='NETCDF4')
 ncfile.title = "AMR-Wind data sampling output combined"
 
 #create global dimensions
@@ -163,126 +94,82 @@ sampling_dim = ncfile.createDimension("sampling",None)
 time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
 time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
 
-RtAeroVxh = ncfile.createVariable("RtAeroVxh", np.float64, ('OF',),zlib=True)
 RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
-RtAeroMrh = ncfile.createVariable("RtAeroMrh", np.float64, ('OF',),zlib=True)
+RtAeroMyh = ncfile.createVariable("RtAeroMyh", np.float64, ('OF',),zlib=True)
+RtAeroMzh = ncfile.createVariable("RtAeroMzh", np.float64, ('OF',),zlib=True)
 Theta = ncfile.createVariable("Theta", np.float64, ('OF',),zlib=True)
-LSShftFya = ncfile.createVariable("LSShftFya", np.float64, ('OF',),zlib=True)
-LSShftFza = ncfile.createVariable("LSShftFza", np.float64, ('OF',),zlib=True)
+LSSGagMys = ncfile.createVariable("LSSGagMys", np.float64, ('OF',),zlib=True)
+LSSGagMzs = ncfile.createVariable("LSSGagMzs", np.float64, ('OF',),zlib=True)
+LSSTipMys = ncfile.createVariable("LSSTipMys", np.float64, ('OF',),zlib=True)
+LSSTipMzs = ncfile.createVariable("LSSTipMzs", np.float64, ('OF',),zlib=True)
 LSShftFys = ncfile.createVariable("LSShftFys", np.float64, ('OF',),zlib=True)
 LSShftFzs = ncfile.createVariable("LSShftFzs", np.float64, ('OF',),zlib=True)
-LSShftMya = ncfile.createVariable("LSShftMya", np.float64, ('OF',),zlib=True)
-LSShftMza = ncfile.createVariable("LSShftMza", np.float64, ('OF',),zlib=True)
-LSShftMys = ncfile.createVariable("LSShftMys", np.float64, ('OF',),zlib=True)
-LSShftMzs = ncfile.createVariable("LSShftMzs", np.float64, ('OF',),zlib=True)
 
-print("line 175",time.time()-start_time)
+print("line 148",time.time()-start_time)
 
 
 #openfast data
-da = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
-db = io.fast_output_file.FASTOutputFile("../../NREL_5MW_MCBL_R_CRPM_100320/NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+df = io.fast_output_file.FASTOutputFile("./NREL_5MW_Main.out").toDataFrame()
 
-#combine time
-restart_time = 137.748
-Time_a_OF = np.array(da["Time_[s]"]); Time_b_OF = np.array(db["Time_[s]"]); Time_b_OF = Time_b_OF+restart_time
-restart_idx = np.searchsorted(Time_a_OF,restart_time); restart_idx-=1
-Time_OF = np.concatenate((Time_a_OF[0:restart_idx],Time_b_OF))
+time_OF[:] = np.array(df["Time_[s]"])
 
+print("line 156",time.time()-start_time)
 
-plot_all_times = True
-if plot_all_times == False:
-    tstart = 50
-    tend = 150
-    tstart_OF_idx = np.searchsorted(Time_OF,tstart)
-    tend_OF_idx = np.searchsorted(Time_OF,tend)
-else:
-    tstart_OF_idx = 0
-    tend_OF_idx = np.searchsorted(Time_OF,Time_OF[-1])
-
-time_OF[:] = Time_OF[tstart_OF_idx:tend_OF_idx]; del Time_OF
-
-
-#combine openFAST outputs
-df = pd.concat((da[:][0:restart_idx],db[:])); del da; del db
-
-print("line 205",time.time()-start_time)
-
-Variables = ["Wind1VelX","RtAeroFxh","RtAeroMxh","MR","Theta","LSShftFya","LSShftFza","LSShftFys","LSShftFzs",
-             "LSShftMya","LSShftMza","LSShftMys","LSShftMzs"]
-units = ["[m/s]","[N]","[N-m]","[N-m]","[rads]","[kN]","[kN]","[kN]","[kN]","[kN-m]","[kN-m]","[kN-m]","[kN-m]"]
-
-
+Variables = ["RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","Theta","LSSGagMys","LSSGagMzs",
+             "LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs"]
+units = ["[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]"]
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
 
-    if Variable == "MR" or Variable == "Theta":
-        signaly = df["RtAeroMyh_[N-m]"][tstart_OF_idx:tend_OF_idx]
-        signalz = df["RtAeroMzh_[N-m]"][tstart_OF_idx:tend_OF_idx]
+    if Variable == "Theta":
+        signaly = np.array(df["RtAeroMyh_[N-m]"])
+        signalz = np.array(df["RtAeroMzh_[N-m]"])
         
-        if Variable == "MR":
-            signal = np.sqrt( np.square(signaly) + np.square(signalz) ) 
-            RtAeroMrh[:] = signal; del signal
-        elif Variable == "Theta": 
-            signal = np.arctan2(signalz,signaly)
-            Theta[:] = signal; del signal
+        signal = np.arctan2(signalz,signaly)
+        Theta[:] = signal; del signal
 
     else:
         txt = "{0}_{1}".format(Variable,units[iv])
-        signal = df[txt][tstart_OF_idx:tend_OF_idx]
+        signal = np.array(df[txt])
         if Variable == "RtAeroFxh":
             RtAeroFxh[:] = signal; del signal
         elif Variable == "RtAeroMxh":
             RtAeroMxh[:] = signal; del signal
-        elif Variable == "Wind1VelX":
-            RtAeroVxh[:] = signal; del signal
-        elif Variable == "LSShftFya":
-            LSShftFya[:] = signal; del signal
-        elif Variable == "LSShftFza":
-            LSShftFza[:] = signal; del signal
+        elif Variable == "RtAeroMyh":
+            RtAeroMyh[:] = signal; del signal
+        elif Variable == "RtAeroMzh":
+            RtAeroMzh[:] = signal; del signal
+        elif Variable == "LSSGagMys":
+            LSSGagMys[:] = signal; del signal
+        elif Variable == "LSSGagMzs":
+            LSSGagMzs[:] = signal; del signal
+        elif Variable == "LSSTipMys":
+            LSSTipMys[:] = signal; del signal
+        elif Variable == "LSSTipMzs":
+            LSSTipMzs[:] = signal; del signal
         elif Variable == "LSShftFys":
-            LSShftFys[:] = signal; del signal
+            LSShftFys[:] = signal[:,0]; del signal
         elif Variable == "LSShftFzs":
             LSShftFzs[:] = signal; del signal
-        elif Variable == "LSShftMya":
-            LSShftMya[:] = signal; del signal
-        elif Variable == "LSShftMza":
-            LSShftMza[:] = signal; del signal
-        elif Variable == "LSShftMys":
-            LSShftMys[:] = signal; del signal
-        elif Variable == "LSShftMzs":
-            LSShftMzs[:] = signal; del signal
+
 
 del df
 
-print("line 235",time.time()-start_time)
+print("line 191",time.time()-start_time)
 
 #sampling data
 a = Dataset("./sampling_r_0.0.nc")
 
 #sampling time
 Time_sample = np.array(a.variables["time"])
-Time_sample = Time_sample - Time_sample[0]
+time_idx = len(Time_sample)
+time_sampling[:] = Time_sample; del Time_sample
 
-plot_all_times = True
-if plot_all_times == False:
-    tstart = 50
-    tend = 150
-    tstart_sample_idx = np.searchsorted(Time_sample,tstart)
-    tend_sample_idx = np.searchsorted(Time_sample,tend)
-else:
-    tstart_sample_idx = 0
-    tend_sample_idx = np.searchsorted(Time_sample,Time_sample[-1])
+print("line 201", time_idx, time.time()-start_time)
 
-print(tend_sample_idx)
-
-time_sampling[:] = Time_sample[tstart_sample_idx:tend_sample_idx]
-
-print("line 254", time.time()-start_time)
-
-offsets = [0.0, -63.0, -126]
-group_label = [0.0, 63.0, 126.0]
+offsets = [0.0,-63.0]
+group_label = [0.0,63.0]
 
 ic = 0
 for offset in offsets:
@@ -292,24 +179,23 @@ for offset in offsets:
     group = ncfile.createGroup("{}".format(group_label[ic]))
 
     Ux = group.createVariable("Ux", np.float64, ('sampling'),zlib=True)
-    Uz = group.createVariable("Uz", np.float64, ('sampling'),zlib=True)
     IA = group.createVariable("IA", np.float64, ('sampling'),zlib=True)
-    HV = group.createVariable("HV", np.float64, ('sampling'),zlib=True)
 
-    p_rotor = a.groups["p_r"]
+    p_rotor = a.groups["p_r"]; del a
 
-    Variables = ["Ux_{0}".format(offset), "Uz_{0}".format(offset), "IA_{0}".format(offset), "HV_{0}".format(offset)]
-    units = ["[m/s]", "[m/s]", "[$m^4/s$]"]
+    velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"])
 
+    Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset)]
+    units = ["[m/s]", "[$m^4/s$]"]
 
     x = p_rotor.ijk_dims[0] #no. data points
     y = p_rotor.ijk_dims[1] #no. data points
 
-    coordinates = p_rotor.variables["coordinates"]
+    coordinates = np.array(p_rotor.variables["coordinates"])
 
-    xo = coordinates[0:x,0]
-    yo = coordinates[0:x,1]
-    zo = np.linspace(p_rotor.origin[2],p_rotor.axis2[2],y)
+    xo = coordinates[:,0]
+    yo = coordinates[:,1]
+    zo = coordinates[:,2]
 
     rotor_coordiates = [2560,2560,90]
 
@@ -321,36 +207,18 @@ for offset in offsets:
     ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
     zs = zo - rotor_coordiates[2]
 
+    Y = np.linspace(round(np.min(ys),0), round(np.max(ys),0),x )
+    Z = np.linspace(round(np.min(zs),0), round(np.max(zs),0),y )
 
-    dy = ys[1]-ys[0]
-    dz = zs[1] - zs[0]
+    del coordinates
+
+    dy = (max(Y) - min(Y))/x
+    dz = (max(Z) - min(Z))/y
     dA = dy * dz
 
-    print("line 295",time.time()-start_time)
+    del p_rotor
 
-
-    def velocity_field(it):
-
-        hvelmag_it = magnitude_horizontal_velocity(velocityx[it],velocityy[it],twist,x,zs,h)
-
-        return hvelmag_it
-        
-
-
-    #velocity field
-    velocityx = p_rotor.variables["velocityx"]
-    velocityy = p_rotor.variables["velocityy"]
-    velocityz = p_rotor.variables["velocityz"]
-    hvelmag = []
-    with Pool() as pool:
-        for hvelmag_it in pool.imap(velocity_field,np.arange(tstart_sample_idx,tend_sample_idx)):
-            
-            hvelmag.append(hvelmag_it)
-            print(len(hvelmag),time.time()-start_time)
-
-    np.array(hvelmag)
-
-    print("line 323",np.shape(hvelmag))
+    print("line 249",time.time()-start_time)
 
     for iv in np.arange(0,len(Variables)):
         Variable = Variables[iv]
@@ -358,47 +226,32 @@ for offset in offsets:
 
         if Variable[0:2] == "Ux":
             Ux_it = []
-            print("Ux calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
+            print("Ux calcs")
             with Pool() as pool:
-                for Ux_i in pool.imap(Ux_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
+                i_Ux = 1
+                for Ux_i in pool.imap(Ux_it_offset, np.arange(0,time_idx)):
                     Ux_it.append(Ux_i)
-                    print(len(Ux_it),time.time()-start_time)
+                    print(i_Ux,time.time()-start_time)
+                    i_Ux+=1
                 Ux_it = np.array(Ux_it)
                 Ux[:] = Ux_it; del Ux_it
 
-        elif Variable[0:2] == "Uz":
-            Uz_it = []
-            print("Uz calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
-            with Pool() as pool:
-                for Uz_i in pool.imap(Uz_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
-                    Uz_it.append(Uz_i)
-                    print(len(Uz_it),time.time()-start_time)
-                Uz_it = np.array(Uz_it)
-                Uz[:] = Uz_it; del Uz_it
-
         elif Variable[0:2] == "IA":
             IA_it = []
-            print("IA calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
+            print("IA calcs")
             with Pool() as pool:
-                for IA_i in pool.imap(IA_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
+                i_IA = 1
+                for IA_i in pool.imap(IA_it_offset, np.arange(0,time_idx)):
                     IA_it.append(IA_i)
-                    print(len(IA_it),time.time()-start_time)
+                    print(i_IA,time.time()-start_time)
+                    i_IA+=1
                 IA_it = np.array(IA_it)
                 IA[:] = IA_it; del IA_it
 
-        elif Variable[0:2] == "HV":
-            HV_it = []
-            print("HV calcs",len(np.arange(tstart_sample_idx,tend_sample_idx)))
-            with Pool() as pool:
-                for HV_i in pool.imap(HV_it_offset, np.arange(tstart_sample_idx,tend_sample_idx)):
-                    HV_it.append(HV_i)
-                    print(len(HV_it),time.time()-start_time)
-                HV_it = np.array(HV_it)
-                HV[:] = HV_it; del HV_it
 
     print(ncfile.groups)
     ic+=1
 print(ncfile)
 ncfile.close()
 
-print("line 352",time.time() - start_time)
+print("line 308",time.time() - start_time)
