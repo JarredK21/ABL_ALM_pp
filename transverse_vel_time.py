@@ -141,7 +141,7 @@ for offset,plane in zip(offsets,planes):
         height = 90
         trans = 2560
         hub_height_vel = []
-        with Pool as pool:
+        with Pool() as pool:
             ic = 1
         for hub_height_vel_it in pool.imap(average_velocity,np.arange(0,time_idx)):
 
