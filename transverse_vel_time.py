@@ -18,6 +18,25 @@ def average_velocity(it):
             avg_velx_it.append(np.average(hvelmag))
     return avg_velx_it
 
+
+
+def hub_height_velocity(it):
+    velx = np.reshape(velocityx[it],(z,y))
+    fx = interpolate.interp2d(Y,Z,velx,kind="linear")
+    Ux = fx(rotor_coordinates[1],rotor_coordinates[2])
+
+    if plane == "r":
+        vely = np.reshape(velocityy[it],(z,y))
+        fy = interpolate.interp2d(Y,Z,vely,kind="linear")
+        Uy = fy(rotor_coordinates[1],rotor_coordinates[2])
+        hub_height_vel_it = Ux*np.cos(np.radians(29))+Uy*np.sin(np.radians(29))
+    else:
+        hub_height_vel_it = Ux
+
+    return hub_height_vel_it
+
+
+
 start_time = time.time()
 
 in_dir = "./"
@@ -116,20 +135,13 @@ for offset,plane in zip(offsets,planes):
         height = 90
         trans = 2560
         hub_height_vel = []
-        for it in np.arange(0,time_idx):
+        with Pool as pool:
+            ic = 1
+        for hub_height_vel_it in pool.imap(average_velocity,np.arange(0,time_idx)):
 
-            velx = np.reshape(velocityx[it],(z,y))
-            fx = interpolate.interp2d(Y,Z,velx,kind="linear")
-            Ux = fx(rotor_coordinates[1],rotor_coordinates[2])
-
-            if plane == "r":
-                vely = np.reshape(velocityy[it],(z,y))
-                fy = interpolate.interp2d(Y,Z,vely,kind="linear")
-                Uy = fy(rotor_coordinates[1],rotor_coordinates[2])
-                hub_height_vel.append(Ux*np.cos(np.radians(29))+Uy*np.sin(np.radians(29)))
-            else:
-                hub_height_vel.append(Ux)
-            print(it,time.time()-start_time)
+            hub_height_vel.append(hub_height_vel_it)
+            print(ic,time.time()-start_time)
+        
 
         fig = plt.figure(figsize=(14,8))
         plt.plot(Time_sample,hub_height_vel)
