@@ -33,6 +33,7 @@ plot_hub_height = True
 
 for offset,plane in zip(offsets,planes):
 
+    print(offset,plane)
     a = Dataset(in_dir+"sampling_{}_{}.nc".format(plane,offset))
     Time_sample = np.array(a.variables["time"])
     Time_sample = Time_sample - Time_sample[0]
@@ -76,6 +77,8 @@ for offset,plane in zip(offsets,planes):
         height_idx = []
         for height in heights:
             height_idx.append(np.searchsorted(zs,height))
+
+    print("line 81")
 
     if plot_average_y == True:
 
