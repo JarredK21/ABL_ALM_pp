@@ -11,9 +11,10 @@ def average_velocity(it):
     avg_velx_it = []
     for idx in height_idx:
         if plane == "t":
-            avg_velx_it.append(np.average(velocityx[it,idx:(idx+z)]))
+            avg_velx_it.append(np.average(velocityx[it,idx:(idx+y-1)]))
         elif plane == "r":
-            hvelmag = np.add(np.multiply(velocityx[it,idx:(idx+z)], np.cos(np.radians(29))) ,np.multiply(velocityy[it,idx:(idx+z)], np.sin(np.radians(29))))
+            hvelmag = np.add(np.multiply(velocityx[it,idx:(idx+y-1)], np.cos(np.radians(29))) ,
+                             np.multiply(velocityy[it,idx:(idx+y-1)], np.sin(np.radians(29))))
             avg_velx_it.append(np.average(hvelmag))
     return avg_velx_it
 
