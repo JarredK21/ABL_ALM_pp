@@ -45,8 +45,10 @@ out_dir = in_dir+"Quasi-stationarity/"
 
 heights = [10,40,90,500,1000,1200]
 
-planes = ["t", "t", "r", "r","r","r"]
-offsets = [1280, 3820,0.0,126,-63.0,-126]
+# planes = ["t", "t", "r", "r","r","r"]
+# offsets = [1280, 3820,0.0,126,-63.0,-126]
+planes = ["r", "r","r","r"]
+offsets = [0.0,126,-63.0,-126]
 
 plot_average_y = True
 plot_hub_height = True
@@ -100,11 +102,15 @@ for offset,plane in zip(offsets,planes):
 
     print("line 81")
 
-    if plot_average_y == True:
+    velocityx = np.array(p.variables["velocityx"])
+    if plane == "r":
+        velocityy = np.array(p.variables["velocityy"])
 
-        velocityx = np.array(p.variables["velocityx"])
-        if plane == "r":
-            velocityy = np.array(p.variables["velocityy"])
+    del p
+
+    print("line 107")
+
+    if plot_average_y == True:
 
         avg_velx = []
         with Pool() as pool:
@@ -157,3 +163,5 @@ for offset,plane in zip(offsets,planes):
         plt.tight_layout()
         plt.savefig(out_dir+"hub_height_velocityx_{}_{}.png".format(plane,offset))
         plt.close(fig)
+
+    del velocityx; del velocityy
