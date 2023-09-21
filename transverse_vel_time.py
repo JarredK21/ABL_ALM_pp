@@ -19,6 +19,16 @@ def average_velocity(it):
     return avg_velx_it
 
 
+def average_velocity_comps(it):
+    
+    avg_velx_it = []
+    avg_vely_it = []
+    for idx in height_idx:
+        avg_velx_it.append(np.average(velocityx[it,idx:(idx+y-1)]))
+        avg_vely_it.append(np.average(velocityy[it,idx:(idx+y-1)]))
+    return avg_velx_it, avg_vely_it
+
+
 
 def hub_height_velocity(it):
     velx = np.reshape(velocityx[it],(z,y))
@@ -50,8 +60,9 @@ heights = [10,40,90,500,1000,1200]
 planes = ["r", "r","r","r"]
 offsets = [0.0,126,-63.0,-126]
 
-plot_average_y = True
-plot_hub_height = True
+plot_average_y = False
+plot_hub_height = False
+plot_comps_average_y = True
 
 for offset,plane in zip(offsets,planes):
 
@@ -136,6 +147,44 @@ for offset,plane in zip(offsets,planes):
         plt.tight_layout()
         plt.savefig(out_dir+"avg_velocityx_{}_{}.png".format(plane,offset))
         plt.close(fig)
+
+    
+    if plot_comps_average_y == True:
+
+        avg_velx = []
+        avg_vely = []
+        with Pool() as pool:
+            ic = 1
+            for avg_velx_it,avg_vely_it in pool.imap(average_velocity_comps,np.arange(0,time_idx)):
+                
+                avg_velx.append(avg_velx_it)
+                avg_vely.append(avg_vely_it)
+                print(ic,time.time()-start_time)
+                ic+=1
+        
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time_sample,avg_velx)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Ux averaged in the y' direction [m/s]",fontsize=16)
+        plt.title("Ux averaged in the y' direction at {}m from tower centerline".format(offset),fontsize=18)
+        plt.legend(heights)
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"avg_velocityx_comp_{}_{}.png".format(plane,offset))
+        plt.close(fig)
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time_sample,avg_vely)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Uy averaged in the y' direction [m/s]",fontsize=16)
+        plt.title("Uy averaged in the y' direction at {}m from tower centerline".format(offset),fontsize=18)
+        plt.legend(heights)
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"avg_velocityy_comp_{}_{}.png".format(plane,offset))
+        plt.close(fig)
+
 
     if plot_hub_height == True:
         height = 90
