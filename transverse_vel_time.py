@@ -143,10 +143,11 @@ for offset,plane in zip(offsets,planes):
         hub_height_vel = []
         with Pool() as pool:
             ic = 1
-        for hub_height_vel_it in pool.imap(average_velocity,np.arange(0,time_idx)):
+            for hub_height_vel_it in pool.imap(hub_height_velocity,np.arange(0,time_idx)):
 
-            hub_height_vel.append(hub_height_vel_it)
-            print(ic,time.time()-start_time)
+                hub_height_vel.append(hub_height_vel_it)
+                print(ic,time.time()-start_time)
+                ic+=1
         
 
         fig = plt.figure(figsize=(14,8))
