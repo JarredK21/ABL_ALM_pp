@@ -452,7 +452,7 @@ for plane in planes:
                     height, width, layers = img.shape
                     size = (width,height)
                     img_array.append(img)
-                    print("line 454)", Time[time_steps[it]],time.time()-start_time)
+                    print("line 454)", Time[time_steps[it_img]],time.time()-start_time)
                     it_img+=1
                 
                 #cv2.VideoWriter_fourcc(*'DIVX')
@@ -460,7 +460,7 @@ for plane in planes:
                 it_vid = 0
                 for im in range(len(img_array)):
                     out.write(img_array[im])
-                    print("Line 462)",Time[time_steps[it]],time.time()-start_time)
+                    print("Line 462)",Time[time_steps[it_vid]],time.time()-start_time)
                     it_vid+=1
                 out.release(); del img_array
                 print("Line 465)",time.time()-start_time)
@@ -473,14 +473,14 @@ for plane in planes:
                     height, width, layers = img.shape
                     size = (width,height)
                     img_array.append(img)
-                    print("line 475)", Time[time_steps[it]],time.time()-start_time)
+                    print("line 475)", Time[time_steps[it_img]],time.time()-start_time)
                     it_img+=1
                 
                 #cv2.VideoWriter_fourcc(*'DIVX')
                 out = cv2.VideoWriter(video_folder+filename+"_2"+'.avi',0, 1, size)
                 for im in range(len(img_array)):
                     out.write(img_array[im])
-                    print("Line 482)",Time[time_steps[it]],time.time()-start_time)
+                    print("Line 482)",Time[time_steps[it_vid]],time.time()-start_time)
                     it_vid+=1
                 out.release(); del img_array
                 print("Line 485)",time.time()-start_time)
