@@ -106,6 +106,12 @@ for offset in offsets:
     RtAeroFzh = np.array(df["RtAeroFzh_[N]"][Time_start_idx:Time_end_idx])
     RtAeroFR = np.sqrt( np.add(np.square(RtAeroFyh), np.square(RtAeroFzh)) )
 
+    xxx = np.add(np.square(RtAeroMyh/1000), np.square(RtAeroMzh/1000))
+    yyy = np.add(np.square(LSSTipMys), np.square(LSSTipMzs))
+
+    aaa = np.square(RtAeroMyh/1000); bbb = np.square(RtAeroMzh/1000)
+    ccc = np.square(LSSTipMys); ddd = np.square(LSSTipMzs)
+
 
     L = 1.912
 
@@ -132,19 +138,20 @@ for offset in offsets:
 
 
     #plotting options
-    plot_variables = True
+    plot_variables = False
+    plot_FFT_OOPBM = True
     compare_total_OOPBM_correlations = False
-    compare_FFT_OOPBM = True
+    compare_FFT_OOPBM = False
 
     out_dir = in_dir + "OOPBM_lineplots/"
 
 
     #plot variables#
     if plot_variables == True:
-        Variables = ["Mz_add"]
-        units = ["[kN-m]"]
-        Ylabels = ["Rotor Elastodyn additional Moment z direction"]
-        h_vars = [Mz_add]
+        Variables = ["My_add","Mz_add"]
+        units = ["[kN-m]","[kN-m]"]
+        Ylabels = ["Rotor additional Moment y direction","Rotor additional Moment z direction"]
+        h_vars = [My_add,Mz_add]
 
         for i in np.arange(0,len(h_vars)):
             fig = plt.figure(figsize=(14,8))
@@ -156,13 +163,43 @@ for offset in offsets:
             plt.close()
 
 
+    if plot_FFT_OOPBM == True:
+        Variables = ["My_add","Mz_add"]
+        units = ["[kN-m]","[kN-m]"]
+        Ylabels = ["Rotor additional Moment y direction","Rotor additional Moment z direction"]
+        h_vars = [My_add,Mz_add]
+
+        for i in np.arange(0,len(h_vars)):
+            
+            frq,FFT = temporal_spectra(h_vars[i],dt,Variables[i])
+
+            fig = plt.figure(figsize=(14,8))
+            plt.plot(frq,FFT)
+
+            frq_int = [1/60, 1/30, 12.1/60, (12.1/60)*3]
+            frq_label = ["60s", "30s", "1P", "3P"]
+            y_FFT = FFT[0]+1e+03
+
+            for l in np.arange(0,len(frq_int)):
+                plt.axvline(frq_int[l])
+                plt.text(frq_int[l],y_FFT, frq_label[l])
+
+            plt.xscale("log")
+            plt.yscale("log")
+            plt.xlabel("Frequency [Hz]",fontsize=14)
+            plt.ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=14)
+            plt.tight_layout()
+            plt.savefig(out_dir+"FFT_{0}.png".format(Variables[i]))
+            plt.close(fig)
+
+
 
     #compare total signal correlations
     if compare_total_OOPBM_correlations == True:
-        Variables = ["Mz_add"]
-        units = ["[kN-m]"]
-        Ylabels = ["Rotor Elastodyn additional Moment z direction"]
-        h_vars = [Mz_add]
+        Variables = ["RtAeroMR^2","LSSTipMR^2"]
+        units = ["$[kN-m]^2$","$[kN-m]^2$"]
+        Ylabels = ["Rotor Aerodyn OOPBM squared","Rotor Elastodyn OOPBM squared"]
+        h_vars = [xxx,yyy]
 
         for j in np.arange(0,len(h_vars)):
             for i in np.arange(0,len(h_vars)):
@@ -187,36 +224,33 @@ for offset in offsets:
 
 
     if compare_FFT_OOPBM == True:
-        Variables = ["Mz_add"]
-        units = ["[kN-m]"]
-        Ylabels = ["Rotor Elastodyn additional Moment z direction"]
-        h_vars = [Mz_add]
+        Variables = ["RtAeroMyh","LSSTipMys"]
+        units = ["[kN-m]","[kN-m]"]
+        Ylabels = ["Rotor Aerodynamic Moment y", "Rotor Elastic Moment y"]
+        h_vars = [RtAeroMyh/1000, LSSTipMys]
 
-        for j in np.arange(0,len(h_vars)):
-            for i in np.arange(0,len(h_vars)):
+        frq_i,FFT_i = temporal_spectra(h_vars[0],dt,Variables[0])
+        frq_j,FFT_j = temporal_spectra(h_vars[1],dt,Variables[1])
 
-                frq_i,FFT_i = temporal_spectra(h_vars[i],dt,Variables[i])
-                frq_j,FFT_j = temporal_spectra(h_vars[j],dt,Variables[j])
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(frq_i,FFT_i,"-b")
+        plt.plot(frq_j,FFT_j,"-r")
+        frq_int = [1/60, 1/30, 12.1/60, (12.1/60)*3]
+        frq_label = ["60s", "30s", "1P", "3P"]
+        y_FFT = FFT_i[0]+1e+03
 
-                fig = plt.figure(figsize=(14,8))
-                plt.plot(frq_i,FFT_i,"-b")
-                plt.plot(frq_j,FFT_j,"-r")
-                frq_int = [1/60, 1/30, 12.1/60, (12.1/60)*3]
-                frq_label = ["60s", "30s", "1P", "3P"]
-                y_FFT = FFT_i[0]+1e+03
+        for l in np.arange(0,len(frq_int)):
+            plt.axvline(frq_int[l])
+            plt.text(frq_int[l],y_FFT, frq_label[l])
 
-                for l in np.arange(0,len(frq_int)):
-                    plt.axvline(frq_int[l])
-                    plt.text(frq_int[l],y_FFT, frq_label[l])
-
-                plt.xscale("log")
-                plt.yscale("log")
-                plt.xlabel("Frequency [Hz]",fontsize=14)
-                plt.ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=14)
-                plt.legend([Variables[i],Variables[j]])
-                plt.tight_layout()
-                plt.savefig(out_dir+"FFT_{0}_{1}.png".format(Variables[i],Variables[j]))
-                plt.close(fig)
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.xlabel("Frequency [Hz]",fontsize=14)
+        plt.ylabel("{0} {1}".format(Ylabels[0],units[0]),fontsize=14)
+        plt.legend([Variables[0],Variables[1]])
+        plt.tight_layout()
+        plt.savefig(out_dir+"FFT_{0}_{1}.png".format(Variables[0],Variables[1]))
+        plt.close(fig)
 
     ic+=1
 
