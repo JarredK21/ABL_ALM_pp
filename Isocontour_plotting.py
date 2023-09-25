@@ -373,7 +373,7 @@ for plane in planes:
 
                         cb = plt.colorbar(cs)
 
-                        if plane == "r" and offset == 0.0:
+                        if plane == "r" and offset == 0.0 or plane == "r" and offset == "-63.0":
                             YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
 
                             plt.plot(YB1,ZB1,color="k",linewidth = 0.5)
