@@ -443,10 +443,11 @@ for plane in planes:
                 files = glob.glob(folder+"*.png")
                 files.sort(key=natural_keys)
 
+                no_files = math.floor((len(files)/2))
                 #write to video
                 img_array = []
                 it_img = 0
-                for file in files[:(len(files)/2)]:
+                for file in files[:no_files]:
                     img = cv2.imread(file)
                     height, width, layers = img.shape
                     size = (width,height)
@@ -467,7 +468,7 @@ for plane in planes:
                 
                 #write to video
                 img_array = []
-                for file in files[(len(files)/2):]:
+                for file in files[no_files:]:
                     img = cv2.imread(file)
                     height, width, layers = img.shape
                     size = (width,height)
