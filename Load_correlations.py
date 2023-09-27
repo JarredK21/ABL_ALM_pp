@@ -58,7 +58,7 @@ def temporal_spectra(signal,dt,Var):
     return frq, PSD
 
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 offsets = [0.0,63.0]
 
@@ -109,11 +109,11 @@ for offset in offsets:
 
 
     #plotting options
-    plot_variables = True
-    compare_total_correlations = True
-    compare_LP_correlations = True
+    plot_variables = False
+    compare_total_correlations = False
+    compare_LP_correlations = False
     compare_time_series = True
-    compare_FFT = True
+    compare_FFT = False
 
     out_dir = in_dir + "lineplots_{}/".format(offset)
 
@@ -212,11 +212,11 @@ for offset in offsets:
 
 
     if compare_time_series == True:
-        Variables = ["Ux","RtAeroFxh","RtAeroMxh","RtAeroMR","LSSMR","IA"]
-        h_vars = [Ux,RtAeroFxh, RtAeroMxh,RtAeroMR,LSSGagMR,IA]
-        units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]","[$m^4/s$]"]
+        Variables = ["Ux","RtAeroFxh","RtAeroMxh","LSSTipMR","IA","Theta"]
+        h_vars = [Ux,RtAeroFxh, RtAeroMxh,LSSTipMR,IA,Theta]
+        units = ["[m/s]","[N]","[N-m]","[kN-m]","[$m^4/s$]","[rads]"]
         Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
-                    "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment","Asymmetry parameter"]
+                    "Tip Out-of-plane bending moment","Asymmetry parameter","Angle OOPBM"]
         
         #comparing time series
         fig, axs = plt.subplots(6,1,figsize=(32,24))

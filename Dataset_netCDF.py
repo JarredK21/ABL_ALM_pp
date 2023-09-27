@@ -98,13 +98,15 @@ RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
 RtAeroMyh = ncfile.createVariable("RtAeroMyh", np.float64, ('OF',),zlib=True)
 RtAeroMzh = ncfile.createVariable("RtAeroMzh", np.float64, ('OF',),zlib=True)
-Theta = ncfile.createVariable("Theta", np.float64, ('OF',),zlib=True)
 LSSGagMys = ncfile.createVariable("LSSGagMys", np.float64, ('OF',),zlib=True)
 LSSGagMzs = ncfile.createVariable("LSSGagMzs", np.float64, ('OF',),zlib=True)
 LSSTipMys = ncfile.createVariable("LSSTipMys", np.float64, ('OF',),zlib=True)
 LSSTipMzs = ncfile.createVariable("LSSTipMzs", np.float64, ('OF',),zlib=True)
 LSShftFys = ncfile.createVariable("LSShftFys", np.float64, ('OF',),zlib=True)
 LSShftFzs = ncfile.createVariable("LSShftFzs", np.float64, ('OF',),zlib=True)
+Theta_Aero = ncfile.createVariable("Theta_Aero", np.float64, ('OF',),zlib=True)
+Theta_Tip = ncfile.createVariable("Theta_Tip", np.float64, ('OF',),zlib=True)
+Theta_LSS = ncfile.createVariable("Theta_LSS", np.float64, ('OF',),zlib=True)
 
 print("line 148",time.time()-start_time)
 
@@ -117,17 +119,32 @@ time_OF[:] = np.array(df["Time_[s]"])
 print("line 156",time.time()-start_time)
 
 Variables = ["RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","Theta","LSSGagMys","LSSGagMzs",
-             "LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs"]
-units = ["[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]"]
+             "LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs","Theta_Aero","Theta_Tip", "Theta_LSS"]
+units = ["[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]","[rads]","[rads]","[rads]"]
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
 
-    if Variable == "Theta":
-        signaly = np.array(df["RtAeroMyh_[N-m]"])
-        signalz = np.array(df["RtAeroMzh_[N-m]"])
+    if Variable[0:4] == "Theta":
+        if Variable[6:] == "Aero":
+            signaly = np.array(df["RtAeroMyh_[N-m]"])
+            signalz = np.array(df["RtAeroMzh_[N-m]"])
+            
+            signal = np.arctan2(signalz,signaly)
+            Theta_Aero[:] = signal; del signal
+
+        elif Variable[6:] == "Tip":
+            signaly = np.array(df["LSSTipMys_[kN-m]"])
+            signalz = np.array(df["LSSTipMzs_[kN-m]"])
+            
+            signal = np.arctan2(signalz,signaly)
+            Theta_Tip[:] = signal; del signal
         
-        signal = np.arctan2(signalz,signaly)
-        Theta[:] = signal; del signal
+        elif Variable[6:] == "LSS":
+            signaly = np.array(df["LSSGagMys_[kN-m]"])
+            signalz = np.array(df["LSSGagMzs_[kN-m]"])
+            
+            signal = np.arctan2(signalz,signaly)
+            Theta_LSS[:] = signal; del signal
 
     else:
         txt = "{0}_{1}".format(Variable,units[iv])

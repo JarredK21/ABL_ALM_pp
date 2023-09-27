@@ -59,7 +59,7 @@ def temporal_spectra(signal,dt,Var):
     return frq, PSD
 
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 offsets = [0.0]
 
@@ -73,7 +73,7 @@ for offset in offsets:
     Time_sampling = Time_sampling - Time_sampling[0]
 
     Time_start = 100
-    Time_end = 200
+    Time_end = Time_sampling[-1]
 
     dt = Time_OF[1] - Time_OF[0]
 
@@ -123,6 +123,8 @@ for offset in offsets:
     Mz_add = np.subtract(LSSTipMzs, RtAeroMzh/1000)
     MR_add = np.sqrt( np.add(np.square(My_add), np.square(Mz_add)) )
 
+    MR_diff = np.subtract(LSSTipMR,RtAeroMR/1000)
+
 
 
     # group = a.groups["{}".format(offset)]
@@ -142,17 +144,18 @@ for offset in offsets:
     plot_FFT_OOPBM = False
     compare_total_OOPBM_correlations = False
     compare_FFT_OOPBM = False
-    compare_OOPBM = True
+    compare_OOPBM = False
+    sys_LPF_OOPBM = True
 
     out_dir = in_dir + "OOPBM_lineplots/"
 
 
     #plot variables#
     if plot_variables == True:
-        Variables = ["My_add","Mz_add"]
-        units = ["[kN-m]","[kN-m]"]
-        Ylabels = ["Rotor additional Moment y direction","Rotor additional Moment z direction"]
-        h_vars = [My_add,Mz_add]
+        Variables = ["MR_diff", "RtAeroMR", "LSSTipMR"]
+        units = ["[kN-m]","[kN-m]", "[kN-m]"]
+        Ylabels = ["Difference between Elastodyn magnitude of OOPBM \nand Aerodyn magnitude of OOPBM", "Rotor OOPBM", "Tip OOPBM"]
+        h_vars = [MR_diff, RtAeroMR/1000, LSSTipMR]
 
         for i in np.arange(0,len(h_vars)):
             fig = plt.figure(figsize=(14,8))
@@ -165,10 +168,10 @@ for offset in offsets:
 
 
     if plot_FFT_OOPBM == True:
-        Variables = ["My_add","Mz_add"]
-        units = ["[kN-m]","[kN-m]"]
-        Ylabels = ["Rotor additional Moment y direction","Rotor additional Moment z direction"]
-        h_vars = [My_add,Mz_add]
+        Variables = ["MR_diff", "RtAeroMR", "LSSTipMR"]
+        units = ["[kN-m]","[kN-m]", "[kN-m]"]
+        Ylabels = ["Difference between Elastodyn magnitude of OOPBM \nand Aerodyn magnitude of OOPBM", "Rotor OOPBM", "Tip OOPBM"]
+        h_vars = [MR_diff, RtAeroMR/1000, LSSTipMR]
 
         for i in np.arange(0,len(h_vars)):
             
@@ -176,14 +179,15 @@ for offset in offsets:
 
             fig = plt.figure(figsize=(14,8))
             plt.plot(frq,FFT)
+            
+            if Variables[i] != "MR_diff":
+                frq_int = [1/60, 1/30, 12.1/60, (12.1/60)*3]
+                frq_label = ["60s", "30s", "1P", "3P"]
+                y_FFT = FFT[0]+1e+03
 
-            frq_int = [1/60, 1/30, 12.1/60, (12.1/60)*3]
-            frq_label = ["60s", "30s", "1P", "3P"]
-            y_FFT = FFT[0]+1e+03
-
-            for l in np.arange(0,len(frq_int)):
-                plt.axvline(frq_int[l])
-                plt.text(frq_int[l],y_FFT, frq_label[l])
+                for l in np.arange(0,len(frq_int)):
+                    plt.axvline(frq_int[l])
+                    plt.text(frq_int[l],y_FFT, frq_label[l])
 
             plt.xscale("log")
             plt.yscale("log")
@@ -225,10 +229,10 @@ for offset in offsets:
 
 
     if compare_FFT_OOPBM == True:
-        Variables = ["RtAeroMyh","LSSTipMys"]
+        Variables = ["RtAeroMR", "LSSTipMR"]
         units = ["[kN-m]","[kN-m]"]
-        Ylabels = ["Rotor Aerodynamic Moment y", "Rotor Elastic Moment y"]
-        h_vars = [RtAeroMyh/1000, LSSTipMys]
+        Ylabels = ["Rotor OOPBM", "Tip OOPBM"]
+        h_vars = [RtAeroMR/1000, LSSTipMR]
 
         frq_i,FFT_i = temporal_spectra(h_vars[0],dt,Variables[0])
         frq_j,FFT_j = temporal_spectra(h_vars[1],dt,Variables[1])
@@ -280,6 +284,46 @@ for offset in offsets:
         plt.tight_layout()
         plt.savefig(out_dir+"OOPBM_joint_vars_2.png")
         plt.close(fig)
+
+
+    if sys_LPF_OOPBM == True:
+        Variables = ["RtAeroFyh", "RtAeroFzh", "RtAeroMyh", "RtAeroMzh"]
+        units = ["[kN-m]","[kN-m]", "[kN-m]", "[kN-m]"]
+        Ylabels = ["Rotor force y", "Rotor force z", "Rotor moment y", "Rotor moment z"]
+        h_vars = [RtAeroFyh/1000, RtAeroFzh/1000, RtAeroMyh/1000, RtAeroMzh/1000]
+
+        Variables_2 = ["LSShftFys", "LSSshftFzs", "LSSTipMys", "LSSTipMzs"]
+        units_2 = ["[kN-m]","[kN-m]", "[kN-m]", "[kN-m]"]
+        Ylabels_2 = ["Tip force y", "Tip force z", "Tip moment y", "Tip moment z"]
+        h_vars_2 = [LSShftFys, LSShftFzs, LSSTipMys, LSSTipMzs]
+
+        cutoffs = [100, 10, round((12.1/60)*3,4), round(12.1/60,4)]
+
+        for i in np.arange(0,len(h_vars)):
+
+            for cutoff in cutoffs:
+
+                signal_LP_1 = low_pass_filter(h_vars[i], cutoff)
+                signal_LP_2 = low_pass_filter(h_vars_2[i],cutoff)
+            
+                fig, axs = plt.subplots(2,1,figsize=(14,8),sharex=True)
+                
+                corr = correlation_coef(signal_LP_1, signal_LP_2)
+                corr = round(corr,2)
+
+                axs = axs.ravel()
+
+                axs[0].plot(Time_OF,signal_LP_1)
+                axs[0].set_ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=14)
+                axs[1].plot(Time_OF,signal_LP_2)
+                axs[1].set_ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=14)
+
+
+                plt.suptitle("Low pass filtered at {0}Hz. \nCorrelation: {1} with {2} = {3}".format(cutoff,Ylabels[i],Ylabels_2[i],corr),fontsize=16)
+                plt.xlabel("Time [s]",fontsize=16)
+                plt.tight_layout()
+                plt.savefig(out_dir+"LPF_cutoff_{0}_corr_{1}_{2}.png".format(cutoff,Variables[i],Variables_2[i]))
+                plt.close(fig)
 
     ic+=1
 
