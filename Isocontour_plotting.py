@@ -456,7 +456,7 @@ for plane in planes:
                     it_img+=1
                 
                 #cv2.VideoWriter_fourcc(*'DIVX')
-                out = cv2.VideoWriter(video_folder+filename+"_1"+'.avi',0, 1, size)
+                out = cv2.VideoWriter(video_folder+filename+"_1"+'.avi',0, 4, size)
                 it_vid = 0
                 for im in range(len(img_array)):
                     out.write(img_array[im])
@@ -477,7 +477,7 @@ for plane in planes:
                     it_img+=1
                 
                 #cv2.VideoWriter_fourcc(*'DIVX')
-                out = cv2.VideoWriter(video_folder+filename+"_2"+'.avi',0, 1, size)
+                out = cv2.VideoWriter(video_folder+filename+"_2"+'.avi',0, 4, size)
                 for im in range(len(img_array)):
                     out.write(img_array[im])
                     print("Line 482)",Time[time_steps[it_vid]],time.time()-start_time)

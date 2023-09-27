@@ -73,7 +73,7 @@ for offset in offsets:
     Time_sampling = Time_sampling - Time_sampling[0]
 
     Time_start = 100
-    Time_end = Time_sampling[-1]
+    Time_end = 200
 
     dt = Time_OF[1] - Time_OF[0]
 
@@ -125,13 +125,13 @@ for offset in offsets:
 
 
 
-    group = a.groups["{}".format(offset)]
-    Ux = np.array(group.variables["Ux"])
+    # group = a.groups["{}".format(offset)]
+    # Ux = np.array(group.variables["Ux"])
 
-    #IA = np.array(group.variables["IA"])
+    # #IA = np.array(group.variables["IA"])
 
-    f = interpolate.interp1d(Time_sampling,Ux)
-    Ux = f(Time_OF)
+    # f = interpolate.interp1d(Time_sampling,Ux)
+    # Ux = f(Time_OF)
 
     #f = interpolate.interp1d(Time_sampling,IA)
     #IA = f(Time_OF)
@@ -139,9 +139,10 @@ for offset in offsets:
 
     #plotting options
     plot_variables = False
-    plot_FFT_OOPBM = True
+    plot_FFT_OOPBM = False
     compare_total_OOPBM_correlations = False
     compare_FFT_OOPBM = False
+    compare_OOPBM = True
 
     out_dir = in_dir + "OOPBM_lineplots/"
 
@@ -250,6 +251,34 @@ for offset in offsets:
         plt.legend([Variables[0],Variables[1]])
         plt.tight_layout()
         plt.savefig(out_dir+"FFT_{0}_{1}.png".format(Variables[0],Variables[1]))
+        plt.close(fig)
+
+
+
+    if compare_OOPBM == True:
+        h_vars = [RtAeroMyh, LSSTipMys, RtAeroMzh, LSSTipMzs, RtAeroMR, LSSTipMR]
+        units = ["[kN-m]", "[kN-m]", "[kN-m]","[kN-m]","[kN-m]","[kN-m]"]
+        Ylabels = ["Rotor My", "Tip My", "Rotor Mz", "Tip Mz", "Rotor OOPBM","Tip OOPBM"]
+        
+        #comparing time series
+        fig, axs = plt.subplots(6,2,figsize=(32,24))
+        plt.rcParams.update({'font.size': 16})
+        for i in np.arange(0,len(h_vars)):
+
+            unit = units[i]
+            Ylabel = Ylabels[i]
+
+            signal = h_vars[i]
+
+            axs = axs.ravel()
+
+            axs[i].plot(Time_OF,signal)
+
+            axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=12)
+
+        fig.supxlabel("Time [s]")
+        plt.tight_layout()
+        plt.savefig(out_dir+"OOPBM_joint_vars_2.png")
         plt.close(fig)
 
     ic+=1
