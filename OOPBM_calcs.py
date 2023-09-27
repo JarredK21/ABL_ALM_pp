@@ -73,7 +73,8 @@ for offset in offsets:
     Time_sampling = Time_sampling - Time_sampling[0]
 
     Time_start = 100
-    Time_end = Time_sampling[-1]
+    #Time_end = Time_sampling[-1]
+    Time_end = 250
 
     dt = Time_OF[1] - Time_OF[0]
 
@@ -140,22 +141,22 @@ for offset in offsets:
 
 
     #plotting options
-    plot_variables = False
+    plot_variables = True
     plot_FFT_OOPBM = False
     compare_total_OOPBM_correlations = False
     compare_FFT_OOPBM = False
     compare_OOPBM = False
-    sys_LPF_OOPBM = True
+    sys_LPF_OOPBM = False
 
     out_dir = in_dir + "OOPBM_lineplots/"
 
 
     #plot variables#
     if plot_variables == True:
-        Variables = ["MR_diff", "RtAeroMR", "LSSTipMR"]
-        units = ["[kN-m]","[kN-m]", "[kN-m]"]
-        Ylabels = ["Difference between Elastodyn magnitude of OOPBM \nand Aerodyn magnitude of OOPBM", "Rotor OOPBM", "Tip OOPBM"]
-        h_vars = [MR_diff, RtAeroMR/1000, LSSTipMR]
+        Variables = ["RtAeroFyh","RtAeroFzh"]
+        units = ["[kN-m]","[kN-m]"]
+        Ylabels = ["Rotor force y", "Rotor force z"]
+        h_vars = [RtAeroFyh/1000, RtAeroFzh/1000]
 
         for i in np.arange(0,len(h_vars)):
             fig = plt.figure(figsize=(14,8))
@@ -163,7 +164,7 @@ for offset in offsets:
             plt.xlabel("Time [s]",fontsize=16)
             plt.ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=16)
             plt.tight_layout()
-            plt.savefig(out_dir+"{0}".format(Variables[i]))
+            plt.savefig(out_dir+"short_period_{0}".format(Variables[i]))
             plt.close()
 
 
