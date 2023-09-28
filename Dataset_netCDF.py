@@ -95,10 +95,21 @@ time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
 time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
 
 Alpha_75 = ncfile.createVariable("Alpha_75", np.float64, ('OF',),zlib=True)
+Vrel_75 = ncfile.createVariable("Vrel_75", np.float64, ('OF',),zlib=True)
+Cl_75 = ncfile.createVariable("Cl_75", np.float64, ('OF',),zlib=True)
+Cd_75 = ncfile.createVariable("Cd_75", np.float64, ('OF',),zlib=True)
+Fn_75 = ncfile.createVariable("Fn_75", np.float64, ('OF',),zlib=True)
+Ft_75 = ncfile.createVariable("Ft_75", np.float64, ('OF',),zlib=True)
+Fx_75 = ncfile.createVariable("Fx_75", np.float64, ('OF',),zlib=True)
+Fy_75 = ncfile.createVariable("Fy_75", np.float64, ('OF',),zlib=True)
+Vx_75 = ncfile.createVariable("Vx_75", np.float64, ('OF',),zlib=True)
+Vy_75 = ncfile.createVariable("Vy_75", np.float64, ('OF',),zlib=True)
+
 RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroMxh = ncfile.createVariable("RtAeroMxh", np.float64, ('OF',),zlib=True)
 RtAeroMyh = ncfile.createVariable("RtAeroMyh", np.float64, ('OF',),zlib=True)
 RtAeroMzh = ncfile.createVariable("RtAeroMzh", np.float64, ('OF',),zlib=True)
+
 LSSGagMys = ncfile.createVariable("LSSGagMys", np.float64, ('OF',),zlib=True)
 LSSGagMzs = ncfile.createVariable("LSSGagMzs", np.float64, ('OF',),zlib=True)
 LSSTipMys = ncfile.createVariable("LSSTipMys", np.float64, ('OF',),zlib=True)
@@ -119,9 +130,11 @@ time_OF[:] = np.array(df["Time_[s]"])
 
 print("line 156",time.time()-start_time)
 
-Variables = ["AB1N225Alpha","RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","Theta","LSSGagMys","LSSGagMzs",
+Variables = ["AB1N225Alpha","AB1N225Vrel","AB1N225Cl","AB1N225Cd","AB1N225Fn","AB1N225Ft","AB1N225Fx","AB1N225Fy","AB1N225Vx","AB1N225Vy",
+             "RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","LSSGagMys","LSSGagMzs",
              "LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs","Theta_Aero","Theta_Tip", "Theta_LSS"]
-units = ["[deg]","[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]","[rads]","[rads]","[rads]"]
+units = ["[deg]","[m/s]","[-]","[-]","[N/m]","[N/m]","[N/m]","[N/m]","[m/s]","[m/s]",
+         "[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]","[rads]","[rads]","[rads]"]
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
 
@@ -172,7 +185,24 @@ for iv in np.arange(0,len(Variables)):
             LSShftFzs[:] = signal; del signal
         elif Variable == "AB1N225Alpha":
             Alpha_75[:] = signal; del signal
-
+        elif Variable == "AB1N225Vrel":
+            Vrel_75 = signal; del signal
+        elif Variable == "AB1N225Cl":
+            Cl_75 = signal; del signal
+        elif Variable == "AB1N225Cd":
+            Cd_75 = signal; del signal
+        elif Variable == "AB1N225Fn":
+            Fn_75 = signal; del signal
+        elif Variable == "AB1N225Ft":
+            Ft_75 = signal; del signal
+        elif Variable == "AB1N225Fx":
+            Fx_75 = signal; del signal
+        elif Variable == "AB1N225Fy":
+            Fy_75 = signal; del signal
+        elif Variable == "AB1N225Vx":
+            Vx_75 = signal; del signal
+        elif Variable == "AB1N225Vy":
+            Vy_75 = signal; del signal
 
 del df
 

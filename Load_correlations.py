@@ -81,9 +81,6 @@ for offset in offsets:
 
     Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
-    df = io.fast_output_file.FASTOutputFile(in_dir+"NREL_5MW_Main.out").toDataFrame()
-    Alpha_75 = np.array(df["AB1N225Alpha_[deg]"][Time_start_idx:Time_end_idx])
-    del df
 
     RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:Time_end_idx])
     RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:Time_end_idx])
@@ -126,16 +123,12 @@ for offset in offsets:
 
     #plot variables#
     if plot_variables == True:
-        # Variables = ["Ux", "IA", "RtAeroFxh","RtAeroMxh","RtAeroMR","LSSTipMR","LSSGagMR"]
-        # units = ["[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[kN-m]","[kN-m]"]
-        # Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Asymmetry parameter","Rotor Thrust", "Rotor Torque", 
-        #            "Rotor Aerodyn Out-of-plane bending moment", "Rotor Elastodyn Rotor Out-of-plane bending moment",
-        #            "LSS Elastodyn Out-of-plane bending moment"]
-        # h_vars = [Ux, IA, RtAeroFxh, RtAeroMxh, RtAeroMR, LSSTipMR,LSSGagMR]
-        Variables = ["Alpha_75"]
-        units = ["[deg]"]
-        Ylabels = ["Angle of attack at 0.75 span location"]
-        h_vars = [Alpha_75]
+        Variables = ["Ux", "IA", "RtAeroFxh","RtAeroMxh","RtAeroMR","LSSTipMR","LSSGagMR"]
+        units = ["[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[kN-m]","[kN-m]"]
+        Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Asymmetry parameter","Rotor Thrust", "Rotor Torque", 
+                   "Rotor Aerodyn Out-of-plane bending moment", "Rotor Elastodyn Rotor Out-of-plane bending moment",
+                   "LSS Elastodyn Out-of-plane bending moment"]
+        h_vars = [Ux, IA, RtAeroFxh, RtAeroMxh, RtAeroMR, LSSTipMR,LSSGagMR]
 
         for i in np.arange(0,len(h_vars)):
             cutoff = 0.5*(12.1/60)*3
@@ -152,16 +145,12 @@ for offset in offsets:
             plt.close()
 
     if plot_FFT == True:
-        # Variables = ["Ux", "IA", "RtAeroFxh","RtAeroMxh","RtAeroMR","LSSTipMR","LSSGagMR"]
-        # units = ["[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[kN-m]","[kN-m]"]
-        # Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Asymmetry parameter","Rotor Thrust", "Rotor Torque", 
-        #            "Rotor Aerodyn Out-of-plane bending moment", "Rotor Elastodyn Rotor Out-of-plane bending moment",
-        #            "LSS Elastodyn Out-of-plane bending moment"]
-        # h_vars = [Ux, IA, RtAeroFxh, RtAeroMxh, RtAeroMR, LSSTipMR,LSSGagMR]
-        Variables = ["Alpha_75", "Ux"]
-        units = ["[deg]","[m/s]"]
-        Ylabels = ["Angle of attack at 0.75 span location","$<Ux'>_{Rotor}$ rotor averaged horizontal velocity"]
-        h_vars = [Alpha_75, Ux]
+        Variables = ["Ux", "IA", "RtAeroFxh","RtAeroMxh","RtAeroMR","LSSTipMR","LSSGagMR"]
+        units = ["[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[kN-m]","[kN-m]"]
+        Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Asymmetry parameter","Rotor Thrust", "Rotor Torque", 
+                   "Rotor Aerodyn Out-of-plane bending moment", "Rotor Elastodyn Rotor Out-of-plane bending moment",
+                   "LSS Elastodyn Out-of-plane bending moment"]
+        h_vars = [Ux, IA, RtAeroFxh, RtAeroMxh, RtAeroMR, LSSTipMR,LSSGagMR]
 
         for i in np.arange(0,len(h_vars)):
 
@@ -190,16 +179,12 @@ for offset in offsets:
 
     #compare total signal correlations
     if compare_total_correlations == True:
-        # Variables = ["Ux", "IA", "RtAeroFxh","RtAeroMxh","RtAeroMR","LSSTipMR","LSSGagMR"]
-        # units = ["[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[kN-m]","[kN-m]"]
-        # Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Asymmetry parameter","Rotor Thrust", "Rotor Torque", 
-        #            "Rotor Aerodyn Out-of-plane bending moment", "Rotor Elastodyn Rotor Out-of-plane bending moment",
-        #            "LSS Elastodyn Out-of-plane bending moment"]
-        # h_vars = [Ux, IA, RtAeroFxh, RtAeroMxh, RtAeroMR, LSSTipMR,LSSGagMR]
-        Variables = ["Alpha_75", "Ux"]
-        units = ["[deg]","[m/s]"]
-        Ylabels = ["Angle of attack at 0.75 span location","$<Ux'>_{Rotor}$ rotor averaged horizontal velocity"]
-        h_vars = [Alpha_75, Ux]
+        Variables = ["Ux", "IA", "RtAeroFxh","RtAeroMxh","RtAeroMR","LSSTipMR","LSSGagMR"]
+        units = ["[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[kN-m]","[kN-m]"]
+        Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Asymmetry parameter","Rotor Thrust", "Rotor Torque", 
+                   "Rotor Aerodyn Out-of-plane bending moment", "Rotor Elastodyn Rotor Out-of-plane bending moment",
+                   "LSS Elastodyn Out-of-plane bending moment"]
+        h_vars = [Ux, IA, RtAeroFxh, RtAeroMxh, RtAeroMR, LSSTipMR,LSSGagMR]
 
         for j in np.arange(0,len(h_vars)):
             for i in np.arange(0,len(h_vars)):

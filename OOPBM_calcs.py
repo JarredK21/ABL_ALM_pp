@@ -141,8 +141,8 @@ for offset in offsets:
 
 
     #plotting options
-    plot_variables = True
-    plot_FFT_OOPBM = False
+    plot_variables = False
+    plot_FFT_OOPBM = True
     compare_total_OOPBM_correlations = False
     compare_FFT_OOPBM = False
     compare_OOPBM = False
@@ -169,10 +169,10 @@ for offset in offsets:
 
 
     if plot_FFT_OOPBM == True:
-        Variables = ["MR_diff", "RtAeroMR", "LSSTipMR"]
-        units = ["[kN-m]","[kN-m]", "[kN-m]"]
-        Ylabels = ["Difference between Elastodyn magnitude of OOPBM \nand Aerodyn magnitude of OOPBM", "Rotor OOPBM", "Tip OOPBM"]
-        h_vars = [MR_diff, RtAeroMR/1000, LSSTipMR]
+        Variables = ["RtAeroFyh","RtAeroFzh"]
+        units = ["[kN-m]","[kN-m]"]
+        Ylabels = ["Rotor force y", "Rotor force z"]
+        h_vars = [RtAeroFyh/1000, RtAeroFzh/1000]
 
         for i in np.arange(0,len(h_vars)):
             
