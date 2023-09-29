@@ -114,8 +114,10 @@ LSSGagMys = ncfile.createVariable("LSSGagMys", np.float64, ('OF',),zlib=True)
 LSSGagMzs = ncfile.createVariable("LSSGagMzs", np.float64, ('OF',),zlib=True)
 LSSTipMys = ncfile.createVariable("LSSTipMys", np.float64, ('OF',),zlib=True)
 LSSTipMzs = ncfile.createVariable("LSSTipMzs", np.float64, ('OF',),zlib=True)
+LSShftFxa = ncfile.createVariable("LSShftFxa", np.float64, ('OF',),zlib=True)
 LSShftFys = ncfile.createVariable("LSShftFys", np.float64, ('OF',),zlib=True)
 LSShftFzs = ncfile.createVariable("LSShftFzs", np.float64, ('OF',),zlib=True)
+LSShftMxa = ncfile.createVariable("LSShftMxa", np.float64, ('OF',),zlib=True)
 Theta_Aero = ncfile.createVariable("Theta_Aero", np.float64, ('OF',),zlib=True)
 Theta_Tip = ncfile.createVariable("Theta_Tip", np.float64, ('OF',),zlib=True)
 Theta_LSS = ncfile.createVariable("Theta_LSS", np.float64, ('OF',),zlib=True)
@@ -132,9 +134,9 @@ print("line 156",time.time()-start_time)
 
 Variables = ["AB1N225Alpha","AB1N225Vrel","AB1N225Cl","AB1N225Cd","AB1N225Fn","AB1N225Ft","AB1N225Fx","AB1N225Fy","AB1N225Vx","AB1N225Vy",
              "RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","LSSGagMys","LSSGagMzs",
-             "LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs","Theta_Aero","Theta_Tip", "Theta_LSS"]
+             "LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs","Theta_Aero","Theta_Tip", "Theta_LSS", "LSShftFxa", "LSShftMxa"]
 units = ["[deg]","[m/s]","[-]","[-]","[N/m]","[N/m]","[N/m]","[N/m]","[m/s]","[m/s]",
-         "[N]","[N-m]","[N-m]","[N-m]","[rads]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]","[rads]","[rads]","[rads]"]
+         "[N]","[N-m]","[N-m]","[N-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]","[rads]","[rads]","[rads]","[kN]","[kN-m]"]
 for iv in np.arange(0,len(Variables)):
     Variable = Variables[iv]
 

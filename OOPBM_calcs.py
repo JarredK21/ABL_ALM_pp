@@ -141,7 +141,7 @@ for offset in offsets:
 
 
     #plotting options
-    plot_variables = False
+    plot_variables = True
     plot_FFT_OOPBM = True
     compare_total_OOPBM_correlations = False
     compare_FFT_OOPBM = False
@@ -153,10 +153,10 @@ for offset in offsets:
 
     #plot variables#
     if plot_variables == True:
-        Variables = ["RtAeroFyh","RtAeroFzh"]
+        Variables = ["RtAeroMyh","RtAeroMzh"]
         units = ["[kN-m]","[kN-m]"]
-        Ylabels = ["Rotor force y", "Rotor force z"]
-        h_vars = [RtAeroFyh/1000, RtAeroFzh/1000]
+        Ylabels = ["Rotor Moment y", "Rotor Moment z"]
+        h_vars = [RtAeroMyh/1000, RtAeroMzh/1000]
 
         for i in np.arange(0,len(h_vars)):
             fig = plt.figure(figsize=(14,8))
@@ -169,10 +169,10 @@ for offset in offsets:
 
 
     if plot_FFT_OOPBM == True:
-        Variables = ["RtAeroFyh","RtAeroFzh"]
+        Variables = ["RtAeroMyh","RtAeroMzh"]
         units = ["[kN-m]","[kN-m]"]
-        Ylabels = ["Rotor force y", "Rotor force z"]
-        h_vars = [RtAeroFyh/1000, RtAeroFzh/1000]
+        Ylabels = ["Rotor Moment y", "Rotor Moment z"]
+        h_vars = [RtAeroMyh/1000, RtAeroMzh/1000]
 
         for i in np.arange(0,len(h_vars)):
             
