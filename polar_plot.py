@@ -36,11 +36,12 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 
 Start_time = time.time()
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+in_dir = "./"
+#in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 out_dir = in_dir + "polar_plots/"
 
-video_folder = in_dir + "videos/"
+video_folder = in_dir + "polar_videos/"
 isExist = os.path.exists(video_folder)
 if isExist == False:
     os.makedirs(video_folder)
@@ -139,7 +140,7 @@ for ic in np.arange(0,len(Times)-1):
 
         x_var = x_vars[j]; y_var = y_vars[j]
 
-        folder = out_dir+"{}_{}/".format(x_var,Times[ic])
+        folder = out_dir+"{}_{}/".format(Variables[j],Times[ic])
 
         isExist = os.path.exists(folder)
         if isExist == False:
