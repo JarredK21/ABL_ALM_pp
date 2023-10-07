@@ -151,8 +151,6 @@ for ic in np.arange(0,len(Times)-1):
 
                     print(T,time.time()-Start_time)
 
-            time.sleep(60)
-
         #whether or not folder exists execute code
         #sort files
         def atof(text):
@@ -171,6 +169,8 @@ for ic in np.arange(0,len(Times)-1):
         #sort files
         files = glob.glob(folder+"*.png")
         files.sort(key=natural_keys)
+
+        print("line 173", time.time()-Start_time)
 
         #write to video
         img_array = []
