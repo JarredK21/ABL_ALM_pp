@@ -36,8 +36,8 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 
 Start_time = time.time()
 
-in_dir = "./"
-#in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+#in_dir = "./"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 out_dir = in_dir + "polar_plots/"
 
@@ -103,14 +103,16 @@ for ic in np.arange(0,len(Times)-1):
 
     Theta_AeroF = np.degrees(np.arctan2(RtAeroFzs,RtAeroFys))
     Theta_AeroF = theta_360(Theta_AeroF)
+    Theta_AeroF = np.radians(np.array(Theta_AeroF))
     Theta_AeroM = np.degrees(np.arctan2(RtAeroMzs,RtAeroMys))
     Theta_AeroM = theta_360(Theta_AeroM)
+    Theta_AeroM = np.radians(np.array(Theta_AeroM))
     Theta_LSSTipF = np.degrees(np.arctan2(LSShftFzs,LSShftFys))
     Theta_LSSTipF = theta_360(Theta_LSSTipF)
+    Theta_LSSTipF = np.radians(np.array(Theta_LSSTipF))
     Theta_LSSTipM = np.degrees(np.arctan2(LSSTipMzs,LSSTipMys))
     Theta_LSSTipM = theta_360(Theta_LSSTipM)
-    Theta_GagM = np.degrees(np.arctan2(LSSGagMzs,LSSGagMys))
-    Theta_GagM = theta_360(Theta_GagM)
+    Theta_LSSTipM = np.radians(np.array(Theta_LSSTipM))
 
     print("line 106", time.time()-Start_time)
 
@@ -120,6 +122,7 @@ for ic in np.arange(0,len(Times)-1):
         ax = fig.add_subplot(projection='polar')
         c = ax.scatter(x_var[it], y_var[it], c="k", s=20)
         ax.arrow(0, 0, x_var[it], y_var[it], length_includes_head=True)
+        print(x_var[it])
         ax.set_ylim(0,np.max(y_var))
         ax.set_title("{} {}\nTime = {}s".format(Ylabels[j],units[j],Time_OF[it]), va='bottom')
         T = Time_OF[it]
@@ -131,11 +134,16 @@ for ic in np.arange(0,len(Times)-1):
 
 
 
-    Variables = ["AeroF", "AeroM", "LSSTipF", "LSSTipM","LSSGagM"]
-    units = ["[kN]","[kN-m]","[kN]","[kN-m]","[kN-m]"]
-    Ylabels = ["Rotor Aerodynamic Force", "Rotor Aerodynamic Moment", "Rotor Aeroelastic Force", "Rotor Aeroelastic Moment", "LSS Moment"]
-    x_vars = [Theta_AeroF, Theta_AeroM, Theta_LSSTipF, Theta_LSSTipM, Theta_GagM]
-    y_vars = [RtAeroFR/1000, RtAeroMR/1000, LSShftFR, LSSTipMR, LSSGagMR]
+    # Variables = ["AeroF", "AeroM", "LSSTipF", "LSSTipM"]
+    # units = ["[kN]","[kN-m]","[kN]","[kN-m]"]
+    # Ylabels = ["Rotor Aerodynamic Force", "Rotor Aerodynamic Moment", "Rotor Aeroelastic Force", "Rotor Aeroelastic Moment"]
+    # x_vars = [Theta_AeroF, Theta_AeroM, Theta_LSSTipF, Theta_LSSTipM]
+    # y_vars = [RtAeroFR/1000, RtAeroMR/1000, LSShftFR, LSSTipMR]
+    Variables = ["LSSTipF"]
+    units = ["[kN]"]
+    Ylabels = ["Rotor Aeroelastic Force"]
+    x_vars = [Theta_LSSTipF]
+    y_vars = [LSShftFR]
     for j in np.arange(0,len(x_vars)):
 
         x_var = x_vars[j]; y_var = y_vars[j]

@@ -109,9 +109,9 @@ for offset in offsets:
     # Time_sampling = np.array(a.variables["time_sampling"])
     # Time_sampling = Time_sampling - Time_sampling[0]
 
-    Time_start = 100
+    Time_start = 200
     #Time_end = Time_sampling[-1]
-    Time_end = 1990
+    Time_end = 300
 
     dt = Time_OF[1] - Time_OF[0]
 
@@ -175,7 +175,20 @@ for offset in offsets:
 
     Rel_LSSTipMys = np.true_divide(abs(LSSTipMys),LSSTipMR)
     Rel_LSSTipMzs = np.true_divide(abs(LSSTipMzs),LSSTipMR)
-    Theta_LSSTip = np.degrees(np.arctan2(LSSTipMzs,LSSTipMys))
+    Theta_LSSTipM = np.degrees(np.arctan2(LSSTipMzs,LSSTipMys))
+
+    Rel_LSShftFys = np.true_divide(abs(LSShftFys),LSShftFR)
+    Rel_LSShftFzs = np.true_divide(abs(LSShftFzs),LSShftFR)
+    Theta_LSShftF = np.degrees(np.arctan2(LSShftFzs,LSShftFys))
+
+    Rel_RtAeroFys = np.true_divide(abs(RtAeroFys/1000),RtAeroFR/1000)
+    Rel_RtAeroFzs = np.true_divide(abs(RtAeroFzs/1000),RtAeroFR/1000)
+    Theta_RtAeroF = np.degrees(np.arctan2(RtAeroFzs,RtAeroFys))
+
+    Rel_RtAeroMys = np.true_divide(abs(RtAeroMys/1000),RtAeroMR/1000)
+    Rel_RtAeroMzs = np.true_divide(abs(RtAeroMzs/1000),RtAeroMR/1000)
+    Theta_RtAeroM = np.degrees(np.arctan2(RtAeroMzs,RtAeroMys))
+
 
     # group = a.groups["{}".format(offset)]
     # Ux = np.array(group.variables["Ux"])
@@ -410,21 +423,21 @@ for offset in offsets:
 
 
         ylabel1 = "Relative contributions to the OOPBM from (blue) y and (red) z components"
-        ylabel2 = "Magnitude of Rotor Aeroelastic OOPBM [kN-m]"
-        ylabel3 = "Angle of Rotor Aeroelastic OOPBM [deg]"
+        ylabel2 = "Magnitude of Rotor Aerodynamic OOPBM [kN-m]"
+        ylabel3 = "Angle of Rotor Aerodynamic OOPBM [deg]"
 
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(14,8))
-        ax1.plot(Time_OF, Rel_LSSTipMys,"b")
-        ax1.plot(Time_OF,Rel_LSSTipMzs,"r")
+        ax1.plot(Time_OF, Rel_RtAeroMys,"b")
+        ax1.plot(Time_OF,Rel_RtAeroMzs,"r")
         ax1.set_title('{}'.format(ylabel1))
-        ax2.plot(Time_OF, LSSTipMR)
+        ax2.plot(Time_OF, RtAeroMR/1000)
         ax2.set_title("{}".format(ylabel2))
-        ax3.plot(Time_OF,Theta_LSSTip)
+        ax3.plot(Time_OF,Theta_RtAeroM)
         ax3.set_title("{}".format(ylabel3))
         fig.supxlabel("Time [s]")
         plt.tight_layout()
         #plt.show()
-        plt.savefig(out_dir+"short_Relative_plots_LSSTipMR.png")
+        plt.savefig(out_dir+"short_Relative_plots_RtAeroM.png")
 
 
     if plot_PDF == True:
