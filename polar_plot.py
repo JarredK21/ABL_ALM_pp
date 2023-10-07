@@ -36,8 +36,8 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 
 Start_time = time.time()
 
-in_dir = "./"
-#in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+#in_dir = "./"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 out_dir = in_dir + "polar_plots/"
 
@@ -120,7 +120,7 @@ for ic in np.arange(0,len(Times)-1):
     Theta_LSSTipM = np.radians(np.array(Theta_LSSTipM))
     Theta_FB = np.degrees(np.arctan2(FBz,FBy))
     Theta_FB = theta_360(Theta_FB)
-    Theta_FB = np.degrees(np.array(Theta_FB))
+    Theta_FB = np.radians(np.array(Theta_FB))
 
     print("line 106", time.time()-Start_time)
 
