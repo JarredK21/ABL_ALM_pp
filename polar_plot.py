@@ -37,7 +37,7 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 Start_time = time.time()
 
 in_dir = "./"
-in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+#in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 out_dir = in_dir + "polar_plots/"
 
