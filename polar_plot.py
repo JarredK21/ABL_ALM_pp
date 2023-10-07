@@ -36,8 +36,8 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 
 Start_time = time.time()
 
-in_dir = "./"
-#in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+#in_dir = "./"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 out_dir = in_dir + "polar_plots/"
 
@@ -60,7 +60,7 @@ for ic in np.arange(0,len(Times)-1):
     Time_start_idx = np.searchsorted(Time_OF,Time_start)
     Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
-    time_steps = np.arange(Time_start_idx,Time_end_idx)
+    time_steps = np.arange(Time_start_idx,Time_end_idx,25)
 
     Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
@@ -185,7 +185,7 @@ for ic in np.arange(0,len(Times)-1):
         
         #cv2.VideoWriter_fourcc(*'DIVX')
         filename = "{}_{}".format(x_var, Times[ic])
-        out = cv2.VideoWriter(video_folder+filename+'.avi',0, 500, size)
+        out = cv2.VideoWriter(video_folder+filename+'.avi',0, 20, size)
         it_vid = 0
         for im in range(len(img_array)):
             out.write(img_array[im])
