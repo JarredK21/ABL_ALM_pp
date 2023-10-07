@@ -36,8 +36,8 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 
 Start_time = time.time()
 
-#in_dir = "./"
-in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+in_dir = "./"
+#in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 out_dir = in_dir + "polar_plots/"
 
@@ -48,7 +48,7 @@ if isExist == False:
 
 a = Dataset(in_dir+"OF_Dataset.nc")
 
-Times = [100,400,700,1000,1300,1600,1990]
+Times = [100,400,700,1000,1200]
 
 for ic in np.arange(0,len(Times)-1):
 
@@ -101,6 +101,11 @@ for ic in np.arange(0,len(Times)-1):
     LSShftFzs = np.array(a.variables["LSShftFzs"][Time_start_idx:Time_end_idx])
     LSShftFR = np.sqrt( np.add(np.square(LSShftFys), np.square(LSShftFzs)) )
 
+    L1 = 1.912; L2 = 5
+    FBy = -((np.add(LSSTipMys,LSShftFzs*(L1+L2))/L2))
+    FBz = (np.subtract(LSSTipMzs,LSShftFys*(L1+L2))/L2)
+    FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
+
     Theta_AeroF = np.degrees(np.arctan2(RtAeroFzs,RtAeroFys))
     Theta_AeroF = theta_360(Theta_AeroF)
     Theta_AeroF = np.radians(np.array(Theta_AeroF))
@@ -113,6 +118,9 @@ for ic in np.arange(0,len(Times)-1):
     Theta_LSSTipM = np.degrees(np.arctan2(LSSTipMzs,LSSTipMys))
     Theta_LSSTipM = theta_360(Theta_LSSTipM)
     Theta_LSSTipM = np.radians(np.array(Theta_LSSTipM))
+    Theta_FB = np.degrees(np.arctan2(FBz,FBy))
+    Theta_FB = theta_360(Theta_FB)
+    Theta_FB = np.degrees(np.array(Theta_FB))
 
     print("line 106", time.time()-Start_time)
 
@@ -122,7 +130,6 @@ for ic in np.arange(0,len(Times)-1):
         ax = fig.add_subplot(projection='polar')
         c = ax.scatter(x_var[it], y_var[it], c="k", s=20)
         ax.arrow(0, 0, x_var[it], y_var[it], length_includes_head=True)
-        print(x_var[it])
         ax.set_ylim(0,np.max(y_var))
         ax.set_title("{} {}\nTime = {}s".format(Ylabels[j],units[j],Time_OF[it]), va='bottom')
         T = Time_OF[it]
@@ -139,11 +146,11 @@ for ic in np.arange(0,len(Times)-1):
     # Ylabels = ["Rotor Aerodynamic Force", "Rotor Aerodynamic Moment", "Rotor Aeroelastic Force", "Rotor Aeroelastic Moment"]
     # x_vars = [Theta_AeroF, Theta_AeroM, Theta_LSSTipF, Theta_LSSTipM]
     # y_vars = [RtAeroFR/1000, RtAeroMR/1000, LSShftFR, LSSTipMR]
-    Variables = ["LSSTipF"]
+    Variables = ["BearingF"]
     units = ["[kN]"]
-    Ylabels = ["Rotor Aeroelastic Force"]
-    x_vars = [Theta_LSSTipF]
-    y_vars = [LSShftFR]
+    Ylabels = ["Main Bearing Aeroelastic Force"]
+    x_vars = [Theta_FB]
+    y_vars = [FBR]
     for j in np.arange(0,len(x_vars)):
 
         x_var = x_vars[j]; y_var = y_vars[j]

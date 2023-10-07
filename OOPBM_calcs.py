@@ -97,6 +97,7 @@ in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 offsets = [0.0]
 
 a = Dataset(in_dir+"OF_Dataset.nc")
+b = Dataset(in_dir+"Dataset.nc")
 
 ic = 2
 for offset in offsets:
@@ -106,8 +107,8 @@ for offset in offsets:
     out_dir_PDF = in_dir+"PDFs/"
 
     Time_OF = np.array(a.variables["time_OF"])
-    # Time_sampling = np.array(a.variables["time_sampling"])
-    # Time_sampling = Time_sampling - Time_sampling[0]
+    Time_sampling = np.array(b.variables["time_sampling"])
+    Time_sampling = Time_sampling - Time_sampling[0]
 
     Time_start = 200
     #Time_end = Time_sampling[-1]
@@ -189,17 +190,26 @@ for offset in offsets:
     Rel_RtAeroMzs = np.true_divide(abs(RtAeroMzs/1000),RtAeroMR/1000)
     Theta_RtAeroM = np.degrees(np.arctan2(RtAeroMzs,RtAeroMys))
 
+    L1 = 1.912; L2 = 5
 
-    # group = a.groups["{}".format(offset)]
-    # Ux = np.array(group.variables["Ux"])
+    FBy = -((np.add(LSSTipMys,LSShftFzs*(L1+L2))/L2))
+    FBz = (np.subtract(LSSTipMzs,LSShftFys*(L1+L2))/L2)
+    FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
+    Rel_FBy = np.true_divide(abs(FBy),FBR)
+    Rel_FBz = np.true_divide(abs(FBz),FBR)
+    Theta_FB = np.degrees(np.arctan2(FBz,FBy))
 
-    # #IA = np.array(group.variables["IA"])
 
-    # f = interpolate.interp1d(Time_sampling,Ux)
-    # Ux = f(Time_OF)
+    group = b.groups["{}".format(offset)]
+    Ux = np.array(group.variables["Ux"])
 
-    #f = interpolate.interp1d(Time_sampling,IA)
-    #IA = f(Time_OF)
+    IA = np.array(group.variables["IA"])
+
+    f = interpolate.interp1d(Time_sampling,Ux)
+    Ux = f(Time_OF)
+
+    f = interpolate.interp1d(Time_sampling,IA)
+    IA = f(Time_OF)
 
 
     #plotting options
@@ -422,22 +432,22 @@ for offset in offsets:
     if plot_relative_contributions == True:
 
 
-        ylabel1 = "Relative contributions to the OOPBM from (blue) y and (red) z components"
-        ylabel2 = "Magnitude of Rotor Aerodynamic OOPBM [kN-m]"
-        ylabel3 = "Angle of Rotor Aerodynamic OOPBM [deg]"
+        ylabel1 = "Relative contributions to the Bearing radial force from (blue) y and (red) z components"
+        ylabel2 = "Magnitude of Bearing radial force [kN]"
+        ylabel3 = "Angle of Bearing radial force [deg]"
 
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(14,8))
-        ax1.plot(Time_OF, Rel_RtAeroMys,"b")
-        ax1.plot(Time_OF,Rel_RtAeroMzs,"r")
+        ax1.plot(Time_OF, Rel_FBy,"b")
+        ax1.plot(Time_OF,Rel_FBz,"r")
         ax1.set_title('{}'.format(ylabel1))
-        ax2.plot(Time_OF, RtAeroMR/1000)
+        ax2.plot(Time_OF, FBR)
         ax2.set_title("{}".format(ylabel2))
-        ax3.plot(Time_OF,Theta_RtAeroM)
+        ax3.plot(Time_OF,Theta_FB)
         ax3.set_title("{}".format(ylabel3))
         fig.supxlabel("Time [s]")
         plt.tight_layout()
         #plt.show()
-        plt.savefig(out_dir+"short_Relative_plots_RtAeroM.png")
+        plt.savefig(out_dir+"short_Relative_plots_BearingF.png")
 
 
     if plot_PDF == True:
