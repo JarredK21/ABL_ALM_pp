@@ -102,9 +102,13 @@ for ic in np.arange(0,len(Times)-1):
     LSShftFR = np.sqrt( np.add(np.square(LSShftFys), np.square(LSShftFzs)) )
 
     L1 = 1.912; L2 = 5
-    FBy = -((np.add(LSSTipMys,LSShftFzs*(L1+L2))/L2))
-    FBz = (np.subtract(LSSTipMzs,LSShftFys*(L1+L2))/L2)
+    FBMy = LSSTipMzs/L2; FBFy = -LSShftFys*((L1+L2)/L2)
+    FBMz = -LSSTipMys/L2; FBFz = -LSShftFzs*((L1+L2)/L2)
+
+    FBy = FBMy + FBFy; FBz = FBMz + FBFz
+
     FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
+    Theta_FB = np.degrees(np.arctan2(FBz,FBy))
 
     Theta_AeroF = np.degrees(np.arctan2(RtAeroFzs,RtAeroFys))
     Theta_AeroF = theta_360(Theta_AeroF)
@@ -148,7 +152,7 @@ for ic in np.arange(0,len(Times)-1):
     # y_vars = [RtAeroFR/1000, RtAeroMR/1000, LSShftFR, LSSTipMR]
     Variables = ["BearingF"]
     units = ["[kN]"]
-    Ylabels = ["Main Bearing Aeroelastic Force"]
+    Ylabels = ["Main Bearing Force"]
     x_vars = [Theta_FB]
     y_vars = [FBR]
     for j in np.arange(0,len(x_vars)):
