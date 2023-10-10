@@ -103,11 +103,12 @@ def delta_Ux(j,k,r,fx,fy):
     return delta_Ux
 
 #directories
-in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+in_dir = "./"
+#in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 out_dir = in_dir
 
 #create netcdf file
-ncfile = Dataset(out_dir+"OF_Dataset.nc",mode="w",format='NETCDF4')
+ncfile = Dataset(out_dir+"Dataset.nc",mode="w",format='NETCDF4')
 ncfile.title = "OpenFAST data sampling output"
 
 #create global dimensions
@@ -227,7 +228,7 @@ del df
 print("line 191",time.time()-start_time)
 
 #sampling data
-a = Dataset("./sampling_r_0.0.nc")
+a = Dataset(in_dir+"sampling_r_0.0.nc")
 
 #sampling time
 Time_sample = np.array(a.variables["time"])
@@ -242,7 +243,7 @@ group_label = [0.0,63.0]
 ic = 0
 for offset in offsets:
 
-    a = Dataset("./sampling_r_{}.nc".format(offset))
+    a = Dataset(in_dir+"sampling_r_{}.nc".format(offset))
 
     group = ncfile.createGroup("{}".format(group_label[ic]))
 
