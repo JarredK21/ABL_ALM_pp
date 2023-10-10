@@ -68,19 +68,24 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 a = Dataset(in_dir+"OF_Dataset.nc")
+b = Dataset(in_dir+"Dataset.nc")
 
 #plotting options
-compare_variables = True
-compare_FFT = True
-plot_relative_contributions = True
+compare_variables = False
+compare_FFT = False
+plot_relative_contributions = False
+compare_total_correlations = True
+compare_LPF_correlations = False
 
 
 out_dir = in_dir + "Bearing_loads/"
 
 Time_OF = np.array(a.variables["time_OF"])
+Time_sampling = np.array(b.variables["time_sampling"])
+Time_sampling = Time_sampling - Time_sampling[0]
 
 Time_start = 200
-Time_end = 1900
+Time_end = Time_sampling[-1]
 #Time_end = 300
 
 dt = Time_OF[1] - Time_OF[0]
@@ -127,6 +132,10 @@ LSShftFys = np.array(a.variables["LSShftFys"][Time_start_idx:Time_end_idx])
 LSShftFzs = np.array(a.variables["LSShftFzs"][Time_start_idx:Time_end_idx])
 LSShftFR = np.sqrt( np.add(np.square(LSShftFys), np.square(LSShftFzs)) )
 
+LSSGagMys = np.array(a.variables["LSSGagMys"][Time_start_idx:Time_end_idx])
+LSSGagMzs = np.array(a.variables["LSSGagMzs"][Time_start_idx:Time_end_idx])
+LSSGagMR = np.sqrt( np.add(np.square(LSSGagMys), np.square(LSSGagMzs)) )
+
 L1 = 1.912; L2 = 5
 
 FBMy = LSSTipMzs/L2; FBFy = -LSShftFys*((L1+L2)/L2)
@@ -140,19 +149,27 @@ Rel_FBz = np.true_divide(np.square(FBz),np.square(FBR))
 add_RelFB = np.add(Rel_FBy,Rel_FBz)
 Theta_FB = np.degrees(np.arctan2(FBz,FBy))
 
+group = b.groups["0.0"]
+Ux = np.array(group.variables["Ux"])
+
+IA = np.array(group.variables["IA"])
+
+f = interpolate.interp1d(Time_sampling,Ux)
+Ux = f(Time_OF)
+
+f = interpolate.interp1d(Time_sampling,IA)
+IA = f(Time_OF)
+
+
 
 
 
 if compare_variables == True:
 
-    Variables = ["Radial Bearing Force components", "Y Bearing Force components", "Z Bearing Force components"]
-    units = [["[kN]", "[kN]", "[kN]"], ["[kN]", "[kN]", "[kN]"], ["[kN]", "[kN]", "[kN]"]]
-    Ylabels = [["Bearing Force y direction", "Bearing Force z direction", "Magnitude Bearing Force"], 
-               ["Force due to the moment contribution \nto the Bearing Force y direction",
-                "Force due to the force contribution \nto the Bearing Force y direction","Bearing Force y direction"],
-               ["Force due to the moment contribution \nto the Bearing Force z direction",
-                "Force due to the force contribution \nto the Bearing Force z direction","Bearing Force z direction"]]
-    h_vars = [[FBy, FBz, FBR], [FBMy, FBFy, FBy], [FBMz, FBFz, FBz]]
+    Variables = ["Bearing Force comp"]
+    units = [["[kN]","[kN-m]","[kN]"]]
+    Ylabels = [["Magnitude Bearing Force", "Magnitude Hub Moment", "Hub Force y direction"]]
+    h_vars = [[FBR, LSSTipMR, LSShftFys]]
 
     for i in np.arange(0,len(h_vars)):
         h_var = h_vars[i]; unit = units[i]; ylabel = Ylabels[i]
@@ -172,7 +189,7 @@ if compare_variables == True:
         ax3.set_title("{} {}".format(ylabel[2],unit[2]))
         fig.supxlabel("Time [s]")
         plt.tight_layout()
-        plt.savefig(in_dir+"Bearing_Loads/{}.png".format(Variables[i]))
+        plt.savefig(in_dir+"Bearing_Loads/short_{}.png".format(Variables[i]))
 
 
 if compare_FFT == True:
@@ -240,4 +257,63 @@ if plot_relative_contributions == True:
         fig.supxlabel("Time [s]")
         plt.tight_layout()
         plt.savefig(in_dir+"Bearing_Loads/Relative_{}.png".format(Variable))
+        
 
+if compare_total_correlations == True:
+    Variables = ["LSShftFys", "LSShftFzs", "LSSTipMys", "LSSTipMzs"]
+    units = ["[kN]","[kN]","[kN-m]","[kN-m]"]
+    Ylabels = ["Hub Force y", "Hub Force z", "Hub Moment y", "Hub Moment z"]
+    h_vars = [LSShftFys, LSShftFzs, LSSTipMys, LSSTipMzs]
+
+    for j in np.arange(0,len(h_vars)):
+        for i in np.arange(0,len(h_vars)):
+
+            fig,ax = plt.subplots(figsize=(14,8))
+            
+            corr = correlation_coef(h_vars[j],h_vars[i])
+            corr = round(corr,2)
+
+            ax.plot(Time_OF,h_vars[j],'-b')
+            ax.set_ylabel("{0} {1}".format(Ylabels[j],units[j]),fontsize=14)
+
+            ax2=ax.twinx()
+            ax2.plot(Time_OF,h_vars[i],"-r")
+            ax2.set_ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=14)
+
+            plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
+            ax.set_xlabel("Time [s]",fontsize=16)
+            plt.tight_layout()
+            plt.savefig(in_dir+"Bearing_Loads/corr_{0}_{1}.png".format(Variables[j],Variables[i]))
+            plt.close(fig)
+
+
+if compare_LPF_correlations == True:
+    Variables = ["FBR","LSSTipMR", "IA"]
+    units = ["[kN]","[kN-m]","[$m^4/s$]"]
+    Ylabels = ["Magnitude Main Bearing Reaction Force","Magnitude Hub Moment","Asymmetry parameter"]
+    h_vars = [FBR,LSSTipMR, IA]
+
+    for j in np.arange(0,len(h_vars)):
+        for i in np.arange(0,len(h_vars)):
+
+            cutoff = 0.1
+            signal_LP_0 = low_pass_filter(h_vars[i], cutoff)
+            signal_LP_1 = low_pass_filter(h_vars[j], cutoff)
+
+            fig,ax = plt.subplots(figsize=(14,8))
+            
+            corr = correlation_coef(signal_LP_0,signal_LP_1)
+            corr = round(corr,2)
+
+            ax.plot(Time_OF,signal_LP_0,'-b')
+            ax.set_ylabel("{0} {1}".format(Ylabels[j],units[j]),fontsize=14)
+
+            ax2=ax.twinx()
+            ax2.plot(Time_OF,signal_LP_1,"-r")
+            ax2.set_ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=14)
+
+            plt.title("Low passs filtered at 0.1Hz.\nCorrelation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
+            ax.set_xlabel("Time [s]",fontsize=16)
+            plt.tight_layout()
+            plt.savefig(in_dir+"Bearing_Loads/LPF_corr_{0}_{1}.png".format(Variables[j],Variables[i]))
+            plt.close(fig)

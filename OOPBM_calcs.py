@@ -102,10 +102,10 @@ b = Dataset(in_dir+"Dataset.nc")
 #plotting options
 plot_variables = False
 plot_FFT_OOPBM = False
-compare_total_OOPBM_correlations = False
+compare_total_OOPBM_correlations = True
 compare_FFT_OOPBM = False
 plot_sys_LPF = False
-plot_relative_contributions = True
+plot_relative_contributions = False
 plot_PDF = False
 
 ic = 2
@@ -154,6 +154,7 @@ for offset in offsets:
     RtAeroMys = np.array(RtAeroMys); RtAeroMzs = np.array(RtAeroMzs)
 
     RtAeroMR = np.sqrt( np.add(np.square(RtAeroMys), np.square(RtAeroMzs)) ) 
+    RtAeroMR = low_pass_filter(RtAeroMR,0.1)
 
     LSSGagMys = np.array(a.variables["LSSGagMys"][Time_start_idx:Time_end_idx])
     LSSGagMzs = np.array(a.variables["LSSGagMzs"][Time_start_idx:Time_end_idx])
@@ -163,6 +164,7 @@ for offset in offsets:
     LSSTipMys = np.array(a.variables["LSSTipMys"][Time_start_idx:Time_end_idx])
     LSSTipMzs = np.array(a.variables["LSSTipMzs"][Time_start_idx:Time_end_idx])
     LSSTipMR = np.sqrt( np.add(np.square(LSSTipMys), np.square(LSSTipMzs)) )
+    LSSTipMR = low_pass_filter(LSSTipMR, 0.1)
 
     LSShftFxa = np.array(a.variables["LSShftFxa"][Time_start_idx:Time_end_idx])
     LSShftFys = np.array(a.variables["LSShftFys"][Time_start_idx:Time_end_idx])
@@ -305,15 +307,22 @@ for offset in offsets:
 
     #compare total signal correlations
     if compare_total_OOPBM_correlations == True:
-        Variables = ["RtAeroFR", "RtAeroMR", "LSShftFR", "LSSTipMR", "Ux", "IA", 
-                  "Theta_RtAeroF", "Theta_RtAeroM", "Theta_LSShftF", "Theta_LSSTipM"]
-        units = ["[kN]","[kN-m]","[kN]","[kN-m]","[m/s]","[$m^4/s$]","[deg]","[deg]","[deg]","[deg]"]
-        Ylabels = ["Magnitude Rotor Aerodynamic OOPBF", "Magnitude Rotor Aerodynmaic OOPBM", "Magnitude Rotor Aeroelastic OOPBF", 
-                   "Magnitude Rotor Aeroelastic OOPBM", "$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Asymmetry parameter",
-                   "Angle Rotor Aerodynamic OOPBF", "Angle Rotor Aerodynmaic OOPBM", "Angle Rotor Aeroelastic OOPBF", 
-                   "Angle Rotor Aeroelastic OOPBM"]
-        h_vars = [RtAeroFR/1000, RtAeroMR/1000, LSShftFR, LSSTipMR, Ux, IA, 
-                  Theta_RtAeroF, Theta_RtAeroM, Theta_LSShftF, Theta_LSSTipM]
+        # Variables = ["RtAeroFR", "RtAeroMR", "LSShftFR", "LSSTipMR", "Ux", "IA", "Torque"]
+        # units = ["[kN]","[kN-m]","[kN]","[kN-m]","[m/s]","[$m^4/s$]","[N-m]"]
+        # Ylabels = ["Magnitude Rotor Aerodynamic OOPBF", "Magnitude Rotor Aerodynmaic OOPBM", "Magnitude Rotor Aeroelastic OOPBF", 
+        #            "Magnitude Rotor Aeroelastic OOPBM", "$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Asymmetry parameter",
+        #            "Torque"]
+        # h_vars = [RtAeroFR/1000, RtAeroMR/1000, LSShftFR, LSSTipMR, Ux, IA, RtAeroMxh]
+
+        # Variables = ["LSSGagMR","Ux", "IA", "Torque"]
+        # units = ["[kN-m]","[m/s]","[$m^4/s$]","[N-m]"]
+        # Ylabels = ["Magnitude LSS OOPBM", "$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Asymmetry parameter","Torque"]
+        # h_vars = [LSSGagMR, Ux, IA, RtAeroMxh]
+
+        Variables = ["RtAeroMR", "LSSTipMR", "IA"]
+        units = ["[kN-m]", "[kN-m]", "[$m^4/s$]"]
+        Ylabels = ["Magnitude Rotor Aerodynmaic OOPBM", "Magnitude Rotor Aeroelastic OOPBM", "Asymmetry parameter"]
+        h_vars = [RtAeroMR, LSSTipMR, IA]
 
         for j in np.arange(0,len(h_vars)):
             for i in np.arange(0,len(h_vars)):
@@ -333,7 +342,7 @@ for offset in offsets:
                 plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
                 ax.set_xlabel("Time [s]",fontsize=16)
                 plt.tight_layout()
-                plt.savefig(in_dir+"correlations/{0}_{1}.png".format(Variables[j],Variables[i]))
+                plt.savefig(in_dir+"correlations/LPF_{0}_{1}.png".format(Variables[j],Variables[i]))
                 plt.close(fig)
 
 
