@@ -283,8 +283,8 @@ for offset in offsets:
     Uy = group.createVariable("Uy", np.float64, ('sampling'),zlib=True)
     Uz = group.createVariable("Uz", np.float64, ('sampling'),zlib=True)
     IA = group.createVariable("IA", np.float64, ('sampling'),zlib=True)
-    Iy = group.creatVariable("Iy", np.float64, ('sampling'),zlib=True)
-    Iz = group.creatVariable("Iz", np.float64, ('sampling'),zlib=True)
+    Iy = group.createVariable("Iy", np.float64, ('sampling'),zlib=True)
+    Iz = group.createVariable("Iz", np.float64, ('sampling'),zlib=True)
 
     p_rotor = a.groups["p_r"]; del a
 

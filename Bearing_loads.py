@@ -65,6 +65,35 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
     return Y,Z
 
 
+def probability_dist(y):
+
+    mu = np.mean(y)
+    var = np.var(y)
+    sd = np.std(y)
+    N = len(y)
+    no_bin = 1000
+    X = np.linspace(np.min(y),np.max(y),no_bin)
+    dx = X[1]-X[0]
+    P = []
+    p = 0
+    mu_3 = 0
+    mu_4 = 0
+    i = 0
+    for x in X:
+        denom = np.sqrt(var*2*np.pi)
+        num = np.exp(-((x-mu)**2)/(2*var))
+        P.append(num/denom)
+        mu_3+=((y[i]-mu)**3)
+        mu_4+=((y[i]-mu)**4)
+        p+=(num/denom)*dx
+        i+=1
+    S = mu_3/((N-1)*sd**3)
+    k = mu_4/(sd**4)
+    print(p)
+    return P,X, round(mu,2), round(sd,2),round(S,2),round(k,2)
+
+
+
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 a = Dataset(in_dir+"OF_Dataset.nc")
@@ -74,8 +103,9 @@ b = Dataset(in_dir+"Dataset.nc")
 compare_variables = False
 compare_FFT = False
 plot_relative_contributions = False
-compare_total_correlations = True
+compare_total_correlations = False
 compare_LPF_correlations = False
+plot_PDF = True
 
 
 out_dir = in_dir + "Bearing_loads/"
@@ -161,17 +191,17 @@ Ux = f(Time_OF)
 f = interpolate.interp1d(Time_sampling,IA)
 IA = f(Time_OF)
 
-f = interpolate.interp1d(Time_sampling,Uy)
-Uy = f(Time_OF)
+# f = interpolate.interp1d(Time_sampling,Uy)
+# Uy = f(Time_OF)
 
-f = interpolate.interp1d(Time_sampling,Uz)
-Uz = f(Time_OF)
+# f = interpolate.interp1d(Time_sampling,Uz)
+# Uz = f(Time_OF)
 
-Uxz = np.sqrt(np.add(np.square(Ux),np.square(Uz)))
+# Uxz = np.sqrt(np.add(np.square(Ux),np.square(Uz)))
 
-Uxyz = []
-for i in np.arange(0,len(Time_OF)):
-    Uxyz.append(np.sqrt(Ux[i]**2 + Uy[i]**2 + Uz[i]**2))
+# Uxyz = []
+# for i in np.arange(0,len(Time_OF)):
+#     Uxyz.append(np.sqrt(Ux[i]**2 + Uy[i]**2 + Uz[i]**2))
 
 
 if compare_variables == True:
@@ -327,3 +357,27 @@ if compare_LPF_correlations == True:
             plt.tight_layout()
             plt.savefig(in_dir+"Bearing_Loads/LPF_corr_{0}_{1}.png".format(Variables[j],Variables[i]))
             plt.close(fig)
+
+
+if plot_PDF == True:
+
+    Variables = ["FBy", "FBz", "FBMy", "FBFy", "FBMz", "FBFz"]
+    units = ["[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
+    Ylabels = ["Bearing Force y", "Bearing Force z", "$M_z/L_2$", "$-Fy(L_1+L_2)/L_2$", "$-M_y/L_2$", "$-Fz(L_1+L_2)/L_2$"]
+    h_vars = [FBy, FBz, FBMy, FBFy, FBMz, FBFz]
+
+    for i in np.arange(0,len(h_vars)):
+        cutoff = 40
+        signal_LP = low_pass_filter(h_vars[i], cutoff)
+
+        P,X,mu,std,S,k = probability_dist(signal_LP)
+
+        txt = "mean = {0}{1}\nstandard deviation = {2}{1}\nSkewness = {3}\nKurtosis = {4}".format(mu,units[i],std,S,k)
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(X,P)
+        plt.ylabel("Probability",fontsize=16)
+        plt.xlabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=16)
+        plt.text(np.max(X)-0.1*np.max(X),np.max(P)-0.1*np.max(P),txt,horizontalalignment="right",verticalalignment="top")
+        plt.tight_layout()
+        plt.savefig(in_dir+"PDFs/{0}".format(Variables[i]))
+        plt.close()
