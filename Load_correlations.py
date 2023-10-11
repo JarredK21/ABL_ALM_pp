@@ -63,7 +63,7 @@ in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 offsets = [0.0]
 
-a = Dataset(in_dir+"Dataset.nc")
+a = Dataset(in_dir+"Dataset_2.nc")
 
 for offset in offsets:
 
@@ -111,9 +111,9 @@ for offset in offsets:
 
 
     #plotting options
-    plot_variables = True
-    plot_FFT = True
-    compare_total_correlations = False
+    plot_variables = False
+    plot_FFT = False
+    compare_total_correlations = True
     compare_LP_correlations = False
     compare_time_series = False
     compare_FFT = False
@@ -204,7 +204,7 @@ for offset in offsets:
                 plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
                 ax.set_xlabel("Time [s]",fontsize=16)
                 plt.tight_layout()
-                plt.savefig(out_dir+"corr_{0}_{1}.png".format(Variables[j],Variables[i]))
+                plt.savefig(in_dir+"test/corr_{0}_{1}.png".format(Variables[j],Variables[i]))
                 plt.close(fig)
 
 

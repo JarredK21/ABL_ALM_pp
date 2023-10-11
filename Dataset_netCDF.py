@@ -102,6 +102,38 @@ def delta_Ux(j,k,r,fx,fy):
 
     return delta_Ux
 
+
+def delta_y_Ux(it):
+
+    velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
+
+    fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
+    vx1 = fx(63,0); vy1 = fy(63,0); vx2 = fx(-63,0); vy2 = fy(-63,0)
+
+    Ux_1 = vx1*np.cos(np.radians(29))+vy1*np.sin(np.radians(29))
+    Ux_2 = vx2*np.cos(np.radians(29))+vy2*np.sin(np.radians(29))
+
+    delta_y_Ux = Ux_1 - Ux_2
+
+    return delta_y_Ux
+
+
+def delta_z_Ux(it):
+
+    velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
+
+    fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
+    vx1 = fx(0,63); vy1 = fy(0,63); vx2 = fx(0,-63); vy2 = fy(0,-63)
+
+    Ux_1 = vx1*np.cos(np.radians(29))+vy1*np.sin(np.radians(29))
+    Ux_2 = vx2*np.cos(np.radians(29))+vy2*np.sin(np.radians(29))
+
+    delta_z_Ux = Ux_1 - Ux_2
+
+    return delta_z_Ux
+
+
+
 #directories
 in_dir = "./"
 #in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
@@ -251,13 +283,16 @@ for offset in offsets:
     Uy = group.createVariable("Uy", np.float64, ('sampling'),zlib=True)
     Uz = group.createVariable("Uz", np.float64, ('sampling'),zlib=True)
     IA = group.createVariable("IA", np.float64, ('sampling'),zlib=True)
+    Iy = group.creatVariable("Iy", np.float64, ('sampling'),zlib=True)
+    Iz = group.creatVariable("Iz", np.float64, ('sampling'),zlib=True)
 
     p_rotor = a.groups["p_r"]; del a
 
     velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"])
     velocityz = np.array(p_rotor.variables["velocityz"])
 
-    Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset), "Uy_{0}".format(offset), "Uz_{0}".format(offset)]
+    Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset), "Uy_{0}".format(offset), "Uz_{0}".format(offset),
+                 "Iy_{0}".format(offset), "Iz_{0}".format(offset)]
 
     x = p_rotor.ijk_dims[0] #no. data points
     y = p_rotor.ijk_dims[1] #no. data points
@@ -307,6 +342,7 @@ for offset in offsets:
                 Ux_it = np.array(Ux_it)
                 Ux[:] = Ux_it; del Ux_it
 
+
         elif Variable[0:2] == "Uy":
             Uy_it = []
             print("Uy calcs")
@@ -319,17 +355,19 @@ for offset in offsets:
                 Uy_it = np.array(Uy_it)
                 Uy[:] = Uy_it; del Uy_it
 
+
         elif Variable[0:2] == "Uz":
             Uz_it = []
             print("Uz calcs")
             with Pool() as pool:
                 i_Uz = 1
                 for Uz_i in pool.imap(Uz_it_offset, np.arange(0,time_idx)):
-                    Uz_it.append(Uy_i)
+                    Uz_it.append(Uz_i)
                     print(i_Uz,time.time()-start_time)
                     i_Uz+=1
                 Uz_it = np.array(Uz_it)
                 Uz[:] = Uz_it; del Uz_it
+
 
         elif Variable[0:2] == "IA":
             IA_it = []
@@ -343,6 +381,34 @@ for offset in offsets:
                 IA_it = np.array(IA_it)
                 IA[:] = IA_it; del IA_it
 
+
+        elif Variable[0:2] == "Iy":
+            Iy_it = []
+            print("Iy calcs")
+            with Pool() as pool:
+                i_Iy = 1
+                for Iy_i in pool.imap(delta_y_Ux, np.arange(0,time_idx)):
+                    Iy_it.append(Iy_i)
+                    print(i_Iy,time.time()-start_time)
+                    i_Iy+=1
+                Iy_it = np.array(Iy_it)
+                Iy[:] = Iy_it; del Iy_it
+
+
+        elif Variable[0:2] == "Iz":
+            Iz_it = []
+            print("Iz calcs")
+            with Pool() as pool:
+                i_Iz = 1
+                for Iz_i in pool.imap(delta_z_Ux, np.arange(0,time_idx)):
+                    Iz_it.append(Iz_i)
+                    print(i_Iz,time.time()-start_time)
+                    i_Iz+=1
+                Iz_it = np.array(Iz_it)
+                Iz[:] = Iz_it; del Iz_it
+
+
+    del velocityx; velocityy; velocityz
 
     print(ncfile.groups)
     ic+=1

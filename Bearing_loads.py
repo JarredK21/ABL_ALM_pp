@@ -151,8 +151,9 @@ Theta_FB = np.degrees(np.arctan2(FBz,FBy))
 
 group = b.groups["0.0"]
 Ux = np.array(group.variables["Ux"])
-
 IA = np.array(group.variables["IA"])
+Uy = np.array(group.variables["Uy"])
+Uz = np.array(group.variables["Uz"])
 
 f = interpolate.interp1d(Time_sampling,Ux)
 Ux = f(Time_OF)
@@ -160,16 +161,25 @@ Ux = f(Time_OF)
 f = interpolate.interp1d(Time_sampling,IA)
 IA = f(Time_OF)
 
+f = interpolate.interp1d(Time_sampling,Uy)
+Uy = f(Time_OF)
 
+f = interpolate.interp1d(Time_sampling,Uz)
+Uz = f(Time_OF)
 
+Uxz = np.sqrt(np.add(np.square(Ux),np.square(Uz)))
+
+Uxyz = []
+for i in np.arange(0,len(Time_OF)):
+    Uxyz.append(np.sqrt(Ux[i]**2 + Uy[i]**2 + Uz[i]**2))
 
 
 if compare_variables == True:
 
-    Variables = ["Bearing Force comp"]
-    units = [["[kN]","[kN-m]","[kN]"]]
-    Ylabels = [["Magnitude Bearing Force", "Magnitude Hub Moment", "Hub Force y direction"]]
-    h_vars = [[FBR, LSSTipMR, LSShftFys]]
+    Variables = ["Negative Bearing Force z comp"]
+    units = [["[kN]","[kN]","[kN]"]]
+    Ylabels = [["Negative Bearing Force z", "[$M_y/L_2$]", "[$F_z(L_1+L_2)/L_2$]"]]
+    h_vars = [[-FBz, -FBMz, -FBFz]]
 
     for i in np.arange(0,len(h_vars)):
         h_var = h_vars[i]; unit = units[i]; ylabel = Ylabels[i]
@@ -260,10 +270,10 @@ if plot_relative_contributions == True:
         
 
 if compare_total_correlations == True:
-    Variables = ["LSShftFys", "LSShftFzs", "LSSTipMys", "LSSTipMzs"]
-    units = ["[kN]","[kN]","[kN-m]","[kN-m]"]
-    Ylabels = ["Hub Force y", "Hub Force z", "Hub Moment y", "Hub Moment z"]
-    h_vars = [LSShftFys, LSShftFzs, LSSTipMys, LSSTipMzs]
+    Variables = ["Uz", "LSShftMxa","LSSTipMys", "FBR", "LSSTipMR"]
+    units = ["[m/s]","[kN-m]","[kN-m]","[kN]","[kN-m]"]
+    Ylabels = ["Average rotor velocity z", "Torque", "Hub Moment y", "Magnitude Bearing reaction Force", "Magnitude OOPBM"]
+    h_vars = [Uz, LSShftMxa,LSSTipMys, FBR, LSSTipMR]
 
     for j in np.arange(0,len(h_vars)):
         for i in np.arange(0,len(h_vars)):
@@ -283,7 +293,7 @@ if compare_total_correlations == True:
             plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
-            plt.savefig(in_dir+"Bearing_Loads/corr_{0}_{1}.png".format(Variables[j],Variables[i]))
+            plt.savefig(in_dir+"velocity_correlations/corr_{0}_{1}.png".format(Variables[j],Variables[i]))
             plt.close(fig)
 
 
