@@ -37,7 +37,7 @@ in_dir = "./"
 out_dir = in_dir + "ISOplots/"
 video_folder = in_dir + "NAWEA_videos/"
 
-plane_label = "longitudinal_plane"
+plane_label = "longitudinal"
 velocity_comp = "Horizontal velocity"
 offset = 85
 
@@ -61,7 +61,7 @@ for file in files[no_files:(no_files+514)]:
     print("line 475)",time.time()-start_time)
 
 #cv2.VideoWriter_fourcc(*'DIVX')
-out = cv2.VideoWriter(video_folder+filename+'.avi',0, 4, size)
+out = cv2.VideoWriter(video_folder+filename+'.avi',0, 12, size)
 for im in range(len(img_array)):
     out.write(img_array[im])
     print("Line 482)",time.time()-start_time)
