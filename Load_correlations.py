@@ -60,6 +60,7 @@ def temporal_spectra(signal,dt,Var):
 
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+out_dir = "../../"
 
 offsets = [0.0]
 
@@ -71,7 +72,7 @@ for offset in offsets:
     Time_sampling = np.array(a.variables["time_sampling"])
     Time_sampling = Time_sampling - Time_sampling[0]
 
-    Time_start = 100
+    Time_start = 200
     Time_end = Time_sampling[-1]
 
     dt = Time_OF[1] - Time_OF[0]
@@ -87,7 +88,7 @@ for offset in offsets:
     RtAeroMyh = np.array(a.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
     RtAeroMzh = np.array(a.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
     RtAeroMR = np.sqrt( np.add(np.square(RtAeroMyh), np.square(RtAeroMzh)) ) 
-    Theta = np.array(a.variables["Theta"][Time_start_idx:Time_end_idx])
+    #Theta = np.array(a.variables["Theta"][Time_start_idx:Time_end_idx])
 
     LSSGagMys = np.array(a.variables["LSSGagMys"][Time_start_idx:Time_end_idx])
     LSSGagMzs = np.array(a.variables["LSSGagMzs"][Time_start_idx:Time_end_idx])
@@ -113,12 +114,12 @@ for offset in offsets:
     #plotting options
     plot_variables = False
     plot_FFT = False
-    compare_total_correlations = True
+    compare_total_correlations = False
     compare_LP_correlations = False
-    compare_time_series = False
+    compare_time_series = True
     compare_FFT = False
 
-    out_dir = in_dir + "lineplots_{}/".format(offset)
+    #out_dir = in_dir + "lineplots_{}/".format(offset)
 
 
     #plot variables#
@@ -246,15 +247,43 @@ for offset in offsets:
 
 
 
+    # if compare_time_series == True:
+    #     Variables = ["Ux","RtAeroFxh","RtAeroMxh","LSSTipMR","IA","Theta"]
+    #     h_vars = [Ux,RtAeroFxh, RtAeroMxh,LSSTipMR,IA,Theta]
+    #     units = ["[m/s]","[N]","[N-m]","[kN-m]","[$m^4/s$]","[rads]"]
+    #     Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
+    #                 "Tip Out-of-plane bending moment","Asymmetry parameter","Angle OOPBM"]
+        
+    #     #comparing time series
+    #     fig, axs = plt.subplots(6,1,figsize=(32,24))
+    #     plt.rcParams.update({'font.size': 16})
+    #     for i in np.arange(0,len(h_vars)):
+
+    #         unit = units[i]
+    #         Ylabel = Ylabels[i]
+
+    #         signal = h_vars[i]
+
+    #         axs = axs.ravel()
+
+    #         axs[i].plot(Time_OF,signal)
+
+    #         axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
+
+    #     fig.supxlabel("Time [s]")
+    #     plt.tight_layout()
+    #     plt.savefig(out_dir+"joint_vars.png")
+    #     plt.close(fig)
+
     if compare_time_series == True:
-        Variables = ["Ux","RtAeroFxh","RtAeroMxh","LSSTipMR","IA","Theta"]
-        h_vars = [Ux,RtAeroFxh, RtAeroMxh,LSSTipMR,IA,Theta]
-        units = ["[m/s]","[N]","[N-m]","[kN-m]","[$m^4/s$]","[rads]"]
+        Variables = ["Ux","RtAeroFxh","RtAeroMxh","LSSTipMR","IA"]
+        h_vars = [Ux,RtAeroFxh, RtAeroMxh,LSSTipMR,IA]
+        units = ["[m/s]","[N]","[N-m]","[kN-m]","[$m^4/s$]"]
         Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
-                    "Tip Out-of-plane bending moment","Asymmetry parameter","Angle OOPBM"]
+                    "Out-of-plane bending moment","Asymmetry parameter"]
         
         #comparing time series
-        fig, axs = plt.subplots(6,1,figsize=(32,24))
+        fig, axs = plt.subplots(5,1,figsize=(32,24))
         plt.rcParams.update({'font.size': 16})
         for i in np.arange(0,len(h_vars)):
 
@@ -267,11 +296,11 @@ for offset in offsets:
 
             axs[i].plot(Time_OF,signal)
 
-            axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
+            axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=28)
 
-        fig.supxlabel("Time [s]")
+        fig.supxlabel("Time [s]",fontsize=28)
         plt.tight_layout()
-        plt.savefig(out_dir+"joint_vars.png")
+        plt.savefig(out_dir+"NAWEA_23/post_processing/plots_3/joint_vars.png")
         plt.close(fig)
 
 

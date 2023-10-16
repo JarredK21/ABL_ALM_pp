@@ -96,22 +96,22 @@ def probability_dist(y):
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
-a = Dataset(in_dir+"OF_Dataset.nc")
-b = Dataset(in_dir+"Dataset.nc")
+#a = Dataset(in_dir+"OF_Dataset.nc")
+a = Dataset(in_dir+"Dataset.nc")
 
 #plotting options
 compare_variables = False
 compare_FFT = False
 plot_relative_contributions = False
 compare_total_correlations = False
-compare_LPF_correlations = False
-plot_PDF = True
+compare_LPF_correlations = True
+plot_PDF = False
 
 
 out_dir = in_dir + "Bearing_loads/"
 
 Time_OF = np.array(a.variables["time_OF"])
-Time_sampling = np.array(b.variables["time_sampling"])
+Time_sampling = np.array(a.variables["time_sampling"])
 Time_sampling = Time_sampling - Time_sampling[0]
 
 Time_start = 200
@@ -179,11 +179,25 @@ Rel_FBz = np.true_divide(np.square(FBz),np.square(FBR))
 add_RelFB = np.add(Rel_FBy,Rel_FBz)
 Theta_FB = np.degrees(np.arctan2(FBz,FBy))
 
-group = b.groups["0.0"]
+
+Aero_FBMy = RtAeroMzs/L2; Aero_FBFy = -RtAeroFys*((L1+L2)/L2)
+Aero_FBMz = -RtAeroMys/L2; Aero_FBFz = -RtAeroFzs*((L1+L2)/L2)
+
+Aero_FBy = Aero_FBMy + Aero_FBFy; Aero_FBz = Aero_FBMz + Aero_FBFz
+
+Aero_FBR = np.sqrt(np.add(np.square(Aero_FBy),np.square(Aero_FBz)))
+Rel_Aero_FBy = np.true_divide(np.square(Aero_FBy),np.square(Aero_FBR))
+Rel_Aero_FBz = np.true_divide(np.square(Aero_FBz),np.square(Aero_FBR))
+add_Aero_RelFB = np.add(Rel_Aero_FBy,Rel_Aero_FBz)
+Theta_Aero_FB = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
+
+group = a.groups["0.0"]
 Ux = np.array(group.variables["Ux"])
 IA = np.array(group.variables["IA"])
 Uy = np.array(group.variables["Uy"])
 Uz = np.array(group.variables["Uz"])
+Iy = np.array(group.variables["Iy"])
+Iz = np.array(group.variables["Iz"])
 
 f = interpolate.interp1d(Time_sampling,Ux)
 Ux = f(Time_OF)
@@ -191,25 +205,31 @@ Ux = f(Time_OF)
 f = interpolate.interp1d(Time_sampling,IA)
 IA = f(Time_OF)
 
-# f = interpolate.interp1d(Time_sampling,Uy)
-# Uy = f(Time_OF)
+f = interpolate.interp1d(Time_sampling,Iy)
+Iy = f(Time_OF)
 
-# f = interpolate.interp1d(Time_sampling,Uz)
-# Uz = f(Time_OF)
+f = interpolate.interp1d(Time_sampling,Iz)
+Iz = f(Time_OF)
 
-# Uxz = np.sqrt(np.add(np.square(Ux),np.square(Uz)))
+f = interpolate.interp1d(Time_sampling,Uy)
+Uy = f(Time_OF)
 
-# Uxyz = []
-# for i in np.arange(0,len(Time_OF)):
-#     Uxyz.append(np.sqrt(Ux[i]**2 + Uy[i]**2 + Uz[i]**2))
+f = interpolate.interp1d(Time_sampling,Uz)
+Uz = f(Time_OF)
+
+Uxz = np.sqrt(np.add(np.square(Ux),np.square(Uz)))
+
+Uxyz = []
+for i in np.arange(0,len(Time_OF)):
+    Uxyz.append(np.sqrt(Ux[i]**2 + Uy[i]**2 + Uz[i]**2))
 
 
 if compare_variables == True:
 
-    Variables = ["Negative Bearing Force z comp"]
-    units = [["[kN]","[kN]","[kN]"]]
-    Ylabels = [["Negative Bearing Force z", "[$M_y/L_2$]", "[$F_z(L_1+L_2)/L_2$]"]]
-    h_vars = [[-FBz, -FBMz, -FBFz]]
+    Variables =["Bearing reaction force z comps"]
+    units = [["[kN]", "[kN]","[kN]"]]
+    Ylabels = [["[-M_y/L_2]","[$-F_z(L_1+L_2)/L_2$]","Bearing Force z"]]
+    h_vars = [[Aero_FBMz/1000,Aero_FBFz/1000,Aero_FBz/1000]]
 
     for i in np.arange(0,len(h_vars)):
         h_var = h_vars[i]; unit = units[i]; ylabel = Ylabels[i]
@@ -229,7 +249,7 @@ if compare_variables == True:
         ax3.set_title("{} {}".format(ylabel[2],unit[2]))
         fig.supxlabel("Time [s]")
         plt.tight_layout()
-        plt.savefig(in_dir+"Bearing_Loads/short_{}.png".format(Variables[i]))
+        plt.savefig(in_dir+"Bearing_Aero_Loads/{}.png".format(Variables[i]))
 
 
 if compare_FFT == True:
@@ -240,7 +260,7 @@ if compare_FFT == True:
                 "Force due to the force contribution \nto the Bearing Force y direction","Bearing Force y direction"],
                ["Force due to the moment contribution \nto the Bearing Force z direction",
                 "Force due to the force contribution \nto the Bearing Force z direction","Bearing Force z direction"]]
-    h_vars = [[FBy, FBz, FBR], [FBMy, FBFy, FBy], [FBMz, FBFz, FBz]]
+    h_vars = [[Aero_FBy/1000, Aero_FBz/1000, Aero_FBR/1000], [FBMy/1000, FBFy/1000, FBy/1000], [FBMz/1000, FBFz/1000, FBz/1000]]
 
     for i in np.arange(0,len(h_vars)):
         h_var = h_vars[i]; unit = units[i]; ylabel = Ylabels[i]
@@ -269,13 +289,13 @@ if compare_FFT == True:
         ax3.set_yscale("log")
         fig.supxlabel("Frequency [Hz]",fontsize=14)
         plt.tight_layout()
-        plt.savefig(in_dir+"Bearing_Loads/FFT_{}.png".format(Variables[i]))
+        plt.savefig(in_dir+"Bearing_Aero_Loads/FFT_{}.png".format(Variables[i]))
         plt.close()
 
 
 if plot_relative_contributions == True:
 
-    h_vars = [[Rel_FBy, Rel_FBz, FBR, Theta_FB]]
+    h_vars = [[Rel_Aero_FBy, Rel_Aero_FBz, Aero_FBR/1000, Theta_Aero_FB]]
     Ylabels = [["Relative contributions to the Radial Bearing Force (y blue) (z red)", "Bearing Radial Force", "Angle Bearing Radial Force"]]
     Variables = ["BearingF"]
     units = [["[-]","[kN]","[deg]"]]
@@ -296,14 +316,21 @@ if plot_relative_contributions == True:
         ax3.set_title("{}".format(ylabel[2]))
         fig.supxlabel("Time [s]")
         plt.tight_layout()
-        plt.savefig(in_dir+"Bearing_Loads/Relative_{}.png".format(Variable))
+        plt.savefig(in_dir+"Bearing_Aero_Loads/Relative_{}.png".format(Variable))
         
 
 if compare_total_correlations == True:
-    Variables = ["Uz", "LSShftMxa","LSSTipMys", "FBR", "LSSTipMR"]
-    units = ["[m/s]","[kN-m]","[kN-m]","[kN]","[kN-m]"]
-    Ylabels = ["Average rotor velocity z", "Torque", "Hub Moment y", "Magnitude Bearing reaction Force", "Magnitude OOPBM"]
-    h_vars = [Uz, LSShftMxa,LSSTipMys, FBR, LSSTipMR]
+    # Variables = ["Iy", "Iz","Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMz", "Aero_FBMy", "Aero_FBFy", "Aero_FBFz"]
+    # units = ["[m/s]","[m/s]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
+    # Ylabels = ["Iy", "Iz","Aerodynamic Bearing Reaction Force", "Aerodynamic Bearing Reaction Force y", 
+    #            "Aerodynamic Bearing Reaction Force z","[$-M_y/L_2$]", "[$M_z/L_2$]", "[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
+    # h_vars = [Iy, Iz, Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMz/1000, Aero_FBMy/1000, Aero_FBFy/1000, Aero_FBFz/1000]
+    Variables = ["IA", "RtAeroMR", "Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMy", "Aero_FBMz", "Aero_FBFy","Aero_FBFz"]
+    units = ["[$m^4/s$]","[kN-m]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
+    Ylabels = ["Asymmetry Parameter", "OOPBM","Magnitude Bearing Force", "Bearing Force y", "Bearing Force z",
+               "[$M_z/L_2$]", "[$-M_y/L_2$]","[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
+    h_vars = [IA, RtAeroMR/1000, Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMy/1000, Aero_FBMz/1000, Aero_FBFy/1000,
+              Aero_FBFz/1000]
 
     for j in np.arange(0,len(h_vars)):
         for i in np.arange(0,len(h_vars)):
@@ -323,15 +350,22 @@ if compare_total_correlations == True:
             plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
-            plt.savefig(in_dir+"velocity_correlations/corr_{0}_{1}.png".format(Variables[j],Variables[i]))
+            plt.savefig(in_dir+"Aero_correlations/corr_{0}_{1}.png".format(Variables[j],Variables[i]))
             plt.close(fig)
 
 
 if compare_LPF_correlations == True:
-    Variables = ["FBR","LSSTipMR", "IA"]
-    units = ["[kN]","[kN-m]","[$m^4/s$]"]
-    Ylabels = ["Magnitude Main Bearing Reaction Force","Magnitude Hub Moment","Asymmetry parameter"]
-    h_vars = [FBR,LSSTipMR, IA]
+    # Variables = ["Iy", "Iz","Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMz", "Aero_FBMy", "Aero_FBFy", "Aero_FBFz"]
+    # units = ["[m/s]","[m/s]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
+    # Ylabels = ["Iy", "Iz","Aerodynamic Bearing Reaction Force", "Aerodynamic Bearing Reaction Force y", 
+    #            "Aerodynamic Bearing Reaction Force z","[$-M_y/L_2$]", "[$M_z/L_2$]", "[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
+    # h_vars = [Iy, Iz, Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMz/1000, Aero_FBMy/1000, Aero_FBFy/1000, Aero_FBFz/1000]
+    Variables = ["IA", "RtAeroMR", "Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMy", "Aero_FBMz", "Aero_FBFy","Aero_FBFz"]
+    units = ["[$m^4/s$]","[kN-m]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
+    Ylabels = ["Asymmetry Parameter", "OOPBM","Magnitude Bearing Force", "Bearing Force y", "Bearing Force z",
+               "[$M_z/L_2$]", "[$-M_y/L_2$]","[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
+    h_vars = [IA, RtAeroMR/1000, Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMy/1000, Aero_FBMz/1000, Aero_FBFy/1000,
+              Aero_FBFz/1000]
 
     for j in np.arange(0,len(h_vars)):
         for i in np.arange(0,len(h_vars)):
@@ -355,16 +389,17 @@ if compare_LPF_correlations == True:
             plt.title("Low passs filtered at 0.1Hz.\nCorrelation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
-            plt.savefig(in_dir+"Bearing_Loads/LPF_corr_{0}_{1}.png".format(Variables[j],Variables[i]))
+            plt.savefig(in_dir+"Aero_correlations/LPF_corr_{0}_{1}.png".format(Variables[j],Variables[i]))
             plt.close(fig)
 
 
 if plot_PDF == True:
 
-    Variables = ["FBy", "FBz", "FBMy", "FBFy", "FBMz", "FBFz"]
-    units = ["[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
-    Ylabels = ["Bearing Force y", "Bearing Force z", "$M_z/L_2$", "$-Fy(L_1+L_2)/L_2$", "$-M_y/L_2$", "$-Fz(L_1+L_2)/L_2$"]
-    h_vars = [FBy, FBz, FBMy, FBFy, FBMz, FBFz]
+    Variables = ["Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMz", "Aero_FBMy", "Aero_FBFy", "Aero_FBFz"]
+    units = ["[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
+    Ylabels = ["Aerodynamic Bearing Reaction Force", "Aerodynamic Bearing Reaction Force y", "Aerodynamic Bearing Reaction Force z",
+               "[$-M_y/L_2$]", "[$M_z/L_2$]", "[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
+    h_vars = [Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMz/1000, Aero_FBMy/1000, Aero_FBFy/1000, Aero_FBFz/1000]
 
     for i in np.arange(0,len(h_vars)):
         cutoff = 40
@@ -377,7 +412,10 @@ if plot_PDF == True:
         plt.plot(X,P)
         plt.ylabel("Probability",fontsize=16)
         plt.xlabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=16)
-        plt.text(np.max(X)-0.1*np.max(X),np.max(P)-0.1*np.max(P),txt,horizontalalignment="right",verticalalignment="top")
+        if Variables[i] == "FBFz":
+            plt.text(1525,np.max(P)-0.1*np.max(P),txt,horizontalalignment="right",verticalalignment="top")
+        else:
+            plt.text(np.max(X)-0.1*np.max(X),np.max(P)-0.1*np.max(P),txt,horizontalalignment="right",verticalalignment="top")
         plt.tight_layout()
-        plt.savefig(in_dir+"PDFs/{0}".format(Variables[i]))
+        plt.savefig(in_dir+"Aero_PDFs/{0}".format(Variables[i]))
         plt.close()
