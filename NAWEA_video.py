@@ -319,7 +319,7 @@ print("line 317",cmin_r,cmax_r)
 
 
 #longitudinal plane data
-a = Dataset(in_dir+"sampling_l_85.0.nc")
+a = Dataset(in_dir+"sampling_l_85.nc")
 p = a.groups["p_l"]
 
 x_l = p.ijk_dims[0] #no. data points
