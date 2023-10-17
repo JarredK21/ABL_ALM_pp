@@ -104,8 +104,8 @@ compare_variables = False
 compare_FFT = False
 plot_relative_contributions = False
 compare_total_correlations = False
-compare_LPF_correlations = True
-plot_PDF = False
+compare_LPF_correlations = False
+plot_PDF = True
 
 
 out_dir = in_dir + "Bearing_loads/"
@@ -397,9 +397,14 @@ if plot_PDF == True:
 
     Variables = ["Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMz", "Aero_FBMy", "Aero_FBFy", "Aero_FBFz"]
     units = ["[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
-    Ylabels = ["Aerodynamic Bearing Reaction Force", "Aerodynamic Bearing Reaction Force y", "Aerodynamic Bearing Reaction Force z",
+    Ylabels = ["Bearing Reaction Force", "Bearing Reaction Force y", "Bearing Reaction Force z",
                "[$-M_y/L_2$]", "[$M_z/L_2$]", "[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
     h_vars = [Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMz/1000, Aero_FBMy/1000, Aero_FBFy/1000, Aero_FBFz/1000]
+    # Variables = ["FBy", "FBz","FBMy", "FBFy", "FBMz", "FBFz"]
+    # units = ["[kN]", "[kN]","[kN]","[kN]","[kN]","[kN]"]
+    # Ylabels = ["Bearing Force y direction", "Bearing Force z direction", "[$M_z/L_2$]",
+    #            "[$-F_y(L_1+L_2)/L_2$]","[$-M_y/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
+    # h_vars = [FBy, FBz, FBMy, FBFy, FBMz, FBFz]
 
     for i in np.arange(0,len(h_vars)):
         cutoff = 40
@@ -407,15 +412,17 @@ if plot_PDF == True:
 
         P,X,mu,std,S,k = probability_dist(signal_LP)
 
-        txt = "mean = {0}{1}\nstandard deviation = {2}{1}\nSkewness = {3}\nKurtosis = {4}".format(mu,units[i],std,S,k)
+        idx1 = np.searchsorted(X,mu-std)
+        idx2 = np.searchsorted(X,mu+std)
+        ymax1 = P[idx1]
+        ymax2 = P[idx2]
+
         fig = plt.figure(figsize=(14,8))
         plt.plot(X,P)
+        plt.axvline(mu,color="b")
+        plt.axvline(mu-std, ymax=ymax1, color="r"); plt.axvline(mu+std, ymax=ymax2, color="r")
         plt.ylabel("Probability",fontsize=16)
-        plt.xlabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=16)
-        if Variables[i] == "FBFz":
-            plt.text(1525,np.max(P)-0.1*np.max(P),txt,horizontalalignment="right",verticalalignment="top")
-        else:
-            plt.text(np.max(X)-0.1*np.max(X),np.max(P)-0.1*np.max(P),txt,horizontalalignment="right",verticalalignment="top")
+        plt.xlabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=28)
         plt.tight_layout()
         plt.savefig(in_dir+"Aero_PDFs/{0}".format(Variables[i]))
         plt.close()
