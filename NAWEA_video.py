@@ -179,8 +179,9 @@ def Horizontal_velocity(u,v,twist,x,normal,zs,h,height):
 
 start_time = time.time()
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
-out_dir = in_dir+"test/"
+#in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+in_dir = "./"
+out_dir = in_dir+"NAWEA_plots/"
 a = Dataset(in_dir+"Dataset.nc")
 
 Time_OF = np.array(a.variables["time_OF"])
