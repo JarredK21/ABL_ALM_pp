@@ -278,7 +278,7 @@ del precursor
 
 
 #rotor disk data
-a = Dataset(in_dir+"sampling_r_-63.0")
+a = Dataset(in_dir+"sampling_r_-63.0.nc")
 p = a.groups["p_r"]
 
 x_r = p.ijk_dims[0] #no. data points
@@ -319,7 +319,7 @@ print("line 317",cmin_r,cmax_r)
 
 
 #longitudinal plane data
-a = Dataset(in_dir+"sampling_l_85.0")
+a = Dataset(in_dir+"sampling_l_85.0.nc")
 p = a.groups["p_l"]
 
 x_l = p.ijk_dims[0] #no. data points
