@@ -73,7 +73,7 @@ def blade_positions(it):
 
 def Update(it):
 
-    T = Time_OF[it]
+    T = Time_OF[it[0]]
 
     fig = plt.figure(figsize=(14,8),constrained_layout=True)
     gs = fig.add_gridspec(2, 2)
@@ -82,9 +82,9 @@ def Update(it):
     f3_ax3 = fig.add_subplot(gs[0, 1:])
 
     #bottom plot
-    f3_ax1.plot(Time_OF[:it],LPF_Aero_FBR[:it]/1000,"r")
+    f3_ax1.plot(Time_OF[:it[0]],LPF_Aero_FBR[:it[0]]/1000,"r")
     f3_ax1_2 = f3_ax1.twinx()
-    f3_ax1_2.plot(Time_OF[:it],LPF_IA[:it],"b")
+    f3_ax1_2.plot(Time_OF[:it[0]],LPF_IA[:it[0]],"b")
     f3_ax1.set_title("Filtered at 0.1Hz: Correlations = {}".format(np.round(corr,2)),fontsize=16)
     f3_ax1.set_xlabel("Time [s]",fontsize=16)
     f3_ax1.set_ylabel("Bearing Force [kN]",fontsize=16)
@@ -95,7 +95,7 @@ def Update(it):
 
 
     #rotor disk plot
-    U_r = u_r[it] #velocity time step it
+    U_r = u_r[it[1]] #velocity time step it
 
     u_plane = U_r.reshape(y_r,x_r)
     X,Y = np.meshgrid(ys_r,zs_r)
@@ -123,7 +123,7 @@ def Update(it):
     f3_ax2.set_title(Title)
 
 
-    U_l = u_l[it]
+    U_l = u_l[it[1]]
 
     u_plane = U_l.reshape(x_l,y_l)
     X,Y = np.meshgrid(xs_l,ys_l)
