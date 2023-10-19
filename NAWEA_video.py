@@ -117,8 +117,10 @@ def Update(it):
     f3_ax2.plot(YB1,ZB1,color="k",linewidth = 0.5)
     f3_ax2.plot(YB2,ZB2,color="k",linewidth = 0.5)
     f3_ax2.plot(YB3,ZB3,color="k",linewidth = 0.5)  
+    Drawing_uncolored_circle = plt.Circle( (2560, 2560 ),63 ,fill = False, linewidth=0.5)
+    f3_ax2.add_artist(Drawing_uncolored_circle)
 
-    Title = "Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(T,4))
+    Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(T,4))
 
     f3_ax2.set_title(Title)
 
@@ -133,6 +135,9 @@ def Update(it):
     cz = f3_ax3.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
     f3_ax3.set_xlabel("X axis [m]")
     f3_ax3.set_ylabel("Y axis [m]")
+    f3_ax3.set_xlim([2000,3000]); f3_ax3.set_ylim([2000,3000])
+
+    plt.plot([2524.5,2585.5],[2615.1,2504.9],linewidth=1.0,color="k")
 
     divider = make_axes_locatable(f3_ax3)
     cax = divider.append_axes('right', size='5%', pad=0.05)
