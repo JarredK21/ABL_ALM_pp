@@ -93,7 +93,7 @@ def Update(it):
     f3_ax1.set_xlim([np.min(Time_OF),np.max(Time_OF)])
     f3_ax1.set_ylim([np.min(LPF_Aero_FBR/1000),np.max(LPF_Aero_FBR/1000)])
     f3_ax1_2.set_ylim([np.min(LPF_IA),np.max(LPF_IA)])
-    f3_ax1.legend(["Aerodynamic bearing force", "Asymmetry parameter"])
+    f3_ax1.legend(["Aerodynamic bearing force"]); f3_ax1_2.legend(["Asymmetry Parameter"])
 
 
     #rotor disk plot
@@ -119,7 +119,7 @@ def Update(it):
     f3_ax2.plot(YB1,ZB1,color="k",linewidth = 0.5)
     f3_ax2.plot(YB2,ZB2,color="k",linewidth = 0.5)
     f3_ax2.plot(YB3,ZB3,color="k",linewidth = 0.5)  
-    Drawing_uncolored_circle = Circle( (2560, 2560),radius=63 ,fill = False, linewidth=0.5)
+    Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax2.add_artist(Drawing_uncolored_circle)
 
     Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(T,4))
