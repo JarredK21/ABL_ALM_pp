@@ -1,21 +1,17 @@
 from netCDF4 import Dataset
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import glob 
 import os
 from matplotlib import cm
-from matplotlib.animation import PillowWriter
-import operator
 import math
-import sys
 import time
 from multiprocessing import Pool
 import cv2
 import re
-import pyFAST.input_output as io
 from scipy.signal import butter,filtfilt
 from scipy import interpolate
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def correlation_coef(x,y):
@@ -110,7 +106,10 @@ def Update(it):
     f3_ax2.set_xlabel("Y' axis (rotor frame of reference) [m]")
     f3_ax2.set_ylabel("Z' axis (rotor frame of reference) [m]")
 
-    cb = f3_ax2.colorbar(cs)
+    divider = make_axes_locatable(f3_ax2)
+    cax = divider.append_axes('right', size='5%', pad=0.05)
+
+    cb = fig.colorbar(cs,cax=cax)
 
 
     YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
@@ -135,7 +134,9 @@ def Update(it):
     f3_ax3.set_xlabel("X axis [m]")
     f3_ax3.set_ylabel("Y axis [m]")
 
-    cd = plt.colorbar(cz)
+    divider = make_axes_locatable(f3_ax3)
+    cax = divider.append_axes('right', size='5%', pad=0.05)
+    cd = plt.colorbar(cz, cax=cax)
 
     Title = "Horizotnal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(T,4))
 
@@ -253,13 +254,17 @@ IA = IA[:len(Time_OF)-Time_shift_idx]
 Time_OF = Time_OF[Time_shift_idx:]
 
 Time_shift_idx = np.searchsorted(Time_sampling,Time_sampling[0]+Time_shift)
+Time_sampling = Time_sampling[:len(Time_sampling)-Time_shift_idx]
 
 LPF_IA = low_pass_filter(IA,0.1)
 LPF_Aero_FBR = low_pass_filter(Aero_FBR,0.1)
 
 corr = correlation_coef(LPF_IA,LPF_Aero_FBR)
 
-Time_steps = np.arange(0,len(Time_OF),100)
+Time_steps_OF = np.arange(0,len(Time_OF),100)
+Time_steps_samp = np.arange(0,len(Time_sampling))
+
+Time_steps = zip(Time_steps_OF,Time_steps_samp)
 
 print("line 263", time.time()-start_time)
 
@@ -358,36 +363,36 @@ with Pool() as pool:
 
 
 
-# #whether or not folder exists execute code
-# #sort files
-# def atof(text):
-#     try:
-#         retval = float(text)
-#     except ValueError:
-#         retval = text
-#     return retval
+#whether or not folder exists execute code
+#sort files
+def atof(text):
+    try:
+        retval = float(text)
+    except ValueError:
+        retval = text
+    return retval
 
-# def natural_keys(text):
+def natural_keys(text):
     
-#     return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
+    return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
 
-# #sort files
-# files = glob.glob(out_dir+"*.png")
-# files.sort(key=natural_keys)
+#sort files
+files = glob.glob(out_dir+"*.png")
+files.sort(key=natural_keys)
 
-# #write to video
-# img_array = []
-# for file in files:
-#     img = cv2.imread(file)
-#     height, width, layers = img.shape
-#     size = (width,height)
-#     img_array.append(img)
-#     print("line 475)",time.time()-start_time)
+#write to video
+img_array = []
+for file in files:
+    img = cv2.imread(file)
+    height, width, layers = img.shape
+    size = (width,height)
+    img_array.append(img)
+    print("line 475)",time.time()-start_time)
 
-# #cv2.VideoWriter_fourcc(*'DIVX')
-# out = cv2.VideoWriter(out_dir+'NAWEA_video.avi',0, 12, size)
-# for im in range(len(img_array)):
-#     out.write(img_array[im])
-#     print("Line 482)",time.time()-start_time)
-# out.release(); del img_array
-# print("Line 485)",time.time()-start_time)
+#cv2.VideoWriter_fourcc(*'DIVX')
+out = cv2.VideoWriter(out_dir+'NAWEA_video.avi',0, 12, size)
+for im in range(len(img_array)):
+    out.write(img_array[im])
+    print("Line 482)",time.time()-start_time)
+out.release(); del img_array
+print("Line 485)",time.time()-start_time)
