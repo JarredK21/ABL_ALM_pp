@@ -87,13 +87,15 @@ def Update(it):
     f3_ax1_2 = f3_ax1.twinx()
     f3_ax1_2.plot(Time_OF[:it[0]],LPF_IA[:it[0]],"b")
     f3_ax1.set_title("Filtered at 0.1Hz: Correlations = {}".format(np.round(corr,2)),fontsize=16)
+    f3_ax1.axhline(np.mean(LPF_Aero_FBR/1000),linestyle="--",color="r")
+    f3_ax1_2.axhline(np.mean(LPF_IA),linestyle="--",color="b")
     f3_ax1.set_xlabel("Time [s]",fontsize=16)
     f3_ax1.set_ylabel("Bearing Force [kN]",fontsize=16)
     f3_ax1_2.set_ylabel("Asymmetry Parameter [$m^4/s$]",fontsize=16)
     f3_ax1.set_xlim([np.min(Time_OF),np.max(Time_OF)])
     f3_ax1.set_ylim([np.min(LPF_Aero_FBR/1000),np.max(LPF_Aero_FBR/1000)])
     f3_ax1_2.set_ylim([np.min(LPF_IA),np.max(LPF_IA)])
-    f3_ax1.legend(["Aerodynamic bearing force"]); f3_ax1_2.legend(["Asymmetry Parameter"])
+    f3_ax1.legend(["Aerodynamic bearing force", "mean"],loc="upper left"); f3_ax1_2.legend(["Asymmetry Parameter","mean"],loc="upper right")
 
 
     #rotor disk plot
