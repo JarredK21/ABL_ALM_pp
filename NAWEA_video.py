@@ -112,7 +112,7 @@ def Update(it):
     cb = fig.colorbar(cs,cax=cax)
 
 
-    YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
+    YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it[0])
 
     f3_ax2.plot(YB1,ZB1,color="k",linewidth = 0.5)
     f3_ax2.plot(YB2,ZB2,color="k",linewidth = 0.5)
