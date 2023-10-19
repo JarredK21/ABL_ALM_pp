@@ -12,6 +12,7 @@ import re
 from scipy.signal import butter,filtfilt
 from scipy import interpolate
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.patches import Circle
 
 
 def correlation_coef(x,y):
@@ -117,7 +118,7 @@ def Update(it):
     f3_ax2.plot(YB1,ZB1,color="k",linewidth = 0.5)
     f3_ax2.plot(YB2,ZB2,color="k",linewidth = 0.5)
     f3_ax2.plot(YB3,ZB3,color="k",linewidth = 0.5)  
-    Drawing_uncolored_circle = plt.Circle( (2560, 2560 ),63 ,fill = False, linewidth=0.5)
+    Drawing_uncolored_circle = Circle( (2560, 2560),63 ,fill = False, linewidth=0.5)
     f3_ax2.add_artist(Drawing_uncolored_circle)
 
     Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(T,4))
@@ -137,7 +138,8 @@ def Update(it):
     f3_ax3.set_ylabel("Y axis [m]")
     f3_ax3.set_xlim([2000,3000]); f3_ax3.set_ylim([2000,3000])
 
-    plt.plot([2524.5,2585.5],[2615.1,2504.9],linewidth=1.0,color="k")
+    x = [2524.5,2585.5]; y = [2615.1,2504.9]
+    f3_ax3.plot(x,y,linewidth=1.0,color="k")
 
     divider = make_axes_locatable(f3_ax3)
     cax = divider.append_axes('right', size='5%', pad=0.05)
