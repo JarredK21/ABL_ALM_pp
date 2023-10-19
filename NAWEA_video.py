@@ -90,7 +90,7 @@ def Update(it):
     f3_ax1.set_ylabel("Bearing Force [kN]",fontsize=16)
     f3_ax1_2.set_ylabel("Asymmetry Parameter [$m^4/s$]",fontsize=16)
     f3_ax1.set_xlim([np.min(Time_OF),np.max(Time_OF)])
-    f3_ax1.set_ylim([np.min(LPF_Aero_FBR),np.max(LPF_Aero_FBR)])
+    f3_ax1.set_ylim([np.min(LPF_Aero_FBR/1000),np.max(LPF_Aero_FBR/1000)])
     f3_ax1_2.set_ylim([np.min(LPF_IA),np.max(LPF_IA)])
 
 
