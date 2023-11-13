@@ -12,14 +12,10 @@ import pandas as pd
 from multiprocessing import Pool
 import time
 
-#review codes for load correlations
 
 start_time = time.time()
 
-#loop over coordinates with counter
-#calc range of y and z coordinates rotor falls into
-#if true sum velocity
-#divide by len
+
 def Ux_it_offset(it):
 
     Ux_rotor = []
@@ -32,26 +28,26 @@ def Ux_it_offset(it):
     return np.average(Ux_rotor)
 
 
-def Uy_it_offset(it):
-    Uy_rotor = []
-    ijk = 0
-    for j,k in zip(ys,zs):
-        r = np.sqrt(j**2 + k**2)
-        if r <= 63 and r > 1.5:
-            Uy_rotor.append(-velocityx[it,ijk]*np.sin(np.radians(29))+velocityy[it,ijk]*np.cos(np.radians(29)))
-        ijk+=1
-    return np.average(Uy_rotor)
+# def Uy_it_offset(it):
+#     Uy_rotor = []
+#     ijk = 0
+#     for j,k in zip(ys,zs):
+#         r = np.sqrt(j**2 + k**2)
+#         if r <= 63 and r > 1.5:
+#             Uy_rotor.append(-velocityx[it,ijk]*np.sin(np.radians(29))+velocityy[it,ijk]*np.cos(np.radians(29)))
+#         ijk+=1
+#     return np.average(Uy_rotor)
 
 
-def Uz_it_offset(it):
-    Uz_rotor = []
-    ijk = 0
-    for j,k in zip(ys,zs):
-        r = np.sqrt(j**2 + k**2)
-        if r <= 63 and r > 1.5:
-            Uz_rotor.append(velocityz[it,ijk])
-        ijk+=1
-    return np.average(Uz_rotor)
+# def Uz_it_offset(it):
+#     Uz_rotor = []
+#     ijk = 0
+#     for j,k in zip(ys,zs):
+#         r = np.sqrt(j**2 + k**2)
+#         if r <= 63 and r > 1.5:
+#             Uz_rotor.append(velocityz[it,ijk])
+#         ijk+=1
+#     return np.average(Uz_rotor)
 
 
 def IA_it_offset(it):
@@ -160,17 +156,6 @@ sampling_dim = ncfile.createDimension("sampling",None)
 time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
 time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
 
-# Alpha_75 = ncfile.createVariable("Alpha_75", np.float64, ('OF',),zlib=True)
-# Vrel_75 = ncfile.createVariable("Vrel_75", np.float64, ('OF',),zlib=True)
-# Cl_75 = ncfile.createVariable("Cl_75", np.float64, ('OF',),zlib=True)
-# Cd_75 = ncfile.createVariable("Cd_75", np.float64, ('OF',),zlib=True)
-# Fn_75 = ncfile.createVariable("Fn_75", np.float64, ('OF',),zlib=True)
-# Ft_75 = ncfile.createVariable("Ft_75", np.float64, ('OF',),zlib=True)
-# Fx_75 = ncfile.createVariable("Fx_75", np.float64, ('OF',),zlib=True)
-# Fy_75 = ncfile.createVariable("Fy_75", np.float64, ('OF',),zlib=True)
-# Vx_75 = ncfile.createVariable("Vx_75", np.float64, ('OF',),zlib=True)
-# Vy_75 = ncfile.createVariable("Vy_75", np.float64, ('OF',),zlib=True)
-
 Azimuth = ncfile.createVariable("Azimuth", np.float64, ('OF',),zlib=True)
 RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroFyh = ncfile.createVariable("RtAeroFyh", np.float64, ('OF',),zlib=True)
@@ -196,12 +181,6 @@ df = io.fast_output_file.FASTOutputFile(in_dir+"NREL_5MW_Main.out").toDataFrame(
 time_OF[:] = np.array(df["Time_[s]"])
 
 print("line 156",time.time()-start_time)
-
-# Variables = ["AB1N225Alpha","AB1N225Vrel","AB1N225Cl","AB1N225Cd","AB1N225Fn","AB1N225Ft","AB1N225Fx","AB1N225Fy","AB1N225Vx","AB1N225Vy",
-#              "RtAeroFxh","RtAeroMxh","RtAeroMyh","RtAeroMzh","LSSGagMys","LSSGagMzs",
-#              "LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs","Theta_Aero","Theta_Tip", "Theta_LSS", "LSShftFxa", "LSShftMxa"]
-# units = ["[deg]","[m/s]","[-]","[-]","[N/m]","[N/m]","[N/m]","[N/m]","[m/s]","[m/s]",
-#          "[N]","[N-m]","[N-m]","[N-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]","[rads]","[rads]","[rads]","[kN]","[kN-m]"]
 
 Variables = ["Azimuth","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh",
              "LSSGagMys","LSSGagMzs", "LSShftMxa","LSSTipMys","LSSTipMzs",
@@ -243,26 +222,6 @@ for i in np.arange(0,len(Variables)):
         LSShftFzs[:] = signal; del signal
     elif Variable == "Azimuth":
         Azimuth[:] = signal; del signal
-    # elif Variable == "AB1N225Alpha":
-    #     Alpha_75[:] = signal; del signal
-    # elif Variable == "AB1N225Vrel":
-    #     Vrel_75 = signal; del signal
-    # elif Variable == "AB1N225Cl":
-    #     Cl_75 = signal; del signal
-    # elif Variable == "AB1N225Cd":
-    #     Cd_75 = signal; del signal
-    # elif Variable == "AB1N225Fn":
-    #     Fn_75 = signal; del signal
-    # elif Variable == "AB1N225Ft":
-    #     Ft_75 = signal; del signal
-    # elif Variable == "AB1N225Fx":
-    #     Fx_75 = signal; del signal
-    # elif Variable == "AB1N225Fy":
-    #     Fy_75 = signal; del signal
-    # elif Variable == "AB1N225Vx":
-    #     Vx_75 = signal; del signal
-    # elif Variable == "AB1N225Vy":
-    #     Vy_75 = signal; del signal
 
 del df
 
@@ -307,8 +266,8 @@ for offset in offsets:
     group = ncfile.createGroup("{}".format(group_label[ic]))
 
     Ux = group.createVariable("Ux", np.float64, ('sampling'),zlib=True)
-    Uy = group.createVariable("Uy", np.float64, ('sampling'),zlib=True)
-    Uz = group.createVariable("Uz", np.float64, ('sampling'),zlib=True)
+    #Uy = group.createVariable("Uy", np.float64, ('sampling'),zlib=True)
+    #Uz = group.createVariable("Uz", np.float64, ('sampling'),zlib=True)
     IA = group.createVariable("IA", np.float64, ('sampling'),zlib=True)
     Iy = group.createVariable("Iy", np.float64, ('sampling'),zlib=True)
     Iz = group.createVariable("Iz", np.float64, ('sampling'),zlib=True)
@@ -316,10 +275,11 @@ for offset in offsets:
     p_rotor = a.groups["p_r"]; del a
 
     velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"])
-    velocityz = np.array(p_rotor.variables["velocityz"])
+    #velocityz = np.array(p_rotor.variables["velocityz"])
 
-    Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset), "Uy_{0}".format(offset), "Uz_{0}".format(offset),
-                 "Iy_{0}".format(offset), "Iz_{0}".format(offset)]
+    # Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset), "Uy_{0}".format(offset), "Uz_{0}".format(offset),
+    #              "Iy_{0}".format(offset), "Iz_{0}".format(offset)]
+    Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset), "Iy_{0}".format(offset), "Iz_{0}".format(offset)]
 
     x = p_rotor.ijk_dims[0] #no. data points
     y = p_rotor.ijk_dims[1] #no. data points
@@ -370,30 +330,30 @@ for offset in offsets:
                 Ux[:] = Ux_it; del Ux_it
 
 
-        elif Variable[0:2] == "Uy":
-            Uy_it = []
-            print("Uy calcs")
-            with Pool() as pool:
-                i_Uy = 1
-                for Uy_i in pool.imap(Uy_it_offset, np.arange(0,time_idx)):
-                    Uy_it.append(Uy_i)
-                    print(i_Uy,time.time()-start_time)
-                    i_Uy+=1
-                Uy_it = np.array(Uy_it)
-                Uy[:] = Uy_it; del Uy_it
+        # elif Variable[0:2] == "Uy":
+        #     Uy_it = []
+        #     print("Uy calcs")
+        #     with Pool() as pool:
+        #         i_Uy = 1
+        #         for Uy_i in pool.imap(Uy_it_offset, np.arange(0,time_idx)):
+        #             Uy_it.append(Uy_i)
+        #             print(i_Uy,time.time()-start_time)
+        #             i_Uy+=1
+        #         Uy_it = np.array(Uy_it)
+        #         Uy[:] = Uy_it; del Uy_it
 
 
-        elif Variable[0:2] == "Uz":
-            Uz_it = []
-            print("Uz calcs")
-            with Pool() as pool:
-                i_Uz = 1
-                for Uz_i in pool.imap(Uz_it_offset, np.arange(0,time_idx)):
-                    Uz_it.append(Uz_i)
-                    print(i_Uz,time.time()-start_time)
-                    i_Uz+=1
-                Uz_it = np.array(Uz_it)
-                Uz[:] = Uz_it; del Uz_it
+        # elif Variable[0:2] == "Uz":
+        #     Uz_it = []
+        #     print("Uz calcs")
+        #     with Pool() as pool:
+        #         i_Uz = 1
+        #         for Uz_i in pool.imap(Uz_it_offset, np.arange(0,time_idx)):
+        #             Uz_it.append(Uz_i)
+        #             print(i_Uz,time.time()-start_time)
+        #             i_Uz+=1
+        #         Uz_it = np.array(Uz_it)
+        #         Uz[:] = Uz_it; del Uz_it
 
 
         elif Variable[0:2] == "IA":
@@ -435,7 +395,7 @@ for offset in offsets:
                 Iz[:] = Iz; del Iz
 
 
-    del velocityx; velocityy; velocityz
+    del velocityx; velocityy; #velocityz
 
     print(ncfile.groups)
     ic+=1
