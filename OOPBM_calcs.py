@@ -102,11 +102,11 @@ b = Dataset(in_dir+"Dataset.nc")
 #plotting options
 plot_variables = False
 plot_FFT_OOPBM = False
-compare_total_OOPBM_correlations = True
+compare_total_OOPBM_correlations = False
 compare_FFT_OOPBM = False
 plot_sys_LPF = False
 plot_relative_contributions = False
-plot_PDF = False
+plot_PDF = True
 
 ic = 2
 for offset in offsets:

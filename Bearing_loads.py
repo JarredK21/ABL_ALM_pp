@@ -4,6 +4,7 @@ from scipy import interpolate
 from scipy.signal import butter,filtfilt
 from scipy import interpolate
 from netCDF4 import Dataset
+import pandas as pd
 
 def correlation_coef(x,y):
     
@@ -101,14 +102,15 @@ a = Dataset(in_dir+"Dataset.nc")
 
 #plotting options
 compare_variables = False
-compare_FFT = False
+compare_FFT = True
 plot_relative_contributions = False
 compare_total_correlations = False
 compare_LPF_correlations = False
-plot_PDF = True
+plot_PDF = False
+plot_derivative = False
+plot_moving_stats = False
 
-
-out_dir = in_dir + "Bearing_loads/"
+out_dir = in_dir + "Bearing_Loads_2/"
 
 Time_OF = np.array(a.variables["time_OF"])
 Time_sampling = np.array(a.variables["time_sampling"])
@@ -172,11 +174,7 @@ FBMy = LSSTipMzs/L2; FBFy = -LSShftFys*((L1+L2)/L2)
 FBMz = -LSSTipMys/L2; FBFz = -LSShftFzs*((L1+L2)/L2)
 
 FBy = FBMy + FBFy; FBz = FBMz + FBFz
-
 FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
-Rel_FBy = np.true_divide(np.square(FBy),np.square(FBR))
-Rel_FBz = np.true_divide(np.square(FBz),np.square(FBR))
-add_RelFB = np.add(Rel_FBy,Rel_FBz)
 Theta_FB = np.degrees(np.arctan2(FBz,FBy))
 
 
@@ -202,14 +200,14 @@ Iz = np.array(group.variables["Iz"])
 f = interpolate.interp1d(Time_sampling,Ux)
 Ux = f(Time_OF)
 
-f = interpolate.interp1d(Time_sampling,IA)
-IA = f(Time_OF)
+# f = interpolate.interp1d(Time_sampling,IA)
+# IA = f(Time_OF)
 
-f = interpolate.interp1d(Time_sampling,Iy)
-Iy = f(Time_OF)
+# f = interpolate.interp1d(Time_sampling,Iy)
+# Iy = f(Time_OF)
 
-f = interpolate.interp1d(Time_sampling,Iz)
-Iz = f(Time_OF)
+# f = interpolate.interp1d(Time_sampling,Iz)
+# Iz = f(Time_OF)
 
 f = interpolate.interp1d(Time_sampling,Uy)
 Uy = f(Time_OF)
@@ -227,9 +225,9 @@ for i in np.arange(0,len(Time_OF)):
 if compare_variables == True:
 
     Variables =["Bearing reaction force z comps"]
-    units = [["[kN]", "[kN]","[kN]"]]
-    Ylabels = [["[-M_y/L_2]","[$-F_z(L_1+L_2)/L_2$]","Bearing Force z"]]
-    h_vars = [[Aero_FBMz/1000,Aero_FBFz/1000,Aero_FBz/1000]]
+    units = [["[kN]", "[m^4/s]","[kN-m]","[kN-m]"]]
+    Ylabels = [["FBR","IA","Mys","Mzs"]]
+    h_vars = [[Aero_FBR/1000, IA, RtAeroMys/1000, RtAeroMzs/1000]]
 
     for i in np.arange(0,len(h_vars)):
         h_var = h_vars[i]; unit = units[i]; ylabel = Ylabels[i]
@@ -238,43 +236,47 @@ if compare_variables == True:
         signal_LP_0 = low_pass_filter(h_var[0], cutoff)
         signal_LP_1 = low_pass_filter(h_var[1], cutoff)
         signal_LP_2 = low_pass_filter(h_var[2], cutoff)
+        signal_LP_3 = low_pass_filter(h_var[3], cutoff)
 
 
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(14,8))
+        fig, (ax1, ax2, ax3,ax4) = plt.subplots(4, 1, sharex=True, figsize=(14,8))
         ax1.plot(Time_OF, signal_LP_0)
         ax1.set_title('{} {}'.format(ylabel[0],unit[0]))
         ax2.plot(Time_OF, signal_LP_1)
         ax2.set_title("{} {}".format(ylabel[1],unit[1]))
         ax3.plot(Time_OF,signal_LP_2)
         ax3.set_title("{} {}".format(ylabel[2],unit[2]))
+        ax4.plot(Time_OF,signal_LP_3)
+        ax4.set_title("{} {}".format(ylabel[3],unit[3]))
         fig.supxlabel("Time [s]")
         plt.tight_layout()
-        plt.savefig(in_dir+"Bearing_Aero_Loads/{}.png".format(Variables[i]))
+        plt.show()
+        #plt.savefig(in_dir+"Bearing_Aero_Loads/{}.png".format(Variables[i]))
 
 
 if compare_FFT == True:
-    Variables = ["Radial Bearing Force components", "Y Bearing Force components", "Z Bearing Force components"]
-    units = [["[kN]", "[kN]", "[kN]"], ["[kN]", "[kN]", "[kN]"], ["[kN]", "[kN]", "[kN]"]]
-    Ylabels = [["Bearing Force y direction", "Bearing Force z direction", "Magnitude Bearing Force"], 
-               ["Force due to the moment contribution \nto the Bearing Force y direction",
-                "Force due to the force contribution \nto the Bearing Force y direction","Bearing Force y direction"],
-               ["Force due to the moment contribution \nto the Bearing Force z direction",
-                "Force due to the force contribution \nto the Bearing Force z direction","Bearing Force z direction"]]
-    h_vars = [[Aero_FBy/1000, Aero_FBz/1000, Aero_FBR/1000], [FBMy/1000, FBFy/1000, FBy/1000], [FBMz/1000, FBFz/1000, FBz/1000]]
+    Variables = [["Iy", "Iz"]]
+    units = [["[]","[]"]]
+    Ylabels = [["Asymmetry in horizontal", "Asymmetry in vertical"]]
+    h_vars = [[Iy,Iz]]
+
+
 
     for i in np.arange(0,len(h_vars)):
         h_var = h_vars[i]; unit = units[i]; ylabel = Ylabels[i]
 
-        cutoff = 40
-        signal_LP_0 = low_pass_filter(h_var[0], cutoff)
-        signal_LP_1 = low_pass_filter(h_var[1], cutoff)
-        signal_LP_2 = low_pass_filter(h_var[2], cutoff)
+        # cutoff = 40
+        # signal_LP_0 = low_pass_filter(h_var[0], cutoff)
+        # signal_LP_1 = low_pass_filter(h_var[1], cutoff)
+        # signal_LP_2 = low_pass_filter(h_var[2], cutoff)
+
+        dt = Time_sampling[1]-Time_sampling[0]
 
         frq_0,FFT_0 = temporal_spectra(h_var[0],dt,Variables[i])
         frq_1,FFT_1 = temporal_spectra(h_var[1],dt,Variables[i])
-        frq_2,FFT_2 = temporal_spectra(h_var[2],dt,Variables[i])
+        #frq_2,FFT_2 = temporal_spectra(h_var[2],dt,Variables[i])
 
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(14,8))
+        fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(14,8)) #set to 2 change
         ax1.plot(frq_0, FFT_0)
         ax1.set_title('{} {}'.format(ylabel[0],unit[0]),fontsize=14)
         ax1.set_xscale("log")
@@ -283,10 +285,10 @@ if compare_FFT == True:
         ax2.set_title("{} {}".format(ylabel[1],unit[1]),fontsize=14)
         ax2.set_xscale("log")
         ax2.set_yscale("log")
-        ax3.plot(frq_2,FFT_2)
-        ax3.set_title("{} {}".format(ylabel[2],unit[2]),fontsize=14)
-        ax3.set_xscale("log")
-        ax3.set_yscale("log")
+        # ax3.plot(frq_2,FFT_2)
+        # ax3.set_title("{} {}".format(ylabel[2],unit[2]),fontsize=14)
+        # ax3.set_xscale("log")
+        # ax3.set_yscale("log")
         fig.supxlabel("Frequency [Hz]",fontsize=14)
         plt.tight_layout()
         plt.savefig(in_dir+"Bearing_Aero_Loads/FFT_{}.png".format(Variables[i]))
@@ -320,17 +322,11 @@ if plot_relative_contributions == True:
         
 
 if compare_total_correlations == True:
-    # Variables = ["Iy", "Iz","Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMz", "Aero_FBMy", "Aero_FBFy", "Aero_FBFz"]
-    # units = ["[m/s]","[m/s]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
-    # Ylabels = ["Iy", "Iz","Aerodynamic Bearing Reaction Force", "Aerodynamic Bearing Reaction Force y", 
-    #            "Aerodynamic Bearing Reaction Force z","[$-M_y/L_2$]", "[$M_z/L_2$]", "[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
-    # h_vars = [Iy, Iz, Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMz/1000, Aero_FBMy/1000, Aero_FBFy/1000, Aero_FBFz/1000]
-    Variables = ["IA", "RtAeroMR", "Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMy", "Aero_FBMz", "Aero_FBFy","Aero_FBFz"]
-    units = ["[$m^4/s$]","[kN-m]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
-    Ylabels = ["Asymmetry Parameter", "OOPBM","Magnitude Bearing Force", "Bearing Force y", "Bearing Force z",
-               "[$M_z/L_2$]", "[$-M_y/L_2$]","[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
-    h_vars = [IA, RtAeroMR/1000, Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMy/1000, Aero_FBMz/1000, Aero_FBFy/1000,
-              Aero_FBFz/1000]
+    
+    Variables = ["Iy", "Iz"]
+    units = ["[]","[]"]
+    Ylabels = ["Asymmetry in horizontal", "Asymmetry in vertical"]
+    h_vars = [Iy,Iz]
 
     for j in np.arange(0,len(h_vars)):
         for i in np.arange(0,len(h_vars)):
@@ -355,17 +351,10 @@ if compare_total_correlations == True:
 
 
 if compare_LPF_correlations == True:
-    # Variables = ["Iy", "Iz","Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMz", "Aero_FBMy", "Aero_FBFy", "Aero_FBFz"]
-    # units = ["[m/s]","[m/s]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
-    # Ylabels = ["Iy", "Iz","Aerodynamic Bearing Reaction Force", "Aerodynamic Bearing Reaction Force y", 
-    #            "Aerodynamic Bearing Reaction Force z","[$-M_y/L_2$]", "[$M_z/L_2$]", "[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
-    # h_vars = [Iy, Iz, Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMz/1000, Aero_FBMy/1000, Aero_FBFy/1000, Aero_FBFz/1000]
-    Variables = ["IA", "RtAeroMR", "Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMy", "Aero_FBMz", "Aero_FBFy","Aero_FBFz"]
-    units = ["[$m^4/s$]","[kN-m]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
-    Ylabels = ["Asymmetry Parameter", "OOPBM","Magnitude Bearing Force", "Bearing Force y", "Bearing Force z",
-               "[$M_z/L_2$]", "[$-M_y/L_2$]","[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
-    h_vars = [IA, RtAeroMR/1000, Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMy/1000, Aero_FBMz/1000, Aero_FBFy/1000,
-              Aero_FBFz/1000]
+    Variables = ["RtAeroMzs", "Iy"]
+    units = ["[kN]","[kN]"]
+    Ylabels = ["Aerodynamic moment z at hub", "Asymmetry in horizontal"]
+    h_vars = [RtAeroMzs/1000, Iy]
 
     for j in np.arange(0,len(h_vars)):
         for i in np.arange(0,len(h_vars)):
@@ -395,22 +384,30 @@ if compare_LPF_correlations == True:
 
 if plot_PDF == True:
 
-    Variables = ["Aero_FBR", "Aero_FBy", "Aero_FBz", "Aero_FBMz", "Aero_FBMy", "Aero_FBFy", "Aero_FBFz"]
-    units = ["[kN]","[kN]","[kN]","[kN]","[kN]","[kN]","[kN]"]
-    Ylabels = ["Bearing Reaction Force", "Bearing Reaction Force y", "Bearing Reaction Force z",
-               "[$-M_y/L_2$]", "[$M_z/L_2$]", "[$-F_y(L_1+L_2)/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
-    h_vars = [Aero_FBR/1000, Aero_FBy/1000, Aero_FBz/1000, Aero_FBMz/1000, Aero_FBMy/1000, Aero_FBFy/1000, Aero_FBFz/1000]
-    # Variables = ["FBy", "FBz","FBMy", "FBFy", "FBMz", "FBFz"]
-    # units = ["[kN]", "[kN]","[kN]","[kN]","[kN]","[kN]"]
-    # Ylabels = ["Bearing Force y direction", "Bearing Force z direction", "[$M_z/L_2$]",
-    #            "[$-F_y(L_1+L_2)/L_2$]","[$-M_y/L_2$]","[$-F_z(L_1+L_2)/L_2$]"]
-    # h_vars = [FBy, FBz, FBMy, FBFy, FBMz, FBFz]
+    Variables = ["RtAeroFys", "RtAeroFzs", "RtAeroMys", "RtAeroMzs", "RtAeroMR", 
+                    "LSShftFys","LSShftFzs", "LSSTipMys", "LSSTipMzs", "LSSTipMR",
+                    "FBy", "FBz", "FBR"]
+    units = ["[kN]","[kN]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]","[kN]"]
+    Ylabels = ["Rotor Aerodynamic Force y direction fixed frame of reference","Rotor Aerodynamic Force z direction fixed frame of reference",
+                "Rotor Aerodynamic Moment y direction fixed frame of reference", "Rotor Aerodynamic Moment z direction fixed frame of reference",
+                "Rotor Aerodynamic OOPBM fixed frame of reference",
+                "Rotor Aeroelastic Force y direction fixed frame of reference", "Rotor Aeroelastic Force z direction fixed frame of reference",
+               "Rotor Aeroelastic Moment y direction fixed frame of reference",
+                "Rotor Aeroelastic Moment z direction fixed frame of reference","Rotor Aeroelastic OOPBM fixed frame of reference",
+                "LSS Aeroelastic Moment y direction fixed frame of reference","LSS Aeroelastic Moment z direction fixed frame of reference",
+                "Bearing Force y direction", "Bearing Force z direction", "Bearing Force"]
+    
+    h_vars = [RtAeroFys/1000, RtAeroFzs/1000, RtAeroMys/1000, RtAeroMzs/1000, RtAeroMR/1000, LSShftFys,
+                LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, FBy, FBz, FBR]
 
     for i in np.arange(0,len(h_vars)):
         cutoff = 40
         signal_LP = low_pass_filter(h_vars[i], cutoff)
 
         P,X,mu,std,S,k = probability_dist(signal_LP)
+
+        txt = "mean = {0}{1}\nstandard deviation = {2}{1}".format(mu,units[i],std)
+        print(Variables[i], txt)
 
         idx1 = np.searchsorted(X,mu-std)
         idx2 = np.searchsorted(X,mu+std)
@@ -424,5 +421,88 @@ if plot_PDF == True:
         plt.ylabel("Probability",fontsize=16)
         plt.xlabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=28)
         plt.tight_layout()
-        plt.savefig(in_dir+"Aero_PDFs/{0}".format(Variables[i]))
+        #plt.savefig(in_dir+"Aero_PDFs/{0}".format(Variables[i]))
         plt.close()
+
+
+if plot_derivative == True:
+
+    Variables = ["IA"]
+    units = ["[$m^4/s$]"]
+    Ylabels = ["Asymmetry parameter"]
+    h_vars = [IA]
+
+    for i in np.arange(0,len(h_vars)):
+
+        d_var_dt = []
+        for j in np.arange(0,len(h_vars[i])-1):
+            d_var_dt.append( (IA[j+1]-IA[j])/(Time_sampling[j+1]-Time_sampling[j]) )
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling[:-1],d_var_dt)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("d{}/dt - Time derivative of {}".format(Variables[i], Ylabels[i]),fontsize=16)
+        plt.tight_layout()
+        plt.savefig(out_dir+"{}.png".format(Variables[i]))
+        plt.close()
+
+        dt = Time_sampling[1] - Time_sampling[0]
+
+        frq,FFT = temporal_spectra(h_vars[i],dt,Variables[i])
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(frq, FFT)
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.xlabel("Frequency [Hz]",fontsize=16)
+        plt.ylabel("PSD - d{}/dt - Time derivative of {}".format(Variables[i], Ylabels[i]),fontsize=16)
+        plt.tight_layout()
+        plt.savefig(out_dir+"FFT_{}.png".format(Variables[i]))
+        plt.close()
+
+
+if plot_moving_stats == True:
+
+    Variables = ["FBR", "Mys", "Mzs","IA"]
+    units = ["[kN]", "[kN]", "[kN]","[$m^4/s$]"]
+    h_vars = [Aero_FBR, RtAeroMys, RtAeroMzs,IA]
+
+    fig, axs = plt.subplots(4, 1, sharex=True, figsize=(14,8))
+        
+    i = 0
+    for ax in axs.ravel():
+        
+        # some sample data
+        if i == 3:
+            ts = pd.Series(h_vars[i],Time_sampling)
+            #ts.rolling(window=4).mean().plot(style='k--',ax=ax)
+            ts.plot(style='b-',ax=ax)
+        else:
+            ts = pd.Series(h_vars[i], index=Time_OF)
+            #ts.rolling(window=400).mean().plot(style='k--',ax=ax)
+
+            ts.rolling(window=400).var().plot(style='r-',ax=ax)
+
+            t = ts.index
+            v = ts.values
+
+            f = interpolate.interp1d(Time_sampling,IA)
+            IA_interp = f(t)
+
+            corr = correlation_coef(v,IA_interp)
+
+        #plot the time series
+        #ts.plot(style='b-',ax=ax)
+        plt.xlim(left=200)
+
+
+
+        if i == 3:
+            ax.set_title('{} {}'.format(Variables[i],units[i]))
+        else:
+            ax.set_title('Variance {} {} correlated with IA = {}'.format(Variables[i],units[i],round(corr,2)))
+        fig.supxlabel("Time [s]")
+        i+=1
+    plt.tight_layout()
+    plt.savefig(out_dir+"moving_stats.png")
+    plt.close()

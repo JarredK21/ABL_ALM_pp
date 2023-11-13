@@ -103,35 +103,44 @@ def delta_Ux(j,k,r,fx,fy):
     return delta_Ux
 
 
-def delta_y_Ux(it):
+def Iy_it(it):
 
     velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
 
     fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
-    vx1 = fx(63,0); vy1 = fy(63,0); vx2 = fx(-63,0); vy2 = fy(-63,0)
 
-    Ux_1 = vx1*np.cos(np.radians(29))+vy1*np.sin(np.radians(29))
-    Ux_2 = vx2*np.cos(np.radians(29))+vy2*np.sin(np.radians(29))
+    delta_z_Ux = []
+    for L_top_i in L_top:
+        for L_bottom_i in L_bottom:
+            r = L_top_i[1] - L_bottom_i[1]
+            ux_top = fx(L_top_i[0],L_top_i[1]); uy_top = fy(L_top_i[0],L_top_i[1])
+            Ux_1 = ux_top*np.cos(np.radians(29))+uy_top*np.sin(np.radians(29))
+            ux_bottom = fx(L_bottom_i[0],L_bottom_i[1]); uy_bottom = fy(L_bottom_i[0],L_bottom_i[1])
+            Ux_2 = ux_bottom*np.cos(np.radians(29))+uy_bottom*np.sin(np.radians(29))
+            
+            delta_z_Ux.append(r*(Ux_1-Ux_2))
 
-    delta_y_Ux = Ux_1 - Ux_2
-
-    return delta_y_Ux
+    return max(delta_z_Ux)
 
 
-def delta_z_Ux(it):
+def Iz_it(it):
 
     velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
 
     fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
-    vx1 = fx(0,63); vy1 = fy(0,63); vx2 = fx(0,-63); vy2 = fy(0,-63)
 
-    Ux_1 = vx1*np.cos(np.radians(29))+vy1*np.sin(np.radians(29))
-    Ux_2 = vx2*np.cos(np.radians(29))+vy2*np.sin(np.radians(29))
+    delta_y_Ux = []
+    for L_right_i in L_right:
+        for L_left_i in L_left:
+            r = L_right_i[0] - L_left_i[0]
+            ux_right = fx(L_right_i[0],L_right_i[1]); uy_right = fy(L_right_i[0],L_right_i[1])
+            Ux_1 = ux_right*np.cos(np.radians(29))+uy_right*np.sin(np.radians(29))
+            ux_left = fx(L_left_i[0],L_left_i[1]); uy_left = fy(L_left_i[0],L_left_i[1])
+            Ux_2 = ux_left*np.cos(np.radians(29))+uy_left*np.sin(np.radians(29))
+            
+            delta_y_Ux.append(r*(Ux_1-Ux_2))
 
-    delta_z_Ux = Ux_1 - Ux_2
-
-    return delta_z_Ux
-
+    return max(delta_y_Ux)
 
 
 #directories
@@ -272,6 +281,24 @@ print("line 201", time_idx, time.time()-start_time)
 offsets = [0.0,-63.0]
 group_label = [0.0,63.0]
 
+
+#defining asymmetry domains
+L_bottom_int = np.linspace(-63,-1.5,200)
+L_top_int = np.linspace(63,1.5,200)
+l = np.linspace(-1.5,1.5,10)
+
+L_bottom = []
+L_top = []
+L_right = []
+L_left = []
+for L_bottom_i,L_top_i in zip(L_bottom_int,L_top_int):
+    for l_i in l:
+        L_bottom.append([l_i,L_bottom_i])
+        L_top.append([l_i,L_top_i])
+        L_right.append([L_top_i,l_i])
+        L_left.append([L_bottom_i,l_i])
+
+
 ic = 0
 for offset in offsets:
 
@@ -383,29 +410,29 @@ for offset in offsets:
 
 
         elif Variable[0:2] == "Iy":
-            Iy_it = []
+            Iy = []
             print("Iy calcs")
             with Pool() as pool:
                 i_Iy = 1
-                for Iy_i in pool.imap(delta_y_Ux, np.arange(0,time_idx)):
-                    Iy_it.append(Iy_i)
+                for Iy_i in pool.imap(Iy_it, np.arange(0,time_idx)):
+                    Iy.append(Iy_i)
                     print(i_Iy,time.time()-start_time)
                     i_Iy+=1
-                Iy_it = np.array(Iy_it)
-                Iy[:] = Iy_it; del Iy_it
+                Iy = np.array(Iy)
+                Iy[:] = Iy; del Iy
 
 
         elif Variable[0:2] == "Iz":
-            Iz_it = []
+            Iz = []
             print("Iz calcs")
             with Pool() as pool:
                 i_Iz = 1
-                for Iz_i in pool.imap(delta_z_Ux, np.arange(0,time_idx)):
-                    Iz_it.append(Iz_i)
+                for Iz_i in pool.imap(Iz_it, np.arange(0,time_idx)):
+                    Iz.append(Iz_i)
                     print(i_Iz,time.time()-start_time)
                     i_Iz+=1
-                Iz_it = np.array(Iz_it)
-                Iz[:] = Iz_it; del Iz_it
+                Iz = np.array(Iz)
+                Iz[:] = Iz; del Iz
 
 
     del velocityx; velocityy; velocityz
