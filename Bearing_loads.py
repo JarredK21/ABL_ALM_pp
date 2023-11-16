@@ -102,11 +102,11 @@ a = Dataset(in_dir+"Dataset.nc")
 
 #plotting options
 compare_variables = False
-compare_FFT = True
+compare_FFT = False
 plot_relative_contributions = False
 compare_total_correlations = False
 compare_LPF_correlations = False
-plot_PDF = False
+plot_PDF = True
 plot_derivative = False
 plot_moving_stats = False
 
@@ -168,7 +168,7 @@ LSSGagMys = np.array(a.variables["LSSGagMys"][Time_start_idx:Time_end_idx])
 LSSGagMzs = np.array(a.variables["LSSGagMzs"][Time_start_idx:Time_end_idx])
 LSSGagMR = np.sqrt( np.add(np.square(LSSGagMys), np.square(LSSGagMzs)) )
 
-L1 = 1.912; L2 = 5
+L1 = 1.912; L2 = 2.09
 
 FBMy = LSSTipMzs/L2; FBFy = -LSShftFys*((L1+L2)/L2)
 FBMz = -LSSTipMys/L2; FBFz = -LSShftFzs*((L1+L2)/L2)
@@ -200,14 +200,14 @@ Iz = np.array(group.variables["Iz"])
 f = interpolate.interp1d(Time_sampling,Ux)
 Ux = f(Time_OF)
 
-# f = interpolate.interp1d(Time_sampling,IA)
-# IA = f(Time_OF)
+f = interpolate.interp1d(Time_sampling,IA)
+IA = f(Time_OF)
 
-# f = interpolate.interp1d(Time_sampling,Iy)
-# Iy = f(Time_OF)
+f = interpolate.interp1d(Time_sampling,Iy)
+Iy = f(Time_OF)
 
-# f = interpolate.interp1d(Time_sampling,Iz)
-# Iz = f(Time_OF)
+f = interpolate.interp1d(Time_sampling,Iz)
+Iz = f(Time_OF)
 
 f = interpolate.interp1d(Time_sampling,Uy)
 Uy = f(Time_OF)
@@ -351,15 +351,15 @@ if compare_total_correlations == True:
 
 
 if compare_LPF_correlations == True:
-    Variables = ["RtAeroMzs", "Iy"]
-    units = ["[kN]","[kN]"]
-    Ylabels = ["Aerodynamic moment z at hub", "Asymmetry in horizontal"]
-    h_vars = [RtAeroMzs/1000, Iy]
+    Variables = ["FB", "IA"]
+    units = ["[kN]","[$m^4/s$]"]
+    Ylabels = ["Aerodynamic Bearing Force", "Asymmetry parameter"]
+    h_vars = [Aero_FBR/1000, IA]
 
     for j in np.arange(0,len(h_vars)):
         for i in np.arange(0,len(h_vars)):
 
-            cutoff = 0.1
+            cutoff = 0.4
             signal_LP_0 = low_pass_filter(h_vars[i], cutoff)
             signal_LP_1 = low_pass_filter(h_vars[j], cutoff)
 
@@ -375,10 +375,10 @@ if compare_LPF_correlations == True:
             ax2.plot(Time_OF,signal_LP_1,"-r")
             ax2.set_ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=14)
 
-            plt.title("Low passs filtered at 0.1Hz.\nCorrelation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
+            plt.title("Low passs filtered at {0}Hz.\nCorrelation: {1} with {2} = {3}".format(cutoff,Ylabels[j],Ylabels[i],corr),fontsize=16)
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
-            plt.savefig(in_dir+"Aero_correlations/LPF_corr_{0}_{1}.png".format(Variables[j],Variables[i]))
+            plt.savefig(in_dir+"Aero_correlations/LPF_{0}_corr_{1}_{2}.png".format(cutoff,Variables[j],Variables[i]))
             plt.close(fig)
 
 
@@ -398,7 +398,7 @@ if plot_PDF == True:
                 "Bearing Force y direction", "Bearing Force z direction", "Bearing Force"]
     
     h_vars = [RtAeroFys/1000, RtAeroFzs/1000, RtAeroMys/1000, RtAeroMzs/1000, RtAeroMR/1000, LSShftFys,
-                LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, FBy, FBz, FBR]
+                LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, Aero_FBy/1000, Aero_FBz/1000, Aero_FBR/1000]
 
     for i in np.arange(0,len(h_vars)):
         cutoff = 40

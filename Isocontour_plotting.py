@@ -115,10 +115,9 @@ start_time = time.time()
 precursor = Dataset("./abl_statistics60000.nc")
 Time_pre = np.array(precursor.variables["time"])
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
-t_start = np.searchsorted(precursor.variables["time"],32300)
-t_end = np.searchsorted(precursor.variables["time"],33500)
-u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
-v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
+t_start = np.searchsorted(precursor.variables["time"],32500)
+u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
+v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 del precursor
@@ -130,29 +129,37 @@ df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/N
 #Openfast time
 Time_OF = df["Time_[s]"]
 #Azimuthal position for blade 1
-Azimuth = np.array(np.radians(df["Azimuth_[deg]"])); del df
+Azimuth = np.array(np.radians(df["Azimuth_[deg]"]))
+del df
 
 print("line 144", time.time()-start_time)
 
 #directories
 in_dir = "./"
 out_dir = in_dir + "ISOplots/"
+isExist = os.path.exists(out_dir)
+if isExist == False:
+    os.makedirs(out_dir)
 video_folder = in_dir + "videos/"
 isExist = os.path.exists(video_folder)
 if isExist == False:
     os.makedirs(video_folder)
 
-planes = ["l","r", "t"]
-plane_labels = ["longitudinal","rotor", "transverse"]
+planes = ["l","r", "tr","p_i","p_t"]
+plane_labels = ["horizontal","rotor", "transverse rotor", "inflow", "longitudinal"]
 
 ip = 0
 for plane in planes:
     if plane == "l":
-        offsets = [85]
+        offsets = [22,85,142.5]
     elif plane == "r":
-        offsets = [0.0, -63.0, -126, 126]
+        offsets = [-5.5,-63]
+    elif plane == "tr":
+        offsets = [0.0]
+    elif plane == "i":
+        offsets = [0.0]
     elif plane == "t":
-        offsets = [1280, 1930, 3190, 3820]
+        offsets = [0.0]
 
     ic = 0
     for offset in offsets:
@@ -176,7 +183,7 @@ for plane in planes:
         elif p.axis3[2] == 1:
             normal = "z"
         else:
-            normal = int(np.degrees(np.arccos(p.axis3[0])))
+            normal = 29
 
         #define plotting axes
         coordinates = np.array(p.variables["coordinates"])
@@ -311,7 +318,7 @@ for plane in planes:
                         return u_k
                     
                     if fluc_vel == True:
-                        u = mean_velocity(u)
+                        u = u - mean_velocity(u)
                     
 
                     print("line 328",time.time()-start_time)
@@ -373,7 +380,7 @@ for plane in planes:
 
                         cb = plt.colorbar(cs)
 
-                        if plane == "r" and offset == 0.0 or plane == "r" and offset == "-63.0":
+                        if plane == "r" and offset == -5.5:
                             YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
 
                             plt.plot(YB1,ZB1,color="k",linewidth = 0.5)

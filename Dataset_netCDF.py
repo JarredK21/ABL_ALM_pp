@@ -28,29 +28,7 @@ def Ux_it_offset(it):
     return np.average(Ux_rotor)
 
 
-# def Uy_it_offset(it):
-#     Uy_rotor = []
-#     ijk = 0
-#     for j,k in zip(ys,zs):
-#         r = np.sqrt(j**2 + k**2)
-#         if r <= 63 and r > 1.5:
-#             Uy_rotor.append(-velocityx[it,ijk]*np.sin(np.radians(29))+velocityy[it,ijk]*np.cos(np.radians(29)))
-#         ijk+=1
-#     return np.average(Uy_rotor)
-
-
-# def Uz_it_offset(it):
-#     Uz_rotor = []
-#     ijk = 0
-#     for j,k in zip(ys,zs):
-#         r = np.sqrt(j**2 + k**2)
-#         if r <= 63 and r > 1.5:
-#             Uz_rotor.append(velocityz[it,ijk])
-#         ijk+=1
-#     return np.average(Uz_rotor)
-
-
-def IA_it_offset(it):
+def IA_it(it):
 
     velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
 
@@ -63,6 +41,36 @@ def IA_it_offset(it):
             delta_Ux_i = delta_Ux(j,k,r,fx,fy)
             IA += r * delta_Ux_i * dA
     return IA
+
+
+def IB_it(it):
+
+    velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
+
+    fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
+
+    IB = 0
+    dr = (63-1.5)/200
+    for r in np.arange(1.5,63,200):
+            delta_Ux_i = delta_Ux_r(r,fx,fy,it)
+            IB += r * delta_Ux_i * dr
+    return IB
+
+
+def Iyz_it(it):
+
+    velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
+
+    fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
+
+    Iy = 0
+    Iz = 0
+    dr = (63-1.5)/200
+    for r in np.arange(1.5,63,200):
+            delta_Ux_y, delta_Ux_z = delta_Ux_yz(r,fx,fy,it)
+            Iy += delta_Ux_z * dr
+            Iz += delta_Ux_y * dr
+    return Iy, Iz
 
 
 def delta_Ux(j,k,r,fx,fy):
@@ -99,44 +107,81 @@ def delta_Ux(j,k,r,fx,fy):
     return delta_Ux
 
 
-def Iy_it(it):
+def delta_Ux_r(r,fx,fy,it):
+    theta = Azimuth[it]
 
-    velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
+    Y = r*np.cos(theta)
+    Z = r*np.sin(theta)
 
-    fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
+    if theta + ((2*np.pi)/3) > (2*np.pi):
+        theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
+    else:
+        theta_1 = theta + (2*np.pi)/3
 
-    delta_z_Ux = []
-    for L_top_i in L_top:
-        for L_bottom_i in L_bottom:
-            r = L_top_i[1] - L_bottom_i[1]
-            ux_top = fx(L_top_i[0],L_top_i[1]); uy_top = fy(L_top_i[0],L_top_i[1])
-            Ux_1 = ux_top*np.cos(np.radians(29))+uy_top*np.sin(np.radians(29))
-            ux_bottom = fx(L_bottom_i[0],L_bottom_i[1]); uy_bottom = fy(L_bottom_i[0],L_bottom_i[1])
-            Ux_2 = ux_bottom*np.cos(np.radians(29))+uy_bottom*np.sin(np.radians(29))
-            
-            delta_z_Ux.append(r*(Ux_1-Ux_2))
-
-    return max(delta_z_Ux)
+    Y_1 = r*np.cos(theta_1)
+    Z_1 = r*np.sin(theta_1)
 
 
-def Iz_it(it):
+    if theta - ((2*np.pi)/3) < 0:
+        theta_2 = theta - ((2*np.pi)/3) + (2*np.pi)
+    else:
+        theta_2 = theta - ((2*np.pi)/3)
 
-    velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
+    Y_2 = r*np.cos(theta_2)
+    Z_2 = r*np.sin(theta_2)
 
-    fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
+    vx = fx(Y,Z); vy = fy(Y,Z)
+    vx_1 = fx(Y_1,Z_1); vy_1 = fy(Y_1,Z_1)
+    vx_2 = fx(Y_2,Z_2); vy_2 = fy(Y_2,Z_2)
 
-    delta_y_Ux = []
-    for L_right_i in L_right:
-        for L_left_i in L_left:
-            r = L_right_i[0] - L_left_i[0]
-            ux_right = fx(L_right_i[0],L_right_i[1]); uy_right = fy(L_right_i[0],L_right_i[1])
-            Ux_1 = ux_right*np.cos(np.radians(29))+uy_right*np.sin(np.radians(29))
-            ux_left = fx(L_left_i[0],L_left_i[1]); uy_left = fy(L_left_i[0],L_left_i[1])
-            Ux_2 = ux_left*np.cos(np.radians(29))+uy_left*np.sin(np.radians(29))
-            
-            delta_y_Ux.append(r*(Ux_1-Ux_2))
+    Ux_0 = vx*np.cos(np.radians(29))+vy*np.sin(np.radians(29))
+    Ux_1 = vx_1*np.cos(np.radians(29))+vy_1*np.sin(np.radians(29))
+    Ux_2 = vx_2*np.cos(np.radians(29))+vy_2*np.sin(np.radians(29))
 
-    return max(delta_y_Ux)
+    delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
+
+    return delta_Ux
+
+
+def delta_Ux_yz(r,fx,fy,it):
+    theta = Azimuth[it]
+
+    Y = r*np.cos(theta)
+    Z = r*np.sin(theta)
+
+    if theta + ((2*np.pi)/3) > (2*np.pi):
+        theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
+    else:
+        theta_1 = theta + (2*np.pi)/3
+
+    Y_1 = r*np.cos(theta_1)
+    Z_1 = r*np.sin(theta_1)
+
+
+    if theta - ((2*np.pi)/3) < 0:
+        theta_2 = theta - ((2*np.pi)/3) + (2*np.pi)
+    else:
+        theta_2 = theta - ((2*np.pi)/3)
+
+    Y_2 = r*np.cos(theta_2)
+    Z_2 = r*np.sin(theta_2)
+
+    vx = fx(Y,Z); vy = fy(Y,Z)
+    vx_1 = fx(Y_1,Z_1); vy_1 = fy(Y_1,Z_1)
+    vx_2 = fx(Y_2,Z_2); vy_2 = fy(Y_2,Z_2)
+
+    lz0 = Z - Z_1; lz1 = Z - Z_2; lz2 = Z_1 - Z_2
+    ly0 = Y - Y_1; ly1 = Y - Y_2; ly2 = Y_1 - Y_2
+
+    Ux_0 = vx*np.cos(np.radians(29))+vy*np.sin(np.radians(29))
+    Ux_1 = vx_1*np.cos(np.radians(29))+vy_1*np.sin(np.radians(29))
+    Ux_2 = vx_2*np.cos(np.radians(29))+vy_2*np.sin(np.radians(29))
+
+    delta_Ux_y =  np.max( [ly0*abs( Ux_0 - Ux_1 ), ly1*abs( Ux_0 - Ux_2 ), ly2*abs(Ux_1 - Ux_2)] )
+    delta_Ux_z =  np.max( [lz0*abs( Ux_0 - Ux_1 ), lz1*abs( Ux_0 - Ux_2 ), lz2*abs(Ux_1 - Ux_2)] )
+
+    return delta_Ux_y, delta_Ux_z
+
 
 
 #directories
@@ -223,6 +268,8 @@ for i in np.arange(0,len(Variables)):
     elif Variable == "Azimuth":
         Azimuth[:] = signal; del signal
 
+Azimuth = np.radians(np.array(df["Azimuth_[deg]"]))
+
 del df
 
 print("line 191",time.time()-start_time)
@@ -241,23 +288,6 @@ offsets = [0.0,-63.0]
 group_label = [0.0,63.0]
 
 
-#defining asymmetry domains
-L_bottom_int = np.linspace(-63,-1.5,200)
-L_top_int = np.linspace(63,1.5,200)
-l = np.linspace(-1.5,1.5,10)
-
-L_bottom = []
-L_top = []
-L_right = []
-L_left = []
-for L_bottom_i,L_top_i in zip(L_bottom_int,L_top_int):
-    for l_i in l:
-        L_bottom.append([l_i,L_bottom_i])
-        L_top.append([l_i,L_top_i])
-        L_right.append([L_top_i,l_i])
-        L_left.append([L_bottom_i,l_i])
-
-
 ic = 0
 for offset in offsets:
 
@@ -266,20 +296,16 @@ for offset in offsets:
     group = ncfile.createGroup("{}".format(group_label[ic]))
 
     Ux = group.createVariable("Ux", np.float64, ('sampling'),zlib=True)
-    #Uy = group.createVariable("Uy", np.float64, ('sampling'),zlib=True)
-    #Uz = group.createVariable("Uz", np.float64, ('sampling'),zlib=True)
     IA = group.createVariable("IA", np.float64, ('sampling'),zlib=True)
+    IB = group.createVariable("IB",np.float64, ('sampling'),zlib=True)
     Iy = group.createVariable("Iy", np.float64, ('sampling'),zlib=True)
     Iz = group.createVariable("Iz", np.float64, ('sampling'),zlib=True)
 
     p_rotor = a.groups["p_r"]; del a
 
     velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"])
-    #velocityz = np.array(p_rotor.variables["velocityz"])
 
-    # Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset), "Uy_{0}".format(offset), "Uz_{0}".format(offset),
-    #              "Iy_{0}".format(offset), "Iz_{0}".format(offset)]
-    Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset), "Iy_{0}".format(offset), "Iz_{0}".format(offset)]
+    Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset), "IB_{0}".format(offset), "I__{0}".format(offset)]
 
     x = p_rotor.ijk_dims[0] #no. data points
     y = p_rotor.ijk_dims[1] #no. data points
@@ -330,72 +356,50 @@ for offset in offsets:
                 Ux[:] = Ux_it; del Ux_it
 
 
-        # elif Variable[0:2] == "Uy":
-        #     Uy_it = []
-        #     print("Uy calcs")
-        #     with Pool() as pool:
-        #         i_Uy = 1
-        #         for Uy_i in pool.imap(Uy_it_offset, np.arange(0,time_idx)):
-        #             Uy_it.append(Uy_i)
-        #             print(i_Uy,time.time()-start_time)
-        #             i_Uy+=1
-        #         Uy_it = np.array(Uy_it)
-        #         Uy[:] = Uy_it; del Uy_it
-
-
-        # elif Variable[0:2] == "Uz":
-        #     Uz_it = []
-        #     print("Uz calcs")
-        #     with Pool() as pool:
-        #         i_Uz = 1
-        #         for Uz_i in pool.imap(Uz_it_offset, np.arange(0,time_idx)):
-        #             Uz_it.append(Uz_i)
-        #             print(i_Uz,time.time()-start_time)
-        #             i_Uz+=1
-        #         Uz_it = np.array(Uz_it)
-        #         Uz[:] = Uz_it; del Uz_it
-
-
         elif Variable[0:2] == "IA":
-            IA_it = []
+            IA_it_Arr = []
             print("IA calcs")
             with Pool() as pool:
                 i_IA = 1
-                for IA_i in pool.imap(IA_it_offset, np.arange(0,time_idx)):
-                    IA_it.append(IA_i)
+                for IA_i in pool.imap(IA_it, np.arange(0,time_idx)):
+                    IA_it_Arr.append(IA_i)
                     print(i_IA,time.time()-start_time)
                     i_IA+=1
-                IA_it = np.array(IA_it)
-                IA[:] = IA_it; del IA_it
+                IA_it_Arr = np.array(IA_it_Arr)
+                IA[:] = IA_it_Arr; del IA_it_Arr
 
 
-        elif Variable[0:2] == "Iy":
+        elif Variable[0:2] == "IB":
+            IB_it_Arr = []
+            print("IB calcs")
+            with Pool() as pool:
+                i_IB = 1
+                for IB_i in pool.imap(IB_it, np.arange(0,time_idx)):
+                    IB_it_Arr.append(IB_i)
+                    print(i_IB,time.time()-start_time)
+                    i_IB+=1
+                IB_it_Arr = np.array(IB_it_Arr)
+                IB[:] = IB_it_Arr; del IB_it_Arr
+
+
+        elif Variable[0:2] == "I_":
             Iy = []
-            print("Iy calcs")
-            with Pool() as pool:
-                i_Iy = 1
-                for Iy_i in pool.imap(Iy_it, np.arange(0,time_idx)):
-                    Iy.append(Iy_i)
-                    print(i_Iy,time.time()-start_time)
-                    i_Iy+=1
-                Iy = np.array(Iy)
-                Iy[:] = Iy; del Iy
-
-
-        elif Variable[0:2] == "Iz":
             Iz = []
-            print("Iz calcs")
+            print("Iy and Iz calcs")
             with Pool() as pool:
-                i_Iz = 1
-                for Iz_i in pool.imap(Iz_it, np.arange(0,time_idx)):
+                i_I = 1
+                for Iy_i,Iz_i in pool.imap(Iyz_it, np.arange(0,time_idx)):
+                    Iy.append(Iy_i)
                     Iz.append(Iz_i)
-                    print(i_Iz,time.time()-start_time)
-                    i_Iz+=1
+                    print(i_I,time.time()-start_time)
+                    i_I+=1
+                Iy = np.array(Iy)
                 Iz = np.array(Iz)
+                Iy[:] = Iy; del Iy
                 Iz[:] = Iz; del Iz
 
 
-    del velocityx; velocityy; #velocityz
+    del velocityx; velocityy
 
     print(ncfile.groups)
     ic+=1

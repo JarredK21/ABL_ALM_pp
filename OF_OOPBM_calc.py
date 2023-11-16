@@ -98,7 +98,7 @@ def start_stop_idx(y):
 
 
 
-in_dir = "../../NREL_5MW_3.4.1/Steady_Rigid_blades/"
+in_dir = "../../NREL_5MW_3.4.1/Steady_Rigid_blades_shear_0.085/"
 
 df = io.fast_output_file.FASTOutputFile(in_dir+"NREL_5MW_Main.out").toDataFrame()
 
@@ -151,12 +151,13 @@ My_add = np.subtract(LSSTipMys,RtAeroMys/1000)
 Mz_add = np.subtract(LSSTipMzs,RtAeroMzs/1000)
 MR_add = np.subtract(LSSTipMR,RtAeroMR/1000)
 
-L1 = 1.912; L2 = 5
+L1 = 1.912; L2 = 2.09
 
-FBy = -((np.add((RtAeroMzs/1000),(RtAeroFys/1000)*(L1+L2))/L2))
-FBz = (np.subtract((RtAeroMys/1000),(RtAeroFzs/1000)*(L1+L2))/L2)
-FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
-Theta_FB = np.degrees(np.arctan2(FBz,FBy))
+Aero_FBMy = RtAeroMzs/L2; Aero_FBFy = -RtAeroFys*((L1+L2)/L2)
+Aero_FBMz = -RtAeroMys/L2; Aero_FBFz = -RtAeroFzs*((L1+L2)/L2)
+
+Aero_FBy = Aero_FBMy + Aero_FBFy; Aero_FBz = Aero_FBMz + Aero_FBFz
+FBR = np.sqrt(np.add(np.square(Aero_FBy),np.square(Aero_FBz)))
 
 idx = len(Time)-1
 
@@ -174,6 +175,7 @@ hvelmag = np.average(hvelmag,axis=0)
 
 z_h = z_h[:11]
 hvelmag = hvelmag[:11]
+
 
 plt.plot(vel_profile,z,"bo-")
 plt.plot(hvelmag,z_h,"r*-")
@@ -202,7 +204,7 @@ if plot_variables == True:
                 "LSS Aeroelastic Moment y direction fixed frame of reference","LSS Aeroelastic Moment z direction fixed frame of reference",
                 "Bearing Force y direction", "Bearing Force z direction", "Bearing Force"]
     h_vars = [RtAeroFys/1000, RtAeroFzs/1000, RtAeroMys/1000, RtAeroMzs/1000, RtAeroMR/1000, LSShftFys,
-                LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, FBy, FBz, FBR]
+                LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, Aero_FBy/1000, Aero_FBz/1000, FBR/1000]
 
     for i in np.arange(0,len(h_vars)):
         signal_LP = low_pass_filter(h_vars[i],cutoff=3)
@@ -232,7 +234,7 @@ if plot_PDF == True:
                 "Bearing Force y direction", "Bearing Force z direction", "Bearing Force"]
     
     h_vars = [RtAeroFys/1000, RtAeroFzs/1000, RtAeroMys/1000, RtAeroMzs/1000, RtAeroMR/1000, LSShftFys,
-                LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, FBy, FBz, FBR]
+                LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, Aero_FBy/1000, Aero_FBz/1000, FBR/1000]
 
     for i in np.arange(0,len(h_vars)):
 
@@ -266,7 +268,7 @@ if plot_FFT == True:
                 "Bearing Force y direction", "Bearing Force z direction", "Bearing Force"]
     
     h_vars = [RtAeroFys/1000, RtAeroFzs/1000, RtAeroMys/1000, RtAeroMzs/1000, RtAeroMR/1000, LSShftFys,
-                LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, FBy, FBz, FBR]
+                LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, Aero_FBy/1000, Aero_FBz/1000, FBR/1000]
 
     for i in np.arange(0,len(h_vars)):
         frq,PSD = temporal_spectra(h_vars[i],dt,Variables[i])
