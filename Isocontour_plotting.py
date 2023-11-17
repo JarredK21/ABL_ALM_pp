@@ -19,9 +19,12 @@ import pyFAST.input_output as io
 #isocontourplot
 def isocontourplot(u,x,y,normal,xs,ys,zs,Title,filename,dir):
     
-    if type(normal) == int: #rotor plane
+    if type(normal) == int and plane == "r" or type(normal) and plane == "tr": #rotor y',z planes
         u_plane = u.reshape(y,x)
         X,Y = np.meshgrid(ys,zs)
+    elif type(normal) == int and plane == "t":
+        u_plane = u.reshape(y,x)
+        X,Y = np.meshgrid(xs,zs)
     elif normal == "z":
         u_plane = u.reshape(x,y)
         X,Y = np.meshgrid(xs,ys)
@@ -43,8 +46,11 @@ def isocontourplot(u,x,y,normal,xs,ys,zs,Title,filename,dir):
     elif normal == "z":
         plt.xlabel("X axis [m]")
         plt.ylabel("Y axis [m]")
-    else:
+    elif type(normal) == int and plane == "r" or type(normal) and plane == "tr":
         plt.xlabel("Y' axis (rotor frame of reference) [m]")
+        plt.ylabel("Z' axis (rotor frame of reference) [m]")
+    elif type(normal) == int and plane == "t":
+        plt.xlabel("X' axis (rotor frame of reference) [m]")
         plt.ylabel("Z' axis (rotor frame of reference) [m]")
 
     plt.title(Title,fontsize=12)
@@ -243,7 +249,7 @@ for plane in planes:
 
         
         #loop over true velocity components
-        velocity_comps = ["velocityx","velocityy","velocityz","Horizontal velocity"]
+        velocity_comps = ["velocityx","velocityy","velocityz","Horizontal_velocity"]
         iv = 0
         for velocity_comp in velocity_comps:
             if velocity_plot[iv] == False:
@@ -260,7 +266,7 @@ for plane in planes:
 
                 if plot_isocontour == True:
                     #get velocity to plot for isocontour plots
-                    if velocity_comp == "Horizontal velocity":
+                    if velocity_comp == "Horizontal_velocity":
                         u = np.array(p.variables["velocityx"][it])
                         v = np.array(p.variables["velocityy"][it])
                         u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
@@ -272,7 +278,7 @@ for plane in planes:
 
                     #define titles and filenames for isocontour plots
                     if fluc_vel == True:
-                        if velocity_comp == "Horizontal velocity":
+                        if velocity_comp == "Horizontal_velocity":
                             Title = "{0} Plane. \nFluctuating {1} [m/s]: Offset = {2}, Time = {3}s".format(plane_labels[ip], velocity_comp[:],float(offset),np.round(Time[it],2))
                             filename = "{0}_Fluc_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),np.round(Time[it],2))
                         else:
@@ -280,7 +286,7 @@ for plane in planes:
                             filename = "{0}_Fluc_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),np.round(Time[it],2))
                     else:
                         u = np.array(u)
-                        if velocity_comp == "Horizontal velocity":
+                        if velocity_comp == "Horizontal_velocity":
                             Title = "{0} Plane. \n{1} [m/s]: Offset = {2}, Time = {3}s".format(plane_labels[ip],velocity_comp[:],float(offset),np.round(Time[it],2))
                             filename = "{0}_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),np.round(Time[it],2))
                         else:
@@ -304,7 +310,7 @@ for plane in planes:
                     os.makedirs(folder)
 
                     #velocity field
-                    if velocity_comp == "Horizontal velocity":
+                    if velocity_comp == "Horizontal_velocity":
                         u = np.array(p.variables["velocityx"])
                         v = np.array(p.variables["velocityy"])
                         u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
@@ -318,7 +324,7 @@ for plane in planes:
                         return u_k
                     
                     if fluc_vel == True:
-                        u = u - mean_velocity(u)
+                        u = mean_velocity(u)
                     
 
                     print("line 328",time.time()-start_time)
@@ -328,7 +334,7 @@ for plane in planes:
                     #for rotor and transverse planes always set cmin = 0
                     if custom_colorbar == False:                            
                         if fluc_vel == False:
-                            if plane == "r" and velocity_comp != "velocityz" or plane == "t" and velocity_comp != "velocityz":
+                            if plane != "l" and velocity_comp == "velocityx" or plane != "l" and velocity_comp == "Horizontal_velocity":
                                 cmin = 0
                             else:
                                 cmin = math.floor(np.min(u))
@@ -346,10 +352,23 @@ for plane in planes:
                     def Update(it):
 
                         U = u[it] #velocity time step it
+                        
+                        if it < 10:
+                            Time_idx = "000{}".format(it)
+                        elif it >= 10 and it < 100:
+                            Time_idx = "00{}".format(it)
+                        elif it >= 100 and it < 1000:
+                            Time_idx = "0{}".format(it)
+                        elif it >= 1000 and it < 10000:
+                            Time_idx = "{}".format(it)
 
-                        if type(normal) == int: #rotor plane
+
+                        if type(normal) == int and plane == "r" or type(normal) and plane == "tr": #rotor planes
                             u_plane = U.reshape(y,x)
                             X,Y = np.meshgrid(ys,zs)
+                        elif type(normal) == int and plane == "t":
+                            u_plane = U.reshape(y,x)
+                            X,Y = np.meshgrid(xs,zs)
                         elif normal == "z":
                             u_plane = U.reshape(x,y)
                             X,Y = np.meshgrid(xs,ys)
@@ -389,19 +408,19 @@ for plane in planes:
 
                         #define titles and filenames for movie
                         if fluc_vel == True:
-                            if velocity_comp == "Horizontal velocity":
+                            if velocity_comp == "Horizontal_velocity":
                                 Title = "{0} Plane. \nFluctuating {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip], velocity_comp[:],float(offset),round(T,4))
-                                filename = "{0}_Fluc_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
+                                filename = "{0}_Fluc_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),Time_idx)
                             else:
                                 Title = "{0} Plane. \nFluctuating velocity {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
-                                filename = "{0}_Fluc_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
+                                filename = "{0}_Fluc_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),Time_idx)
                         else:
-                            if velocity_comp == "Horizontal velocity":
+                            if velocity_comp == "Horizontal_velocity":
                                 Title = "{0} Plane. \n{1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
-                                filename = "{0}_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),round(T,4))
+                                filename = "{0}_{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[:],float(offset),Time_idx)
                             else:
                                 Title = "{0} Plane. \nTotal velocity {1} [m/s]: Offset = {2}, Time = {3}[s]".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
-                                filename = "{0}_Tot_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),round(T,4))
+                                filename = "{0}_Tot_vel{1}_{2}_{3}.png".format(plane_labels[ip],velocity_comp[-1],float(offset),Time_idx)
 
                         plt.title(Title)
                         plt.savefig(folder+filename)
@@ -435,12 +454,12 @@ for plane in planes:
 
                 #define titles and filenames for movie
                 if fluc_vel == True:
-                    if velocity_comp == "Horizontal velocity":
+                    if velocity_comp == "Horizontal_velocity":
                         filename = "{0}_Fluc_{1}_{2}.png".format(plane_labels[ip],velocity_comp[:],float(offset))
                     else:
                         filename = "{0}_Fluc_vel{1}_{2}.png".format(plane_labels[ip],velocity_comp[-1],float(offset))
                 else:
-                    if velocity_comp == "Horizontal velocity":
+                    if velocity_comp == "Horizontal_velocity":
                         filename = "{0}_{1}_{2}.png".format(plane_labels[ip],velocity_comp[:],float(offset))
                     else:
                         filename = "{0}_Tot_vel{1}_{2}.png".format(plane_labels[ip],velocity_comp[-1],float(offset))

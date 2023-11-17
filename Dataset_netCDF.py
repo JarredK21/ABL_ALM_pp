@@ -59,17 +59,20 @@ def IB_it(it):
 
 def Iyz_it(it):
 
-    velx = np.reshape(velocityx[it],(y,x)); vely = np.reshape(velocityy[it],(y,x))
+    M_velY = 0
+    M_velZ = 0
+    ijk = 0
+    for j,k in zip(ys,zs):
+        r = np.sqrt(j**2 + k**2)
+        if r <= 63 and r > 1.5:
+            N = 0
+            M_velY += (velocityx[it,ijk]*np.cos(np.radians(29))+velocityy[it,ijk]*np.sin(np.radians(29)))*j
+            M_velZ += (velocityx[it,ijk]*np.cos(np.radians(29))+velocityy[it,ijk]*np.sin(np.radians(29)))*k
+            N+=1
+        ijk+=1
+    Iy = M_velZ/N
+    Iz = M_velY/N
 
-    fx = interpolate.interp2d(Y,Z,velx,kind="linear"); fy = interpolate.interp2d(Y,Z,vely,kind="linear")
-
-    Iy = 0
-    Iz = 0
-    dr = (63-1.5)/200
-    for r in np.arange(1.5,63,200):
-            delta_Ux_y, delta_Ux_z = delta_Ux_yz(r,fx,fy,it)
-            Iy += delta_Ux_z * dr
-            Iz += delta_Ux_y * dr
     return Iy, Iz
 
 
@@ -138,49 +141,11 @@ def delta_Ux_r(r,fx,fy,it):
     Ux_1 = vx_1*np.cos(np.radians(29))+vy_1*np.sin(np.radians(29))
     Ux_2 = vx_2*np.cos(np.radians(29))+vy_2*np.sin(np.radians(29))
 
-    delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 )] )
+    delta_Ux =  np.max( [abs( Ux_0 - Ux_1 ), abs( Ux_0 - Ux_2 ), abs(Ux_1 - Ux_2)] )
 
     return delta_Ux
 
 
-def delta_Ux_yz(r,fx,fy,it):
-    theta = Azimuth[it]
-
-    Y = r*np.cos(theta)
-    Z = r*np.sin(theta)
-
-    if theta + ((2*np.pi)/3) > (2*np.pi):
-        theta_1 = theta +(2*np.pi)/3 - (2*np.pi)
-    else:
-        theta_1 = theta + (2*np.pi)/3
-
-    Y_1 = r*np.cos(theta_1)
-    Z_1 = r*np.sin(theta_1)
-
-
-    if theta - ((2*np.pi)/3) < 0:
-        theta_2 = theta - ((2*np.pi)/3) + (2*np.pi)
-    else:
-        theta_2 = theta - ((2*np.pi)/3)
-
-    Y_2 = r*np.cos(theta_2)
-    Z_2 = r*np.sin(theta_2)
-
-    vx = fx(Y,Z); vy = fy(Y,Z)
-    vx_1 = fx(Y_1,Z_1); vy_1 = fy(Y_1,Z_1)
-    vx_2 = fx(Y_2,Z_2); vy_2 = fy(Y_2,Z_2)
-
-    lz0 = Z - Z_1; lz1 = Z - Z_2; lz2 = Z_1 - Z_2
-    ly0 = Y - Y_1; ly1 = Y - Y_2; ly2 = Y_1 - Y_2
-
-    Ux_0 = vx*np.cos(np.radians(29))+vy*np.sin(np.radians(29))
-    Ux_1 = vx_1*np.cos(np.radians(29))+vy_1*np.sin(np.radians(29))
-    Ux_2 = vx_2*np.cos(np.radians(29))+vy_2*np.sin(np.radians(29))
-
-    delta_Ux_y =  np.max( [ly0*abs( Ux_0 - Ux_1 ), ly1*abs( Ux_0 - Ux_2 ), ly2*abs(Ux_1 - Ux_2)] )
-    delta_Ux_z =  np.max( [lz0*abs( Ux_0 - Ux_1 ), lz1*abs( Ux_0 - Ux_2 ), lz2*abs(Ux_1 - Ux_2)] )
-
-    return delta_Ux_y, delta_Ux_z
 
 
 
