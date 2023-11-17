@@ -16,50 +16,6 @@ import re
 import pyFAST.input_output as io
 
 
-#isocontourplot
-def isocontourplot(u,x,y,normal,xs,ys,zs,Title,filename,dir):
-    
-    if type(normal) == int and plane == "r" or type(normal) and plane == "tr": #rotor y',z planes
-        u_plane = u.reshape(y,x)
-        X,Y = np.meshgrid(ys,zs)
-    elif type(normal) == int and plane == "t":
-        u_plane = u.reshape(y,x)
-        X,Y = np.meshgrid(xs,zs)
-    elif normal == "z":
-        u_plane = u.reshape(x,y)
-        X,Y = np.meshgrid(xs,ys)
-    elif normal == "x":
-        u_plane = u.reshape(y,x)
-        X,Y = np.meshgrid(ys,zs)
-
-
-    fig = plt.figure()
-    plt.rcParams['font.size'] = 12
-    
-    plt.contourf(X,Y,u_plane, cmap=cm.coolwarm)
-    if normal == "x":
-        plt.xlabel("Y axis [m]")
-        plt.ylabel("Z axis [m]")
-    elif normal == "y":
-        plt.xlabel("X axis [m]")
-        plt.ylabel("Z axis [m]")
-    elif normal == "z":
-        plt.xlabel("X axis [m]")
-        plt.ylabel("Y axis [m]")
-    elif type(normal) == int and plane == "r" or type(normal) and plane == "tr":
-        plt.xlabel("Y' axis (rotor frame of reference) [m]")
-        plt.ylabel("Z' axis (rotor frame of reference) [m]")
-    elif type(normal) == int and plane == "t":
-        plt.xlabel("X' axis (rotor frame of reference) [m]")
-        plt.ylabel("Z' axis (rotor frame of reference) [m]")
-
-    plt.title(Title,fontsize=12)
-    plt.colorbar()
-    plt.tight_layout()
-    plt.savefig(dir+"{}".format(filename))
-    plt.close(fig)
-
-
 def coriolis_twist(u,v):
     twist = np.arctan(np.true_divide(v,u))
 
@@ -178,6 +134,27 @@ for plane in planes:
         Time = np.array(a.variables["time"])
         Time = Time - Time[0]
 
+        #plotting option
+        fluc_vel = False
+        plot_specific_offsets = False
+        plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
+        velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
+        plot_all_times = False
+        custom_colorbar = False
+
+        #time options
+        if plot_all_times == True:
+            tend_idx = np.searchsorted(Time,Time[-1])
+            Time_steps = np.arange(0,tend_idx)
+        else:
+            #specify time steps to plot instantaneous isocontours at
+            Time_steps = [0,10]
+
+        #colorbar options
+        if custom_colorbar == True:
+            #specify color bar
+            cmin = 0; cmax = 18
+
         x = p.ijk_dims[0] #no. data points
         y = p.ijk_dims[1] #no. data points
 
@@ -218,18 +195,6 @@ for plane in planes:
             ys = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y)
             zs = 0
 
-        
-        plot_all_times = True
-        if plot_all_times == False:
-            tstart = 0
-            tend = 1200
-            tstart_idx = np.searchsorted(Time,tstart)
-            tend_idx = np.searchsorted(Time,tend)
-            time_steps = np.arange(tstart_idx,tend_idx)
-        else:
-            tend_idx = np.searchsorted(Time,Time[-1])
-            time_steps = np.arange(0,tend_idx)
-
 
         #plotting option
         fluc_vel = False
@@ -251,12 +216,6 @@ for plane in planes:
                 continue
             
             print(plane_labels[ip],velocity_comps[iv],offset,time.time()-start_time)
-
-            #colorbar options
-            custom_colorbar = False
-            cmin = 0; cmax = 18
-
-            print("line 297", time.time()-start_time)
 
             if fluc_vel == True:
                 folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
@@ -389,7 +348,7 @@ for plane in planes:
                     return T
 
                 with Pool() as pool:
-                    for T in pool.imap(Update,time_steps):
+                    for T in pool.imap(Update,Time_steps):
 
                         print(T,time.time()-start_time)
 
