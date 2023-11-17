@@ -71,6 +71,7 @@ for i in np.arange(0,len(du_dz)):
 
 
 Times = [32500, 33000, 34000, 34500]
+
 plt.figure(figsize=(14,8))
 for Time in Times:
     Time_idx = np.searchsorted(time,Time)
@@ -81,6 +82,20 @@ plt.xlabel("horizontal velocity [m/s]",fontsize=16)
 plt.legend(Times)
 plt.tight_layout()
 plt.savefig(out_dir+"horizonal_velocity.png")
+plt.close()
+
+
+plt.figure(figsize=(14,8))
+for Time in Times:
+    Time_idx = np.searchsorted(time,Time)
+    hvelmag_i = hvelmag[Time_idx]
+    plt.plot(hvelmag_i,z)
+plt.ylabel("Distance from surface [m]",fontsize=16)
+plt.xlabel("horizontal velocity [m/s]",fontsize=16)
+plt.legend(Times)
+plt.ylim([0,200])
+plt.tight_layout()
+plt.savefig(out_dir+"horizonal_velocity_0.2.png")
 plt.close()
 
 plt.figure(figsize=(14,8))
