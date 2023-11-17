@@ -5,14 +5,11 @@ import matplotlib.pyplot as plt
 import glob 
 import os
 from matplotlib import cm
-from matplotlib.animation import PillowWriter
 import operator
 import math
 import sys
 import time
 from multiprocessing import Pool
-import cv2
-import re
 import pyFAST.input_output as io
 
 
