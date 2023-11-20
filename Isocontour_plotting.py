@@ -147,7 +147,9 @@ for plane in planes:
 
         #time options
         Time = np.array(a.variables["time"])
+        tstart = 32500 - Time[0]
         Time = Time - Time[0]
+        tstart_idx = np.searchsorted(Time,tstart)
 
         #plotting option
         fluc_vel = False
@@ -163,11 +165,10 @@ for plane in planes:
 
         #time options
         if plot_all_times == True:
-            tend_idx = np.searchsorted(Time,Time[-1])
-            Time_steps = np.arange(0,tend_idx)
+            Time_steps = np.arange(0,len(Time))
         else:
             #specify time steps to plot instantaneous isocontours at
-            Time_steps = [0,10]
+            Time_steps = np.arange(tstart_idx,len(Time))
 
         #colorbar options
         if custom_colorbar == True:
