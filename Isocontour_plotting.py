@@ -110,7 +110,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = False; plot_r = False; plot_tr = False; plot_i = True; plot_t = True
+plot_l = True; plot_r = True; plot_tr = True; plot_i = True; plot_t = True
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -239,7 +239,7 @@ for plane in planes:
                             
                             u_hvel.append(u_hvel_it)
                             print(len(u_hvel),time.time()-start_time)
-                    u = np.array(u_hvel); u_hvel; del v
+                    u = np.array(u_hvel); del u_hvel; del v
                 else:
                     u = np.array(p.variables[velocity_comp][tstart_idx:tend_idx])
 
