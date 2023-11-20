@@ -147,9 +147,11 @@ for plane in planes:
 
         #time options
         Time = np.array(a.variables["time"])
-        tstart = 32500 - Time[0]
-        Time = Time - Time[0]
+        tstart = 32500
         tstart_idx = np.searchsorted(Time,tstart)
+        tend = 35000
+        tend_idx = np.searchsorted(Time,tend)
+        Time_steps = np.arange(0, tend_idx-tstart_idx)
 
         #plotting option
         fluc_vel = False
@@ -160,15 +162,7 @@ for plane in planes:
         if all(list(map(operator.not_, velocity_plot))) == True:
             sys.exit("error no velocity component selected")
         
-        plot_all_times = False
         custom_colorbar = False
-
-        #time options
-        if plot_all_times == True:
-            Time_steps = np.arange(0,len(Time))
-        else:
-            #specify time steps to plot instantaneous isocontours at
-            Time_steps = np.arange(tstart_idx,len(Time))
 
         #colorbar options
         if custom_colorbar == True:
@@ -237,8 +231,8 @@ for plane in planes:
 
                 #velocity field
                 if velocity_comp == "Horizontal_velocity":
-                    u = np.array(p.variables["velocityx"])
-                    v = np.array(p.variables["velocityy"])
+                    u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
+                    v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
                     with Pool() as pool:
                         u_hvel = []
                         for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
@@ -247,7 +241,7 @@ for plane in planes:
                             print(len(u_hvel),time.time()-start_time)
                     u = np.array(u_hvel); u_hvel; del v
                 else:
-                    u = np.array(p.variables[velocity_comp])
+                    u = np.array(p.variables[velocity_comp][tstart_idx:tend_idx])
 
                 def mean_velocity(u):
                     u_k = []
@@ -361,9 +355,6 @@ for plane in planes:
                     plt.close(fig)
 
                     return T
-
-                if plot_all_times == False and velocity_comp == "Horizontal_velocity":
-                    Time_steps = np.arange(0,len(u))
 
                 with Pool() as pool:
                     for T in pool.imap(Update,Time_steps):
