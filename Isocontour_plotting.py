@@ -28,9 +28,9 @@ def Horizontal_velocity(it):
         mag_horz_vel = u[it]*np.cos(twist_h) + v[it]*np.sin(twist_h)
     else:
         mag_horz_vel = []
-        for i in np.arange(0,len(height)):
+        for i in np.arange(0,len(zs)):
             u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
-            if zs < h[0]:
+            if zs[i] < h[0]:
                 twist_h = f(h[0])
             else:
                 twist_h = f(zs[i])
@@ -108,7 +108,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = True; plot_r = True; plot_tr = True; plot_i = True; plot_t = True
+plot_l = False; plot_r = True; plot_tr = True; plot_i = True; plot_t = True
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
