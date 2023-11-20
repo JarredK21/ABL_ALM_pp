@@ -304,7 +304,7 @@ for plane in planes:
 
                     Z = u_plane
 
-                    T = Time[it]
+                    T = Time[it] + (tend-tstart)
 
                     fig = plt.figure(figsize=(50,30))
                     plt.rcParams['font.size'] = 40
