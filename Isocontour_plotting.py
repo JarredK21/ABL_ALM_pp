@@ -108,7 +108,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = False; plot_r = False; plot_tr = True; plot_i = True; plot_t = True
+plot_l = False; plot_r = False; plot_tr = False; plot_i = True; plot_t = True
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -117,7 +117,7 @@ if all(list(map(operator.not_, planes_plot))) == True:
 
 
 #loop over true planes
-planes = ["l","r", "tr","p_i","p_t"]
+planes = ["l","r", "tr","i","t"]
 plane_labels = ["horizontal","rotor", "transverse rotor", "inflow", "longitudinal"]
 ip = 0
 for plane in planes:
@@ -359,7 +359,7 @@ for plane in planes:
 
                     return T
 
-                if plot_all_times == False:
+                if plot_all_times == False and velocity_comp == "Horizontal_velocity":
                     Time_steps = np.arange(0,len(u))
 
                 with Pool() as pool:
