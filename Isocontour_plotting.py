@@ -79,17 +79,21 @@ u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-del precursor
+del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v; del h
 
 print("line 126", time.time()-start_time)
 
-#Openfast data
-df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
-#Openfast time
-Time_OF = df["Time_[s]"]
-#Azimuthal position for blade 1
-Azimuth = np.array(np.radians(df["Azimuth_[deg]"]))
-del df
+#plotting precursor planes?
+precursor = True
+
+if precursor == False:
+    #Openfast data
+    df = io.fast_output_file.FASTOutputFile("../NREL_5MW_3.4.1/Steady_Rigid_blades/NREL_5MW_Main.out").toDataFrame()
+    #Openfast time
+    Time_OF = df["Time_[s]"]
+    #Azimuthal position for blade 1
+    Azimuth = np.array(np.radians(df["Azimuth_[deg]"]))
+    del df
 
 print("line 144", time.time()-start_time)
 
@@ -99,16 +103,25 @@ out_dir = in_dir + "ISOplots/"
 isExist = os.path.exists(out_dir)
 if isExist == False:
     os.makedirs(out_dir)
-video_folder = in_dir + "videos/"
-isExist = os.path.exists(video_folder)
-if isExist == False:
-    os.makedirs(video_folder)
 
+
+plot_l = True; plot_r = True; plot_tr = True; plot_i = True; plot_t = True
+planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
+
+#check if no velocity components selected
+if all(list(map(operator.not_, planes_plot))) == True:
+    sys.exit("error no velocity component selected")
+
+
+#loop over true planes
 planes = ["l","r", "tr","p_i","p_t"]
 plane_labels = ["horizontal","rotor", "transverse rotor", "inflow", "longitudinal"]
-
 ip = 0
 for plane in planes:
+    if planes_plot[ip] == False:
+        ip+=1
+        continue
+
     if plane == "l":
         offsets = [22,85,142.5]
     elif plane == "r":
@@ -133,9 +146,13 @@ for plane in planes:
 
         #plotting option
         fluc_vel = False
-        plot_specific_offsets = False
         plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
+
+        #check if no velocity components selected
+        if all(list(map(operator.not_, velocity_plot))) == True:
+            sys.exit("error no velocity component selected")
+        
         plot_all_times = False
         custom_colorbar = False
 
@@ -191,17 +208,6 @@ for plane in planes:
             xs = np.linspace(p.origin[0],p.origin[0]+p.axis1[0],x)
             ys = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y)
             zs = 0
-
-
-        #plotting option
-        fluc_vel = False
-        plot_specific_offsets = False
-        plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
-        velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
-
-        #check if no velocity components selected
-        if all(list(map(operator.not_, velocity_plot))) == True:
-            sys.exit("error no velocity component selected")
 
         
         #loop over true velocity components
@@ -313,7 +319,7 @@ for plane in planes:
 
                     cb = plt.colorbar(cs)
 
-                    if plane == "r" and offset == -5.5:
+                    if precursor == False and plane == "r" and offset == -5.5:
                         YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
 
                         plt.plot(YB1,ZB1,color="k",linewidth = 0.5)
