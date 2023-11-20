@@ -235,12 +235,12 @@ for plane in planes:
                     u = np.array(p.variables["velocityx"])
                     v = np.array(p.variables["velocityy"])
                     with Pool() as pool:
-                        u = []
-                        for u_it in pool.imap(Horizontal_velocity,Time_steps):
+                        u_hvel = []
+                        for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
                             
-                            u.append(u_it)
-                            print(len(u),time.time()-start_time)
-                    u = np.array(u)
+                            u_hvel.append(u_hvel_it)
+                            print(len(u_hvel),time.time()-start_time)
+                    u = np.array(u_hvel); u_hvel; del v
                 else:
                     u = np.array(p.variables[velocity_comp])
 
