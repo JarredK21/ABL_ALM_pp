@@ -108,7 +108,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = False; plot_r = True; plot_tr = True; plot_i = True; plot_t = True
+plot_l = False; plot_r = False; plot_tr = True; plot_i = True; plot_t = True
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -358,6 +358,9 @@ for plane in planes:
                     plt.close(fig)
 
                     return T
+
+                if plot_all_times == False:
+                    Time_steps = np.arange(0,len(u))
 
                 with Pool() as pool:
                     for T in pool.imap(Update,Time_steps):

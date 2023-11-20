@@ -6,7 +6,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 from scipy import interpolate
 
-def dz_calc(u,dz):
+def dz_calc_2(u,dz):
     #compute graident to 2nd order accurate using central difference primarily and forward difference for the first cell
     d_dz = []
     for i in np.arange(0,len(u)-4,1):
@@ -14,6 +14,16 @@ def dz_calc(u,dz):
             d_dz_i = ((-(25/12)*u[i]+4*u[i+1]-3*u[i+2]+(4/3)*u[i+3]-(1/4)*u[i+4])/dz)
         else:
             d_dz_i = ((u[i+1] - u[i-1])/(2*dz))
+
+        d_dz.append(d_dz_i)
+
+    return d_dz
+
+def dz_calc(u,dz):
+    #compute graident to 2nd order accurate using central difference primarily and forward difference for the first cell
+    d_dz = []
+    for i in np.arange(0,len(u)-4,1):
+        d_dz_i = ((-(25/12)*u[i]+4*u[i+1]-3*u[i+2]+(4/3)*u[i+3]-(1/4)*u[i+4])/dz)
 
         d_dz.append(d_dz_i)
 
