@@ -130,7 +130,7 @@ for plane in planes:
     if plane == "l":
         offsets = [22.5,85,142.5]
     elif plane == "r":
-        offsets = [-5.5,-63]
+        offsets = [-5.5,-63.0]
     elif plane == "tr":
         offsets = [0.0]
     elif plane == "i":

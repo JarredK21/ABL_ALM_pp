@@ -29,6 +29,16 @@ def dz_calc(u,dz):
 
     return d_dz
 
+def dz_calc_1(u,dz):
+    #compute graident to 2nd order accurate using central difference primarily and forward difference for the first cell
+    d_dz = []
+    for i in np.arange(0,len(u)-4,1):
+        d_dz_i = (u[i+1]-u[i])/dz
+
+        d_dz.append(d_dz_i)
+
+    return d_dz
+
 
 def dt_calc(u,dt):
     #compute time derivative using first order forward difference
@@ -91,7 +101,21 @@ plt.ylabel("Distance from surface [m]",fontsize=16)
 plt.xlabel("horizontal velocity [m/s]",fontsize=16)
 plt.legend(Times)
 plt.tight_layout()
-plt.savefig(out_dir+"horizonal_velocity.png")
+plt.savefig(out_dir+"horizonal_velocity_4th_order_FD.png")
+plt.close()
+
+
+plt.figure(figsize=(14,8))
+for Time in Times:
+    Time_idx = np.searchsorted(time,Time)
+    du_dz_i = du_dz[Time_idx]
+    plt.plot(du_dz_i,z[0:-4])
+plt.ylabel("Distance from surface [m]",fontsize=16)
+plt.xlabel("horizontal velocity gradient [1/s]",fontsize=16)
+plt.legend(Times)
+plt.ylim([0,200])
+plt.tight_layout()
+plt.savefig(out_dir+"horizonal_velocity_gradient_0.2_4th_order_FD.png")
 plt.close()
 
 
@@ -105,7 +129,7 @@ plt.xlabel("horizontal velocity [m/s]",fontsize=16)
 plt.legend(Times)
 plt.ylim([0,200])
 plt.tight_layout()
-plt.savefig(out_dir+"horizonal_velocity_0.2.png")
+plt.savefig(out_dir+"horizonal_velocity_0.2_4th_order_FD.png")
 plt.close()
 
 plt.figure(figsize=(14,8))
@@ -117,7 +141,7 @@ plt.ylabel("Distance from surface [m]",fontsize=16)
 plt.xlabel("phi_m [-]",fontsize=16)
 plt.legend(Times)
 plt.tight_layout()
-plt.savefig(out_dir+"phi_m.png")
+plt.savefig(out_dir+"phi_m_4th_order_FD.png")
 plt.close()
 
 plt.figure(figsize=(14,8))
@@ -130,7 +154,7 @@ plt.xlabel("phi_m [-]",fontsize=16)
 plt.legend(Times)
 plt.ylim([0,200]); plt.xlim([0,2])
 plt.tight_layout()
-plt.savefig(out_dir+"phi_m_0.2.png")
+plt.savefig(out_dir+"phi_m_0.2_4th_order_FD.png")
 plt.close()
 
 
@@ -207,6 +231,9 @@ du_dz = dz_calc(hvelmag,dz)
 dtheta_dz = dz_calc(theta,dz)
 u = np.average(u[tstart_idx:],axis=0); v = np.average(v[tstart_idx:],axis=0)
 twist = coriolis_twist(u,v)
+
+print(du_dz[0:10])
+print(z[0:10])
 
 #phi_m
 kappa = 0.41
