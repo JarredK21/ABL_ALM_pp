@@ -11,6 +11,7 @@ import sys
 import time
 from multiprocessing import Pool
 import pyFAST.input_output as io
+from scipy import interpolate
 
 
 def coriolis_twist(u,v):
@@ -19,19 +20,19 @@ def coriolis_twist(u,v):
     return twist
 
 
-def Horizontal_velocity(u,v,twist,x,normal,zs,h,height):
+def Horizontal_velocity(it):
+    f = interpolate.interp1d(h,twist)
     if normal == "z":
-        h_idx = np.searchsorted(h,height)
-        mag_horz_vel = np.add( np.multiply(u,np.cos(twist[h_idx])) , np.multiply( v,np.sin(twist[h_idx])) )
+        height = offset
+        twist_h = f(height)
+        mag_horz_vel = u[it]*np.cos(twist_h) + v[it]*np.sin(twist_h)
     else:
+        twist_hs = f(zs)
         mag_horz_vel = []
-        for i in np.arange(0,len(zs)):
-            u_i = u[i*x:(i+1)*x]; v_i = v[i*x:(i+1)*x]
-            height = zs[i]
-            h_idx = np.searchsorted(h,height,side="left")
-            if h_idx > 127:
-                h_idx = 127
-            mag_horz_vel_i = np.add( np.multiply(u_i,np.cos(twist[h_idx])) , np.multiply( v_i,np.sin(twist[h_idx])) )
+        for i in np.arange(0,len(height)):
+            u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
+            twist_h = twist_hs[i]
+            mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
             mag_horz_vel.extend(mag_horz_vel_i)
         mag_horz_vel = np.array(mag_horz_vel)
     return mag_horz_vel
@@ -79,7 +80,7 @@ u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v; del h
+del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 print("line 126", time.time()-start_time)
 
@@ -123,7 +124,7 @@ for plane in planes:
         continue
 
     if plane == "l":
-        offsets = [22,85,142.5]
+        offsets = [22.5,85,142.5]
     elif plane == "r":
         offsets = [-5.5,-63]
     elif plane == "tr":
@@ -233,7 +234,13 @@ for plane in planes:
                 if velocity_comp == "Horizontal_velocity":
                     u = np.array(p.variables["velocityx"])
                     v = np.array(p.variables["velocityy"])
-                    u = Horizontal_velocity(u,v,twist,x,normal,zs,h,height=90) #height only used for longitudinal planes
+                    with Pool() as pool:
+                        u = []
+                        for u_it in pool.imap(Horizontal_velocity,Time_steps):
+                            
+                            u.append(u_it)
+                            print(len(u),time.time()-start_time)
+                    u = np.array(u)
                 else:
                     u = np.array(p.variables[velocity_comp])
 
