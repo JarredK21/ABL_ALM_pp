@@ -27,11 +27,13 @@ def Horizontal_velocity(it):
         twist_h = f(height)
         mag_horz_vel = u[it]*np.cos(twist_h) + v[it]*np.sin(twist_h)
     else:
-        twist_hs = f(zs)
         mag_horz_vel = []
         for i in np.arange(0,len(height)):
             u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
-            twist_h = twist_hs[i]
+            if zs < h[0]:
+                twist_h = f(h[0])
+            else:
+                twist_h = f(zs[i])
             mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
             mag_horz_vel.extend(mag_horz_vel_i)
         mag_horz_vel = np.array(mag_horz_vel)
