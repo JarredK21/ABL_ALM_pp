@@ -32,6 +32,8 @@ def Horizontal_velocity(it):
             u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
             if zs[i] < h[0]:
                 twist_h = f(h[0])
+            elif zs[i] > h[-1]:
+                twist_h = f(h[-1])
             else:
                 twist_h = f(zs[i])
             mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
