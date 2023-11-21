@@ -120,7 +120,7 @@ if all(list(map(operator.not_, planes_plot))) == True:
 
 #loop over true planes
 planes = ["l","r", "tr","i","t"]
-plane_labels = ["horizontal","rotor", "transverse rotor", "inflow", "longitudinal"]
+plane_labels = ["horizontal","rotor", "transverse_rotor", "inflow", "longitudinal"]
 ip = 0
 for plane in planes:
     if planes_plot[ip] == False:
