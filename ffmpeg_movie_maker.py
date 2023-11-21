@@ -1,3 +1,4 @@
+#working on local computer
 import ffmpeg
 import os
 import operator
