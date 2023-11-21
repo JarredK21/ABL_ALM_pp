@@ -28,7 +28,7 @@ def average_velocity_comps(it):
 
 
 def hub_height_velocity(it):
-    
+
     velx = np.reshape(velocityx[it],(z,y))
     fx = interpolate.interp2d(Y,Z,velx,kind="linear")
     Ux = fx(rotor_coordinates[1],rotor_coordinates[2])
@@ -64,8 +64,8 @@ for offset,plane in zip(offsets,planes):
     Time_sample = np.array(a.variables["time"])
     tstart = 32500
     tstart_idx = np.searchsorted(Time_sample,tstart)
-    Time_steps = np.searchsorted(tstart_idx,len(Time_sample))
-    Time = Time[tstart_idx:]
+    Time_sample = Time_sample[tstart_idx:]
+    Time_steps = np.arange(0,len(Time_sample))
 
     p = a.groups["p_{}".format(plane)]
 
@@ -108,8 +108,8 @@ for offset,plane in zip(offsets,planes):
 
     print("line 81")
 
-    velocityx = np.array(p.variables["velocityx"])
-    velocityy = np.array(p.variables["velocityy"])
+    velocityx = np.array(p.variables["velocityx"][tstart_idx:])
+    velocityy = np.array(p.variables["velocityy"][tstart_idx:])
 
     del p
 
