@@ -13,20 +13,20 @@ def offset_data(i, no_cells_offset,var):
 
     return u_slice
 
-planes = ["l","r", "t"]
-plane_labels = ["longitudinal","rotor", "transverse"]
-groups = ["group_l","group_r", "group_t"]
+planes = ["l","r", "tr","i","t"]
+plane_labels = ["horizontal","rotor", "transverse_rotor","inlet","longitudinal_rotor"]
+groups = ["group_l","group_r", "group_tr","group_i","group_t"]
 
 ip = 0
 for plane in planes:
     if plane == "l":
-        offsets = [85]
+        offsets = [22.5, 85, 142.5]
         no_cells_offset = 262144
     elif plane == "r":
-        offsets = [0.0, -63.0, -126, 126]
+        offsets = [-5.5, -63.0]
         no_cells_offset = 1228800
-    elif plane == "t":
-        offsets = [1280, 1930, 3190, 3820]
+    elif plane == "tr" or plane == "i" or plane == "t":
+        offsets = [0.0]
         no_cells_offset = 65536
     
     io = 0
@@ -44,7 +44,7 @@ for plane in planes:
         time = ncfile.createVariable("time", np.float64, ('num_time_steps',))
 
         #open files to be combined
-        a = Dataset("./sampling65000.nc") #check
+        a = Dataset("./sampling60000.nc") #check
 
         #determine restart index
         time[:] = np.array(a.variables["time"])
@@ -61,12 +61,7 @@ for plane in planes:
         axis2 = np.array(p.axis2)
         axis3 = np.array(p.axis3)
 
-        if plane == "l":
-            group = ncfile.createGroup("p_l")
-        elif plane == "r":
-            group = ncfile.createGroup("p_r")
-        elif plane == "t":
-            group = ncfile.createGroup("p_t")
+        group = ncfile.createGroup("p_{}".format(plane))
 
 
         points_dim = group.createDimension("num_points",None)

@@ -5,6 +5,7 @@ from scipy.signal import butter,filtfilt
 from scipy import interpolate
 from netCDF4 import Dataset
 import pandas
+import pyFAST.input_output as io
 
 def correlation_coef(x,y):
     
@@ -58,11 +59,12 @@ def temporal_spectra(signal,dt,Var):
     return frq, PSD
 
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_2/post_processing/"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+out_dir = "../../"
 
-offsets = [0.0,63.0]
+offsets = [0.0]
 
-a = Dataset(in_dir+"Dataset.nc")
+a = Dataset(in_dir+"Dataset_2.nc")
 
 for offset in offsets:
 
@@ -70,7 +72,7 @@ for offset in offsets:
     Time_sampling = np.array(a.variables["time_sampling"])
     Time_sampling = Time_sampling - Time_sampling[0]
 
-    Time_start = 100
+    Time_start = 200
     Time_end = Time_sampling[-1]
 
     dt = Time_OF[1] - Time_OF[0]
@@ -80,12 +82,13 @@ for offset in offsets:
 
     Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
+
     RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:Time_end_idx])
     RtAeroMxh = np.array(a.variables["RtAeroMxh"][Time_start_idx:Time_end_idx])
     RtAeroMyh = np.array(a.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
     RtAeroMzh = np.array(a.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
     RtAeroMR = np.sqrt( np.add(np.square(RtAeroMyh), np.square(RtAeroMzh)) ) 
-    Theta = np.array(a.variables["Theta"][Time_start_idx:Time_end_idx])
+    #Theta = np.array(a.variables["Theta"][Time_start_idx:Time_end_idx])
 
     LSSGagMys = np.array(a.variables["LSSGagMys"][Time_start_idx:Time_end_idx])
     LSSGagMzs = np.array(a.variables["LSSGagMzs"][Time_start_idx:Time_end_idx])
@@ -109,13 +112,14 @@ for offset in offsets:
 
 
     #plotting options
-    plot_variables = True
-    compare_total_correlations = True
-    compare_LP_correlations = True
+    plot_variables = False
+    plot_FFT = False
+    compare_total_correlations = False
+    compare_LP_correlations = False
     compare_time_series = True
-    compare_FFT = True
+    compare_FFT = False
 
-    out_dir = in_dir + "lineplots_{}/".format(offset)
+    #out_dir = in_dir + "lineplots_{}/".format(offset)
 
 
     #plot variables#
@@ -140,6 +144,38 @@ for offset in offsets:
             plt.tight_layout()
             plt.savefig(out_dir+"{0}".format(Variables[i]))
             plt.close()
+
+    if plot_FFT == True:
+        Variables = ["Ux", "IA", "RtAeroFxh","RtAeroMxh","RtAeroMR","LSSTipMR","LSSGagMR"]
+        units = ["[m/s]","[$m^4/s$]","[N]","[N-m]","[N-m]","[kN-m]","[kN-m]"]
+        Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Asymmetry parameter","Rotor Thrust", "Rotor Torque", 
+                   "Rotor Aerodyn Out-of-plane bending moment", "Rotor Elastodyn Rotor Out-of-plane bending moment",
+                   "LSS Elastodyn Out-of-plane bending moment"]
+        h_vars = [Ux, IA, RtAeroFxh, RtAeroMxh, RtAeroMR, LSSTipMR,LSSGagMR]
+
+        for i in np.arange(0,len(h_vars)):
+
+            frq,FFT = temporal_spectra(h_vars[i],dt,Variables[i])
+
+            fig = plt.figure(figsize=(14,8))
+            plt.plot(frq,FFT)
+            
+            if Variables[i] != "MR_diff":
+                frq_int = [1/60, 1/30, 12.1/60, (12.1/60)*3]
+                frq_label = ["60s", "30s", "1P", "3P"]
+                y_FFT = FFT[0]+1e+03
+
+                for l in np.arange(0,len(frq_int)):
+                    plt.axvline(frq_int[l])
+                    plt.text(frq_int[l],y_FFT, frq_label[l])
+
+            plt.xscale("log")
+            plt.yscale("log")
+            plt.xlabel("Frequency [Hz]",fontsize=14)
+            plt.ylabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=14)
+            plt.tight_layout()
+            plt.savefig(out_dir+"FFT_{0}.png".format(Variables[i]))
+            plt.close(fig)
 
 
     #compare total signal correlations
@@ -169,7 +205,7 @@ for offset in offsets:
                 plt.title("Correlation: {0} with {1} = {2}".format(Ylabels[j],Ylabels[i],corr),fontsize=16)
                 ax.set_xlabel("Time [s]",fontsize=16)
                 plt.tight_layout()
-                plt.savefig(out_dir+"corr_{0}_{1}.png".format(Variables[j],Variables[i]))
+                plt.savefig(in_dir+"test/corr_{0}_{1}.png".format(Variables[j],Variables[i]))
                 plt.close(fig)
 
 
@@ -211,15 +247,43 @@ for offset in offsets:
 
 
 
+    # if compare_time_series == True:
+    #     Variables = ["Ux","RtAeroFxh","RtAeroMxh","LSSTipMR","IA","Theta"]
+    #     h_vars = [Ux,RtAeroFxh, RtAeroMxh,LSSTipMR,IA,Theta]
+    #     units = ["[m/s]","[N]","[N-m]","[kN-m]","[$m^4/s$]","[rads]"]
+    #     Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
+    #                 "Tip Out-of-plane bending moment","Asymmetry parameter","Angle OOPBM"]
+        
+    #     #comparing time series
+    #     fig, axs = plt.subplots(6,1,figsize=(32,24))
+    #     plt.rcParams.update({'font.size': 16})
+    #     for i in np.arange(0,len(h_vars)):
+
+    #         unit = units[i]
+    #         Ylabel = Ylabels[i]
+
+    #         signal = h_vars[i]
+
+    #         axs = axs.ravel()
+
+    #         axs[i].plot(Time_OF,signal)
+
+    #         axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
+
+    #     fig.supxlabel("Time [s]")
+    #     plt.tight_layout()
+    #     plt.savefig(out_dir+"joint_vars.png")
+    #     plt.close(fig)
+
     if compare_time_series == True:
-        Variables = ["Ux","RtAeroFxh","RtAeroMxh","RtAeroMR","LSSMR","IA"]
-        h_vars = [Ux,RtAeroFxh, RtAeroMxh,RtAeroMR,LSSGagMR,IA]
-        units = ["[m/s]","[N]","[N-m]","[N-m]","[kN-m]","[$m^4/s$]"]
+        Variables = ["Ux","RtAeroFxh","RtAeroMxh","LSSTipMR","IA"]
+        h_vars = [Ux,RtAeroFxh, RtAeroMxh,LSSTipMR,IA]
+        units = ["[m/s]","[N]","[N-m]","[kN-m]","[$m^4/s$]"]
         Ylabels = ["$<Ux'>_{Rotor}$ rotor averaged horizontal velocity","Rotor Thrust", "Rotor Torque",
-                    "Rotor Out-of-plane bending moment","LSS Out-of-plane bending moment","Asymmetry parameter"]
+                    "Out-of-plane bending moment","Asymmetry parameter"]
         
         #comparing time series
-        fig, axs = plt.subplots(6,1,figsize=(32,24))
+        fig, axs = plt.subplots(5,1,figsize=(32,24))
         plt.rcParams.update({'font.size': 16})
         for i in np.arange(0,len(h_vars)):
 
@@ -232,11 +296,11 @@ for offset in offsets:
 
             axs[i].plot(Time_OF,signal)
 
-            axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=18)
+            axs[i].set_title("{0} {1}".format(Ylabels[i],units[i]),fontsize=28)
 
-        fig.supxlabel("Time [s]")
+        fig.supxlabel("Time [s]",fontsize=28)
         plt.tight_layout()
-        plt.savefig(out_dir+"joint_vars.png")
+        plt.savefig(out_dir+"NAWEA_23/post_processing/plots_3/joint_vars.png")
         plt.close(fig)
 
 
