@@ -5,8 +5,9 @@ import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 from scipy import interpolate
+import csv
 
-def dz_calc_2(u,dz):
+def dz_calc(u,dz):
     #compute graident to 2nd order accurate using central difference primarily and forward difference for the first cell
     d_dz = []
     for i in np.arange(0,len(u)-4,1):
@@ -19,7 +20,7 @@ def dz_calc_2(u,dz):
 
     return d_dz
 
-def dz_calc(u,dz):
+def dz_calc_3(u,dz):
     #compute graident to 2nd order accurate using central difference primarily and forward difference for the first cell
     d_dz = []
     for i in np.arange(0,len(u)-4,1):
@@ -64,10 +65,10 @@ out_dir = in_dir + "plots/"
 data = Dataset(in_dir+"abl_statistics60000.nc")
 Mean_profiles = data.groups["mean_profiles"]
 
-time = data.variables["time"]
+time = np.array(data.variables["time"])
 z = np.array(Mean_profiles.variables["h"])
 dz = z[1]-z[0]
-u_star = data.variables["ustar"]
+u_star = np.array(data.variables["ustar"])
 kappa = 0.41
 
 u = np.array(Mean_profiles.variables["u"])
@@ -91,71 +92,30 @@ for i in np.arange(0,len(du_dz)):
 
 
 Times = [32500, 33000, 34000, 34500]
-
-plt.figure(figsize=(14,8))
+fig = plt.figure()
 for Time in Times:
-    Time_idx = np.searchsorted(time,Time)
-    hvelmag_i = hvelmag[Time_idx]
-    plt.plot(hvelmag_i,z)
-plt.ylabel("Distance from surface [m]",fontsize=16)
-plt.xlabel("horizontal velocity [m/s]",fontsize=16)
-plt.legend(Times)
-plt.tight_layout()
-plt.savefig(out_dir+"horizonal_velocity_4th_order_FD.png")
-plt.close()
+    time_idx = np.searchsorted(time,Time)
+    plt.plot(phi_m[time_idx][0:10],z[0:10])
 
-
-plt.figure(figsize=(14,8))
+fig = plt.figure()
 for Time in Times:
-    Time_idx = np.searchsorted(time,Time)
-    du_dz_i = du_dz[Time_idx]
-    plt.plot(du_dz_i,z[0:-4])
-plt.ylabel("Distance from surface [m]",fontsize=16)
-plt.xlabel("horizontal velocity gradient [1/s]",fontsize=16)
-plt.legend(Times)
-plt.ylim([0,200])
-plt.tight_layout()
-plt.savefig(out_dir+"horizonal_velocity_gradient_0.2_4th_order_FD.png")
-plt.close()
+    time_idx = np.searchsorted(time,Time)
+    plt.plot(du_dz[time_idx][0:10],z[0:10])
 
+plt.show()
 
-plt.figure(figsize=(14,8))
-for Time in Times:
-    Time_idx = np.searchsorted(time,Time)
-    hvelmag_i = hvelmag[Time_idx]
-    plt.plot(hvelmag_i,z)
-plt.ylabel("Distance from surface [m]",fontsize=16)
-plt.xlabel("horizontal velocity [m/s]",fontsize=16)
-plt.legend(Times)
-plt.ylim([0,200])
-plt.tight_layout()
-plt.savefig(out_dir+"horizonal_velocity_0.2_4th_order_FD.png")
-plt.close()
-
-plt.figure(figsize=(14,8))
-for Time in Times:
-    Time_idx = np.searchsorted(time,Time)
-
-    plt.plot(phi_m[Time_idx],z[:-4])
-plt.ylabel("Distance from surface [m]",fontsize=16)
-plt.xlabel("phi_m [-]",fontsize=16)
-plt.legend(Times)
-plt.tight_layout()
-plt.savefig(out_dir+"phi_m_4th_order_FD.png")
-plt.close()
-
-plt.figure(figsize=(14,8))
-for Time in Times:
-    Time_idx = np.searchsorted(time,Time)
-
-    plt.plot(phi_m[Time_idx],z[:-4])
-plt.ylabel("Distance from surface [m]",fontsize=16)
-plt.xlabel("phi_m [-]",fontsize=16)
-plt.legend(Times)
-plt.ylim([0,200]); plt.xlim([0,2])
-plt.tight_layout()
-plt.savefig(out_dir+"phi_m_0.2_4th_order_FD.png")
-plt.close()
+# filename = in_dir+"derivatives.csv"
+# with open(filename,"w") as csvfile:
+#     csvwriter = csv.writer(csvfile)
+#     csvwriter.writerow(z[0:10])
+#     for Time in Times:
+#         time_idx = np.searchsorted(time,Time)
+#         hvelmag_row = hvelmag[time_idx][0:10]
+#         du_dz_row = du_dz[time_idx][0:10]
+#         print(u_star[time_idx])
+#         phi_m_row = phi_m[time_idx][0:10]
+#         time_rows = [hvelmag_row, du_dz_row, phi_m_row]
+#         csvwriter.writerows(time_rows)
 
 
 
@@ -1179,6 +1139,535 @@ with PdfPages(out_dir+'comparing_precursor_plots_2.pdf') as pdf:
     plt.ylabel("$z/z_i$ [-]",fontsize=16)
     plt.title("Original time averaged over 1200s, \nnew precursor averaged over 2400s",fontsize=18)
     plt.legend(["new Precursor","Original Precursor"])
+    plt.ylim([0,0.2]); plt.xlim([-1,0.5])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+
+
+#restart
+#directories
+in_dir = "../../ABL_precursor_2_restart/"
+out_dir = in_dir + "plots/"
+
+
+#loads statisitcs data
+data = Dataset(in_dir+"abl_statistics70000.nc")
+Mean_profiles = data.groups["mean_profiles"]
+
+
+Time_2 = np.array(data.variables["time"])
+dt_2 = Time[1]-Time[0]
+
+tstart = 38800
+tstart_idx = np.searchsorted(Time_2,tstart)
+
+#Time varying quantites
+zi_2 = np.array(data.variables["zi"])
+u_star_2 = np.array(data.variables["ustar"])
+w_star_2 = np.array(data.variables["wstar"])
+T0_2 = np.array(data.variables["Tsurf"])
+Q_2 = np.array(data.variables["Q"])
+L_2 = np.array(data.variables["L"])
+dzi_dt_2 = dt_calc(zi_2,dt_2)
+dzi_dt_u_star_2 = np.true_divide(dzi_dt_2,u_star_2[:-1])
+dzi_dt_w_star_2 = np.true_divide(dzi_dt_2,w_star_2[:-1])
+
+#moving statistics
+ts_dzi_dt_u_star_2 = pd.Series(dzi_dt_u_star_2, index=Time_2[:-1])
+ts_dzi_dt_w_star_2 = pd.Series(dzi_dt_w_star_2, index=Time_2[:-1])
+
+zi_L_2 = -np.true_divide(zi_2,L_2)
+tau_u_2 = np.true_divide(zi_2,u_star_2)
+tau_w_2 = np.true_divide(zi_2,w_star_2)
+
+#Average global statistics
+glob_zi_2 = np.average(zi_2[tstart_idx:])
+glob_L_2 = np.average(L_2[tstart_idx:])
+glob_zi_L_2 = -np.true_divide(glob_zi_2,glob_L_2)
+glob_u_star_2 = np.average(u_star_2[tstart_idx:])
+glob_w_star_2 = np.average(w_star_2[tstart_idx:])
+glob_tau_u_2 = np.average(tau_u_2[tstart_idx:])
+glob_tau_w_2 = np.average(tau_w_2[tstart_idx:])
+glob_Q_2 = np.average(Q_2[tstart_idx:])
+
+
+print("zi",glob_zi_2,"-L",-glob_L_2,"-zi/L",glob_zi_L_2,"u*",glob_u_star_2,"w*",glob_w_star_2,"tau_u",glob_tau_u_2/60,"tau_w",glob_tau_w_2/60)
+
+
+#mean profiles averaged in time
+z_2 = np.array(Mean_profiles.variables["h"])
+dz_2 = z[1] - z[0]
+z_zi_2 = z_2/glob_zi_2
+u_2 = np.array(Mean_profiles.variables["u"])
+v_2 = np.array(Mean_profiles.variables["v"])
+w_2 = np.average(np.array(Mean_profiles.variables["w"][:]),axis=0)
+hvelmag_2 = []
+for u_i, v_i in zip(u_2,v_2):
+    hvelmag_2.append(np.add( np.multiply(np.cos(np.radians(29)),u_i), np.multiply(np.sin(np.radians(29)),v_i) ))
+hvelmag_2 = np.array(hvelmag_2)
+#hub height
+z_hub = 90
+z_hub_idx = np.searchsorted(z,z_hub)
+hvelmag_hub_2 = hvelmag_2[:,z_hub_idx]
+glob_hvelmag_hub = np.average(hvelmag_hub_2[tstart_idx:])
+
+hvelmag_2 = np.average(hvelmag_2[tstart_idx:],axis=0)
+
+theta_2 = np.average(np.array(Mean_profiles.variables["theta"][tstart_idx:]),axis=0)
+w_theta_2 = np.average(np.array(Mean_profiles.variables["w'theta'_r"][tstart_idx:]),axis=0)
+u_u_r_2 = np.average(np.array(Mean_profiles.variables["u'u'_r"][tstart_idx:]),axis=0)
+v_v_r_2 = np.average(np.array(Mean_profiles.variables["v'v'_r"][tstart_idx:]),axis=0)
+w_w_r_2 = np.average(np.array(Mean_profiles.variables["w'w'_r"][tstart_idx:]),axis=0)
+u_w_r_2 = np.average(np.array(Mean_profiles.variables["u'w'_r"][tstart_idx:]),axis=0)
+v_w_r_2 = np.average(np.array(Mean_profiles.variables["v'w'_r"][tstart_idx:]),axis=0)
+u_w_sfs_2 = np.average(np.array(Mean_profiles.variables["u'w'_sfs"][tstart_idx:]),axis=0)
+v_w_sfs_2 = np.average(np.array(Mean_profiles.variables["v'w'_sfs"][tstart_idx:]),axis=0)
+du_dz_2 = dz_calc(hvelmag_2,dz_2)
+dtheta_dz_2 = dz_calc(theta_2,dz_2)
+u_2 = np.average(u_2[tstart_idx:],axis=0); v_2 = np.average(v_2[tstart_idx:],axis=0)
+twist_2 = coriolis_twist(u_2,v_2)
+
+#phi_m
+kappa = 0.41
+z_star_m = (z_2[0:-4]*kappa)/glob_u_star_2
+phi_m_2 = np.multiply(z_star_m,du_dz_2)
+
+
+#phi_h
+T_star = glob_Q_2/glob_u_star_2
+z_star_h = (z_2[0:-4]*kappa)/T_star
+phi_h_2 = np.multiply(z_star_h,dtheta_dz_2)
+
+
+with PdfPages(out_dir+'precursor_plots_restart.pdf') as pdf:
+    #plot Time varying quanities
+    #horizontal velocity
+    plt.figure(figsize=(14,8))
+    plt.plot(Time,hvelmag_hub)
+    plt.plot(Time_2,hvelmag_hub_2)
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("horizontal velocity [m/s]",fontsize=16)
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #zi
+    plt.figure(figsize=(14,8))
+    plt.plot(Time,zi)
+    plt.plot(Time_2,zi_2)
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("$z_i$ [m]",fontsize=16)
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #-zi/L
+    plt.figure(figsize=(14,8))
+    plt.plot(Time,zi_L)
+    plt.plot(Time_2,zi_L_2)
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("$-z_i/L$ [m]",fontsize=16)
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #ustar
+    plt.figure(figsize=(14,8))
+    plt.plot(Time,u_star)
+    plt.plot(Time_2,u_star_2)
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("$u_*$ [m]",fontsize=16)
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #wstar
+    plt.figure(figsize=(14,8))
+    plt.plot(Time,w_star)
+    plt.plot(Time_2,w_star_2)
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("$w_*$ [m]",fontsize=16)
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #tau_u
+    plt.figure(figsize=(14,8))
+    plt.plot(Time,tau_u/60)
+    plt.plot(Time_2,tau_u_2/60)
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("$\\tau_u$ [min]",fontsize=16)
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #tau_w
+    plt.figure(figsize=(14,8))
+    plt.plot(Time,tau_w/60)
+    plt.plot(Time_2,tau_w_2/60)
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("$\\tau_w$ [min]",fontsize=16)
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #dzi/dt
+    plt.figure(figsize=(14,8))
+    plt.plot(Time[:-1],dzi_dt)
+    plt.plot(Time_2[:-1],dzi_dt_2)
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("$dz_i/dt$ [m/s]",fontsize=16)
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #dzi/dt 1/u*
+    plt.figure(figsize=(14,8))
+    plt.plot(Time[:-1],dzi_dt_u_star)
+    window_idx = int((glob_tau_u)/dt)
+    ts_dzi_dt_u_star.rolling(window=window_idx).mean().plot(style='k--')
+    ts_dzi_dt_u_star.rolling(window=window_idx).std().plot(style='r--')
+
+    plt.plot(Time_2[:-1],dzi_dt_u_star_2)
+    window_idx = int((glob_tau_u)/dt)
+    ts_dzi_dt_u_star_2.rolling(window=window_idx).mean().plot(style='k--')
+    ts_dzi_dt_u_star_2.rolling(window=window_idx).std().plot(style='r--')
+
+    plt.axhline(0.01,linestyle="--",color="g"); plt.axhline(-0.01,linestyle="--",color="g")
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("$dz_i/dt 1/u_{star}$ [-]",fontsize=16)
+    plt.legend(["$dz_i/dt 1/u_{star}$","Mean","Std","0.01","-0.01"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #dzi/dt 1/w*
+    plt.figure(figsize=(14,8))
+    plt.plot(Time[:-1],dzi_dt_w_star)
+    window_idx = int((glob_tau_w)/dt)
+    ts_dzi_dt_w_star.rolling(window=window_idx).mean().plot(style='k--')
+    ts_dzi_dt_w_star.rolling(window=window_idx).std().plot(style='r--')
+
+    plt.plot(Time_2[:-1],dzi_dt_w_star_2)
+    window_idx = int((glob_tau_w)/dt)
+    ts_dzi_dt_w_star_2.rolling(window=window_idx).mean().plot(style='k--')
+    ts_dzi_dt_w_star_2.rolling(window=window_idx).std().plot(style='r--')
+
+    plt.axhline(0.01,linestyle="--",color="g"); plt.axhline(-0.01,linestyle="--",color="g")
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("$dz_i/dt 1/w_{star}$ [-]",fontsize=16)
+    plt.legend(["$dz_i/dt 1/w_{star}$","Mean","Std","0.01","-0.01"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #T0
+    plt.figure(figsize=(14,8))
+    plt.plot(Time,T0)
+    plt.plot(Time_2,T0_2)
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("Surface Temperature [K]",fontsize=16)
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+
+    #mean profiles
+    #U
+    plt.figure(figsize=(14,8))
+    plt.plot(hvelmag,z_zi)
+    plt.plot(hvelmag_2,z_zi_2)
+    plt.xlabel("Horizontal velocity [m/s]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #dU/dz
+    plt.figure(figsize=(14,8))
+    plt.plot(du_dz,z_zi[:-4])
+    plt.plot(du_dz_2,z_zi_2[:-4])
+    plt.xlabel("Horizontal velocity gradient [1/s]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #W
+    plt.figure(figsize=(14,8))
+    plt.plot(w,z_zi)
+    plt.plot(w_2,z_zi_2)
+    plt.xlabel("Vertical velocity [m/s]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #Coriolis twist
+    plt.figure(figsize=(14,8))
+    plt.plot(np.degrees(twist),z_zi)
+    plt.xlabel("Flow angle [deg]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    f = interpolate.interp1d(z,twist)
+    twist_hub = f(90)
+    plt.text(26,90/glob_zi,"{}deg".format(round(np.degrees(twist_hub),0)),fontsize=14)
+
+    plt.plot(np.degrees(twist_2),z_zi_2)
+    f = interpolate.interp1d(z_2,twist_2)
+    twist_hub = f(90)
+    plt.text(29,90/glob_zi_2,"{}deg".format(round(np.degrees(twist_hub),0)),fontsize=14)
+
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #u'u'_r
+    plt.figure(figsize=(14,8))
+    plt.plot(u_u_r,z_zi)
+    plt.plot(u_u_r_2,z_zi_2)
+    plt.xlabel("$(u'u')^r [m^2/s^2]$",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #v'v'_r
+    plt.figure(figsize=(14,8))
+    plt.plot(v_v_r,z_zi)
+    plt.plot(v_v_r_2,z_zi_2)
+    plt.xlabel("$(v'v')^r [m^2/s^2]$",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #w'w'_r
+    plt.figure(figsize=(14,8))
+    plt.plot(w_w_r,z_zi)
+    plt.plot(w_w_r_2,z_zi_2)
+    plt.xlabel("$(w'w')^r [m^2/s^2]$",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #u'w'_r
+    plt.figure(figsize=(14,8))
+    plt.plot(u_w_r,z_zi)
+    plt.plot(u_w_r_2,z_zi_2)
+    plt.xlabel("$(u'w')^r [m^2/s^2]$",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #Theta
+    plt.figure(figsize=(14,8))
+    plt.plot(theta,z_zi)
+    plt.plot(theta_2,z_zi_2)
+    plt.xlabel("Potential temperature [K]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #dTheta/dz
+    plt.figure(figsize=(14,8))
+    plt.plot(dtheta_dz,z_zi[:-4])
+    plt.plot(dtheta_dz_2,z_zi_2[:-4])
+    plt.xlabel("Potential temperature gradient [K/m]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #w'Theta'_r
+    plt.figure(figsize=(14,8))
+    plt.plot(w_theta,z_zi)
+    plt.plot(w_theta_2,z_zi_2)
+    plt.xlabel("$(w'\\theta')^r [Km/s]$",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+
+    #mean profiles 0.2zi
+    #U
+    plt.figure(figsize=(14,8))
+    plt.plot(hvelmag,z_zi)
+    plt.plot(hvelmag_2,z_zi_2)
+    plt.xlabel("Horizontal velocity [m/s]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #dU/dz
+    plt.figure(figsize=(14,8))
+    plt.plot(du_dz,z_zi[:-4])
+    plt.plot(du_dz_2,z_zi_2[:-4])
+    plt.xlabel("Horizontal velocity gradient [1/s]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #W
+    plt.figure(figsize=(14,8))
+    plt.plot(w,z_zi)
+    plt.plot(w_2,z_zi_2)
+    plt.xlabel("Vertical velocity [m/s]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #u'u'_r
+    plt.figure(figsize=(14,8))
+    plt.plot(u_u_r,z_zi)
+    plt.plot(u_u_r_2,z_zi_2)
+    plt.xlabel("$(u'u')^r [m^2/s^2]$",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #v'v'_r
+    plt.figure(figsize=(14,8))
+    plt.plot(v_v_r,z_zi)
+    plt.plot(v_v_r_2,z_zi_2)
+    plt.xlabel("$(v'v')^r [m^2/s^2]$",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #w'w'_r
+    plt.figure(figsize=(14,8))
+    plt.plot(w_w_r,z_zi)
+    plt.plot(w_w_r_2,z_zi_2)
+    plt.xlabel("$(w'w')^r [m^2/s^2]$",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #u'w'_r
+    plt.figure(figsize=(14,8))
+    plt.plot(u_w_r,z_zi)
+    plt.plot(u_w_r_2,z_zi_2)
+    plt.xlabel("$(u'w')^r [m^2/s^2]$",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #Theta
+    plt.figure(figsize=(14,8))
+    plt.plot(theta,z_zi)
+    plt.plot(theta_2,z_zi_2)
+    plt.xlabel("Potential temperature [K]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #dTheta/dz
+    plt.figure(figsize=(14,8))
+    plt.plot(dtheta_dz,z_zi[:-4])
+    plt.plot(dtheta_dz_2,z_zi_2[:-4])
+    plt.xlabel("Potential temperature gradient [K/m]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #w'Theta'_r
+    plt.figure(figsize=(14,8))
+    plt.plot(w_theta,z_zi)
+    plt.plot(w_theta_2,z_zi_2)
+    plt.xlabel("$(w'\\theta')^r [Km/s]$",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #Re_R_LES
+    #phi_m
+    plt.figure(figsize=(14,8))
+    plt.plot(phi_m,z_zi[:-4])
+    plt.plot(phi_m_2,z_zi_2[:-4])
+    plt.xlabel("$\\phi_m$ [-]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #phi_m
+    plt.figure(figsize=(14,8))
+    plt.plot(phi_m,z_zi[:-4])
+    plt.plot(phi_m_2,z_zi_2[:-4])
+    plt.xlabel("$\\phi_m$ [-]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.ylim([0,0.2]); plt.xlim([0,2])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #phi_h
+    plt.figure(figsize=(14,8))
+    plt.plot(phi_h,z_zi[:-4])
+    plt.plot(phi_h_2,z_zi_2[:-4])
+    plt.xlabel("$\\phi_h$ [-]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
+    plt.tight_layout()
+    pdf.savefig()
+    plt.close()
+
+    #phi_h
+    plt.figure(figsize=(14,8))
+    plt.plot(phi_h,z_zi[:-4])
+    plt.plot(phi_h_2,z_zi_2[:-4])
+    plt.xlabel("$\\phi_h$ [-]",fontsize=16)
+    plt.ylabel("$z/z_i$ [-]",fontsize=16)
+    plt.legend(["averaged over 32500-35000s", "averaged over 38800-40000s"])
     plt.ylim([0,0.2]); plt.xlim([-1,0.5])
     plt.tight_layout()
     pdf.savefig()

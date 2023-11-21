@@ -319,8 +319,11 @@ for plane in planes:
                     elif normal == "z":
                         plt.xlabel("X axis [m]")
                         plt.ylabel("Y axis [m]")
-                    else:
+                    elif type(normal) == int and plane == "r" or type(normal) and plane == "tr": #rotor planes
                         plt.xlabel("Y' axis (rotor frame of reference) [m]")
+                        plt.ylabel("Z' axis (rotor frame of reference) [m]")
+                    elif type(normal) == int and plane == "l":
+                        plt.xlabel("X' axis (rotor frame of reference) [m]")
                         plt.ylabel("Z' axis (rotor frame of reference) [m]")
 
                     cb = plt.colorbar(cs)
