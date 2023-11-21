@@ -51,7 +51,7 @@ out_dir = in_dir+"Quasi-stationarity/"
 heights = [10,40,90,500,1000,1200]
 
 planes = ["i","r","r"]
-offsets = [0.0,0.0,-63.0]
+offsets = [0.0,-5.5,-63.0]
 
 plot_average_y = True
 plot_hub_height = True
