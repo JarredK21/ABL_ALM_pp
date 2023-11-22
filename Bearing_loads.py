@@ -97,7 +97,6 @@ def probability_dist(y):
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
-#a = Dataset(in_dir+"OF_Dataset.nc")
 a = Dataset(in_dir+"Dataset.nc")
 
 #plotting options
@@ -105,8 +104,8 @@ compare_variables = False
 compare_FFT = False
 plot_relative_contributions = False
 compare_total_correlations = False
-compare_LPF_correlations = False
-plot_PDF = True
+compare_LPF_correlations = True
+plot_PDF = False
 plot_derivative = False
 plot_moving_stats = False
 
@@ -192,8 +191,7 @@ Theta_Aero_FB = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
 group = a.groups["0.0"]
 Ux = np.array(group.variables["Ux"])
 IA = np.array(group.variables["IA"])
-Uy = np.array(group.variables["Uy"])
-Uz = np.array(group.variables["Uz"])
+IB = np.array(group.variables["IB"])
 Iy = np.array(group.variables["Iy"])
 Iz = np.array(group.variables["Iz"])
 
@@ -203,23 +201,14 @@ Ux = f(Time_OF)
 f = interpolate.interp1d(Time_sampling,IA)
 IA = f(Time_OF)
 
+f = interpolate.interp1d(Time_sampling,IB)
+IB = f(Time_OF)
+
 f = interpolate.interp1d(Time_sampling,Iy)
 Iy = f(Time_OF)
 
 f = interpolate.interp1d(Time_sampling,Iz)
 Iz = f(Time_OF)
-
-f = interpolate.interp1d(Time_sampling,Uy)
-Uy = f(Time_OF)
-
-f = interpolate.interp1d(Time_sampling,Uz)
-Uz = f(Time_OF)
-
-Uxz = np.sqrt(np.add(np.square(Ux),np.square(Uz)))
-
-Uxyz = []
-for i in np.arange(0,len(Time_OF)):
-    Uxyz.append(np.sqrt(Ux[i]**2 + Uy[i]**2 + Uz[i]**2))
 
 
 if compare_variables == True:
@@ -351,15 +340,19 @@ if compare_total_correlations == True:
 
 
 if compare_LPF_correlations == True:
-    Variables = ["FB", "IA"]
-    units = ["[kN]","[$m^4/s$]"]
-    Ylabels = ["Aerodynamic Bearing Force", "Asymmetry parameter"]
-    h_vars = [Aero_FBR/1000, IA]
+    # Variables = ["Iy", "RtAeroMys", "Iz", "RtAeroMzs"]
+    # units = ["[$m^2/s$]","[kN-m]","[$m^2/s$]","[kN]"]
+    # Ylabels = ["Horizontal Asymmetry", "Rotor aerodynamic moment in y direction","Vertical Asymmetry", "Rotor aerodynamic moment in z direction"]
+    # h_vars = [Iy, RtAeroMys, Iz, RtAeroMzs]
+    Variables = ["IA", "IB", "FBR", "RtAeroMR"]
+    units = ["[$m^4/s$]","[$m^4/s$]","[kN]", "[kN-m]"]
+    Ylabels = ["Asymmetry parameter", "Blade local Asymmetry parameter", "Aerodynamic Bearing Force", "Aerodynamic OOPBM"]
+    h_vars = [IA, IB, Aero_FBR/1000, RtAeroMR/1000]
 
     for j in np.arange(0,len(h_vars)):
         for i in np.arange(0,len(h_vars)):
 
-            cutoff = 0.4
+            cutoff = 40
             signal_LP_0 = low_pass_filter(h_vars[i], cutoff)
             signal_LP_1 = low_pass_filter(h_vars[j], cutoff)
 
@@ -378,7 +371,7 @@ if compare_LPF_correlations == True:
             plt.title("Low passs filtered at {0}Hz.\nCorrelation: {1} with {2} = {3}".format(cutoff,Ylabels[j],Ylabels[i],corr),fontsize=16)
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
-            plt.savefig(in_dir+"Aero_correlations/LPF_{0}_corr_{1}_{2}.png".format(cutoff,Variables[j],Variables[i]))
+            plt.savefig(in_dir+"velocity_correlations_2/LPF_{0}_corr_{1}_{2}.png".format(cutoff,Variables[j],Variables[i]))
             plt.close(fig)
 
 
