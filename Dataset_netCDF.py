@@ -124,7 +124,7 @@ def delta_Ux(j,k,r,fx,fy):
 
 
 def delta_Ux_r(r,fx,fy,it):
-    theta = Azimuth[it]
+    theta = AZIMUTH[it]
 
     Y = r*np.cos(theta)
     Z = r*np.sin(theta)
@@ -178,7 +178,7 @@ sampling_dim = ncfile.createDimension("sampling",None)
 time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
 time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
 
-Azimuth = ncfile.createVariable("Azimuth", np.float64, ('sampling',),zlib=True)
+Azimuth = ncfile.createVariable("Azimuth", np.float64, ('OF',),zlib=True)
 RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroFyh = ncfile.createVariable("RtAeroFyh", np.float64, ('OF',),zlib=True)
 RtAeroFzh = ncfile.createVariable("RtAeroFzh", np.float64, ('OF',),zlib=True)
@@ -204,10 +204,10 @@ time_OF[:] = np.array(df["Time_[s]"])
 
 print("line 156",time.time()-start_time)
 
-Variables = ["RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh",
+Variables = ["Azimuth","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh",
              "LSSGagMys","LSSGagMzs", "LSShftMxa","LSSTipMys","LSSTipMzs",
              "LSShftFxa","LSShftFys","LSShftFzs"]
-units = ["[N]","[N]","[N]","[N-m]","[N-m]","[N-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]",
+units = ["[deg]","[N]","[N]","[N]","[N-m]","[N-m]","[N-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]",
          "[kN]","[kN]","[kN]"]
 for i in np.arange(0,len(Variables)):
     Variable = Variables[i]
@@ -242,6 +242,8 @@ for i in np.arange(0,len(Variables)):
         LSShftFys[:] = signal[:,0]; del signal
     elif Variable == "LSShftFzs":
         LSShftFzs[:] = signal; del signal
+    elif Variable == "Azimuth":
+        Azimuth[:] = signal; del signal
 
 
 TIME_OF = np.array(df["Time_[s]"])
@@ -261,8 +263,7 @@ Time_sample = Time_sample - Time_sample[0]
 time_idx = len(Time_sample)
 time_sampling[:] = Time_sample
 
-AZIMUTH = f(Time_sample)
-Azimuth[:] = AZIMUTH; del AZIMUTH; del f; del Time_sample
+AZIMUTH = f(Time_sample); del Time_sample; del f
 
 print("line 201", time_idx, time.time()-start_time)
 

@@ -5,6 +5,7 @@ from scipy.signal import butter,filtfilt
 from scipy import interpolate
 from netCDF4 import Dataset
 import pandas as pd
+import pyFAST.input_output as io
 
 def correlation_coef(x,y):
     
@@ -101,10 +102,10 @@ a = Dataset(in_dir+"Dataset.nc")
 
 #plotting options
 compare_variables = False
-compare_FFT = False
+compare_FFT = True
 plot_relative_contributions = False
 compare_total_correlations = False
-compare_LPF_correlations = True
+compare_LPF_correlations = False
 plot_PDF = False
 plot_derivative = False
 plot_moving_stats = False
@@ -126,8 +127,9 @@ Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
 Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
-Azimuth = np.array(a.variables["Azimuth"][Time_start_idx:Time_end_idx])
-Azimuth = np.radians(Azimuth)
+df = io.fast_output_file.FASTOutputFile(in_dir+"NREL_5MW_Main.out").toDataFrame()
+
+Azimuth = np.radians(np.array(df["Azimuth_[deg]"][Time_start_idx:Time_end_idx])); del df
 
 RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:Time_end_idx])
 RtAeroFyh = np.array(a.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
@@ -245,7 +247,7 @@ if compare_variables == True:
 
 if compare_FFT == True:
     Variables = [["Iy", "Iz"]]
-    units = [["[]","[]"]]
+    units = [["[$m^4/s$]","[$m^4/s$]"]]
     Ylabels = [["Asymmetry in horizontal", "Asymmetry in vertical"]]
     h_vars = [[Iy,Iz]]
 
@@ -280,7 +282,7 @@ if compare_FFT == True:
         # ax3.set_yscale("log")
         fig.supxlabel("Frequency [Hz]",fontsize=14)
         plt.tight_layout()
-        plt.savefig(in_dir+"Bearing_Aero_Loads/FFT_{}.png".format(Variables[i]))
+        plt.savefig(in_dir+"velocity_correlations_2/FFT_{}.png".format(Variables[i]))
         plt.close()
 
 
@@ -341,7 +343,7 @@ if compare_total_correlations == True:
 
 if compare_LPF_correlations == True:
     # Variables = ["Iy", "RtAeroMys", "Iz", "RtAeroMzs"]
-    # units = ["[$m^2/s$]","[kN-m]","[$m^2/s$]","[kN]"]
+    # units = ["[$m^4/s$]","[kN-m]","[$m^4/s$]","[kN-m]"]
     # Ylabels = ["Horizontal Asymmetry", "Rotor aerodynamic moment in y direction","Vertical Asymmetry", "Rotor aerodynamic moment in z direction"]
     # h_vars = [Iy, RtAeroMys, Iz, RtAeroMzs]
     Variables = ["IA", "IB", "FBR", "RtAeroMR"]
