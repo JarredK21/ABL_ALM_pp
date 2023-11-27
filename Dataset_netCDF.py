@@ -164,7 +164,6 @@ def delta_Ux_r(r,fx,fy,it):
 
 #directories
 in_dir = "./"
-#in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 out_dir = in_dir
 
 #create netcdf file
@@ -179,7 +178,7 @@ sampling_dim = ncfile.createDimension("sampling",None)
 time_OF = ncfile.createVariable("time_OF", np.float64, ('OF',),zlib=True)
 time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
 
-Azimuth = ncfile.createVariable("Azimuth", np.float64, ('OF',),zlib=True)
+Azimuth = ncfile.createVariable("Azimuth", np.float64, ('sampling',),zlib=True)
 RtAeroFxh = ncfile.createVariable("RtAeroFxh", np.float64, ('OF',),zlib=True)
 RtAeroFyh = ncfile.createVariable("RtAeroFyh", np.float64, ('OF',),zlib=True)
 RtAeroFzh = ncfile.createVariable("RtAeroFzh", np.float64, ('OF',),zlib=True)
@@ -205,10 +204,10 @@ time_OF[:] = np.array(df["Time_[s]"])
 
 print("line 156",time.time()-start_time)
 
-Variables = ["Azimuth","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh",
+Variables = ["RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh",
              "LSSGagMys","LSSGagMzs", "LSShftMxa","LSSTipMys","LSSTipMzs",
              "LSShftFxa","LSShftFys","LSShftFzs"]
-units = ["[deg]","[N]","[N]","[N]","[N-m]","[N-m]","[N-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]",
+units = ["[N]","[N]","[N]","[N-m]","[N-m]","[N-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]",
          "[kN]","[kN]","[kN]"]
 for i in np.arange(0,len(Variables)):
     Variable = Variables[i]
@@ -243,10 +242,11 @@ for i in np.arange(0,len(Variables)):
         LSShftFys[:] = signal[:,0]; del signal
     elif Variable == "LSShftFzs":
         LSShftFzs[:] = signal; del signal
-    elif Variable == "Azimuth":
-        Azimuth[:] = signal; del signal
 
-Azimuth = np.radians(np.array(df["Azimuth_[deg]"]))
+
+TIME_OF = np.array(df["Time_[s]"])
+AZIMUTH = np.radians(np.array(df["Azimuth_[deg]"]))
+f = interpolate.interp1d(TIME_OF, AZIMUTH); del TIME_OF; del AZIMUTH
 
 del df
 
@@ -257,8 +257,12 @@ a = Dataset(in_dir+"sampling_r_0.0.nc")
 
 #sampling time
 Time_sample = np.array(a.variables["time"])
+Time_sample = Time_sample - Time_sample[0]
 time_idx = len(Time_sample)
-time_sampling[:] = Time_sample; del Time_sample
+time_sampling[:] = Time_sample
+
+AZIMUTH = f(Time_sample)
+Azimuth[:] = AZIMUTH; del AZIMUTH; del f; del Time_sample
 
 print("line 201", time_idx, time.time()-start_time)
 
@@ -282,8 +286,6 @@ for offset in offsets:
     p_rotor = a.groups["p_r"]; del a
 
     velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"])
-    f = interpolate.interp1d(Azimuth,np.array(time_OF))
-    Azimuth = f(Time_sample)
 
     Variables = ["Ux_{0}".format(offset), "IA_{0}".format(offset), "IB_{0}".format(offset), "Iy_{0}".format(offset),"Iz_{0}".format(offset)]
 
