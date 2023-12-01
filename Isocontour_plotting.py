@@ -110,7 +110,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = True; plot_r = True; plot_tr = True; plot_i = True; plot_t = True
+plot_l = True; plot_r = True; plot_tr = True; plot_i = True; plot_t = False
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -152,6 +152,7 @@ for plane in planes:
         tend = 35000
         tend_idx = np.searchsorted(Time,tend)
         Time_steps = np.arange(0, tend_idx-tstart_idx)
+        Time = Time[tstart_idx:tend_idx]
 
         #plotting option
         fluc_vel = False
@@ -243,14 +244,10 @@ for plane in planes:
                 else:
                     u = np.array(p.variables[velocity_comp][tstart_idx:tend_idx])
 
-                def mean_velocity(u):
-                    u_k = []
-                    for u_j in u:
-                        u_k.append(u_j - np.mean(u_j))
-                    return u_k
                 
                 if fluc_vel == True:
-                    u = mean_velocity(u)
+                    u_mean = np.mean(u)
+                    u = np.subtract(u,u_mean)
                 
 
                 print("line 328",time.time()-start_time)
@@ -304,7 +301,7 @@ for plane in planes:
 
                     Z = u_plane
 
-                    T = Time[it] + (tend-tstart)
+                    T = Time[it]
 
                     fig = plt.figure(figsize=(50,30))
                     plt.rcParams['font.size'] = 40

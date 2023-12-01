@@ -7,38 +7,20 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 import csv
 
-def dz_calc(u,dz):
+def dz_calc(u,z): #doesn't work??
+    U = np.insert(u,0,0)
+    Z = np.insert(z,0,0)
     #compute graident to 2nd order accurate using central difference primarily and forward difference for the first cell
     d_dz = []
-    for i in np.arange(0,len(u)-4,1):
-        if i == 0:
-            d_dz_i = ((-(25/12)*u[i]+4*u[i+1]-3*u[i+2]+(4/3)*u[i+3]-(1/4)*u[i+4])/dz)
-        else:
-            d_dz_i = ((u[i+1] - u[i-1])/(2*dz))
+    z_dz = []
+    for i in np.arange(0,len(U)-1,1):
+        dz = Z[i+1] - Z[i]
+        d_dz.append((U[i+1] - U[i])/dz)
+        z_dz.append((Z[i+1] + Z[i])/2)
 
-        d_dz.append(d_dz_i)
+    return np.array(d_dz), np.array(z_dz)
 
-    return d_dz
 
-def dz_calc_3(u,dz):
-    #compute graident to 2nd order accurate using central difference primarily and forward difference for the first cell
-    d_dz = []
-    for i in np.arange(0,len(u)-4,1):
-        d_dz_i = ((-(25/12)*u[i]+4*u[i+1]-3*u[i+2]+(4/3)*u[i+3]-(1/4)*u[i+4])/dz)
-
-        d_dz.append(d_dz_i)
-
-    return d_dz
-
-def dz_calc_1(u,dz):
-    #compute graident to 2nd order accurate using central difference primarily and forward difference for the first cell
-    d_dz = []
-    for i in np.arange(0,len(u)-4,1):
-        d_dz_i = (u[i+1]-u[i])/dz
-
-        d_dz.append(d_dz_i)
-
-    return d_dz
 
 
 def dt_calc(u,dt):
@@ -67,7 +49,6 @@ Mean_profiles = data.groups["mean_profiles"]
 
 time = np.array(data.variables["time"])
 z = np.array(Mean_profiles.variables["h"])
-dz = z[1]-z[0]
 u_star = np.array(data.variables["ustar"])
 kappa = 0.41
 
@@ -78,29 +59,26 @@ for u_i, v_i in zip(u,v):
     hvelmag.append(np.add( np.multiply(np.cos(np.radians(29)),u_i), np.multiply(np.sin(np.radians(29)),v_i) ))
 
 du_dz = []
-for hvelmag_i in hvelmag:
-    du_dz_i = dz_calc(hvelmag_i,dz)
-    du_dz.append(du_dz_i)
-
-
 phi_m = []
-for i in np.arange(0,len(du_dz)):
+for i in np.arange(0,len(hvelmag)):
+    du_dz_i,z_dz = dz_calc(hvelmag[i],z)
+    du_dz.append(du_dz_i)
     kappa = 0.41
-    z_star_m = (z[0:-4]*kappa)/u_star[i]
-    phi_m_i = np.multiply(z_star_m,du_dz[i])
-    phi_m.append(phi_m_i)
+    z_star_m = (z_dz*kappa)/u_star[i]
+    phi_m.append(np.multiply(z_star_m,du_dz_i))
+    
 
 
 Times = [32500, 33000, 34000, 34500]
 fig = plt.figure()
 for Time in Times:
     time_idx = np.searchsorted(time,Time)
-    plt.plot(phi_m[time_idx][0:10],z[0:10])
+    plt.plot(phi_m[time_idx][0:10],z_dz[0:10])
 
 fig = plt.figure()
 for Time in Times:
     time_idx = np.searchsorted(time,Time)
-    plt.plot(du_dz[time_idx][0:10],z[0:10])
+    plt.plot(du_dz[time_idx][0:10],z_dz[0:10])
 
 plt.show()
 
