@@ -310,8 +310,8 @@ for plane in planes:
 
                     #show where rotor is and reduce plot area
                     plt.xlim([2000,3000]); plt.ylim([2000,3000])
-                    x = [2524.5,2585.5]; y = [2615.1,2504.9]
-                    plt.plot(x,y,linewidth=1.0,color="k")
+                    x_lims = [2524.5,2585.5]; y_lims = [2615.1,2504.9]
+                    plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
 
                     if normal == "x":
                         plt.xlabel("Y axis [m]")

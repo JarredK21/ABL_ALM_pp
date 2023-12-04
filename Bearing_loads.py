@@ -95,6 +95,12 @@ def probability_dist(y):
     return P,X, round(mu,2), round(sd,2),round(S,2),round(k,2)
 
 
+def dt_calc(u,time):
+    dt = []
+    for i in np. arange(0,len(time)-1):
+        dt.append((u[i+1]-u[i])/(time[i+1]-time[i]))
+    return np.array(dt)
+
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
@@ -197,6 +203,8 @@ Iy = np.array(group.variables["Iy"])
 Iz = np.array(group.variables["Iz"])
 
 I_vec = np.sqrt( np.add( np.square(Iy), np.square(Iz) ) )
+
+#ux_dt = dt_calc(Ux,Time_sampling)
 
 fig, (ax1, ax2, ax3) = plt.subplots(3,1,figsize=(14,8),sharex=True)
 ax1.plot(Time_sampling,Ux)

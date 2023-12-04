@@ -14,7 +14,7 @@ if isExist == False:
     os.makedirs(video_folder)
 
 
-plot_l = True; plot_r = True; plot_tr = False; plot_i = False; plot_t = False
+plot_l = True; plot_r = False; plot_tr = False; plot_i = False; plot_t = False
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
