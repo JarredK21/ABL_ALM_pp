@@ -174,7 +174,7 @@ def Update(it):
     cd.remove()
     plt.close(fig)
 
-    return T
+    return it
 
 
 
