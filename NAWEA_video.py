@@ -82,7 +82,7 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax1.add_artist(Drawing_uncolored_circle)
 
-    Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(T,4))
+    Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax1.set_title(Title)
 
@@ -113,7 +113,7 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax2.add_artist(Drawing_uncolored_circle)
 
-    Title = "63m upwind of Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(T,4))
+    Title = "63m upwind of Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax2.set_title(Title)
 
@@ -137,7 +137,7 @@ def Update(it):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(T,4))
+    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax3.set_title(Title)
 
@@ -163,7 +163,7 @@ def Update(it):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(T,4))
+    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax4.set_title(Title)
 
