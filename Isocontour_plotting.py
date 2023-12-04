@@ -110,7 +110,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = True; plot_r = True; plot_tr = True; plot_i = True; plot_t = False
+plot_l = True; plot_r = False; plot_tr = False; plot_i = False; plot_t = False
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -128,7 +128,7 @@ for plane in planes:
         continue
 
     if plane == "l":
-        offsets = [22.5,85,142.5]
+        offsets = [85]
     elif plane == "r":
         offsets = [-5.5,-63.0]
     elif plane == "tr":
@@ -155,8 +155,8 @@ for plane in planes:
         Time = Time[tstart_idx:tend_idx]
 
         #plotting option
-        fluc_vel = False
-        plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
+        fluc_vel = True
+        plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
         #check if no velocity components selected
@@ -307,6 +307,12 @@ for plane in planes:
                     plt.rcParams['font.size'] = 40
 
                     cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+
+                    #show where rotor is and reduce plot area
+                    plt.xlim([2000,3000]); plt.ylim([2000,3000])
+                    x = [2524.5,2585.5]; y = [2615.1,2504.9]
+                    plt.plot(x,y,linewidth=1.0,color="k")
+
                     if normal == "x":
                         plt.xlabel("Y axis [m]")
                         plt.ylabel("Z axis [m]")

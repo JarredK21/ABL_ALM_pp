@@ -127,9 +127,7 @@ Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
 Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
-df = io.fast_output_file.FASTOutputFile(in_dir+"NREL_5MW_Main.out").toDataFrame()
-
-Azimuth = np.radians(np.array(df["Azimuth_[deg]"][Time_start_idx:Time_end_idx])); del df
+Azimuth = np.radians(np.array(a.variables["Azimuth"][Time_start_idx:Time_end_idx]))
 
 RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:Time_end_idx])
 RtAeroFyh = np.array(a.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
@@ -193,27 +191,22 @@ Theta_Aero_FB = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
 offset = "63.0"
 group = a.groups["{}".format(offset)]
 Ux = np.array(group.variables["Ux"])
+Uz = np.array(group.variables["Uz"])
 IA = np.array(group.variables["IA"])
-IB = np.array(group.variables["IB"])
 Iy = np.array(group.variables["Iy"])
 Iz = np.array(group.variables["Iz"])
 
 I_vec = np.sqrt( np.add( np.square(Iy), np.square(Iz) ) )
 
-corr = correlation_coef(I_vec,IA)
-print(corr)
-
 fig, (ax1, ax2, ax3) = plt.subplots(3,1,figsize=(14,8),sharex=True)
-ax1.plot(Time_sampling,np.true_divide(abs(Iy),I_vec),"b")
-ax1.plot(Time_sampling,np.true_divide(abs(Iz),I_vec),"r")
+ax1.plot(Time_sampling,Ux)
 ax1.grid()
-ax1.set_title("Relative contribution to Magntidue of Asymmetry [-]",fontsize=16)
-plt.legend(["Iy/IA", "Iz/IA"])
-ax2.plot(Time_sampling,Iy,"b")
-ax2.set_title("Asymmetry around y axis [$m^4/s$]",fontsize=16)
+ax1.set_title("Rotor averaged horizontal velocity [m/s]",fontsize=16)
+ax2.plot(Time_sampling,Uz)
+ax2.set_title("Rotor averaged vertical velocity [m/s]",fontsize=16)
 ax2.grid()
-ax3.plot(Time_sampling,Iz,"r")
-ax3.set_title("Asymmetry around z axis [$m^4/s$]",fontsize=16)
+ax3.plot(Time_sampling,Iy)
+ax3.set_title("Asymmetry around y axis [$m^4/s$]",fontsize=16)
 ax3.grid()
 plt.xlabel("Time [s]",fontsize=16)
 plt.tight_layout()
@@ -252,20 +245,20 @@ plt.show()
 # plt.tight_layout()
 # plt.show()
 
-    # f = interpolate.interp1d(Time_sampling,Ux)
-    # Ux = f(Time_OF)
+f = interpolate.interp1d(Time_sampling,Ux)
+Ux = f(Time_OF)
 
-    # f = interpolate.interp1d(Time_sampling,IA)
-    # IA = f(Time_OF)
+f = interpolate.interp1d(Time_sampling,Uz)
+Uz = f(Time_OF)
 
-    # f = interpolate.interp1d(Time_sampling,IB)
-    # IB = f(Time_OF)
+f = interpolate.interp1d(Time_sampling,IA)
+IA = f(Time_OF)
 
-    # f = interpolate.interp1d(Time_sampling,Iy)
-    # Iy = f(Time_OF)
+f = interpolate.interp1d(Time_sampling,Iy)
+Iy = f(Time_OF)
 
-    # f = interpolate.interp1d(Time_sampling,Iz)
-    # Iz = f(Time_OF)
+f = interpolate.interp1d(Time_sampling,Iz)
+Iz = f(Time_OF)
 
 
 
@@ -398,11 +391,12 @@ if compare_total_correlations == True:
 
 
 if compare_LPF_correlations == True:
-    Variables = ["AeroFBy", "AeroFBz", "Iy", "Iz"]
-    units = ["[kN]", "[kN]","[$m^4/s$]", "[$m^4/s$]"]
-    Ylabels = ["Aerodynamic Bearing Force in y direction", "Aerodynamic Bearing Force in z direction",
-               "Asymmtry around y axis", "Asymmtry around z axis" ]
-    h_vars = [Aero_FBy/1000, Aero_FBz/1000, Iy, Iz]
+    Variables = ["Uz", "Iy", "Iz", "Ux", "My", "Mz", "FBy", "FBz"]
+    units = ["[m/s]", "[$m^4/s$]", "[$m^4/s$]", "[m/s]", "[kN-m]", "[kN-m]", "[kN]", "[kN]"]
+    Ylabels = ["Rotor averaged vertical velocity", "Asymmetry around y axis", "Asymmetry around z axis",
+               "Rotor averaged horizontal velocity", "Aerodynamic moment around y axis", "Aerodynamic moment around z axis",
+               "Bearing force component y direction", "Bearing force component z direction"]
+    h_vars = [Uz, Iy, Iz, Ux, RtAeroMys/1000, RtAeroMzs/1000,Aero_FBy/1000, Aero_FBz/1000]
 
     for j in np.arange(0,len(h_vars)):
         for i in np.arange(0,len(h_vars)):
