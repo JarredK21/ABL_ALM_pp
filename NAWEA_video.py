@@ -40,6 +40,15 @@ def blade_positions(it):
 
 def Update(it):
 
+    if it < 10:
+        Time_idx = "000{}".format(it)
+    elif it >= 10 and it < 100:
+        Time_idx = "00{}".format(it)
+    elif it >= 100 and it < 1000:
+        Time_idx = "0{}".format(it)
+    elif it >= 1000 and it < 10000:
+        Time_idx = "{}".format(it)
+
     fig = plt.figure(figsize=(14,8),constrained_layout=True)
     gs = fig.add_gridspec(2, 2)
     f3_ax1 = fig.add_subplot(gs[1, :1])#bottom left
@@ -159,7 +168,7 @@ def Update(it):
     f3_ax4.set_title(Title)
 
 
-    plt.savefig(out_dir+"NAWEA_plot_{}.png".format(round(T,4)))
+    plt.savefig(out_dir+"NAWEA_plot_{}.png".format(Time_idx))
     plt.cla()
     cb.remove()
     cd.remove()
