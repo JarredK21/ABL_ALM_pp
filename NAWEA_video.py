@@ -86,7 +86,7 @@ def Update(it):
 
     Z = u_plane
 
-    cs = f3_ax2.contourf(X,Y,Z,levels=levels_r, cmap=cm.coolwarm,vmin=cmin_r,vmax=cmax_r)
+    cs = f3_ax2.contourf(X,Y,Z,levels=levels_w, cmap=cm.coolwarm,vmin=cmin_w,vmax=cmax_w)
     f3_ax2.set_xlabel("Y' axis (rotor frame of reference) [m]")
     f3_ax2.set_ylabel("Z' axis (rotor frame of reference) [m]")
 
@@ -110,7 +110,7 @@ def Update(it):
 
 
     #top left
-    U_l = u_l[it]
+    U_l = u_fluc[it]
 
     u_plane = U_l.reshape(x_l,y_l)
     X,Y = np.meshgrid(xs_l,ys_l)
@@ -271,10 +271,15 @@ w_r = np.array(p.variables["velocityz"][Time_start_idx:]); del p
 
 cmin_r = 0
 cmax_r = math.ceil(np.max(u_r))
+cmin_w = math.floor(np.min(w_r))
+cmax_w = math.ceil(np.max(w_r))
 
 nlevs = (cmax_r-cmin_r)
 levels_r = np.linspace(cmin_r,cmax_r,nlevs,dtype=int)
 print("line 317",cmin_r,cmax_r)
+
+nlevs = (cmax_w-cmin_w)
+levels_w = np.linspace(cmin_w,cmax_w,nlevs,dtype=int)
 
 
 #longitudinal plane data
