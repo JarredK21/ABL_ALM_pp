@@ -57,7 +57,7 @@ def Update(it):
     f3_ax4 = fig.add_subplot(gs[0, 1:])#top right
 
     #bottom left plot
-    U_r = u_r[it] #velocity time step it
+    U_r = u_r[it[0]] #velocity time step it
 
     u_plane = U_r.reshape(y_r,x_r)
     X,Y = np.meshgrid(ys_r,zs_r)
@@ -82,13 +82,13 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax1.add_artist(Drawing_uncolored_circle)
 
-    Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling_r[it[0]],4))
 
     f3_ax1.set_title(Title)
 
 
     #bottom right plot
-    W_r = w_r[it] #velocity time step it
+    W_r = w_r[it[0]] #velocity time step it
 
     u_plane = W_r.reshape(y_r,x_r)
     X,Y = np.meshgrid(ys_r,zs_r)
@@ -113,13 +113,13 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax2.add_artist(Drawing_uncolored_circle)
 
-    Title = "63m upwind of Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "63m upwind of Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(Time_sampling_r[it[0]],4))
 
     f3_ax2.set_title(Title)
 
 
     #top left
-    U_l = u_fluc[it]
+    U_l = u_fluc[it[1]]
 
     u_plane = U_l.reshape(x_l,y_l)
     X,Y = np.meshgrid(xs_l,ys_l)
@@ -137,13 +137,13 @@ def Update(it):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling_l[it[1]],4))
 
     f3_ax3.set_title(Title)
 
 
     #top right
-    U_l = u_fluc[it]
+    U_l = u_fluc[it[1]]
 
     u_plane = U_l.reshape(x_l,y_l)
     X,Y = np.meshgrid(xs_l,ys_l)
@@ -163,7 +163,7 @@ def Update(it):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling_l[it[0]],4))
 
     f3_ax4.set_title(Title)
 
@@ -206,34 +206,31 @@ def Horizontal_velocity(u,v,twist,x,normal,zs,h,height):
 start_time = time.time()
 
 out_dir = "new_vid_plots/"
-a = Dataset("Dataset.nc")
+a = Dataset("NREL_5MW_MCBL_R_CRPM_2/post_processing/Dataset.nc")
 
 Time_OF = np.array(a.variables["time_OF"])
-Time_sampling = np.array(a.variables["time_sampling"])
-Time_sampling = Time_sampling - Time_sampling[0]
+Time_sampling_dataset = np.array(a.variables["time_sampling"])
+Time_sampling_dataset = Time_sampling_dataset - Time_sampling_dataset[0]
 
 Time_start = 200
 Time_end = 1200
-Time_start_idx = np.searchsorted(Time_sampling,Time_start)
-Time_end_idx = np.searchsorted(Time_sampling,Time_end)
+Time_start_idx = np.searchsorted(Time_sampling_dataset,Time_start)
+Time_end_idx = np.searchsorted(Time_sampling_dataset,Time_end)
 
-Time_sampling = Time_sampling[Time_start_idx:Time_end_idx]
+Time_sampling_dataset = Time_sampling_dataset[Time_start_idx:Time_end_idx]
 
 
 Azimuth = np.array(a.variables["Azimuth"])
 Azimuth = np.radians(Azimuth)
 
 f = interpolate.interp1d(Time_OF,Azimuth)
-Azimuth = f(Time_sampling)
-
-
-Time_steps = np.arange(0,len(Time_sampling))
+Azimuth = f(Time_sampling_dataset)
 
 print("line 263", time.time()-start_time)
 
 
 #defining twist angles with height from precursor
-precursor = Dataset("abl_statistics60000.nc")
+precursor = Dataset("convective_precursor_2/post_processing/abl_statistics60000.nc")
 Time_pre = np.array(precursor.variables["time"])
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
 t_start = np.searchsorted(precursor.variables["time"],32300)
@@ -246,7 +243,16 @@ del precursor
 
 
 #rotor disk data
-a = Dataset("sampling_r_-63.0.nc")
+a = Dataset("NREL_5MW_MCBL_R_CRPM_2/post_processing/sampling_r_-63.0.nc")
+
+Time_sampling_r = np.array(a.variables["time"])
+Time_sampling_r = Time_sampling_r - Time_sampling_r[0]
+
+Time_start_idx = np.searchsorted(Time_sampling_r,Time_start)
+Time_end_idx = np.searchsorted(Time_sampling_r,Time_end)
+
+Time_sampling_r = Time_sampling_r[Time_start_idx:Time_end_idx]
+
 p = a.groups["p_r"]
 
 x_r = p.ijk_dims[0] #no. data points
@@ -293,7 +299,16 @@ levels_w = np.linspace(cmin_w,cmax_w,nlevs,dtype=int)
 
 
 #longitudinal plane data
-a = Dataset("sampling_l_85.nc")
+a = Dataset("convective_precursor_2/post_processing/sampling_l_85.nc")
+
+Time_sampling_l = np.array(a.variables["time"])
+Time_sampling_l = Time_sampling_l - Time_sampling_l[0]
+
+Time_start_idx = np.searchsorted(Time_sampling_l,Time_start)
+Time_end_idx = np.searchsorted(Time_sampling_l,Time_end)
+
+Time_sampling_l = Time_sampling_l[Time_start_idx:Time_end_idx]
+
 p = a.groups["p_l"]
 
 x_l = p.ijk_dims[0] #no. data points
@@ -313,8 +328,8 @@ zs_l = 0
 
 del a
 
-u = np.array(p.variables["velocityx"])
-v = np.array(p.variables["velocityy"])
+u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
+v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
 u_l = Horizontal_velocity(u,v,twist,x_l,normal,zs_l,h,height=90); del u; del v; del p
 u_mean = np.mean(u_l)
 u_fluc = np.subtract(u_l,u_mean)
@@ -326,6 +341,8 @@ nlevs = (cmax_l-cmin_l)
 levels_l = np.linspace(cmin_l,cmax_l,nlevs,dtype=int)
 print("line 349",cmin_l,cmax_l)
 
+Time_steps_r = np.arange(0,len(Time_sampling_r)); Time_steps_l = np.arange(0,len(Time_sampling_l))
+Time_steps = zip(Time_steps_r,Time_steps_l)
 
 with Pool() as pool:
     for T in pool.imap(Update,Time_steps):
