@@ -213,10 +213,11 @@ Time_sampling = np.array(a.variables["time_sampling"])
 Time_sampling = Time_sampling - Time_sampling[0]
 
 Time_start = 200
-Time_end = Time_sampling[-1]
+Time_end = 1200
 Time_start_idx = np.searchsorted(Time_sampling,Time_start)
+Time_end_idx = np.searchsorted(Time_sampling,Time_end)
 
-Time_sampling = Time_sampling[Time_start_idx:]
+Time_sampling = Time_sampling[Time_start_idx:Time_end_idx]
 
 
 Azimuth = np.array(a.variables["Azimuth"])
@@ -273,10 +274,10 @@ zs_r = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y_r)
 
 del a
 
-u = np.array(p.variables["velocityx"][Time_start_idx:])
-v = np.array(p.variables["velocityy"][Time_start_idx:])
+u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
+v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
 u_r = Horizontal_velocity(u,v,twist,x_r,normal,zs_r,h,height=90); del u; del v; 
-w_r = np.array(p.variables["velocityz"][Time_start_idx:]); del p
+w_r = np.array(p.variables["velocityz"][Time_start_idx:Time_end_idx]); del p
 
 cmin_r = 0
 cmax_r = math.ceil(np.max(u_r))
