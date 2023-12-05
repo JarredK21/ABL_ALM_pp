@@ -14,7 +14,7 @@ from matplotlib.patches import Circle
 def blade_positions(it):
 
     R = 63
-    Az = Azimuth[it]
+    Az = f_Az(Time_sampling[it])
     Y = [2560]; Y2 = [2560]; Y3 = [2560]
     Z = [90]; Z2 = [90]; Z3 = [90]
 
@@ -137,7 +137,7 @@ def Update(it):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "Horizontal Plane hub height. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax3.set_title(Title)
 
@@ -163,11 +163,11 @@ def Update(it):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "Horizontal Plane hub height. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax4.set_title(Title)
 
-
+    plt.tight_layout()
     plt.savefig(out_dir+"NAWEA_plot_{}.png".format(Time_idx))
     plt.cla()
     cb.remove()
@@ -235,7 +235,7 @@ del precursor
 a = Dataset("sampling_r_-63.0.nc")
 
 Time_sampling = np.array(a.variables["time"])
-Time_start = 32700; Time_end = 33900
+Time_start = 32500; Time_end = 33701
 Time_start_idx = np.searchsorted(Time_sampling,Time_start); Time_end_idx = np.searchsorted(Time_sampling,Time_end)
 Time_sampling = Time_sampling[Time_start_idx:Time_end_idx]; Time_sampling = Time_sampling - Time_sampling[0]
 
