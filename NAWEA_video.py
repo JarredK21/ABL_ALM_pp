@@ -174,7 +174,7 @@ def Update(it):
     cd.remove()
     plt.close(fig)
 
-    return it
+    return Time_idx
 
 
 
