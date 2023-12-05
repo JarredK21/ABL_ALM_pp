@@ -57,7 +57,7 @@ def Update(it):
     f3_ax4 = fig.add_subplot(gs[0, 1:])#top right
 
     #bottom left plot
-    U_r = u_r[it[0]] #velocity time step it
+    U_r = u_r[it] #velocity time step it
 
     u_plane = U_r.reshape(y_r,x_r)
     X,Y = np.meshgrid(ys_r,zs_r)
@@ -82,13 +82,13 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax1.add_artist(Drawing_uncolored_circle)
 
-    Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling_r[it[0]],4))
+    Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling_r[it],4))
 
     f3_ax1.set_title(Title)
 
 
     #bottom right plot
-    W_r = w_r[it[0]] #velocity time step it
+    W_r = w_r[it] #velocity time step it
 
     u_plane = W_r.reshape(y_r,x_r)
     X,Y = np.meshgrid(ys_r,zs_r)
@@ -113,13 +113,13 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax2.add_artist(Drawing_uncolored_circle)
 
-    Title = "63m upwind of Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(Time_sampling_r[it[0]],4))
+    Title = "63m upwind of Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(Time_sampling_r[it],4))
 
     f3_ax2.set_title(Title)
 
 
     #top left
-    U_l = u_fluc[it[1]]
+    U_l = u_fluc[it]
 
     u_plane = U_l.reshape(x_l,y_l)
     X,Y = np.meshgrid(xs_l,ys_l)
@@ -137,13 +137,13 @@ def Update(it):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling_l[it[1]],4))
+    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling_l[it],4))
 
     f3_ax3.set_title(Title)
 
 
     #top right
-    U_l = u_fluc[it[1]]
+    U_l = u_fluc[it]
 
     u_plane = U_l.reshape(x_l,y_l)
     X,Y = np.meshgrid(xs_l,ys_l)
@@ -163,7 +163,7 @@ def Update(it):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling_l[it[0]],4))
+    Title = "Horizontal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling_l[it],4))
 
     f3_ax4.set_title(Title)
 
@@ -341,8 +341,7 @@ nlevs = (cmax_l-cmin_l)
 levels_l = np.linspace(cmin_l,cmax_l,nlevs,dtype=int)
 print("line 349",cmin_l,cmax_l)
 
-Time_steps_r = np.arange(0,len(Time_sampling_r)); Time_steps_l = np.arange(0,len(Time_sampling_l))
-Time_steps = zip(Time_steps_r,Time_steps_l)
+Time_steps = np.arange(0,len(Time_sampling_r))
 
 with Pool() as pool:
     for T in pool.imap(Update,Time_steps):
