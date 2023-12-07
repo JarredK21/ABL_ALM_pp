@@ -1,3 +1,4 @@
+#working on local computer
 import ffmpeg
 import os
 import operator
@@ -5,7 +6,7 @@ import sys
 
 
 #directories
-in_dir = "ISOplots/"
+in_dir = "../../ABL_precursor/post_processing/"
 
 video_folder = in_dir + "videos/"
 isExist = os.path.exists(video_folder)
@@ -13,7 +14,7 @@ if isExist == False:
     os.makedirs(video_folder)
 
 
-plot_l = True; plot_r = True; plot_tr = True; plot_i = True; plot_t = True
+plot_l = True; plot_r = False; plot_tr = False; plot_i = False; plot_t = False
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -31,9 +32,9 @@ for plane in planes:
         continue
 
     if plane == "l":
-        offsets = [22.5,85,142.5]
+        offsets = [85]
     elif plane == "r":
-        offsets = [-5.5,-63.0]
+        offsets = [-5.5]
     elif plane == "tr":
         offsets = [0.0]
     elif plane == "i":
@@ -44,8 +45,9 @@ for plane in planes:
     ic = 0
     for offset in offsets:
 
-        plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
+        plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
+        Fluctuating_velocity = True
 
         #check if no velocity components selected
         if all(list(map(operator.not_, velocity_plot))) == True:
@@ -62,10 +64,12 @@ for plane in planes:
             
             print(plane_labels[ip],velocity_comps[iv],offset)
 
-            plots_dir = in_dir+"{}_{}_{}/".format(plane_labels[ip],velocity_comp,offset)
-            filename = "{}_{}_{}/".format(plane_labels[ip],velocity_comp,offset)
-
-
+            if Fluctuating_velocity == True:
+                plots_dir = in_dir+"{}_Plane_Fluctutating_{}_{}/".format(plane_labels[ip],velocity_comp,offset)
+                filename = "{}_Fluc_{}_{}".format(plane_labels[ip],velocity_comp,offset)
+            else:
+                plots_dir = in_dir+"{}_Plane_Total_{}_{}/".format(plane_labels[ip],velocity_comp,offset)
+                filename = "{}_{}_{}".format(plane_labels[ip],velocity_comp,offset)
 
             FRAMERATE = 4
             (

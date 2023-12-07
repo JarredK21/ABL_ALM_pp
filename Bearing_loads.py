@@ -5,6 +5,7 @@ from scipy.signal import butter,filtfilt
 from scipy import interpolate
 from netCDF4 import Dataset
 import pandas as pd
+import pyFAST.input_output as io
 
 def correlation_coef(x,y):
     
@@ -94,10 +95,15 @@ def probability_dist(y):
     return P,X, round(mu,2), round(sd,2),round(S,2),round(k,2)
 
 
+def dt_calc(u,time):
+    dt = []
+    for i in np. arange(0,len(time)-1):
+        dt.append((u[i+1]-u[i])/(time[i+1]-time[i]))
+    return np.array(dt)
+
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
-#a = Dataset(in_dir+"OF_Dataset.nc")
 a = Dataset(in_dir+"Dataset.nc")
 
 #plotting options
@@ -106,9 +112,11 @@ compare_FFT = False
 plot_relative_contributions = False
 compare_total_correlations = False
 compare_LPF_correlations = False
-plot_PDF = True
+plot_PDF = False
 plot_derivative = False
 plot_moving_stats = False
+systematic_LPF_FFT = True
+systematic_LPF = True
 
 out_dir = in_dir + "Bearing_Loads_2/"
 
@@ -127,8 +135,7 @@ Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
 Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
-Azimuth = np.array(a.variables["Azimuth"][Time_start_idx:Time_end_idx])
-Azimuth = np.radians(Azimuth)
+Azimuth = np.radians(np.array(a.variables["Azimuth"][Time_start_idx:Time_end_idx]))
 
 RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:Time_end_idx])
 RtAeroFyh = np.array(a.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
@@ -189,16 +196,73 @@ Rel_Aero_FBz = np.true_divide(np.square(Aero_FBz),np.square(Aero_FBR))
 add_Aero_RelFB = np.add(Rel_Aero_FBy,Rel_Aero_FBz)
 Theta_Aero_FB = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
 
-group = a.groups["0.0"]
+offset = "63.0"
+group = a.groups["{}".format(offset)]
 Ux = np.array(group.variables["Ux"])
-IA = np.array(group.variables["IA"])
-Uy = np.array(group.variables["Uy"])
 Uz = np.array(group.variables["Uz"])
+IA = np.array(group.variables["IA"])
 Iy = np.array(group.variables["Iy"])
 Iz = np.array(group.variables["Iz"])
 
+# I_vec = np.sqrt( np.add( np.square(Iy), np.square(Iz) ) )
+
+# Ux_dt = dt_calc(Ux,Time_sampling)
+# Uz_dt = dt_calc(Uz,Time_sampling)
+# Iy_dt = dt_calc(Iy,Time_sampling)
+
+# fig, (ax2, ax3) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+# # ax1.plot(Time_sampling,Ux)
+# # ax1.grid()
+# # ax1.set_title("Rotor averaged horizontal velocity [m/s]",fontsize=16)
+# ax2.plot(Time_sampling,Iy)
+# ax2.set_title("Asymmetry around y axis [$m^4/s$]",fontsize=16)
+# ax2.grid()
+# ax3.plot(Time_sampling,Iz)
+# ax3.set_title("Asymmetry around z axis [$m^4/s$]",fontsize=16)
+# ax3.grid()
+# plt.xlabel("Time [s]",fontsize=16)
+# plt.tight_layout()
+# #plt.show()
+# plt.savefig(in_dir+"velocity_correlations_2/Rel_Iy_Iz.png")
+# plt.close()
+
+
+# fig, (ax1, ax2) = plt.subplots(2,1,sharex=True, sharey=True)
+# offsets = ["0.0", "63.0"]
+# for offset in offsets:
+#     group = a.groups["{}".format(offset)]
+#     Ux = np.array(group.variables["Ux"])
+#     IA = np.array(group.variables["IA"])
+#     IB = np.array(group.variables["IB"])
+#     Iy = np.array(group.variables["Iy"])
+#     Iz = np.array(group.variables["Iz"])
+
+#     if offset == "63.0":
+#         time_shift_idx = np.searchsorted(Time_sampling,5.5)
+#         ax1.plot(Time_sampling,Iy,"r-")
+#         ax2.plot(Time_sampling,Iz,"r-")
+#     else:
+#         ax1.plot(Time_sampling,Iy,"b")
+#         ax2.plot(Time_sampling,Iz,"b")
+
+# ax1.axhline(y=(np.mean(Iy)+0.2e+06),linestyle="--",color="k")
+# ax1.axhline(y=(np.mean(Iy)-0.2e+06),linestyle="--",color="k")
+# ax2.axhline(y=(np.mean(Iz)+0.2e+06),linestyle="--",color="k")
+# ax2.axhline(y=(np.mean(Iz)-0.2e+6),linestyle="--",color="k")
+# plt.legend(offsets)
+# plt.xlabel("Time [s]",fontsize=16)
+# ax1.set_ylabel("Asymmtry around y axis [$m^4/s$]")
+# ax2.set_ylabel("Asymmtry around z axis [$m^4/s$]")
+# ax1.grid(); ax2.grid()
+# plt.tight_layout()
+# plt.show()
+
+
 f = interpolate.interp1d(Time_sampling,Ux)
 Ux = f(Time_OF)
+
+f = interpolate.interp1d(Time_sampling,Uz)
+Uz = f(Time_OF)
 
 f = interpolate.interp1d(Time_sampling,IA)
 IA = f(Time_OF)
@@ -209,17 +273,6 @@ Iy = f(Time_OF)
 f = interpolate.interp1d(Time_sampling,Iz)
 Iz = f(Time_OF)
 
-f = interpolate.interp1d(Time_sampling,Uy)
-Uy = f(Time_OF)
-
-f = interpolate.interp1d(Time_sampling,Uz)
-Uz = f(Time_OF)
-
-Uxz = np.sqrt(np.add(np.square(Ux),np.square(Uz)))
-
-Uxyz = []
-for i in np.arange(0,len(Time_OF)):
-    Uxyz.append(np.sqrt(Ux[i]**2 + Uy[i]**2 + Uz[i]**2))
 
 
 if compare_variables == True:
@@ -256,7 +309,7 @@ if compare_variables == True:
 
 if compare_FFT == True:
     Variables = [["Iy", "Iz"]]
-    units = [["[]","[]"]]
+    units = [["[$m^4/s$]","[$m^4/s$]"]]
     Ylabels = [["Asymmetry in horizontal", "Asymmetry in vertical"]]
     h_vars = [[Iy,Iz]]
 
@@ -291,7 +344,7 @@ if compare_FFT == True:
         # ax3.set_yscale("log")
         fig.supxlabel("Frequency [Hz]",fontsize=14)
         plt.tight_layout()
-        plt.savefig(in_dir+"Bearing_Aero_Loads/FFT_{}.png".format(Variables[i]))
+        plt.savefig(in_dir+"velocity_correlations_2/FFT_-63m_{}.png".format(Variables[i]))
         plt.close()
 
 
@@ -351,15 +404,15 @@ if compare_total_correlations == True:
 
 
 if compare_LPF_correlations == True:
-    Variables = ["FB", "IA"]
-    units = ["[kN]","[$m^4/s$]"]
-    Ylabels = ["Aerodynamic Bearing Force", "Asymmetry parameter"]
-    h_vars = [Aero_FBR/1000, IA]
+    Variables = ["IA","RtAeroMR"]
+    units = ["[$m^4/s$]", "[kN-m]"]
+    Ylabels = ["Asymmetry parameter", "Aerodynamic OOPBM"]
+    h_vars = [IA, RtAeroMR]
 
     for j in np.arange(0,len(h_vars)):
         for i in np.arange(0,len(h_vars)):
 
-            cutoff = 0.4
+            cutoff = 40
             signal_LP_0 = low_pass_filter(h_vars[i], cutoff)
             signal_LP_1 = low_pass_filter(h_vars[j], cutoff)
 
@@ -378,33 +431,23 @@ if compare_LPF_correlations == True:
             plt.title("Low passs filtered at {0}Hz.\nCorrelation: {1} with {2} = {3}".format(cutoff,Ylabels[j],Ylabels[i],corr),fontsize=16)
             ax.set_xlabel("Time [s]",fontsize=16)
             plt.tight_layout()
-            plt.savefig(in_dir+"Aero_correlations/LPF_{0}_corr_{1}_{2}.png".format(cutoff,Variables[j],Variables[i]))
+            plt.savefig(in_dir+"velocity_correlations_2/LPF_{0}_corr_{1}_{2}.png".format(cutoff,Variables[j],Variables[i]))
             plt.close(fig)
 
 
 if plot_PDF == True:
 
-    Variables = ["RtAeroFys", "RtAeroFzs", "RtAeroMys", "RtAeroMzs", "RtAeroMR", 
-                    "LSShftFys","LSShftFzs", "LSSTipMys", "LSSTipMzs", "LSSTipMR",
-                    "FBy", "FBz", "FBR"]
-    units = ["[kN]","[kN]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]","[kN-m]","[kN-m]","[kN-m]","[kN]","[kN]","[kN]"]
-    Ylabels = ["Rotor Aerodynamic Force y direction fixed frame of reference","Rotor Aerodynamic Force z direction fixed frame of reference",
-                "Rotor Aerodynamic Moment y direction fixed frame of reference", "Rotor Aerodynamic Moment z direction fixed frame of reference",
-                "Rotor Aerodynamic OOPBM fixed frame of reference",
-                "Rotor Aeroelastic Force y direction fixed frame of reference", "Rotor Aeroelastic Force z direction fixed frame of reference",
-               "Rotor Aeroelastic Moment y direction fixed frame of reference",
-                "Rotor Aeroelastic Moment z direction fixed frame of reference","Rotor Aeroelastic OOPBM fixed frame of reference",
-                "LSS Aeroelastic Moment y direction fixed frame of reference","LSS Aeroelastic Moment z direction fixed frame of reference",
-                "Bearing Force y direction", "Bearing Force z direction", "Bearing Force"]
+    Variables = ["Iy","Iz"]
+    units = ["[$m^4/s$]","[$m^4/s$]"]
+    Ylabels = ["Asymmetry around y axis", "Asymmetry around z axis"]
     
-    h_vars = [RtAeroFys/1000, RtAeroFzs/1000, RtAeroMys/1000, RtAeroMzs/1000, RtAeroMR/1000, LSShftFys,
-                LSShftFzs, LSSTipMys, LSSTipMzs, LSSTipMR, Aero_FBy/1000, Aero_FBz/1000, Aero_FBR/1000]
+    h_vars = [Iy,Iz]
 
     for i in np.arange(0,len(h_vars)):
-        cutoff = 40
-        signal_LP = low_pass_filter(h_vars[i], cutoff)
+        # cutoff = 40
+        # signal_LP = low_pass_filter(h_vars[i], cutoff)
 
-        P,X,mu,std,S,k = probability_dist(signal_LP)
+        P,X,mu,std,S,k = probability_dist(h_vars[i])
 
         txt = "mean = {0}{1}\nstandard deviation = {2}{1}".format(mu,units[i],std)
         print(Variables[i], txt)
@@ -421,7 +464,7 @@ if plot_PDF == True:
         plt.ylabel("Probability",fontsize=16)
         plt.xlabel("{0} {1}".format(Ylabels[i],units[i]),fontsize=28)
         plt.tight_layout()
-        #plt.savefig(in_dir+"Aero_PDFs/{0}".format(Variables[i]))
+        plt.savefig(in_dir+"velocity_correlations_2/{0}".format(Variables[i]))
         plt.close()
 
 
@@ -463,46 +506,113 @@ if plot_derivative == True:
 
 if plot_moving_stats == True:
 
-    Variables = ["FBR", "Mys", "Mzs","IA"]
-    units = ["[kN]", "[kN]", "[kN]","[$m^4/s$]"]
-    h_vars = [Aero_FBR, RtAeroMys, RtAeroMzs,IA]
 
-    fig, axs = plt.subplots(4, 1, sharex=True, figsize=(14,8))
+    Variables = ["FBR","Iy","Iz"]
+    units = ["[kN]","[$m^4/s$]","[$m^4/s$]"]
+    h_vars = [FBR,Iy,Iz]
+
+    fig, axs = plt.subplots(3, 1, sharex=True, figsize=(14,8))
         
     i = 0
     for ax in axs.ravel():
+
         
         # some sample data
-        if i == 3:
+        if i == 2 or i == 1:
             ts = pd.Series(h_vars[i],Time_sampling)
-            #ts.rolling(window=4).mean().plot(style='k--',ax=ax)
+            #plot the time series
             ts.plot(style='b-',ax=ax)
+            ts.rolling(window=250).mean().plot(style='k--',ax=ax)
+            ts.rolling(window=250).std().plot(style='r-',ax=ax)
         else:
             ts = pd.Series(h_vars[i], index=Time_OF)
-            #ts.rolling(window=400).mean().plot(style='k--',ax=ax)
+            #plot the time series
+            ts.plot(style='b-',ax=ax)
+            ts.rolling(window=25000).mean().plot(style='k--',ax=ax)
+            ts.rolling(window=25000).std().plot(style='r-',ax=ax)
 
-            ts.rolling(window=400).var().plot(style='r-',ax=ax)
+        ax.set_title('{} {}'.format(Variables[i],units[i]))
 
-            t = ts.index
-            v = ts.values
-
-            f = interpolate.interp1d(Time_sampling,IA)
-            IA_interp = f(t)
-
-            corr = correlation_coef(v,IA_interp)
-
-        #plot the time series
-        #ts.plot(style='b-',ax=ax)
-        plt.xlim(left=200)
-
-
-
-        if i == 3:
-            ax.set_title('{} {}'.format(Variables[i],units[i]))
-        else:
-            ax.set_title('Variance {} {} correlated with IA = {}'.format(Variables[i],units[i],round(corr,2)))
-        fig.supxlabel("Time [s]")
         i+=1
+
+    fig.supxlabel("Time [s]")
+    plt.xlim(left=200)
     plt.tight_layout()
-    plt.savefig(out_dir+"moving_stats.png")
+    plt.savefig(in_dir+"velocity_correlations_2/moving_stats.png")
     plt.close()
+
+
+if systematic_LPF == True:
+
+    Time_shift_idx = np.searchsorted(Time_OF,Time_OF[0]+5.5)
+
+    IA = IA[:-Time_shift_idx]; RtAeroMR = RtAeroMR[Time_shift_idx:]
+    Time_OF = Time_OF[Time_shift_idx:]
+
+    Variables = ["IA","RtAeroMR"]
+    units = ["[$m^4/s$]", "[kN-m]"]
+    Ylabels = ["Asymmetry parameter", "Aerodynamic OOPBM"]
+    h_vars = [IA, RtAeroMR/1000]
+    cutoffs = [40,1,0.3]
+
+    fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(15, 12))
+    fig.suptitle("Systematic LPF of IA and OOPBM", fontsize=18, y=0.95)
+
+    # loop through tickers and axes
+    corrs = []
+    for cutoff, ax in zip(cutoffs, axs.ravel()):
+
+        signal_LP_0 = low_pass_filter(h_vars[0], cutoff)
+        signal_LP_1 = low_pass_filter(h_vars[1], cutoff)
+
+        frq_0,FFT_0 = temporal_spectra(signal_LP_0,dt,Variables[0])
+        frq_1,FFT_1 = temporal_spectra(signal_LP_1,dt,Variables[1])
+        
+        corr = correlation_coef(signal_LP_0,signal_LP_1)
+        corr = round(corr,2)
+
+        # filter df for ticker and plot on specified axes
+        ax2=ax.twinx()
+        ax.plot(frq_0,FFT_0,color="r")
+        ax2.plot(frq_1,FFT_1,color="b")
+        ax.set_xscale("log");ax.set_yscale("log")
+        ax2.set_xscale("log");ax2.set_yscale("log")
+        ax.legend(["IA"],loc="upper right",fontsize=12); ax2.legend(["OOPBM"],loc="center right",fontsize=12)
+        ax.grid()
+        
+
+        # chart formatting
+        ax.set_title("LPF at {}Hz, cc = {}".format(cutoff, corr),fontsize=14)
+    fig.supxlabel("Frequency [Hz]",fontsize=16)
+    plt.savefig(in_dir+"velocity_correlations_2/FFT_sys_LPF_corr_{}_{}.png".format(Variables[0],Variables[1]))
+    plt.close(fig)
+
+    fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(15, 12))
+    fig.suptitle("Systematic LPF of IA and OOPBM", fontsize=18, y=0.95)
+
+
+    # loop through tickers and axes
+    corrs = []
+    for cutoff, ax in zip(cutoffs, axs.ravel()):
+
+        signal_LP_0 = low_pass_filter(h_vars[0], cutoff)
+        signal_LP_1 = low_pass_filter(h_vars[1], cutoff)
+        
+        corr = correlation_coef(signal_LP_0,signal_LP_1)
+        corr = round(corr,2)
+
+        # filter df for ticker and plot on specified axes
+        ax2=ax.twinx()
+        ax.plot(Time_OF,signal_LP_0,color="r")
+        ax2.plot(Time_OF,signal_LP_1,color="b")
+        ax.legend(["IA"],loc="upper right",fontsize=12); ax2.legend(["OOPBM"],loc="center right",fontsize=12)
+        ax.grid()
+        
+
+        # chart formatting
+        ax.set_title("LPF at {}Hz, cc = {}".format(cutoff, corr),fontsize=14)
+    fig.supxlabel("Time [s]",fontsize=16)
+    plt.savefig(in_dir+"velocity_correlations_2/sys_LPF_corr_{}_{}.png".format(Variables[0],Variables[1]))
+    plt.close(fig)
+
+    

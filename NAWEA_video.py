@@ -1,54 +1,20 @@
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
-import glob 
-import os
 from matplotlib import cm
 import math
 import time
 from multiprocessing import Pool
-import cv2
-import re
 from scipy.signal import butter,filtfilt
 from scipy import interpolate
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.patches import Circle
 
 
-def correlation_coef(x,y):
-    
-    r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
-
-    return r
-
-
-def low_pass_filter(signal, cutoff):  
-
-    fs = 1/dt     # sample rate, Hz      
-    nyq = 0.5 * fs  # Nyquist Frequency      
-    order = 3  # sin wave can be approx represented as 3rd order polynomial
-
-    normal_cutoff = cutoff / nyq
-    # Get the filter coefficients 
-    b, a = butter(order, normal_cutoff, btype='lowpass', analog=False)
-
-    low_pass_signal = filtfilt(b, a, signal)
-
-    return low_pass_signal
-
-
-def tranform_fixed_frame(Y_pri,Z_pri,Theta):
-
-    Y = Y_pri*np.cos(Theta) - Z_pri*np.sin(Theta)
-    Z = Y_pri*np.sin(Theta) + Z_pri*np.cos(Theta)
-
-    return Y,Z
-
-
 def blade_positions(it):
 
     R = 63
-    Az = Azimuth[it]
+    Az = f_Az(Time_sampling[it])
     Y = [2560]; Y2 = [2560]; Y3 = [2560]
     Z = [90]; Z2 = [90]; Z3 = [90]
 
@@ -74,39 +40,62 @@ def blade_positions(it):
 
 def Update(it):
 
-    T = Time_OF[it[0]]
+    if it < 10:
+        Time_idx = "000{}".format(it)
+    elif it >= 10 and it < 100:
+        Time_idx = "00{}".format(it)
+    elif it >= 100 and it < 1000:
+        Time_idx = "0{}".format(it)
+    elif it >= 1000 and it < 10000:
+        Time_idx = "{}".format(it)
 
     fig = plt.figure(figsize=(14,8),constrained_layout=True)
     gs = fig.add_gridspec(2, 2)
-    f3_ax1 = fig.add_subplot(gs[1, :])
-    f3_ax2 = fig.add_subplot(gs[0, :1])
-    f3_ax3 = fig.add_subplot(gs[0, 1:])
+    f3_ax1 = fig.add_subplot(gs[1, :1])#bottom left
+    f3_ax2 = fig.add_subplot(gs[1, 1:])#bottom right
+    f3_ax3 = fig.add_subplot(gs[0, :1])#top left
+    f3_ax4 = fig.add_subplot(gs[0, 1:])#top right
 
-    #bottom plot
-    f3_ax1.plot(Time_OF[:it[0]],LPF_Aero_FBR[:it[0]]/1000,"r")
-    f3_ax1_2 = f3_ax1.twinx()
-    f3_ax1_2.plot(Time_OF[:it[0]],LPF_IA[:it[0]],"b")
-    f3_ax1.set_title("Filtered at 0.1Hz: Correlations = {}".format(np.round(corr,2)),fontsize=16)
-    f3_ax1.axhline(np.mean(LPF_Aero_FBR/1000),linestyle="--",color="r")
-    f3_ax1_2.axhline(np.mean(LPF_IA),linestyle="--",color="b")
-    f3_ax1.set_xlabel("Time [s]",fontsize=16)
-    f3_ax1.set_ylabel("Bearing Force [kN]",fontsize=16)
-    f3_ax1_2.set_ylabel("Asymmetry Parameter [$m^4/s$]",fontsize=16)
-    f3_ax1.set_xlim([np.min(Time_OF),np.max(Time_OF)])
-    f3_ax1.set_ylim([np.min(LPF_Aero_FBR/1000),np.max(LPF_Aero_FBR/1000)])
-    f3_ax1_2.set_ylim([np.min(LPF_IA),np.max(LPF_IA)])
-    f3_ax1.legend(["Aerodynamic bearing force", "mean"],loc="upper left"); f3_ax1_2.legend(["Asymmetry Parameter","mean"],loc="upper right")
-
-
-    #rotor disk plot
-    U_r = u_r[it[1]] #velocity time step it
+    #bottom left plot
+    U_r = u_r[it] #velocity time step it
 
     u_plane = U_r.reshape(y_r,x_r)
     X,Y = np.meshgrid(ys_r,zs_r)
 
     Z = u_plane
 
-    cs = f3_ax2.contourf(X,Y,Z,levels=levels_r, cmap=cm.coolwarm,vmin=cmin_r,vmax=cmax_r)
+    cs = f3_ax1.contourf(X,Y,Z,levels=levels_r, cmap=cm.coolwarm,vmin=cmin_r,vmax=cmax_r)
+    f3_ax1.set_xlabel("Y' axis (rotor frame of reference) [m]")
+    f3_ax1.set_ylabel("Z' axis (rotor frame of reference) [m]")
+
+    divider = make_axes_locatable(f3_ax1)
+    cax = divider.append_axes('right', size='5%', pad=0.05)
+
+    cb = fig.colorbar(cs,cax=cax)
+
+
+    YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
+
+    f3_ax1.plot(YB1,ZB1,color="k",linewidth = 0.5)
+    f3_ax1.plot(YB2,ZB2,color="k",linewidth = 0.5)
+    f3_ax1.plot(YB3,ZB3,color="k",linewidth = 0.5)  
+    Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
+    f3_ax1.add_artist(Drawing_uncolored_circle)
+
+    Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+
+    f3_ax1.set_title(Title)
+
+
+    #bottom right plot
+    W_r = w_r[it] #velocity time step it
+
+    u_plane = W_r.reshape(y_r,x_r)
+    X,Y = np.meshgrid(ys_r,zs_r)
+
+    Z = u_plane
+
+    cs = f3_ax2.contourf(X,Y,Z,levels=levels_w, cmap=cm.coolwarm,vmin=cmin_w,vmax=cmax_w)
     f3_ax2.set_xlabel("Y' axis (rotor frame of reference) [m]")
     f3_ax2.set_ylabel("Z' axis (rotor frame of reference) [m]")
 
@@ -116,7 +105,7 @@ def Update(it):
     cb = fig.colorbar(cs,cax=cax)
 
 
-    YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it[0])
+    YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
 
     f3_ax2.plot(YB1,ZB1,color="k",linewidth = 0.5)
     f3_ax2.plot(YB2,ZB2,color="k",linewidth = 0.5)
@@ -124,12 +113,13 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax2.add_artist(Drawing_uncolored_circle)
 
-    Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(T,4))
+    Title = "63m upwind of Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax2.set_title(Title)
 
 
-    U_l = u_l[it[1]]
+    #top left
+    U_l = u_fluc[it]
 
     u_plane = U_l.reshape(x_l,y_l)
     X,Y = np.meshgrid(xs_l,ys_l)
@@ -139,7 +129,6 @@ def Update(it):
     cz = f3_ax3.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
     f3_ax3.set_xlabel("X axis [m]")
     f3_ax3.set_ylabel("Y axis [m]")
-    f3_ax3.set_xlim([2000,3000]); f3_ax3.set_ylim([2000,3000])
 
     x = [2524.5,2585.5]; y = [2615.1,2504.9]
     f3_ax3.plot(x,y,linewidth=1.0,color="k")
@@ -148,17 +137,44 @@ def Update(it):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizotnal Plane hub height. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(T,4))
+    Title = "Horizontal Plane hub height. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax3.set_title(Title)
 
-    plt.savefig(out_dir+"NAWEA_plot_{}.png".format(round(T,4)))
+
+    #top right
+    U_l = u_fluc[it]
+
+    u_plane = U_l.reshape(x_l,y_l)
+    X,Y = np.meshgrid(xs_l,ys_l)
+
+    Z = u_plane
+
+    cz = f3_ax4.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
+    f3_ax4.set_xlabel("X axis [m]")
+    f3_ax4.set_ylabel("Y axis [m]")
+
+    f3_ax4.set_xlim([2000,3000]); f3_ax4.set_ylim([2000,3000])
+
+    x = [2524.5,2585.5]; y = [2615.1,2504.9]
+    f3_ax4.plot(x,y,linewidth=1.0,color="k")
+
+    divider = make_axes_locatable(f3_ax4)
+    cax = divider.append_axes('right', size='5%', pad=0.05)
+    cd = plt.colorbar(cz, cax=cax)
+
+    Title = "Horizontal Plane hub height. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+
+    f3_ax4.set_title(Title)
+
+    plt.tight_layout()
+    plt.savefig(out_dir+"NAWEA_plot_{}.png".format(Time_idx))
     plt.cla()
     cb.remove()
     cd.remove()
     plt.close(fig)
 
-    return T
+    return Time_idx
 
 
 
@@ -187,100 +203,23 @@ def Horizontal_velocity(u,v,twist,x,normal,zs,h,height):
 
 
 
-
 start_time = time.time()
 
-#in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
-in_dir = "./"
-out_dir = in_dir+"NAWEA_plots/"
-a = Dataset(in_dir+"Dataset.nc")
+out_dir = "new_vid_plots/"
+a = Dataset("Dataset.nc")
 
 Time_OF = np.array(a.variables["time_OF"])
-Time_sampling = np.array(a.variables["time_sampling"])
-Time_sampling = Time_sampling - Time_sampling[0]
 
-Time_start = 200
-Time_end = Time_sampling[-1]
-
-Time_start_idx = np.searchsorted(Time_OF,Time_start)
-Time_end_idx = np.searchsorted(Time_OF,Time_end)
-
-Time_OF = Time_OF[Time_start_idx:Time_end_idx]
-
-dt = Time_OF[1] - Time_OF[0]
-
-
-Azimuth = np.array(a.variables["Azimuth"][Time_start_idx:Time_end_idx])
+Azimuth = np.array(a.variables["Azimuth"])
 Azimuth = np.radians(Azimuth)
 
-RtAeroFyh = np.array(a.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
-RtAeroFzh = np.array(a.variables["RtAeroFzh"][Time_start_idx:Time_end_idx])
-
-RtAeroFys = []; RtAeroFzs = []
-for i in np.arange(0,len(Time_OF)):
-    RtAeroFys_i, RtAeroFzs_i = tranform_fixed_frame(RtAeroFyh[i],RtAeroFzh[i],Azimuth[i])
-    RtAeroFys.append(RtAeroFys_i); RtAeroFzs.append(RtAeroFzs_i)
-RtAeroFys = np.array(RtAeroFys); RtAeroFzs = np.array(RtAeroFzs)
-
-RtAeroMyh = np.array(a.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
-RtAeroMzh = np.array(a.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
-
-RtAeroMys = []; RtAeroMzs = []
-for i in np.arange(0,len(Time_OF)):
-    RtAeroMys_i, RtAeroMzs_i = tranform_fixed_frame(RtAeroMyh[i],RtAeroMzh[i],Azimuth[i])
-    RtAeroMys.append(RtAeroMys_i); RtAeroMzs.append(RtAeroMzs_i)
-RtAeroMys = np.array(RtAeroMys); RtAeroMzs = np.array(RtAeroMzs)
-
-
-L1 = 1.912; L2 = 5
-
-Aero_FBMy = RtAeroMzs/L2; Aero_FBFy = -RtAeroFys*((L1+L2)/L2)
-Aero_FBMz = -RtAeroMys/L2; Aero_FBFz = -RtAeroFzs*((L1+L2)/L2)
-
-Aero_FBy = Aero_FBMy + Aero_FBFy; Aero_FBz = Aero_FBMz + Aero_FBFz
-
-Aero_FBR = np.sqrt(np.add(np.square(Aero_FBy),np.square(Aero_FBz)))
-
-
-group = a.groups["63.0"]
-IA = np.array(group.variables["IA"])
-
-f = interpolate.interp1d(Time_sampling,IA)
-IA = f(Time_OF)
-
-
-Time_start_idx = np.searchsorted(Time_sampling,Time_start)
-Time_end_idx = np.searchsorted(Time_sampling,Time_end)
-
-Time_sampling = Time_sampling[Time_start_idx:Time_end_idx]
-
-
-Time_shift = 5.5
-Time_shift_idx = np.searchsorted(Time_OF,Time_OF[0]+Time_shift)
-
-Aero_FBR = Aero_FBR[Time_shift_idx:]
-Azimuth = Azimuth[Time_shift_idx:]
-IA = IA[:len(Time_OF)-Time_shift_idx]
-Time_OF = Time_OF[Time_shift_idx:]
-
-Time_shift_idx = np.searchsorted(Time_sampling,Time_sampling[0]+Time_shift)
-Time_sampling = Time_sampling[:len(Time_sampling)-Time_shift_idx]
-
-LPF_IA = low_pass_filter(IA,0.1)
-LPF_Aero_FBR = low_pass_filter(Aero_FBR,0.1)
-
-corr = correlation_coef(LPF_IA,LPF_Aero_FBR)
-
-Time_steps_OF = np.arange(0,len(Time_OF),100)
-Time_steps_samp = np.arange(0,len(Time_sampling))
-
-Time_steps = zip(Time_steps_OF,Time_steps_samp)
+f_Az = interpolate.interp1d(Time_OF,Azimuth)
 
 print("line 263", time.time()-start_time)
 
 
 #defining twist angles with height from precursor
-precursor = Dataset(in_dir+"abl_statistics60000.nc")
+precursor = Dataset("abl_statistics60000.nc")
 Time_pre = np.array(precursor.variables["time"])
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
 t_start = np.searchsorted(precursor.variables["time"],32300)
@@ -293,7 +232,13 @@ del precursor
 
 
 #rotor disk data
-a = Dataset(in_dir+"sampling_r_-63.0.nc")
+a = Dataset("sampling_r_-63.0.nc")
+
+Time_sampling = np.array(a.variables["time"])
+Time_start = 32500; Time_end = 33700
+Time_start_idx = np.searchsorted(Time_sampling,Time_start); Time_end_idx = np.searchsorted(Time_sampling,Time_end)
+Time_sampling = Time_sampling[Time_start_idx:Time_end_idx]; Time_sampling = Time_sampling - Time_sampling[0]
+
 p = a.groups["p_r"]
 
 x_r = p.ijk_dims[0] #no. data points
@@ -321,20 +266,27 @@ zs_r = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y_r)
 
 del a
 
-u = np.array(p.variables["velocityx"])
-v = np.array(p.variables["velocityy"])
-u_r = Horizontal_velocity(u,v,twist,x_r,normal,zs_r,h,height=90); del u; del v; del p
+u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
+v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
+u_r = Horizontal_velocity(u,v,twist,x_r,normal,zs_r,h,height=90); del u; del v; 
+w_r = np.array(p.variables["velocityz"][Time_start_idx:Time_end_idx]); del p
 
 cmin_r = 0
 cmax_r = math.ceil(np.max(u_r))
+cmin_w = math.floor(np.min(w_r))
+cmax_w = math.ceil(np.max(w_r))
 
 nlevs = (cmax_r-cmin_r)
 levels_r = np.linspace(cmin_r,cmax_r,nlevs,dtype=int)
 print("line 317",cmin_r,cmax_r)
 
+nlevs = (cmax_w-cmin_w)
+levels_w = np.linspace(cmin_w,cmax_w,nlevs,dtype=int)
+
 
 #longitudinal plane data
-a = Dataset(in_dir+"sampling_l_85.nc")
+a = Dataset("sampling_l_85.nc")
+
 p = a.groups["p_l"]
 
 x_l = p.ijk_dims[0] #no. data points
@@ -354,55 +306,22 @@ zs_l = 0
 
 del a
 
-u = np.array(p.variables["velocityx"])
-v = np.array(p.variables["velocityy"])
+u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
+v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
 u_l = Horizontal_velocity(u,v,twist,x_l,normal,zs_l,h,height=90); del u; del v; del p
+u_mean = np.mean(u_l)
+u_fluc = np.subtract(u_l,u_mean)
 
-cmin_l = 0
-cmax_l = math.ceil(np.max(u_l))
+cmin_l = math.floor(np.min(u_fluc))
+cmax_l = math.ceil(np.max(u_fluc))
 
 nlevs = (cmax_l-cmin_l)
 levels_l = np.linspace(cmin_l,cmax_l,nlevs,dtype=int)
 print("line 349",cmin_l,cmax_l)
 
+Time_steps = np.arange(0,len(Time_sampling))
 
 with Pool() as pool:
     for T in pool.imap(Update,Time_steps):
 
         print(T,time.time()-start_time)
-
-
-
-#whether or not folder exists execute code
-#sort files
-def atof(text):
-    try:
-        retval = float(text)
-    except ValueError:
-        retval = text
-    return retval
-
-def natural_keys(text):
-    
-    return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
-
-#sort files
-files = glob.glob(out_dir+"*.png")
-files.sort(key=natural_keys)
-
-#write to video
-img_array = []
-for file in files:
-    img = cv2.imread(file)
-    height, width, layers = img.shape
-    size = (width,height)
-    img_array.append(img)
-    print("line 475)",time.time()-start_time)
-
-#cv2.VideoWriter_fourcc(*'DIVX')
-out = cv2.VideoWriter(out_dir+'NAWEA_video.avi',0, 12, size)
-for im in range(len(img_array)):
-    out.write(img_array[im])
-    print("Line 482)",time.time()-start_time)
-out.release(); del img_array
-print("Line 485)",time.time()-start_time)

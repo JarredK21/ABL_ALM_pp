@@ -110,7 +110,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = True; plot_r = True; plot_tr = True; plot_i = True; plot_t = True
+plot_l = True; plot_r = False; plot_tr = False; plot_i = False; plot_t = False
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -128,7 +128,7 @@ for plane in planes:
         continue
 
     if plane == "l":
-        offsets = [22.5,85,142.5]
+        offsets = [85]
     elif plane == "r":
         offsets = [-5.5,-63.0]
     elif plane == "tr":
@@ -152,10 +152,11 @@ for plane in planes:
         tend = 35000
         tend_idx = np.searchsorted(Time,tend)
         Time_steps = np.arange(0, tend_idx-tstart_idx)
+        Time = Time[tstart_idx:tend_idx]
 
         #plotting option
-        fluc_vel = False
-        plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
+        fluc_vel = True
+        plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
         #check if no velocity components selected
@@ -243,14 +244,10 @@ for plane in planes:
                 else:
                     u = np.array(p.variables[velocity_comp][tstart_idx:tend_idx])
 
-                def mean_velocity(u):
-                    u_k = []
-                    for u_j in u:
-                        u_k.append(u_j - np.mean(u_j))
-                    return u_k
                 
                 if fluc_vel == True:
-                    u = mean_velocity(u)
+                    u_mean = np.mean(u)
+                    u = np.subtract(u,u_mean)
                 
 
                 print("line 328",time.time()-start_time)
@@ -269,9 +266,14 @@ for plane in planes:
                     
                     cmax = math.ceil(np.max(u))
                     
-                    #if custom_colorbar == True: specify cmain, cmax above
-                    nlevs = (cmax-cmin)
-                    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
+                    if fluc_vel == True or velocity_comp == "velocityz":
+                        nlevs = int((cmax-cmin)/2)
+                        levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
+                        levels = np.concatenate((levs_min,levs_max[1:]))
+                    else:
+                        nlevs = (cmax-cmin)
+                        levels = np.linspace(cmin,cmax,nlevs,dtype=int)
+                    
                     print("line 370",cmin,cmax)
 
 
@@ -304,12 +306,18 @@ for plane in planes:
 
                     Z = u_plane
 
-                    T = Time[it] + (tend-tstart)
+                    T = Time[it]
 
                     fig = plt.figure(figsize=(50,30))
                     plt.rcParams['font.size'] = 40
 
                     cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+
+                    #show where rotor is and reduce plot area
+                    plt.xlim([2000,3000]); plt.ylim([2000,3000])
+                    x_lims = [2524.5,2585.5]; y_lims = [2615.1,2504.9]
+                    plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
+
                     if normal == "x":
                         plt.xlabel("Y axis [m]")
                         plt.ylabel("Z axis [m]")
