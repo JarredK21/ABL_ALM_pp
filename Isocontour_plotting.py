@@ -266,9 +266,14 @@ for plane in planes:
                     
                     cmax = math.ceil(np.max(u))
                     
-                    #if custom_colorbar == True: specify cmain, cmax above
-                    nlevs = (cmax-cmin)
-                    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
+                    if fluc_vel == True or velocity_comp == "velocityz":
+                        nlevs = int((cmax-cmin)/2)
+                        levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
+                        levels = np.concatenate((levs_min,levs_max[1:]))
+                    else:
+                        nlevs = (cmax-cmin)
+                        levels = np.linspace(cmin,cmax,nlevs,dtype=int)
+                    
                     print("line 370",cmin,cmax)
 
 

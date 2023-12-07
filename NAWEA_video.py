@@ -235,7 +235,7 @@ del precursor
 a = Dataset("sampling_r_-63.0.nc")
 
 Time_sampling = np.array(a.variables["time"])
-Time_start = 32500; Time_end = 33701
+Time_start = 32500; Time_end = 33700
 Time_start_idx = np.searchsorted(Time_sampling,Time_start); Time_end_idx = np.searchsorted(Time_sampling,Time_end)
 Time_sampling = Time_sampling[Time_start_idx:Time_end_idx]; Time_sampling = Time_sampling - Time_sampling[0]
 
