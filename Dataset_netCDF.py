@@ -210,7 +210,7 @@ del df
 print("line 191",time.time()-start_time)
 
 #sampling data
-a = Dataset(in_dir+"sampling_r_0.0.nc")
+a = Dataset(in_dir+"sampling_r_-5.5.nc")
 
 #sampling time
 Time_sample = np.array(a.variables["time"])
@@ -220,8 +220,8 @@ time_sampling[:] = Time_sample
 
 print("line 201", time_idx, time.time()-start_time)
 
-offsets = [0.0,-63.0]
-group_label = [0.0,63.0]
+offsets = [-5.5,-63.0]
+group_label = [5.5,63.0]
 
 
 ic = 0

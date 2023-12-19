@@ -76,10 +76,10 @@ def blade_positions(it):
 start_time = time.time()
 
 #defining twist angles with height from precursor
-precursor = Dataset("./abl_statistics60000.nc")
+precursor = Dataset("./abl_statistics76000.nc")
 Time_pre = np.array(precursor.variables["time"])
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
-t_start = np.searchsorted(precursor.variables["time"],32500)
+t_start = np.searchsorted(precursor.variables["time"],38200)
 u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
 h = mean_profiles["h"][:]
@@ -89,7 +89,7 @@ del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 print("line 126", time.time()-start_time)
 
 #plotting precursor planes?
-precursor = True
+precursor = False
 
 if precursor == False:
     #Openfast data
@@ -110,7 +110,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = True; plot_r = False; plot_tr = False; plot_i = False; plot_t = False
+plot_l = True; plot_r = True; plot_tr = True; plot_i = True; plot_t = True
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -128,7 +128,7 @@ for plane in planes:
         continue
 
     if plane == "l":
-        offsets = [85]
+        offsets = [22.5, 85, 142.5]
     elif plane == "r":
         offsets = [-5.5,-63.0]
     elif plane == "tr":
@@ -147,9 +147,9 @@ for plane in planes:
 
         #time options
         Time = np.array(a.variables["time"])
-        tstart = 32500
+        tstart = 38000
         tstart_idx = np.searchsorted(Time,tstart)
-        tend = 35000
+        tend = 39200
         tend_idx = np.searchsorted(Time,tend)
         Time_steps = np.arange(0, tend_idx-tstart_idx)
         Time = Time[tstart_idx:tend_idx]
