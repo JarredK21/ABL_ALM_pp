@@ -155,8 +155,8 @@ for plane in planes:
         Time = Time[tstart_idx:tend_idx]
 
         #plotting option
-        fluc_vel = True
-        plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
+        fluc_vel = False
+        plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
         #check if no velocity components selected
@@ -314,9 +314,9 @@ for plane in planes:
                     cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
 
                     #show where rotor is and reduce plot area
-                    plt.xlim([2000,3000]); plt.ylim([2000,3000])
-                    x_lims = [2524.5,2585.5]; y_lims = [2615.1,2504.9]
-                    plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
+                    #plt.xlim([2000,3000]); plt.ylim([2000,3000])
+                    #x_lims = [2524.5,2585.5]; y_lims = [2615.1,2504.9]
+                    #plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
 
                     if normal == "x":
                         plt.xlabel("Y axis [m]")
@@ -330,7 +330,7 @@ for plane in planes:
                     elif type(normal) == int and plane == "r" or type(normal) and plane == "tr": #rotor planes
                         plt.xlabel("Y' axis (rotor frame of reference) [m]")
                         plt.ylabel("Z' axis (rotor frame of reference) [m]")
-                    elif type(normal) == int and plane == "l":
+                    elif type(normal) == int and plane == "t":
                         plt.xlabel("X' axis (rotor frame of reference) [m]")
                         plt.ylabel("Z' axis (rotor frame of reference) [m]")
 

@@ -197,9 +197,9 @@ for i in np.arange(0,len(Variables)):
     elif Variable == "LSSTipMzs":
         LSSTipMzs[:] = signal; del signal
     elif Variable == "LSShftFxa":
-        LSShftFxa[:] = signal[:,0]; del signal
+        LSShftFxa[:] = signal; del signal
     elif Variable == "LSShftFys":
-        LSShftFys[:] = signal[:,0]; del signal
+        LSShftFys[:] = signal; del signal
     elif Variable == "LSShftFzs":
         LSShftFzs[:] = signal; del signal
     elif Variable == "Azimuth":
