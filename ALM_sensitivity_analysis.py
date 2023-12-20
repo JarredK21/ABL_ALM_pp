@@ -21,7 +21,8 @@ fllc_concept_study = False
 fllc_grid_study = False
 fixed_vs_fllc_study = False
 eps_c_comp_study = False
-fllc_best_case = True
+fllc_best_case = False
+ALM_update_study = True
 
 
 if fllc_best_case == True:
@@ -189,6 +190,20 @@ elif eps_c_study == True:
     markers = ["o","D","s"]
     trans = [1,0.5,0.25]
 
+
+elif ALM_update_study == True:
+    dir = "../../ALM_update/plots/"
+    cases = ["Ex1","Ex2"]
+    eps_cases = ["Fixed 1m", "Fixed 1m"]
+    act_stations_cases = [54,54]
+    eps_dr = [0.85,0.85]
+    dx_cases = [2,2]
+    dt_cases = [0.0039,0.00195]
+    BSR = [1.0,0.5]
+
+    colors = ["red","blue","green"]
+    markers = ["o","D","s"]
+    trans = [1,0.5,0.25]
 
 
 #variables
@@ -444,7 +459,8 @@ if plot_ints == True:
         dq = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
     else:
         #dq = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
-        dq = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
+        #dq = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
+        dq = io.fast_output_file.FASTOutputFile("../../ALM_update/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
         
     tmax = np.arange(time_start[-1],time_end[-1],dt_cases[-1])
 
@@ -454,7 +470,7 @@ if plot_ints == True:
         if delta_r_study == True:
             for j in np.arange(0,len(act_stations_cases)):
                 legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
-        elif time_step_study == True:
+        elif time_step_study == True or ALM_update_study == True:
             for j in np.arange(0,len(dt_cases)):
                 legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
         elif gravity_study == True:
@@ -489,8 +505,8 @@ if plot_ints == True:
                 df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
             else:
                 #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-                df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-        
+                #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+                df = io.fast_output_file.FASTOutputFile("../../ALM_update/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
 
             time = df["Time_[s]"]
             time = np.array(time)
@@ -502,7 +518,7 @@ if plot_ints == True:
 
             Var_int = df[txt][tstart:tend]
 
-            cutoff = 10 #Hz
+            cutoff = 40 #Hz
             fs = 1/dt_cases[ix]
             order = 10
 
@@ -528,7 +544,7 @@ if plot_ints == True:
         plt.legend(legends)
         if delta_r_study == True:
             plt.title('{0}, 5 levels of refinement'.format(Ylabel))
-        elif time_step_study == True:
+        elif time_step_study == True or ALM_update_study == True:
             plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
         elif gravity_study == True:
             plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
@@ -573,7 +589,7 @@ if plot_ints == True:
         if delta_r_study == True:
             plt.legend(act_stations_cases[1:])
             plt.title('{0}, 5 levels of refinement'.format(Ylabel))
-        elif time_step_study == True:
+        elif time_step_study == True or ALM_update_study == True:
             plt.legend(dt_cases[1:])
             plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
         elif delta_x_study == True:
@@ -599,7 +615,7 @@ if plot_ints == True:
         if delta_r_study == True:
             plt.legend(act_stations_cases[1:])
             plt.title('{0}, 5 levels of refinement'.format(Ylabel))
-        elif time_step_study == True:
+        elif time_step_study == True or ALM_update_study == True:
             plt.legend(dt_cases[1:])
             plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
         elif delta_x_study == True:
@@ -620,7 +636,9 @@ if plot_ints == True:
 if plot_time_difference == True:
     #integrated plots
 
-    dq = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
+    #dq = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
+    dq = io.fast_output_file.FASTOutputFile("../../ALM_update/{0}/post_processing/NREL_5MW_Main.out".format(cases[0])).toDataFrame()
+    
         
     tmax = np.arange(time_start[-1],time_end[-1],dt_cases[-1])
 
@@ -630,7 +648,7 @@ if plot_time_difference == True:
         if delta_r_study == True:
             for j in np.arange(0,len(act_stations_cases)):
                 legends.append("{0} actuator points".format(act_stations_cases[j]))
-        elif time_step_study == True:
+        elif time_step_study == True or ALM_update_study == True:
             for j in np.arange(0,len(dt_cases)):
                 legends.append("{0}s dt".format(dt_cases[j]))
         elif gravity_study == True:
@@ -662,7 +680,9 @@ if plot_time_difference == True:
         ix = 0 #case counter
         for case in cases:
             
-            df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+            df = io.fast_output_file.FASTOutputFile("../../ALM_update/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+
 
             time = df["Time_[s]"]
             time = np.array(time)
@@ -714,7 +734,7 @@ if plot_spectra == True:
         if delta_r_study == True:
             for j in np.arange(0,len(act_stations_cases)):
                 legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
-        elif time_step_study == True:
+        elif time_step_study == True or ALM_update_study == True:
             for j in np.arange(0,len(dt_cases)):
                 legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
         elif gravity_study == True:
@@ -747,7 +767,8 @@ if plot_spectra == True:
                 df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
             else:
                 #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-                df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+                #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+                df = io.fast_output_file.FASTOutputFile("../../ALM_update/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
         
             time = df["Time_[s]"]
             time = np.array(time)
@@ -786,7 +807,7 @@ if plot_spectra == True:
 
         if delta_r_study == True:
             plt.title('{0}, 5 levels of refinement'.format(Ylabel))
-        elif time_step_study == True:
+        elif time_step_study == True or ALM_update_study == True:
             plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
         elif gravity_study == True:
             plt.title('{0}, 54 actuator points, 5 levels of refinement'.format(Ylabel))
@@ -811,7 +832,7 @@ if plot_radial == True:
         if delta_r_study == True:
             for j in np.arange(0,len(act_stations_cases)):
                 legends.append("{0}: {1} actuator points".format(cases[j],act_stations_cases[j]))
-        elif time_step_study == True:
+        elif time_step_study == True or ALM_update_study == True:
             for j in np.arange(0,len(dt_cases)):
                 legends.append("{0}: {1}s dt".format(cases[j],dt_cases[j]))
         elif gravity_study == True:
@@ -848,7 +869,8 @@ if plot_radial == True:
                 df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
             else:
                 #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-                df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+                #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+                df = io.fast_output_file.FASTOutputFile("../../ALM_update/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
         
 
             time = df["Time_[s]"]
@@ -941,7 +963,7 @@ if plot_radial == True:
 
         if delta_r_study == True:
             plt.legend(act_stations_cases[1:])
-        elif time_step_study == True:
+        elif time_step_study == True or ALM_update_study == True:
             plt.legend(dt_cases[1:])
         elif delta_x_study == True:
             plt.legend(dx_cases[1:])
@@ -966,7 +988,7 @@ if plot_radial_difference == True:
         if delta_r_study == True:
             for j in np.arange(0,len(act_stations_cases)):
                 legends.append("{0} actuator points".format(act_stations_cases[j]))
-        elif time_step_study == True:
+        elif time_step_study == True or ALM_update_study == True:
             for j in np.arange(0,len(dt_cases)):
                 legends.append("{0}s dt".format(dt_cases[j]))
         elif gravity_study == True:
@@ -1004,7 +1026,8 @@ if plot_radial_difference == True:
                 df = io.fast_output_file.FASTOutputFile("../../gravity_study/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
             else:
                 #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
-                df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+                #df = io.fast_output_file.FASTOutputFile("../../../jarred/ALM_sensitivity_analysis_nhalf/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
+                df = io.fast_output_file.FASTOutputFile("../../ALM_update/{0}/post_processing/NREL_5MW_Main.out".format(case)).toDataFrame()
         
 
             time = df["Time_[s]"]

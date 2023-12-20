@@ -44,7 +44,7 @@ def Horizontal_velocity(it):
 
 def blade_positions(it):
 
-    Time_it = Time[it]#find time from sampled data
+    Time_it = Time[it] - Time[0] #find time from sampled data
 
     it_OF = np.searchsorted(Time_OF,Time_it)#find index from openfast
 
