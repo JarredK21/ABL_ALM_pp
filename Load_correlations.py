@@ -39,7 +39,7 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 
 
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 a = Dataset(in_dir+"Dataset.nc")
 
@@ -120,7 +120,7 @@ Rel_Aero_FBz = np.true_divide(np.square(Aero_FBz),np.square(Aero_FBR))
 add_Aero_RelFB = np.add(Rel_Aero_FBy,Rel_Aero_FBz)
 Theta_Aero_FB = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
 
-offset = "5.5"
+offset = "0.0"
 group = a.groups["{}".format(offset)]
 Ux = np.array(group.variables["Ux"])
 Uz = np.array(group.variables["Uz"])
@@ -174,7 +174,7 @@ h_vars_arr = [[Ux, RtAeroFxh],[Ux, RtAeroMxh], [Ux, RtAeroMR], [IA, RtAeroMR], [
                  [Iy, Aero_FBz], [Iz, Aero_FBy], [Iy, Iz], [RtAeroMys, Aero_FBz], [RtAeroFzs, Aero_FBz],
                  [RtAeroMzs, Aero_FBy], [RtAeroFys, Aero_FBy]]
 
-cutoff = 0.3
+cutoff = 40
 
 with PdfPages(out_dir+'precursor_plots_{}.pdf'.format(cutoff)) as pdf:
     for i in np.arange(0,len(Variables_arr)):
