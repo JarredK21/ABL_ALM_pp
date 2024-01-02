@@ -110,7 +110,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = True; plot_r = True; plot_tr = True; plot_i = True; plot_t = True
+plot_l = False; plot_r = False; plot_tr = False; plot_i = True; plot_t = True
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -266,7 +266,7 @@ for plane in planes:
                     
                     cmax = math.ceil(np.max(u))
                     
-                    if fluc_vel == True or velocity_comp == "velocityz":
+                    if fluc_vel == True and velocity_comp != "velocityz":
                         nlevs = int((cmax-cmin)/2)
                         levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
                         levels = np.concatenate((levs_min,levs_max[1:]))
