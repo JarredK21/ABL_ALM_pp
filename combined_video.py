@@ -217,8 +217,8 @@ def Horizontal_velocity(u,v,twist,x,normal,zs,h,height):
 
 def level_calc(cmin,cmax):
     nlevs = int((cmax-cmin)/2)
-    if abs(cmin) == 0.5*cmax or cmax == 0.5*abs(cmin):
-        nlevs = min([abs(cmin),cmax])
+    if nlevs>abs(cmin) or nlevs>cmax:
+        nlevs = min([abs(cmin),cmax])+1
 
     levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
     levels = np.concatenate((levs_min,levs_max[1:]))
