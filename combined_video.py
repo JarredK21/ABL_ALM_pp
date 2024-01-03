@@ -117,11 +117,10 @@ def Update(it):
 
         f3_ax3.set_title(Title)
     elif polar_plot == True:
-        ax = f3_ax3.add_subplot(projection='polar')
-        c = ax.scatter(xv[it], yv[it], c="k", s=20)
-        ax.arrow(0, 0, xv[it], yv[it], length_includes_head=True)
-        ax.set_ylim(0,np.max(yv))
-        ax.set_title("Bearing Force \nTime = {}s".format(Time_sampling[it]), va='bottom')
+        c = f3_ax3.scatter(xv[it], yv[it], c="k", s=20)
+        f3_ax3.arrow(0, 0, xv[it], yv[it], length_includes_head=True)
+        f3_ax3.set_ylim(0,np.max(yv))
+        f3_ax3.set_title("Bearing Force \nTime = {}s".format(Time_sampling[it]), va='bottom')
 
 
     #top right
