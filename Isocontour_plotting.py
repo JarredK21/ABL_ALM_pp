@@ -156,6 +156,7 @@ for plane in planes:
 
         #plotting option
         fluc_vel = False
+        plot_contours = False
         plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
@@ -266,13 +267,16 @@ for plane in planes:
                     
                     cmax = math.ceil(np.max(u))
                     
-                    if fluc_vel == True and velocity_comp != "velocityz":
-                        nlevs = int((cmax-cmin)/2)
-                        levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
-                        levels = np.concatenate((levs_min,levs_max[1:]))
-                    else:
-                        nlevs = (cmax-cmin)
-                        levels = np.linspace(cmin,cmax,nlevs,dtype=int)
+                if fluc_vel == True or velocity_comp == "velocityz":
+                    nlevs = int((cmax-cmin)/2)
+                    if abs(cmin) == 0.5*cmax or cmax == 0.5*abs(cmin):
+                        nlevs = min([abs(cmin),cmax])
+                    
+                    levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
+                    levels = np.concatenate((levs_min,levs_max[1:]))
+                else:
+                    nlevs = (cmax-cmin)
+                    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
                     
                     print("line 370",cmin,cmax)
 
@@ -312,6 +316,10 @@ for plane in planes:
                     plt.rcParams['font.size'] = 40
 
                     cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+
+                    if plot_contours == True and fluc_vel == True:
+                        CS = plt.contour(X, Y, Z, levels=levels, colors='k')  # Negative contours default to dashed.
+                        plt.clabel(CS, fontsize=9, inline=True)
 
                     #show where rotor is and reduce plot area
                     #plt.xlim([2000,3000]); plt.ylim([2000,3000])

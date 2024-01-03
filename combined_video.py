@@ -65,6 +65,10 @@ def Update(it):
     Z = u_plane
 
     cs = f3_ax1.contourf(X,Y,Z,levels=levels_r, cmap=cm.coolwarm,vmin=cmin_r,vmax=cmax_r)
+
+    CS = f3_ax1.contour(X, Y, Z, levels=levels_r, colors='k')  # Negative contours default to dashed.
+    f3_ax1.clabel(CS, fontsize=9, inline=True)
+
     f3_ax1.set_xlabel("Y' axis (rotor frame of reference) [m]")
     f3_ax1.set_ylabel("Z' axis (rotor frame of reference) [m]")
 
@@ -76,9 +80,9 @@ def Update(it):
 
     YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
 
-    f3_ax1.plot(YB1,ZB1,color="k",linewidth = 0.5)
-    f3_ax1.plot(YB2,ZB2,color="k",linewidth = 0.5)
-    f3_ax1.plot(YB3,ZB3,color="k",linewidth = 0.5)  
+    # f3_ax1.plot(YB1,ZB1,color="k",linewidth = 0.5)
+    # f3_ax1.plot(YB2,ZB2,color="k",linewidth = 0.5)
+    # f3_ax1.plot(YB3,ZB3,color="k",linewidth = 0.5)  
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax1.add_artist(Drawing_uncolored_circle)
 
@@ -96,6 +100,10 @@ def Update(it):
     Z = u_plane
 
     cs = f3_ax2.contourf(X,Y,Z,levels=levels_w, cmap=cm.coolwarm,vmin=cmin_w,vmax=cmax_w)
+
+    CS = f3_ax2.contour(X, Y, Z, levels=levels_w, colors='k')  # Negative contours default to dashed.
+    f3_ax3.clabel(CS, fontsize=9, inline=True)
+    
     f3_ax2.set_xlabel("Y' axis (rotor frame of reference) [m]")
     f3_ax2.set_ylabel("Z' axis (rotor frame of reference) [m]")
 
@@ -127,6 +135,7 @@ def Update(it):
     Z = u_plane
 
     cz = f3_ax3.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
+
     f3_ax3.set_xlabel("X axis [m]")
     f3_ax3.set_ylabel("Y axis [m]")
 
@@ -151,6 +160,10 @@ def Update(it):
     Z = u_plane
 
     cz = f3_ax4.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
+    
+    CZ = f3_ax4.contour(X, Y, Z, levels=levels_l, colors='k')  # Negative contours default to dashed.
+    f3_ax4.clabel(CZ, fontsize=9, inline=True)
+
     f3_ax4.set_xlabel("X axis [m]")
     f3_ax4.set_ylabel("Y axis [m]")
 
@@ -168,7 +181,7 @@ def Update(it):
     f3_ax4.set_title(Title)
 
     plt.tight_layout()
-    plt.savefig(out_dir+"NAWEA_plot_{}.png".format(Time_idx))
+    plt.savefig(out_dir+"combined_plot_{}.png".format(Time_idx))
     plt.cla()
     cb.remove()
     cd.remove()
@@ -202,10 +215,20 @@ def Horizontal_velocity(u,v,twist,x,normal,zs,h,height):
     return mag_horz_vel
 
 
+def level_calc(cmin,cmax):
+    nlevs = int((cmax-cmin)/2)
+    if abs(cmin) == 0.5*cmax or cmax == 0.5*abs(cmin):
+        nlevs = min([abs(cmin),cmax])
+
+    levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
+    levels = np.concatenate((levs_min,levs_max[1:]))
+
+    return levels
+
 
 start_time = time.time()
 
-out_dir = "new_vid_plots/"
+out_dir = "combined_plots/"
 a = Dataset("Dataset.nc")
 
 Time_OF = np.array(a.variables["time_OF"])
@@ -219,11 +242,11 @@ print("line 263", time.time()-start_time)
 
 
 #defining twist angles with height from precursor
-precursor = Dataset("abl_statistics60000.nc")
+precursor = Dataset("abl_statistics76000.nc")
 Time_pre = np.array(precursor.variables["time"])
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
-t_start = np.searchsorted(precursor.variables["time"],32300)
-t_end = np.searchsorted(precursor.variables["time"],33500)
+t_start = np.searchsorted(precursor.variables["time"],38000)
+t_end = np.searchsorted(precursor.variables["time"],39200)
 u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
 h = mean_profiles["h"][:]
@@ -235,7 +258,7 @@ del precursor
 a = Dataset("sampling_r_-63.0.nc")
 
 Time_sampling = np.array(a.variables["time"])
-Time_start = 32500; Time_end = 33700
+Time_start = 38000; Time_end = 39200
 Time_start_idx = np.searchsorted(Time_sampling,Time_start); Time_end_idx = np.searchsorted(Time_sampling,Time_end)
 Time_sampling = Time_sampling[Time_start_idx:Time_end_idx]; Time_sampling = Time_sampling - Time_sampling[0]
 
@@ -269,19 +292,18 @@ del a
 u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
 v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
 u_r = Horizontal_velocity(u,v,twist,x_r,normal,zs_r,h,height=90); del u; del v; 
+ur_mean = np.mean(u_r)
+u_r = np.subtract(u_r,ur_mean)
+
 w_r = np.array(p.variables["velocityz"][Time_start_idx:Time_end_idx]); del p
 
-cmin_r = 0
+cmin_r = math.floor(np.min(u_r))
 cmax_r = math.ceil(np.max(u_r))
+levels_r = level_calc(cmin_r,cmax_r)
+
 cmin_w = math.floor(np.min(w_r))
 cmax_w = math.ceil(np.max(w_r))
-
-nlevs = (cmax_r-cmin_r)
-levels_r = np.linspace(cmin_r,cmax_r,nlevs,dtype=int)
-print("line 317",cmin_r,cmax_r)
-
-nlevs = (cmax_w-cmin_w)
-levels_w = np.linspace(cmin_w,cmax_w,nlevs,dtype=int)
+levels_w = level_calc(cmin_w,cmax_w)
 
 
 #longitudinal plane data
@@ -315,11 +337,10 @@ u_fluc = np.subtract(u_l,u_mean)
 cmin_l = math.floor(np.min(u_fluc))
 cmax_l = math.ceil(np.max(u_fluc))
 
-nlevs = (cmax_l-cmin_l)
-levels_l = np.linspace(cmin_l,cmax_l,nlevs,dtype=int)
-print("line 349",cmin_l,cmax_l)
+levels_l = level_calc(cmin_l,cmax_l)
 
-Time_steps = np.arange(0,len(Time_sampling))
+#Time_steps = np.arange(0,len(Time_sampling))
+Time_steps = np.arange(0,10)
 
 with Pool() as pool:
     for T in pool.imap(Update,Time_steps):
