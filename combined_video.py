@@ -26,7 +26,10 @@ def Update(it):
     gs = fig.add_gridspec(2, 2)
     f3_ax1 = fig.add_subplot(gs[1, :1])#bottom left
     f3_ax2 = fig.add_subplot(gs[1, 1:])#bottom right
-    f3_ax3 = fig.add_subplot(gs[0, :1])#top left
+    if regular_plot == True:
+        f3_ax3 = fig.add_subplot(gs[0, :1])#top left
+    elif polar_plot == True:
+        f3_ax3 = fig.add_subplot(gs[0, :1],projection="polar")#top left
     f3_ax4 = fig.add_subplot(gs[0, 1:])#top right
 
     #bottom left plot
@@ -39,8 +42,9 @@ def Update(it):
 
     cs = f3_ax1.contourf(X,Y,Z,levels=levels_r, cmap=cm.coolwarm,vmin=cmin_r,vmax=cmax_r)
 
-    CS = f3_ax1.contour(X, Y, Z, levels=levels_r, colors='k',linewidth=0.7)  # Negative contours default to dashed.
-    f3_ax1.clabel(CS, fontsize=9, inline=True)
+    if contours == True:
+        CS = f3_ax1.contour(X, Y, Z, levels=levels_r, colors='k',linewidth=0.7)  # Negative contours default to dashed.
+        f3_ax1.clabel(CS, fontsize=9, inline=True)
 
     f3_ax1.set_xlabel("Y' axis (rotor frame of reference) [m]")
     f3_ax1.set_ylabel("Z' axis (rotor frame of reference) [m]")
@@ -68,8 +72,9 @@ def Update(it):
 
     cs = f3_ax2.contourf(X,Y,Z,levels=levels_w, cmap=cm.coolwarm,vmin=cmin_w,vmax=cmax_w)
 
-    CS = f3_ax2.contour(X, Y, Z, levels=levels_w, colors='k',linewidth=0.7)  # Negative contours default to dashed.
-    f3_ax3.clabel(CS, fontsize=9, inline=True)
+    if contours == True:
+        CS = f3_ax2.contour(X, Y, Z, levels=levels_w, colors='k',linewidth=0.7)  # Negative contours default to dashed.
+        f3_ax3.clabel(CS, fontsize=9, inline=True)
     
     f3_ax2.set_xlabel("Y' axis (rotor frame of reference) [m]")
     f3_ax2.set_ylabel("Z' axis (rotor frame of reference) [m]")
@@ -88,28 +93,35 @@ def Update(it):
 
 
     #top left
-    U_l = u_fluc[it]
+    if regular_plot == True:
+        U_l = u_fluc[it]
 
-    u_plane = U_l.reshape(x_l,y_l)
-    X,Y = np.meshgrid(xs_l,ys_l)
+        u_plane = U_l.reshape(x_l,y_l)
+        X,Y = np.meshgrid(xs_l,ys_l)
 
-    Z = u_plane
+        Z = u_plane
 
-    cz = f3_ax3.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
+        cz = f3_ax3.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
 
-    f3_ax3.set_xlabel("X axis [m]")
-    f3_ax3.set_ylabel("Y axis [m]")
+        f3_ax3.set_xlabel("X axis [m]")
+        f3_ax3.set_ylabel("Y axis [m]")
 
-    x = [2524.5,2585.5]; y = [2615.1,2504.9]
-    f3_ax3.plot(x,y,linewidth=1.0,color="k")
+        x = [2524.5,2585.5]; y = [2615.1,2504.9]
+        f3_ax3.plot(x,y,linewidth=1.0,color="k")
 
-    divider = make_axes_locatable(f3_ax3)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    cd = plt.colorbar(cz, cax=cax)
+        divider = make_axes_locatable(f3_ax3)
+        cax = divider.append_axes('right', size='5%', pad=0.05)
+        cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane hub height. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+        Title = "Horizontal Plane hub height. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
-    f3_ax3.set_title(Title)
+        f3_ax3.set_title(Title)
+    elif polar_plot == True:
+        ax = f3_ax3.add_subplot(projection='polar')
+        c = ax.scatter(xv[it], yv[it], c="k", s=20)
+        ax.arrow(0, 0, xv[it], yv[it], length_includes_head=True)
+        ax.set_ylim(0,np.max(yv))
+        ax.set_title("Bearing Force \nTime = {}s".format(Time_sampling[it]), va='bottom')
 
 
     #top right
@@ -121,9 +133,9 @@ def Update(it):
     Z = u_plane
 
     cz = f3_ax4.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
-    
-    CZ = f3_ax4.contour(X, Y, Z, levels=levels_l, colors='k',linewidth=0.7)  # Negative contours default to dashed.
-    f3_ax4.clabel(CZ, fontsize=9, inline=True)
+    if contours == True:
+        CZ = f3_ax4.contour(X, Y, Z, levels=levels_l, colors='k',linewidth=0.7)  # Negative contours default to dashed.
+        f3_ax4.clabel(CZ, fontsize=9, inline=True)
 
     f3_ax4.set_xlabel("X axis [m]")
     f3_ax4.set_ylabel("Y axis [m]")
@@ -142,7 +154,10 @@ def Update(it):
     f3_ax4.set_title(Title)
 
     plt.tight_layout()
-    plt.savefig(out_dir+"combined_plot_{}.png".format(Time_idx))
+    if regular_plot == True:
+        plt.savefig(out_dir+"combined_plot_{}.png".format(Time_idx))
+    elif polar_plot == True:
+        plt.savefig(out_dir+"polar_plot_{}.png".format(Time_idx))
     plt.cla()
     cb.remove()
     cd.remove()
@@ -150,6 +165,13 @@ def Update(it):
 
     return Time_idx
 
+
+def tranform_fixed_frame(Y_pri,Z_pri,Theta):
+
+    Y = Y_pri*np.cos(Theta) - Z_pri*np.sin(Theta)
+    Z = Y_pri*np.sin(Theta) + Z_pri*np.cos(Theta)
+
+    return Y,Z
 
 
 def coriolis_twist(u,v):
@@ -189,8 +211,15 @@ def level_calc(cmin,cmax):
 
 start_time = time.time()
 
-out_dir = "combined_plots/"
+polar_plot = True
+regular_plot = False
 
+contours = False
+
+if regular_plot == True:
+    out_dir = "combined_plots/"
+elif polar_plot == True:
+    out_dir = "polar_plots/"
 
 #defining twist angles with height from precursor
 precursor = Dataset("abl_statistics76000.nc")
@@ -298,6 +327,48 @@ cmax_l = math.ceil(np.max(u_fluc))
 
 levels_l = level_calc(cmin_l,cmax_l)
 print("line 341", levels_l)
+
+if polar_plot == True:
+    a = Dataset("Dataset.nc")
+    Time_OF = np.array(a.variables["time_OF"])
+    Time_start_idx = np.searchsorted(Time_OF,Time_start)
+    Time_end_idx = np.searchsorted(Time_OF,Time_end)
+
+    Time_OF = Time_OF[Time_start_idx:Time_end_idx]
+
+    Azimuth = np.radians(np.array(a.variables["Azimuth"][Time_start_idx:Time_end_idx]))
+
+    RtAeroFyh = np.array(a.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
+    RtAeroFzh = np.array(a.variables["RtAeroFzh"][Time_start_idx:Time_end_idx])
+
+    RtAeroFys = []; RtAeroFzs = []
+    for i in np.arange(0,len(Time_OF)):
+        RtAeroFys_i, RtAeroFzs_i = tranform_fixed_frame(RtAeroFyh[i],RtAeroFzh[i],Azimuth[i])
+        RtAeroFys.append(RtAeroFys_i); RtAeroFzs.append(RtAeroFzs_i)
+    RtAeroFys = np.array(RtAeroFys); RtAeroFzs = np.array(RtAeroFzs)
+
+    RtAeroMyh = np.array(a.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
+    RtAeroMzh = np.array(a.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
+
+    RtAeroMys = []; RtAeroMzs = []
+    for i in np.arange(0,len(Time_OF)):
+        RtAeroMys_i, RtAeroMzs_i = tranform_fixed_frame(RtAeroMyh[i],RtAeroMzh[i],Azimuth[i])
+        RtAeroMys.append(RtAeroMys_i); RtAeroMzs.append(RtAeroMzs_i)
+    RtAeroMys = np.array(RtAeroMys); RtAeroMzs = np.array(RtAeroMzs)
+
+    L1 = 1.912; L2 = 2.09
+
+    Aero_FBMy = RtAeroMzs/L2; Aero_FBFy = -RtAeroFys*((L1+L2)/L2)
+    Aero_FBMz = -RtAeroMys/L2; Aero_FBFz = -RtAeroFzs*((L1+L2)/L2)
+
+    Aero_FBy = Aero_FBMy + Aero_FBFy; Aero_FBz = Aero_FBMz + Aero_FBFz
+
+    Aero_FBR = np.sqrt(np.add(np.square(Aero_FBy),np.square(Aero_FBz)))
+    Aero_Theta = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
+
+    f_Aero_FBR = interpolate.interp1d(Time_OF,-Aero_FBR/1000); yv = f_Aero_FBR(Time_sampling)
+    f_Aero_Theta = interpolate.interp1d(Time_OF,Aero_Theta); xv = f_Aero_Theta(Time_sampling)
+
 
 Time_steps = np.arange(0,len(Time_sampling))
 
