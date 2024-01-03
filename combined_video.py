@@ -120,7 +120,7 @@ def Update(it):
         c = f3_ax3.scatter(xv[it], yv[it], c="k", s=20)
         f3_ax3.arrow(0, 0, xv[it], yv[it], length_includes_head=True)
         f3_ax3.set_ylim(0,np.max(yv))
-        f3_ax3.set_title("Bearing Force \nTime = {}s".format(Time_sampling[it]), va='bottom')
+        f3_ax3.set_title("Bearing Force [kN] \nTime = {}s".format(round(Time_sampling[it],4)), va='bottom')
 
 
     #top right
