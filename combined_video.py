@@ -292,6 +292,7 @@ del a
 u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
 v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
 u_r = Horizontal_velocity(u,v,twist,x_r,normal,zs_r,h,height=90); del u; del v; 
+u_r[u_r<0] = 0
 ur_mean = np.mean(u_r)
 u_r = np.subtract(u_r,ur_mean)
 
@@ -335,6 +336,7 @@ del a
 u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
 v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
 u_l = Horizontal_velocity(u,v,twist,x_l,normal,zs_l,h,height=90); del u; del v; del p
+u_l[u_l<0] = 0
 u_mean = np.mean(u_l)
 u_fluc = np.subtract(u_l,u_mean)
 
