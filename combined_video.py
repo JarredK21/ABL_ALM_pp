@@ -331,6 +331,7 @@ print("line 341", levels_l)
 if polar_plot == True:
     a = Dataset("Dataset.nc")
     Time_OF = np.array(a.variables["time_OF"])
+    Time_start = 0; Time_end = 1200
     Time_start_idx = np.searchsorted(Time_OF,Time_start)
     Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
