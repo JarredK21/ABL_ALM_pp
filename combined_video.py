@@ -301,9 +301,13 @@ cmin_r = math.floor(np.min(u_r))
 cmax_r = math.ceil(np.max(u_r))
 levels_r = level_calc(cmin_r,cmax_r)
 
+print("line 304", levels_r)
+
 cmin_w = math.floor(np.min(w_r))
 cmax_w = math.ceil(np.max(w_r))
 levels_w = level_calc(cmin_w,cmax_w)
+
+print(levels_w)
 
 
 #longitudinal plane data
@@ -338,6 +342,7 @@ cmin_l = math.floor(np.min(u_fluc))
 cmax_l = math.ceil(np.max(u_fluc))
 
 levels_l = level_calc(cmin_l,cmax_l)
+print("line 341", levels_l)
 
 #Time_steps = np.arange(0,len(Time_sampling))
 Time_steps = np.arange(0,10)
