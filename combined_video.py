@@ -11,33 +11,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.patches import Circle
 
 
-def blade_positions(it):
-
-    R = 63
-    Az = f_Az(Time_sampling[it])
-    Y = [2560]; Y2 = [2560]; Y3 = [2560]
-    Z = [90]; Z2 = [90]; Z3 = [90]
-
-    Y.append(Y[0]+R*np.sin(Az))
-    Z.append(Z[0]+R*np.cos(Az))
-
-    Az2 = Az+(2*np.pi)/3
-    if Az2 > 2*np.pi:
-        Az2 -= (2*np.pi)
-    
-    Az3 = Az-(2*np.pi)/3
-    if Az2 < 0:
-        Az2 += (2*np.pi)
-
-    Y2.append(Y2[0]+R*np.sin(Az2))
-    Z2.append(Z2[0]+R*np.cos(Az2))
-
-    Y3.append(Y3[0]+R*np.sin(Az3))
-    Z3.append(Z3[0]+R*np.cos(Az3))
-
-    return Y, Z, Y2, Z2, Y3, Z3
-
-
 def Update(it):
 
     if it < 10:
@@ -66,7 +39,7 @@ def Update(it):
 
     cs = f3_ax1.contourf(X,Y,Z,levels=levels_r, cmap=cm.coolwarm,vmin=cmin_r,vmax=cmax_r)
 
-    CS = f3_ax1.contour(X, Y, Z, levels=levels_r, colors='k')  # Negative contours default to dashed.
+    CS = f3_ax1.contour(X, Y, Z, levels=levels_r, colors='k',linewidth=0.7)  # Negative contours default to dashed.
     f3_ax1.clabel(CS, fontsize=9, inline=True)
 
     f3_ax1.set_xlabel("Y' axis (rotor frame of reference) [m]")
@@ -77,12 +50,6 @@ def Update(it):
 
     cb = fig.colorbar(cs,cax=cax)
 
-
-    #YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
-
-    # f3_ax1.plot(YB1,ZB1,color="k",linewidth = 0.5)
-    # f3_ax1.plot(YB2,ZB2,color="k",linewidth = 0.5)
-    # f3_ax1.plot(YB3,ZB3,color="k",linewidth = 0.5)  
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax1.add_artist(Drawing_uncolored_circle)
 
@@ -101,7 +68,7 @@ def Update(it):
 
     cs = f3_ax2.contourf(X,Y,Z,levels=levels_w, cmap=cm.coolwarm,vmin=cmin_w,vmax=cmax_w)
 
-    CS = f3_ax2.contour(X, Y, Z, levels=levels_w, colors='k')  # Negative contours default to dashed.
+    CS = f3_ax2.contour(X, Y, Z, levels=levels_w, colors='k',linewidth=0.7)  # Negative contours default to dashed.
     f3_ax3.clabel(CS, fontsize=9, inline=True)
     
     f3_ax2.set_xlabel("Y' axis (rotor frame of reference) [m]")
@@ -112,12 +79,6 @@ def Update(it):
 
     cb = fig.colorbar(cs,cax=cax)
 
-
-    YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
-
-    f3_ax2.plot(YB1,ZB1,color="k",linewidth = 0.5)
-    f3_ax2.plot(YB2,ZB2,color="k",linewidth = 0.5)
-    f3_ax2.plot(YB3,ZB3,color="k",linewidth = 0.5)  
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax2.add_artist(Drawing_uncolored_circle)
 
@@ -161,7 +122,7 @@ def Update(it):
 
     cz = f3_ax4.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
     
-    CZ = f3_ax4.contour(X, Y, Z, levels=levels_l, colors='k')  # Negative contours default to dashed.
+    CZ = f3_ax4.contour(X, Y, Z, levels=levels_l, colors='k',linewidth=0.7)  # Negative contours default to dashed.
     f3_ax4.clabel(CZ, fontsize=9, inline=True)
 
     f3_ax4.set_xlabel("X axis [m]")
@@ -229,16 +190,6 @@ def level_calc(cmin,cmax):
 start_time = time.time()
 
 out_dir = "combined_plots/"
-a = Dataset("Dataset.nc")
-
-Time_OF = np.array(a.variables["time_OF"])
-
-Azimuth = np.array(a.variables["Azimuth"])
-Azimuth = np.radians(Azimuth)
-
-f_Az = interpolate.interp1d(Time_OF,Azimuth)
-
-print("line 263", time.time()-start_time)
 
 
 #defining twist angles with height from precursor
@@ -252,6 +203,8 @@ v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 del precursor
+
+print("line 207")
 
 
 #rotor disk data
@@ -346,8 +299,7 @@ cmax_l = math.ceil(np.max(u_fluc))
 levels_l = level_calc(cmin_l,cmax_l)
 print("line 341", levels_l)
 
-#Time_steps = np.arange(0,len(Time_sampling))
-Time_steps = np.arange(0,10)
+Time_steps = np.arange(0,len(Time_sampling))
 
 with Pool() as pool:
     for T in pool.imap(Update,Time_steps):
