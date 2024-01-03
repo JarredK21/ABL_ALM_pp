@@ -364,7 +364,7 @@ if polar_plot == True:
     Aero_FBy = Aero_FBMy + Aero_FBFy; Aero_FBz = Aero_FBMz + Aero_FBFz
 
     Aero_FBR = np.sqrt(np.add(np.square(Aero_FBy),np.square(Aero_FBz)))
-    Aero_Theta = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
+    Aero_Theta = np.arctan2(Aero_FBz,Aero_FBy)
 
     f_Aero_FBR = interpolate.interp1d(Time_OF,-Aero_FBR/1000); yv = f_Aero_FBR(Time_sampling)
     f_Aero_Theta = interpolate.interp1d(Time_OF,Aero_Theta); xv = f_Aero_Theta(Time_sampling)
