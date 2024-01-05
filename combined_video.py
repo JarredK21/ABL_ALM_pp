@@ -58,7 +58,7 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax1.add_artist(Drawing_uncolored_circle)
 
-    Title = "{}m from Rotor Plane. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(plane,Time_sampling[it],4))
+    Title = "{}m from Rotor Plane. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(plane,round(Time_sampling[it],4))
 
     f3_ax1.set_title(Title)
 
@@ -88,7 +88,7 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax2.add_artist(Drawing_uncolored_circle)
 
-    Title = "{}m from Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(plane,Time_sampling[it],4))
+    Title = "{}m from Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(plane,round(Time_sampling[it],4))
 
     f3_ax2.set_title(Title)
 
