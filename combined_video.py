@@ -9,6 +9,7 @@ from scipy.signal import butter,filtfilt
 from scipy import interpolate
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.patches import Circle
+import os
 
 
 def Update(it):
@@ -225,8 +226,8 @@ start_time = time.time()
 #plane options -5.5 or -63.0
 plane = -5.5
 
-polar_plot = True
-regular_plot = False
+polar_plot = False
+regular_plot = True
 
 contours = False
 
@@ -234,6 +235,10 @@ if regular_plot == True:
     out_dir = "combined_plots_{}/".format(plane)
 elif polar_plot == True:
     out_dir = "polar_plots_{}/".format(plane)
+
+isExist = os.path.exists(out_dir)
+if isExist == False:
+    os.makedirs(out_dir)
 
 #defining twist angles with height from precursor
 precursor = Dataset("abl_statistics76000.nc")
