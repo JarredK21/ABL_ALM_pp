@@ -259,7 +259,7 @@ Time_start = 38000; Time_end = 39200
 Time_start_idx = np.searchsorted(Time_sampling,Time_start); Time_end_idx = np.searchsorted(Time_sampling,Time_end)
 
 #include time shift
-if plane == -63.0:
+if plane == -63.0 and polar_plot == True:
     Time_start = 38000; Time_end = 39200-5.5
     Time_start_idx = np.searchsorted(Time_sampling,Time_start); Time_end_idx = np.searchsorted(Time_sampling,Time_end)
 
