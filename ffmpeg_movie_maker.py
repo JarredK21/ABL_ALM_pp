@@ -14,8 +14,8 @@ if isExist == False:
     os.makedirs(video_folder)
 
 
-plots_dir = in_dir+"combined_plots/"
-filename = "combined_plot"
+plots_dir = in_dir+"polar_plots/"
+filename = "polar_plot"
 
 FRAMERATE = 4
 (

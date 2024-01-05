@@ -57,7 +57,7 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax1.add_artist(Drawing_uncolored_circle)
 
-    Title = "63m upwind of Rotor Plane. \nTotal Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "5.5m upwind of Rotor Plane. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax1.set_title(Title)
 
@@ -87,24 +87,26 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax2.add_artist(Drawing_uncolored_circle)
 
-    Title = "63m upwind of Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "5.5m upwind of Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax2.set_title(Title)
 
 
     #top left
     if regular_plot == True:
-        U_l = u_fluc[it]
+        U_l = u_22[it]
 
-        u_plane = U_l.reshape(x_l,y_l)
-        X,Y = np.meshgrid(xs_l,ys_l)
+        u_plane = U_l.reshape(x_22,y_22)
+        X,Y = np.meshgrid(xs_22,ys_22)
 
         Z = u_plane
 
-        cz = f3_ax3.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
+        cz = f3_ax3.contourf(X,Y,Z,levels=levels_22, cmap=cm.coolwarm,vmin=cmin_22,vmax=cmax_22)
 
         f3_ax3.set_xlabel("X axis [m]")
         f3_ax3.set_ylabel("Y axis [m]")
+
+        f3_ax3.set_xlim([2000,3000]); f3_ax4.set_ylim([2000,3000])
 
         x = [2524.5,2585.5]; y = [2615.1,2504.9]
         f3_ax3.plot(x,y,linewidth=1.0,color="k")
@@ -113,7 +115,7 @@ def Update(it):
         cax = divider.append_axes('right', size='5%', pad=0.05)
         cd = plt.colorbar(cz, cax=cax)
 
-        Title = "Horizontal Plane hub height. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+        Title = "Horizontal Plane 27.5m from surface. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
         f3_ax3.set_title(Title)
     elif polar_plot == True:
@@ -124,16 +126,16 @@ def Update(it):
 
 
     #top right
-    U_l = u_fluc[it]
+    U_l = u_85[it]
 
-    u_plane = U_l.reshape(x_l,y_l)
-    X,Y = np.meshgrid(xs_l,ys_l)
+    u_plane = U_l.reshape(x_85,y_85)
+    X,Y = np.meshgrid(xs_85,ys_85)
 
     Z = u_plane
 
-    cz = f3_ax4.contourf(X,Y,Z,levels=levels_l, cmap=cm.coolwarm,vmin=cmin_l,vmax=cmax_l)
+    cz = f3_ax4.contourf(X,Y,Z,levels=levels_85, cmap=cm.coolwarm,vmin=cmin_85,vmax=cmax_85)
     if contours == True:
-        CZ = f3_ax4.contour(X, Y, Z, levels=levels_l, colors='k',linewidth=0.7)  # Negative contours default to dashed.
+        CZ = f3_ax4.contour(X, Y, Z, levels=levels_85, colors='k',linewidth=0.7)  # Negative contours default to dashed.
         f3_ax4.clabel(CZ, fontsize=9, inline=True)
 
     f3_ax4.set_xlabel("X axis [m]")
@@ -148,7 +150,7 @@ def Update(it):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane hub height. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "Horizontal plane 90m from surface. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax4.set_title(Title)
 
@@ -226,9 +228,9 @@ regular_plot = False
 contours = False
 
 if regular_plot == True:
-    out_dir = "combined_plots/"
+    out_dir = "combined_plots_2/"
 elif polar_plot == True:
-    out_dir = "polar_plots/"
+    out_dir = "polar_plots_2/"
 
 #defining twist angles with height from precursor
 precursor = Dataset("abl_statistics76000.nc")
@@ -246,7 +248,7 @@ print("line 207")
 
 
 #rotor disk data
-a = Dataset("sampling_r_-63.0.nc")
+a = Dataset("sampling_r_-5.5.nc")
 
 Time_sampling = np.array(a.variables["time"])
 Time_start = 38000; Time_end = 39200
@@ -302,40 +304,77 @@ levels_w = level_calc(cmin_w,cmax_w)
 print(levels_w)
 
 
-#longitudinal plane data
+#horizontal plane 90m data
 a = Dataset("sampling_l_85.nc")
 
 p = a.groups["p_l"]
 
-x_l = p.ijk_dims[0] #no. data points
-y_l = p.ijk_dims[1] #no. data points
+x_85 = p.ijk_dims[0] #no. data points
+y_85 = p.ijk_dims[1] #no. data points
 
 normal = "z"
 
 #define plotting axes
 coordinates = np.array(p.variables["coordinates"])
 
-xo = coordinates[0:x_l,0]
-yo = coordinates[0:x_l,1]
+xo = coordinates[0:x_85,0]
+yo = coordinates[0:x_85,1]
 
-xs_l = np.linspace(p.origin[0],p.origin[0]+p.axis1[0],x_l)
-ys_l = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y_l)
-zs_l = 0
+xs_85 = np.linspace(p.origin[0],p.origin[0]+p.axis1[0],x_85)
+ys_85 = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y_85)
+zs_85 = 0
 
 del a
 
 u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
 v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
-u_l = Horizontal_velocity(u,v,twist,x_l,normal,zs_l,h,height=90); del u; del v; del p
+u_l = Horizontal_velocity(u,v,twist,x_85,normal,zs_85,h,height=90); del u; del v; del p
 u_l[u_l<0] = 0
 u_mean = np.mean(u_l)
-u_fluc = np.subtract(u_l,u_mean)
+u_85 = np.subtract(u_l,u_mean)
 
-cmin_l = math.floor(np.min(u_fluc))
-cmax_l = math.ceil(np.max(u_fluc))
+cmin_85 = math.floor(np.min(u_85))
+cmax_85 = math.ceil(np.max(u_85))
 
-levels_l = level_calc(cmin_l,cmax_l)
-print("line 341", levels_l)
+levels_85 = level_calc(cmin_85,cmax_85)
+print("line 341", levels_85)
+
+
+#horizontal plane 22.5m
+#longitudinal plane data
+a = Dataset("sampling_l_22.5.nc")
+
+p = a.groups["p_l"]
+
+x_22 = p.ijk_dims[0] #no. data points
+y_22 = p.ijk_dims[1] #no. data points
+
+normal = "z"
+
+#define plotting axes
+coordinates = np.array(p.variables["coordinates"])
+
+xo = coordinates[0:x_22,0]
+yo = coordinates[0:x_22,1]
+
+xs_22 = np.linspace(p.origin[0],p.origin[0]+p.axis1[0],x_22)
+ys_22 = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y_22)
+zs_22 = 0
+
+del a
+
+u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
+v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
+u_l = Horizontal_velocity(u,v,twist,x_22,normal,zs_22,h,height=90); del u; del v; del p
+u_l[u_l<0] = 0
+u_mean = np.mean(u_l)
+u_22 = np.subtract(u_l,u_mean)
+
+cmin_22 = math.floor(np.min(u_22))
+cmax_22 = math.ceil(np.max(u_22))
+
+levels_22 = level_calc(cmin_22,cmax_22)
+print("line 375", levels_22)
 
 if polar_plot == True:
     a = Dataset("Dataset.nc")

@@ -276,6 +276,7 @@ if range_vs_corr == True:
 
 
         P,X,mu,std = probability_dist(corr_t)
+        print(mu)
         fig = plt.figure(figsize=(14,8))
         plt.plot(X,P)
         plt.xlabel("Correlation coeefficient",fontsize=16)
