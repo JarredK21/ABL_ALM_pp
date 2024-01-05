@@ -57,7 +57,7 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax1.add_artist(Drawing_uncolored_circle)
 
-    Title = "5.5m upwind of Rotor Plane. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "{}m from Rotor Plane. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(plane,Time_sampling[it],4))
 
     f3_ax1.set_title(Title)
 
@@ -87,7 +87,7 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     f3_ax2.add_artist(Drawing_uncolored_circle)
 
-    Title = "5.5m upwind of Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "{}m from Rotor Plane. \nTotal Vertical velocity [m/s]: Time = {}[s]".format(round(plane,Time_sampling[it],4))
 
     f3_ax2.set_title(Title)
 
@@ -106,7 +106,7 @@ def Update(it):
         f3_ax3.set_xlabel("X axis [m]")
         f3_ax3.set_ylabel("Y axis [m]")
 
-        f3_ax3.set_xlim([2000,3000]); f3_ax4.set_ylim([2000,3000])
+        f3_ax3.set_xlim([2000,3000]); f3_ax3.set_ylim([2000,3000])
 
         x = [2524.5,2585.5]; y = [2615.1,2504.9]
         f3_ax3.plot(x,y,linewidth=1.0,color="k")
@@ -222,15 +222,18 @@ def theta_360(Theta):
 
 start_time = time.time()
 
+#plane options -5.5 or -63.0
+plane = -5.5
+
 polar_plot = True
 regular_plot = False
 
 contours = False
 
 if regular_plot == True:
-    out_dir = "combined_plots_2/"
+    out_dir = "combined_plots_{}/".format(plane)
 elif polar_plot == True:
-    out_dir = "polar_plots_2/"
+    out_dir = "polar_plots_{}/".format(plane)
 
 #defining twist angles with height from precursor
 precursor = Dataset("abl_statistics76000.nc")
@@ -248,11 +251,19 @@ print("line 207")
 
 
 #rotor disk data
-a = Dataset("sampling_r_-5.5.nc")
+a = Dataset("sampling_r_{}.nc".format(plane))
 
 Time_sampling = np.array(a.variables["time"])
+
 Time_start = 38000; Time_end = 39200
 Time_start_idx = np.searchsorted(Time_sampling,Time_start); Time_end_idx = np.searchsorted(Time_sampling,Time_end)
+
+#include time shift
+if plane == -63.0:
+    Time_start = 38000; Time_end = 39200-5.5
+    Time_start_idx = np.searchsorted(Time_sampling,Time_start); Time_end_idx = np.searchsorted(Time_sampling,Time_end)
+
+
 Time_sampling = Time_sampling[Time_start_idx:Time_end_idx]; Time_sampling = Time_sampling - Time_sampling[0]
 
 p = a.groups["p_r"]
@@ -379,16 +390,11 @@ print("line 375", levels_22)
 if polar_plot == True:
     a = Dataset("Dataset.nc")
     Time_OF = np.array(a.variables["time_OF"])
-    Time_start = 0; Time_end = 1200
-    Time_start_idx = np.searchsorted(Time_OF,Time_start)
-    Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
-    Time_OF = Time_OF[Time_start_idx:Time_end_idx]
+    Azimuth = np.radians(np.array(a.variables["Azimuth"]))
 
-    Azimuth = np.radians(np.array(a.variables["Azimuth"][Time_start_idx:Time_end_idx]))
-
-    RtAeroFyh = np.array(a.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
-    RtAeroFzh = np.array(a.variables["RtAeroFzh"][Time_start_idx:Time_end_idx])
+    RtAeroFyh = np.array(a.variables["RtAeroFyh"])
+    RtAeroFzh = np.array(a.variables["RtAeroFzh"])
 
     RtAeroFys = []; RtAeroFzs = []
     for i in np.arange(0,len(Time_OF)):
@@ -396,8 +402,8 @@ if polar_plot == True:
         RtAeroFys.append(RtAeroFys_i); RtAeroFzs.append(RtAeroFzs_i)
     RtAeroFys = np.array(RtAeroFys); RtAeroFzs = np.array(RtAeroFzs)
 
-    RtAeroMyh = np.array(a.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
-    RtAeroMzh = np.array(a.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
+    RtAeroMyh = np.array(a.variables["RtAeroMyh"])
+    RtAeroMzh = np.array(a.variables["RtAeroMzh"])
 
     RtAeroMys = []; RtAeroMzs = []
     for i in np.arange(0,len(Time_OF)):
