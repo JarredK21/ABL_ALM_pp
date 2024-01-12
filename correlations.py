@@ -83,6 +83,31 @@ def temporal_spectra(signal,dt,Var):
     return frq, PSD
 
 
+def moving_stats(x,y,Ylabelx,unitsx,Ylabely,unitsy,time_window):
+
+    window = int(time_window/dt)
+    df = pd.Series(x)
+    var = df.rolling(window=window).std()
+    corr = correlation_coef(var[window:],abs(y[window:])) 
+
+    fig,ax1 = plt.subplots(figsize=(14,8))
+    ax1.plot(Time_OF,x,"k")
+    ax1.plot(Time_OF,var,"b")
+    ax2 = ax1.twinx()
+    ax2.plot(Time_OF,abs(y),"r")
+    ax1.set_ylabel("{}{}".format(Ylabelx,unitsx),fontsize=16)
+    ax1.yaxis.label.set_color("blue")
+    ax1.legend(["{}".format(Ylabelx),"Variance"])
+    ax2.set_ylabel("{}{}".format(Ylabely,unitsy),fontsize=16)
+    ax2.yaxis.label.set_color("red")
+    fig.suptitle("correlation = {}".format(corr),fontsize=16)
+    fig.supxlabel("Time [s]",fontsize=16)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"variance_{}.png".format(i))
+    plt.cla()
+
+
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 a = Dataset(in_dir+"Dataset.nc")
@@ -164,15 +189,32 @@ Rel_Aero_FBz = np.true_divide(np.square(Aero_FBz),np.square(Aero_FBR))
 add_Aero_RelFB = np.add(Rel_Aero_FBy,Rel_Aero_FBz)
 Theta_Aero_FB = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
 
+
+
+
+offset = "5.5"
+group = a.groups["{}".format(offset)]
+Ux_1 = np.array(group.variables["Ux"])
+Uz_1 = np.array(group.variables["Uz"])
+IA_1 = np.array(group.variables["IA"])
+Iy_1 = np.array(group.variables["Iy"])
+Iz_1 = np.array(group.variables["Iz"])
+
 offset = "63.0"
+group = a.groups["{}".format(offset)]
+Ux_2 = np.array(group.variables["Ux"])
+Uz_2 = np.array(group.variables["Uz"])
+IA_2 = np.array(group.variables["IA"])
+Iy_2 = np.array(group.variables["Iy"])
+Iz_2 = np.array(group.variables["Iz"])
+
+offset = "5.5"
 group = a.groups["{}".format(offset)]
 Ux = np.array(group.variables["Ux"])
 Uz = np.array(group.variables["Uz"])
 IA = np.array(group.variables["IA"])
 Iy = np.array(group.variables["Iy"])
 Iz = np.array(group.variables["Iz"])
-
-
 
 f = interpolate.interp1d(Time_sampling,Ux)
 Ux = f(Time_OF)
@@ -192,7 +234,9 @@ Iz = f(Time_OF)
 #plotting options
 time_vs_corr = False
 range_vs_corr = False
-spectra = True
+spectra = False
+plot_moving_stats = False
+line_plots = True
 
 if time_vs_corr == True:
     Variables_arr = [["Ux", "RtAeroMR"], ["AeroFBy", "AeroFBz"], ["RtAeroMys", "RtAeroMzs"]]
@@ -312,3 +356,212 @@ if spectra == True:
         plt.tight_layout()
         plt.savefig(in_dir+"correlations/spectra_{}.png".format(Variable))
         plt.cla()
+
+
+if plot_moving_stats == True:
+    Vars = [[Aero_FBR/1000,IA],[Aero_FBy/1000,Iz],[Aero_FBz/1000,Iy],[RtAeroMys/1000, Iy], [RtAeroMzs/1000, Iz]]
+    Ylabelxs = ["Magnitude Aerodynamic Bearing force", "Aerodynamic Bearing force y component", "Aerodynamic Bearing force z component",
+                "Aerodynamic rotor force y component", "Aerodynamic rotor force z component"]
+    Ylabelys = ["Absolute Asymmetry parameter", "Absolute Asymmetry around z", "Absolute Asymmetry around y",
+                "Absolute Asymmetry around y", "Absolute Asymmetry around z"]
+    unitsxs = ["[kN]", "[kN]", "[kN]","[kN-m]", "[kN-m]"]
+    unitsys = ["[$m^4/s$]","[$m^4/s$]","[$m^4/s$]","[$m^4/s$]","[$m^4/s$]"]
+
+    for i in np.arange(0,len(Vars)):
+        x = Vars[i][0]; y = Vars[i][1]
+        Ylabelx = Ylabelxs[i]; Ylabely = Ylabelys[i]
+        unitsx = unitsxs[i]; unitsy = unitsys[i]
+        time_window = 10
+
+        moving_stats(x,y,Ylabelx,unitsx,Ylabely,unitsy,time_window)
+
+
+if line_plots == True:
+
+    with PdfPages(out_dir+'NREL_5MW_MCBL_R_CRPM_2_line_plots.pdf') as pdf:
+
+        #planar quantities -5.5m
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling,Ux_1)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Rotor averaged horizontal velocity [m/s]",fontsize=16)
+        plt.title("offset: -5.5m",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling,Uz_1)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Rotor averaged vertical velocity [m/s]",fontsize=16)
+        plt.title("offset: -5.5m",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling,IA_1)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Asymmetry parameter [$m^4/s$]",fontsize=16)
+        plt.title("offset: -5.5m",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling,Iy_1)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Asymmetry around y axis [$m^4/s$]",fontsize=16)
+        plt.title("offset: -5.5m",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling,Iz_1)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Asymmetry around z axis [$m^4/s$]",fontsize=16)
+        plt.title("offset: -5.5m",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #planar quantities -63.0m not time shifted
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling,Ux_2)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Rotor averaged horizontal velocity [m/s]",fontsize=16)
+        plt.title("offset: -63.0m not time shifted",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling,Uz_2)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Rotor averaged vertical velocity [m/s]",fontsize=16)
+        plt.title("offset: -63.0m not time shifted",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling,IA_2)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Asymmetry parameter [$m^4/s$]",fontsize=16)
+        plt.title("offset: -63.0m not time shifted",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling,Iy_2)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Asymmetry around y axis [$m^4/s$]",fontsize=16)
+        plt.title("offset: -63.0m not time shifted",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling,Iz_2)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Asymmetry around z axis [$m^4/s$]",fontsize=16)
+        plt.title("offset: -63.0m not time shifted",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+
+        #planar quantities -63.0m time shifted equivalent to if it was measured at -5.5m
+        time_shift = 4.87
+        time_shift_idx = np.searchsorted(Time_sampling,time_shift)
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling[:-time_shift_idx],Ux_2[:-time_shift_idx])
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Rotor averaged horizontal velocity [m/s]",fontsize=16)
+        plt.title("offset: -63.0m time shifted 4.78s \nequavalent to -5.5m",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling[:-time_shift_idx],Uz_2[:-time_shift_idx])
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Rotor averaged vertical velocity [m/s]",fontsize=16)
+        plt.title("offset: -63.0m time shifted 4.78s \nequavalent to -5.5m",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling[:-time_shift_idx],IA_2[:-time_shift_idx])
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Asymmetry parameter [$m^4/s$]",fontsize=16)
+        plt.title("offset: -63.0m time shifted 4.78s \nequavalent to -5.5m",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling[:-time_shift_idx],Iy_2[:-time_shift_idx])
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Asymmetry around y axis [$m^4/s$]",fontsize=16)
+        plt.title("offset: -63.0m time shifted 4.78s \nequavalent to -5.5m",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_sampling[:-time_shift_idx],Iz_2[:-time_shift_idx])
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Asymmetry around z axis [$m^4/s$]",fontsize=16)
+        plt.title("offset: -63.0m time shifted 4.78s \nequavalent to -5.5m",fontsize=16)
+        plt.xticks(np.arange(0,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+
+        #openfast variables
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_OF,Aero_FBR/1000)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Magnitude Aerodynamic Bearing force [kN]",fontsize=16)
+        plt.xticks(np.arange(200,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_OF,Aero_FBy/1000)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Aerodynamic Bearing force y component [kN]",fontsize=16)
+        plt.xticks(np.arange(200,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        plt.figure(figsize=(14,8))
+        plt.plot(Time_OF,Aero_FBz/1000)
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Aerodynamic Bearing force z component [kN]",fontsize=16)
+        plt.xticks(np.arange(200,1250,50))
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
