@@ -13,9 +13,8 @@ isExist = os.path.exists(video_folder)
 if isExist == False:
     os.makedirs(video_folder)
 
-
-plots_dir = in_dir+"polar_plots_-63.0/"
-filename = "polar_plot_-63.0"
+plots_dir = in_dir+"Role_of_weight/polar_plots_weight/"
+filename = "polar_plot_weight"
 
 FRAMERATE = 4
 (
