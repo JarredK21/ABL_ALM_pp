@@ -232,8 +232,8 @@ Iz = f(Time_OF)
 plotting_comparisons = False
 plotting_vars = False
 plotting_contributions = False
-rotor_weight_change = False
-role_of_forces = True
+rotor_weight_change = True
+role_of_forces = False
 
 if plotting_comparisons == True:
     Vars = [[RtAeroFys/1000,LSShftFys],[RtAeroFzs/1000,LSShftFzs],[RtAeroMys/1000,LSSTipMys],[RtAeroMzs/1000,LSSTipMzs],
@@ -263,11 +263,26 @@ if plotting_comparisons == True:
         plt.savefig(out_dir+"{}.png".format(i))
         plt.cla()
 
-        fig = plt.figure(figsize=(14,8))
-        plt.plot(Time_OF,np.subtract(Vars[i][1],Vars[i][0]))
-        plt.ylabel("{}-{} {}".format(Ylabels[i][1],Ylabels[i][0], units[i][1]),fontsize=16)
-        plt.xlabel("Time [s]",fontsize=16)
-        plt.grid()
+        phi = Vars[i][1]
+        variance = round(np.var(phi),2)
+        range = round(np.max(phi)-np.min(phi),2)
+
+        fig,(ax1,ax2) = plt.subplots(2,figsize=(14,8))
+        ax1.plot(Time_OF,Vars[i][1])
+        ax1.set_ylabel("{} {}".format(Ylabels[i][1],units[i][1]),fontsize=16)
+        ax2.plot(Time_OF,np.subtract(Vars[i][1],Vars[i][0]))
+        ax2.set_ylabel("{}-\n{} {}".format(Ylabels[i][1],Ylabels[i][0], units[i][1]),fontsize=16)
+
+        ax1.set_title("Variance = {} \nRange = {}".format(variance,range))
+
+        remainder = np.subtract(Vars[i][1],Vars[i][0])
+        variance = round(np.var(remainder),4)
+        range = round(np.max(remainder)-np.min(remainder),2)
+
+        ax2.set_title("Variance = {} \nRange = {}".format(variance,range))
+
+        ax1.grid()
+        ax2.grid()
         plt.tight_layout()
         plt.savefig(out_dir+"remainer_{}.png".format(i))
         plt.cla()
@@ -320,10 +335,10 @@ if plotting_contributions == True:
 if rotor_weight_change == True:
     out_dir = in_dir+"Role_of_weight/perc_rotor_weight/"
     rotor_weight = -1079.1
-    percentage = [0.1, 0.3, 0.5, 0.7]
+    percentage = [0.3, 0.5, 0.7, 0.9]
 
     for perc in percentage:
-        Fzs = LSShftFzs-(1.0-perc)*rotor_weight
+        Fzs = LSShftFzs-(perc*rotor_weight)
         FBFz_perc = -Fzs*((L1+L2)/L2)
         FBz_perc = FBMz + FBFz_perc
         FBR_perc = np.sqrt(np.add(np.square(FBy),np.square(FBz_perc)))
@@ -338,7 +353,7 @@ if rotor_weight_change == True:
         ax1.grid()
 
         ax2.plot(Time_OF,Fzs,"r")
-        ax2.set_ylabel("{} of rotor weight \n rotor force z [kN]".format(perc),fontsize=12)
+        ax2.set_ylabel("Rotor force z with \n{} reduction in weight [kN]".format(perc),fontsize=12)
         ax2.yaxis.label.set_color("r")
         ax2.set_title("correlation with original = {}".format(round(corr1,2)),fontsize=16)
         ax2.grid()
@@ -351,7 +366,7 @@ if rotor_weight_change == True:
 
         plt.tight_layout()
         plt.savefig(out_dir+"Fzs_perc_{}.png".format(perc))
-        plt.cla()
+        plt.close()
 
         corr1 = correlation_coef(FBz,FBz_perc)
         corr2 = correlation_coef(Aero_FBz,FBz_perc)
@@ -362,7 +377,7 @@ if rotor_weight_change == True:
         ax1.grid()
 
         ax2.plot(Time_OF,FBz_perc,"r")
-        ax2.set_ylabel("{} of rotor weight \n Bearing force z [kN]".format(perc),fontsize=12)
+        ax2.set_ylabel("Bearing force z with \n{} reduction in weight [kN]".format(perc),fontsize=12)
         ax2.yaxis.label.set_color("r")
         ax2.set_title("correlation with original = {}".format(round(corr1,2)),fontsize=16)
         ax2.grid()
@@ -375,7 +390,7 @@ if rotor_weight_change == True:
 
         plt.tight_layout()
         plt.savefig(out_dir+"FBz_perc_{}.png".format(perc))
-        plt.cla()
+        plt.close()
 
 
 
@@ -388,7 +403,7 @@ if rotor_weight_change == True:
         ax1.grid()
 
         ax2.plot(Time_OF,np.square(FBz_perc),"r")
-        ax2.set_ylabel("{} of rotor weight \n Bearing force z squared [$kN^2$]".format(perc),fontsize=12)
+        ax2.set_ylabel("Bearing force z squared with \n {} reduction in weight [$kN^2$]".format(perc),fontsize=12)
         ax2.yaxis.label.set_color("r")
         ax2.set_title("correlation with original = {}".format(round(corr1,2)),fontsize=16)
         ax2.grid()
@@ -401,7 +416,7 @@ if rotor_weight_change == True:
 
         plt.tight_layout()
         plt.savefig(out_dir+"FBz_squared_perc_{}.png".format(perc))
-        plt.cla()
+        plt.close()
 
 
         corr1 = correlation_coef(FBR,FBR_perc)
@@ -413,7 +428,7 @@ if rotor_weight_change == True:
         ax1.grid()
 
         ax2.plot(Time_OF,FBR_perc,"r")
-        ax2.set_ylabel("{} of rotor weight \n Bearing force magnitude [kN]".format(perc),fontsize=12)
+        ax2.set_ylabel("Bearing force magnitude with \n{} reduction in weight [kN]".format(perc),fontsize=12)
         ax2.yaxis.label.set_color("r")
         ax2.set_title("correlation with original = {}".format(round(corr1,2)),fontsize=16)
         ax2.grid()
@@ -426,7 +441,7 @@ if rotor_weight_change == True:
 
         plt.tight_layout()
         plt.savefig(out_dir+"FBR_perc_{}.png".format(perc))
-        plt.cla()
+        plt.close()
 
 
         corr1 = correlation_coef(Theta_FB,Theta_FB_perc)
@@ -438,7 +453,7 @@ if rotor_weight_change == True:
         ax1.grid()
 
         ax2.plot(Time_OF,Theta_FB_perc,"r")
-        ax2.set_ylabel("{} of rotor weight \n Bearing force direction [deg]".format(perc),fontsize=12)
+        ax2.set_ylabel("Bearing force direction with \n{} reduction in weight [deg]".format(perc),fontsize=12)
         ax2.yaxis.label.set_color("r")
         ax2.set_title("correlation with original = {}".format(round(corr1,2)),fontsize=16)
         ax2.grid()
@@ -451,7 +466,21 @@ if rotor_weight_change == True:
 
         plt.tight_layout()
         plt.savefig(out_dir+"Theta_perc_{}.png".format(perc))
-        plt.cla()
+        plt.close()
+
+        fig, (ax1,ax2) = plt.subplots(2,figsize=(14,8))
+        ax1.plot(Time_OF,FBz_perc)
+        ax1.set_ylabel("Bearing force z component with \n{} reduction in weight [kN]".format(perc),fontsize=12)
+        ax1.axhline(0,linestyle="--",color="k")
+        ax1.grid()
+        ax2.plot(Time_OF,Theta_FB_perc)
+        ax2.axhline(0,linestyle="--",color="k")
+        ax2.set_ylabel("Bearing force direction with \n{} reduction in weight [deg]".format(perc),fontsize=12)
+        ax2.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"FB_vector_{}.png".format(perc))
+        plt.close()
+
 
 
 if role_of_forces == True:

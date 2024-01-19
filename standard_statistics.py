@@ -60,9 +60,9 @@ def standard_statistics(phi,Variable):
     mu_tilde = np.mean(phi_tilde)
     phi_pri = phi - mu
     phi_pri_tilde = np.subtract(phi,phi_tilde)
-    var = np.mean(np.square(phi_pri))
-    var_tilde = np.mean(np.square(phi_pri_tilde))
-    var_phi_tilde = np.mean(np.square((phi_tilde-mu_tilde)))
+    var = np.average(np.square(phi_pri))
+    var_tilde = np.average(np.square(phi_pri_tilde))
+    var_phi_tilde = np.average(np.square((phi_tilde-mu_tilde)))
     I = np.sqrt(var)/mu
     I_tilde = np.sqrt(var_tilde)/mu_tilde
 
