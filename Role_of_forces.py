@@ -125,7 +125,7 @@ in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 a = Dataset(in_dir+"Dataset.nc")
 
-out_dir = in_dir + "Role_of_weight/"
+out_dir = in_dir + "Role_of_forces/"
 
 Time_OF = np.array(a.variables["time_OF"])
 Time_sampling = np.array(a.variables["time_sampling"])
@@ -229,10 +229,105 @@ f = interpolate.interp1d(Time_sampling,Iz)
 Iz = f(Time_OF)
 
 #plotting options
-role_of_forces = True
+plot_forces = False
+plot_correlations = False
+plot_PDF = False
+plot_relative_contribution = True
 
 
-if role_of_forces == True:
+if plot_forces == True:
+
+    Vars = [[FBMy,FBFy],[FBMz,FBFz],[Aero_FBMy/1000,Aero_FBFy/1000],[Aero_FBMz/1000, Aero_FBFz/1000]]
+    Ylabels = [["[$M_z/L_2$]","[$-F_yL/L_2$]"],["[$-M_y/L_2$]","[$-F_zL/L_2$]"],["[$\widetilde{M}_z/L_2$]","[$-\widetilde{F}_yL/L_2$]"],
+               ["[$-\widetilde{M}_y/L_2$]","[$-\widetilde{F}_zL/L_2$]"]]
+    units = [["[kN]","[kN]"],["[kN]","[kN]"],["[kN]","[kN]"],["[kN]","[kN]"]]
+    for i in np.arange(0,len(Vars)):
+        M_var = round(np.var(Vars[i][0]),2); F_var = round(np.var(Vars[i][1]),2)
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time_OF,Vars[i][0],"b")
+        plt.plot(Time_OF,Vars[i][1],"r")
+        plt.xlabel("Time [s]",fontsize=16)
+        plt.ylabel("Bearing force component contributions {}".format(units[i][0]),fontsize=16)
+        plt.title("Variance of {} = {} \nVariance of {} = {}".format(Ylabels[i][0], M_var, Ylabels[i][1], F_var))
+        plt.legend(Ylabels[i],fontsize=14)
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"{}.png".format(i))
+        plt.close()
+
+
+if plot_correlations == True:
+    corr = correlation_coef(Aero_FBy,Aero_FBFy)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time_OF,Aero_FBy/1000,"b")
+    ax.set_ylabel("Aerodynamic bearing force y component [kN]",fontsize=16)
+    ax.yaxis.label.set_color("b")
+    ax.grid()
+
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF,Aero_FBFy/1000,"r")
+    ax2.set_ylabel("$\widetilde{F}_y L/L_2 [kN]$",fontsize=16)
+    ax2.yaxis.label.set_color("r")
+    
+    plt.title("correlation = {}".format(round(corr,2)),fontsize=16)
+    plt.tight_layout()
+    plt.savefig(out_dir+"corr_Fy")
+    plt.close()
+
+    corr = correlation_coef(Aero_FBy,Aero_FBMy)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time_OF,Aero_FBy/1000,"b")
+    ax.set_ylabel("Aerodynamic bearing force y component [kN]",fontsize=16)
+    ax.yaxis.label.set_color("b")
+    ax.grid()
+
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF,Aero_FBMy/1000,"r")
+    ax2.set_ylabel("$\widetilde{M}_z 1/L_2 [kN]$",fontsize=16)
+    ax2.yaxis.label.set_color("r")
+    
+    plt.title("correlation = {}".format(round(corr,2)),fontsize=16)
+    plt.tight_layout()
+    plt.savefig(out_dir+"corr_Mz")
+    plt.close()
+
+
+    corr = correlation_coef(Aero_FBz,Aero_FBFz)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time_OF,Aero_FBz/1000,"b")
+    ax.set_ylabel("Aerodynamic bearing force z component [kN]",fontsize=16)
+    ax.yaxis.label.set_color("b")
+    ax.grid()
+
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF,Aero_FBFz/1000,"r")
+    ax2.set_ylabel("$\widetilde{F}_z L/L_2 [kN]$",fontsize=16)
+    ax2.yaxis.label.set_color("r")
+    
+    plt.title("correlation = {}".format(round(corr,2)),fontsize=16)
+    plt.tight_layout()
+    plt.savefig(out_dir+"corr_Fz")
+    plt.close()
+
+    corr = correlation_coef(Aero_FBz,Aero_FBMz)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time_OF,Aero_FBz/1000,"b")
+    ax.set_ylabel("Aerodynamic bearing force z component [kN]",fontsize=16)
+    ax.yaxis.label.set_color("b")
+    ax.grid()
+
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF,Aero_FBMz/1000,"r")
+    ax2.set_ylabel("$\widetilde{M}_y 1/L_2 [kN]$",fontsize=16)
+    ax2.yaxis.label.set_color("r")
+    
+    plt.title("correlation = {}".format(round(corr,2)),fontsize=16)
+    plt.tight_layout()
+    plt.savefig(out_dir+"corr_My")
+    plt.close()
+
+
+if plot_PDF == True:
     out_dir=in_dir+"role_of_forces/"
     PMy,XMy,muMy,stdMy = probability_dist(Aero_FBMy/1000)
     PMz,XMz,muMz,stdMz = probability_dist(Aero_FBMz/1000)
@@ -269,3 +364,29 @@ if role_of_forces == True:
     prob = np.sum(PMz[xMin:xMax])*dX
     print(np.max(Aero_FBFz/1000),np.min(Aero_FBFz/1000))
     print("probability rotor force is contributing to bearing force component = {}".format(prob))
+
+
+if plot_relative_contribution == True:
+    rel_cont = np.true_divide((RtAeroFzs*(L1+L2))/1000,RtAeroMys/1000)
+    P,X,mu,std = probability_dist(rel_cont)
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(X,P)
+    plt.ylabel("PDF",fontsize=16)
+    plt.xlabel("$\widetilde{F}_zL/\widetilde{M}_y$",fontsize=16)
+    plt.title("$F_{B_z} = -1/L_2[\widetilde{M}_y + \widetilde{F}_z L]$",fontsize=16)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"relative_contribution_FBZ.png")
+    plt.close()
+
+    rel_cont = np.true_divide((RtAeroFys*(L1+L2))/1000,RtAeroMzs/1000)
+    P,X,mu,std = probability_dist(rel_cont)
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(X,P)
+    plt.ylabel("PDF ",fontsize=16)
+    plt.xlabel("$\widetilde{F}_yL/\widetilde{M}_z$",fontsize=16)
+    plt.title("$F_{B_y} = -1/L_2[\widetilde{M}_z + \widetilde{F}_y L]$",fontsize=16)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"relative_contribution_FBY.png")
+    plt.close()

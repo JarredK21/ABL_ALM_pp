@@ -314,24 +314,6 @@ if plotting_vars == True:
         plt.cla()
 
 
-if plotting_contributions == True:
-    Vars = [[FBMy,FBFy],[FBMz,FBFz],[Aero_FBMy/1000,Aero_FBFy/1000],[Aero_FBMz/1000, Aero_FBFz/1000]]
-    Ylabels = [["[$M_z/L_2$]","[$-F_yL/L_2$]"],["[$-M_y/L_2$]","[$-F_zL/L_2$]"],["[$\widetilde{M}_z/L_2$]","[$-\widetilde{F}_yL/L_2$]"],
-               ["[$-\widetilde{M}_y/L_2$]","[$-\widetilde{F}_zL/L_2$]"]]
-    units = [["[kN]","[kN]"],["[kN]","[kN]"],["[kN]","[kN]"],["[kN]","[kN]"]]
-    for i in np.arange(0,len(Vars)):
-        fig = plt.figure(figsize=(14,8))
-        plt.plot(Time_OF,Vars[i][0],"b")
-        plt.plot(Time_OF,Vars[i][1],"r")
-        plt.xlabel("Time [s]",fontsize=16)
-        plt.ylabel("Bearing force component contributions {}".format(units[i][0]),fontsize=16)
-        plt.legend(Ylabels[i],fontsize=14)
-        plt.grid()
-        plt.tight_layout()
-        plt.savefig(out_dir+"rel_contribution_{}.png".format(i))
-        plt.cla()
-
-
 if rotor_weight_change == True:
     out_dir = in_dir+"Role_of_weight/perc_rotor_weight/"
     rotor_weight = -1079.1
@@ -482,43 +464,5 @@ if rotor_weight_change == True:
         plt.close()
 
 
-
-if role_of_forces == True:
-    out_dir=in_dir+"role_of_forces/"
-    PMy,XMy,muMy,stdMy = probability_dist(Aero_FBMy/1000)
-    PMz,XMz,muMz,stdMz = probability_dist(Aero_FBMz/1000)
-
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(XMy,PMy)
-    plt.xlabel("$\widetilde{M}_z/L_2$ [kN] ",fontsize=16)
-    plt.ylabel("PDF",fontsize=16)
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(out_dir+"My.png")
-    plt.cla()
-
-    dX = XMy[1] - XMy[0]
-    xMax = np.searchsorted(XMy,10*np.max(Aero_FBFy/1000))
-    xMin = np.searchsorted(XMy,10*np.min(Aero_FBFy/1000))
-    prob = np.sum(PMy[xMin:xMax])*dX
-    print(np.max(Aero_FBFy/1000),np.min(Aero_FBFy/1000))
-    print("probability rotor force is contributing to bearing force component = {}".format(prob))
-
-
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(XMz,PMz)
-    plt.xlabel("$\widetilde{M}_y/L_2$ [kN]",fontsize=16)
-    plt.ylabel("PDF",fontsize=16)
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(out_dir+"Mz.png")
-    plt.cla()
-
-    dX = XMz[1] - XMz[0]
-    xMax = np.searchsorted(XMz,10*np.max(Aero_FBFz/1000))
-    xMin = np.searchsorted(XMz,10*np.min(Aero_FBFz/1000))
-    prob = np.sum(PMz[xMin:xMax])*dX
-    print(np.max(Aero_FBFz/1000),np.min(Aero_FBFz/1000))
-    print("probability rotor force is contributing to bearing force component = {}".format(prob))
 
 
