@@ -6,23 +6,24 @@ import sys
 
 
 #directories
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/Direction/"
 
 video_folder = in_dir + "videos/"
 isExist = os.path.exists(video_folder)
 if isExist == False:
     os.makedirs(video_folder)
 
-plots_dir = in_dir+"Role_of_weight/polar_plots_weight/"
-filename = "polar_plot_weight"
+filenames = ["Aero", "perc_0.3", "perc_0.5", "perc_0.7", "perc_0.9", "Total"]
+for filename in filenames:
+    plots_dir = in_dir+filename
 
-FRAMERATE = 4
-(
-    ffmpeg
-    .input(plots_dir+"*.png", pattern_type="glob", framerate=FRAMERATE)
-    .output(video_folder+"{}.mp4".format(filename))
-    .run()
-)
+    FRAMERATE = 4
+    (
+        ffmpeg
+        .input(plots_dir+"/*.png", pattern_type="glob", framerate=FRAMERATE)
+        .output(video_folder+"{}.mp4".format(filename))
+        .run()
+    )
 
 
 # plot_l = True; plot_r = False; plot_tr = False; plot_i = False; plot_t = False

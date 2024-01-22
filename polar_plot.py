@@ -4,8 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import time
 from multiprocessing import Pool
-import pyFAST.input_output as io
-from scipy import interpolate
+import os
 
 
 def theta_360(Theta):
@@ -29,8 +28,6 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 Start_time = time.time()
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
-
-out_dir = in_dir + "Role_of_weight/polar_plots_weight/"
 
 a = Dataset(in_dir+"Dataset.nc")
 
@@ -84,6 +81,16 @@ Theta_FB = np.degrees(np.arctan2(FBz,FBy))
 Theta_FB = theta_360(Theta_FB)
 Theta_FB = np.radians(np.array(Theta_FB))
 
+Aero_FBMy = RtAeroMzs/L2; Aero_FBFy = -RtAeroFys*((L1+L2)/L2)
+Aero_FBMz = -RtAeroMys/L2; Aero_FBFz = -RtAeroFzs*((L1+L2)/L2)
+
+Aero_FBy = Aero_FBMy + Aero_FBFy; Aero_FBz = Aero_FBMz + Aero_FBFz
+
+Aero_FBR = np.sqrt(np.add(np.square(Aero_FBy),np.square(Aero_FBz)))
+Theta_Aero_FB = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
+Theta_Aero_FB = theta_360(Theta_Aero_FB)
+Theta_Aero_FB = np.radians(np.array(Theta_Aero_FB))
+
 print("line 106", time.time()-Start_time)
 
 def Update(ic):
@@ -104,7 +111,7 @@ def Update(ic):
     c = ax.scatter(x_var[it], y_var[it], c="k", s=20)
     ax.arrow(0, 0, x_var[it], y_var[it], length_includes_head=True)
     ax.set_ylim(0,np.max(y_var))
-    ax.set_title("{} {}\nTime = {}s".format(Ylabels[j],units[j],Time_OF[it]), va='bottom')
+    ax.set_title("{} {}\nTime = {}s".format(Ylabel,units,Time_OF[it]), va='bottom')
     T = Time_OF[it]
     plt.savefig(out_dir+"polar_plot_{}.png".format(Time_idx))
     plt.close(fig)
@@ -112,16 +119,44 @@ def Update(ic):
     return T
 
 
-Variables = ["BearingF"]
-units = ["[kN]"]
+units = "[kN]"
 Ylabels = ["Main Bearing Force"]
 x_vars = [Theta_FB]
 y_vars = [FBR]
+out_dirs = [in_dir+"Direction/Total/"]
+
+rotor_weight = -1079.1
+percentage = [0.3, 0.5, 0.7, 0.9]
+
+for perc in percentage:
+    Fzs = LSShftFzs-(perc*rotor_weight)
+    FBFz_perc = -Fzs*((L1+L2)/L2)
+    FBz_perc = FBMz + FBFz_perc
+    FBR_perc = np.sqrt(np.add(np.square(FBy),np.square(FBz_perc)))
+    Theta_FB_perc = np.degrees(np.arctan2(FBz_perc,FBy))
+    Theta_FB_perc = theta_360(Theta_FB_perc)
+    Theta_FB_perc = np.radians(np.array(Theta_FB_perc))
+    y_vars.append(FBR_perc)
+    x_vars.append(Theta_FB_perc)
+    Ylabels.append("Main Bearing Force with \n{} reduction in weight [kN]".format(perc))
+    out_dirs.append(in_dir+"Direction/perc_{}/".format(perc))
+
+
+x_vars.append(Theta_Aero_FB)
+y_vars.append(Aero_FBR/1000)
+Ylabels.append("Aerodynamic Main Bearing Forces")
+out_dirs.append(in_dir+"Direction/Aero/")
+
 
 ic = np.arange(0,len(time_steps),1)
+
 for j in np.arange(0,len(x_vars)):
 
-    x_var = x_vars[j]; y_var = y_vars[j]
+    x_var = x_vars[j]; y_var = y_vars[j]; Ylabel = Ylabels[j]; out_dir = out_dirs[j]
+
+    isExist = os.path.exists(out_dir)
+    if isExist == False:
+        os.makedirs(out_dir)
 
     with Pool() as pool:
         for T in pool.imap(Update,ic):
