@@ -73,17 +73,6 @@ def blade_positions(it):
     return Y, Z, Y2, Z2, Y3, Z3
 
 
-def level_calc(cmin,cmax):
-    nlevs = int((cmax-cmin)/2)
-    if nlevs>abs(cmin) or nlevs>cmax:
-        nlevs = min([abs(cmin),cmax])+1
-
-    levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
-    levels = np.concatenate((levs_min,levs_max[1:]))
-
-    return levels
-
-
 start_time = time.time()
 
 #defining twist angles with height from precursor
@@ -273,7 +262,16 @@ for plane in planes:
                     cmin = math.floor(np.min(u))
                     cmax = math.ceil(np.max(u))
                     
-                    levels = level_calc(cmin,cmax)
+                if fluc_vel == True or velocity_comp == "velocityz":
+                    nlevs = int((cmax-cmin)/2)
+                    if nlevs>abs(cmin) or nlevs>cmax:
+                        nlevs = min([abs(cmin),cmax])+1
+
+                    levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
+                    levels = np.concatenate((levs_min,levs_max[1:]))
+                else:
+                    nlevs = (cmin-cmax)
+                    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
                     
                 print("line 370",levels)
 
