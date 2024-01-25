@@ -3,6 +3,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
 from windrose import WindroseAxes
+from scipy import stats
+import pandas as pd
 
 def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 
@@ -27,14 +29,57 @@ def probability_dist(y):
     mu = np.mean(y)
     var = np.var(y)
     sd = np.std(y)
+    skew = stats.skew(y)
+    kurtosis = stats.kurtosis(y,fisher=False)
     no_bin = 1000
     X = np.linspace(np.min(y),np.max(y),no_bin)
+    dX = X[1] - X[0]
     P = []
     for x in X:
         denom = np.sqrt(var*2*np.pi)
         num = np.exp(-((x-mu)**2)/(2*var))
         P.append(num/denom)
-    return P,X, round(mu,2), round(sd,2)
+    print(np.sum(P)*dX)
+    return P,X, round(mu,2), round(sd,2), round(skew,2), round(kurtosis,2)
+
+
+def correlation_coef(x,y):
+    
+    r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
+
+    return r
+
+
+def energy_contents_check(Var,e_fft,signal,dt):
+
+    E = (1/dt)*np.sum(e_fft)
+
+    q = np.sum(np.square(signal))
+
+    E2 = q
+
+    print(Var, E, E2, abs(E2/E))    
+
+
+def temporal_spectra(signal,dt,Var):
+
+    fs =1/dt
+    n = len(signal) 
+    if n%2==0:
+        nhalf = int(n/2+1)
+    else:
+        nhalf = int((n+1)/2)
+    frq = np.arange(nhalf)*fs/n
+    Y   = np.fft.fft(signal)
+    PSD = abs(Y[range(nhalf)])**2 /(n*fs) # PSD
+    PSD[1:-1] = PSD[1:-1]*2
+
+
+    energy_contents_check(Var,PSD,signal,dt)
+
+    return frq, PSD
+
+
 
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
@@ -42,6 +87,8 @@ in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 a = Dataset(in_dir+"Dataset.nc")
 
 Time_OF = np.array(a.variables["time_OF"])
+
+dt = Time_OF[1] - Time_OF[0]
 
 Time_start = 200
 Time_end = 1200
@@ -106,28 +153,28 @@ Theta_Aero_FB_rad = np.radians(np.array(Theta_Aero_FB))
 PDFs = False
 lineplots = False
 plot_FB_stats = False
-plot_Fz_stats = True
-
+plot_Fz_stats = False
+plot_F_comp_stats = False
+FB_correlations = False
+moving_stats = True
+random_plots = False
 
 
 if plot_Fz_stats == True:
     out_dir = in_dir+"Direction/PDFs/"
 
-    vars = [np.square(FBz)]
+    vars = []
+    labels = []
     rotor_weight = -1079.1
-    percentage = np.arange(0.1,1.0,0.1)
-    labels = ["Total"]
+    percentage = np.linspace(0,1.0,11)
     
     for perc in percentage:
         Fzs = LSShftFzs-(perc*rotor_weight)
         FBFz_perc = -Fzs*((L1+L2)/L2)
         FBz_perc = FBMz + FBFz_perc
 
-        vars.append(np.square(FBz_perc))
+        vars.append(np.sqrt(np.square(FBz_perc)+np.square(FBy)))
         labels.append("{} reduction".format(round(perc,1)))
-
-    vars.append(np.square(Aero_FBz/1000))
-    labels.append("Aero")
 
 
     means = []
@@ -136,7 +183,7 @@ if plot_Fz_stats == True:
     for i in np.arange(0,len(vars)):
 
         var = vars[i]
-        P,X,mu,std = probability_dist(var)
+        P,X,mu,std,skew,kr = probability_dist(var)
         means.append(mu)
         std_dev.append(std)
 
@@ -146,7 +193,7 @@ if plot_Fz_stats == True:
     plt.ylabel("Mean of \nMain bearing force z squared [$kN^2$]",fontsize=16)
     plt.grid()
     plt.tight_layout()
-    plt.savefig(out_dir+"means_square_FBz.png")
+    plt.savefig(out_dir+"means_squared_FBz.png")
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
@@ -154,7 +201,7 @@ if plot_Fz_stats == True:
     plt.ylabel("Standard deviations of \nMain bearing force z squared [$kN^2$]",fontsize=16)
     plt.grid()
     plt.tight_layout()
-    plt.savefig(out_dir+"std_square_FBz.png")
+    plt.savefig(out_dir+"std_squared_FBz.png")
     plt.close()
 
 
@@ -162,10 +209,10 @@ if plot_Fz_stats == True:
 if plot_FB_stats == True:
     out_dir = in_dir+"Direction/PDFs/"
 
-    vars = [Theta_FB_360,FBR]
+    vars = []
+    labels = []
     rotor_weight = -1079.1
-    percentage = np.arange(0.1,1.0,0.1)
-    labels = ["Total"]
+    percentage = np.linspace(0,1.0,11)
     
     for perc in percentage:
         Fzs = LSShftFzs-(perc*rotor_weight)
@@ -178,20 +225,20 @@ if plot_FB_stats == True:
         vars.append(Theta_FB_perc_360); vars.append(FBR_perc)
         labels.append("{} reduction".format(round(perc,1)))
 
-    vars.append(Theta_Aero_FB_360)
-    vars.append(Aero_FBR/1000)
-    labels.append("Aero")
-
 
     means = []
     std_dev = []
+    skewness = []
+    kurtosis = []
     fig = plt.figure(figsize=(14,8))
     for i in np.arange(0,len(vars),2):
 
         var = vars[i]
-        P,X,mu,std = probability_dist(var)
+        P,X,mu,std,skew,kr = probability_dist(var)
         means.append(mu)
         std_dev.append(std)
+        skewness.append(skew)
+        kurtosis.append(kr)
 
 
     fig = plt.figure(figsize=(14,8))
@@ -210,15 +257,36 @@ if plot_FB_stats == True:
     plt.savefig(out_dir+"std_direction.png")
     plt.close()
 
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(labels,skewness,"o-k")
+    plt.ylabel("Skewness of \nDirection of main bearing force vector [-]",fontsize=16)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"skew_direction.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(labels,skewness,"o-k")
+    plt.ylabel("Kurtosis of \nDirection of main bearing force vector [-]",fontsize=16)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"Kurtosis_direction.png")
+    plt.close()
+
+
     means = []
     std_dev = []
+    skewness = []
+    kurtosis = []
     fig = plt.figure(figsize=(14,8))
     for i in np.arange(1,len(vars),2):
 
         var = vars[i]
-        P,X,mu,std = probability_dist(var)
+        P,X,mu,std,skew,kr = probability_dist(var)
         means.append(mu)
         std_dev.append(std)
+        skewness.append(skew)
+        kurtosis.append(kr)
 
 
     fig = plt.figure(figsize=(14,8))
@@ -237,17 +305,70 @@ if plot_FB_stats == True:
     plt.savefig(out_dir+"std_FBR.png")
     plt.close()
 
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(labels,skewness,"o-k")
+    plt.ylabel("Skewness of \nMagnitude of main bearing force [-]",fontsize=16)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"skew_FBR.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(labels,kurtosis,"o-k")
+    plt.ylabel("Kurtosis of \nMagnitude of main bearing force [-]",fontsize=16)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"Kurtosis_FBR.png")
+    plt.close()
+
+
+if plot_F_comp_stats == True:
+    out_dir = in_dir+"Direction/Tendency/"
+
+    fig,(ax1,ax2)=plt.subplots(2,figsize=(14,8))
+    ax1.plot(Time_OF,FBy)
+    ax1.set_ylabel("Bearing force y compoment [kN]",fontsize=16)
+    ax1.grid()
+
+    ax2.plot(Time_OF,FBz)
+    ax2.set_ylabel("Bearing force z component [kN]",fontsize=16)
+    ax2.grid()
+
+    fig.supxlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.savefig(out_dir+"Bearing_force_comp.png")
+    plt.close()
+
+    fig,(ax1,ax2)=plt.subplots(2,1,figsize=(14,8))
+    P,X,mu,std,skew,kr = probability_dist(FBy)
+    ax1.plot(X,P)
+    ax1.axvline(mu,linestyle="--",color="k")
+    ax1.set_ylabel("Bearing force y compoment [kN]",fontsize=16)
+    ax1.set_title("mean = {}[kN], standard deviation = {}kN,\nskewness = {}, kurtosis = {}".format(mu,std,skew,kr))
+    ax1.grid()
+
+    P,X,mu,std,skew,kr = probability_dist(FBz)
+    ax2.plot(X,P)
+    ax2.axvline(mu,linestyle="--",color="k")
+    ax2.set_ylabel("Bearing force z component [kN]",fontsize=16)
+    ax2.set_title("mean = {}[kN], standard deviation = {}kN,\nskewness = {}, kurtosis = {}".format(mu,std,skew,kr))
+    ax2.grid()
+
+    fig.supxlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.savefig(out_dir+"Bearing_force_comp_PDF.png")
+    plt.close()
 
 
 if PDFs == True:
     units = ["[deg]","[kN]"]
-    Ylabels = ["Direction main bearing force vector {}".format(units[0]),"Magnitude Main Bearing Force {}".format(units[1])]
-    vars = [Theta_FB_360,FBR]
+    Ylabels = []
+    vars = []
     names = ["Theta","FBR"]
-    filenames = ["{}_total.png".format(names[0]),"{}_total.png".format(names[1])]
+    filenames = []
 
     rotor_weight = -1079.1
-    percentage = [0.3, 0.5, 0.7, 0.9]
+    percentage = [0.0, 0.3, 0.5, 0.7, 0.9, 1.0]
 
     for perc in percentage:
         Fzs = LSShftFzs-(perc*rotor_weight)
@@ -263,19 +384,11 @@ if PDFs == True:
         filenames.append("{}_perc_{}.png".format(names[0],perc));filenames.append("{}_perc_{}.png".format(names[1],perc))
 
 
-
-    vars.append(Theta_Aero_FB_360)
-    vars.append(Aero_FBR/1000)
-    Ylabels.append("Direction aerodynamic main bearing force vector {}".format(units[0]))
-    Ylabels.append("Aerodynamic magnitude Main Bearing Force".format(units[1]))
-    filenames.append("{}_aero.png".format(names[0])); filenames.append("{}_aero.png".format(names[1]))
-
-
     #PDFs
     out_dir = in_dir+"Direction/PDFs/"
     for i in np.arange(0,len(vars)):
         var = vars[i];Ylabel = Ylabels[i]; filename = filenames[i]
-        P,X,mu,std = probability_dist(var)
+        P,X,mu,std,skew,kr = probability_dist(var)
         fig = plt.figure(figsize=(14,8))
         plt.plot(X,P)
         plt.axvline(mu,linestyle="--",color="k")
@@ -283,7 +396,7 @@ if PDFs == True:
         plt.axvline(mu-std,linestyle="--",color="r")
         plt.ylabel("PDF",fontsize=16)
         plt.xlabel(Ylabel,fontsize=16)
-        plt.title("Mean = {} \nStandard deviation = {}".format(mu,std))
+        plt.title("Mean = {}, Standard deviation = {},\nskewness = {}, Kurtosis = {}".format(mu,std,skew,kr))
         plt.grid()
         plt.tight_layout()
         plt.savefig(out_dir+filename)
@@ -299,7 +412,7 @@ if PDFs == True:
     for i in np.arange(0,len(vars),2):
 
         var = vars[i]
-        P,X,mu,std = probability_dist(var)
+        P,X,mu,std,skew,kr = probability_dist(var)
         means.append(mu)
         std_dev.append(std)
         
@@ -324,7 +437,7 @@ if PDFs == True:
     for i in np.arange(1,len(vars),2):
 
         var = vars[i]
-        P,X,mu,std = probability_dist(var)
+        P,X,mu,std,skew,kr = probability_dist(var)
         means.append(mu)
         std_dev.append(std)
         
@@ -344,12 +457,11 @@ if PDFs == True:
 
 
 
-
 if lineplots == True:
     #lineplots
-    vars = [FBR]; Ylabels = ["Magnitude main bearing force [kN]"]; units = "[kN]"
+    vars = []; Ylabels = []; units = "[kN]"
     rotor_weight = -1079.1
-    percentage = [0.3, 0.7]
+    percentage = [0.0, 0.3, 0.7, 1.0]
 
     for perc in percentage:
         Fzs = LSShftFzs-(perc*rotor_weight)
@@ -363,8 +475,6 @@ if lineplots == True:
         vars.append(FBR_perc)
         Ylabels.append("Magnitude Main Bearing Force with \n{} reduction in weight {}".format(perc, units))
 
-    vars.append(Aero_FBR/1000); Ylabels.append("Aerodynamic magnitude main bearing force [kN]")
-
     out_dir = in_dir+"Direction/"
     fig,axs = plt.subplots(4,1,figsize=(14,10))
     fig.subplots_adjust(hspace = .5)
@@ -376,16 +486,31 @@ if lineplots == True:
         axs[i].set_title("{}".format(Ylabel))
         axs[i].grid()
 
+    fig.supxlabel("Time [s]")
     plt.savefig(out_dir+"joint_FBR_lineplot.png")
+    plt.close()
+
+    fig,axs = plt.subplots(4,1,figsize=(14,10))
+    fig.subplots_adjust(hspace = .5)
+    axs = axs.ravel()
+
+    for i in np.arange(0,len(vars)):
+        var = vars[i];Ylabel = Ylabels[i]
+        frq, PSD = temporal_spectra(var,dt,Ylabel)
+        axs[i].loglog(frq,PSD)
+        axs[i].axvline(0.605,linestyle="--",color="k")
+        axs[i].set_title("{}".format(Ylabel))
+        axs[i].grid()
+
+    fig.supxlabel("Frequency [Hz]")
+    plt.savefig(out_dir+"joint_spectra_FBR_lineplot.png")
     plt.close()
 
 
 
 
     #lineplots
-    vars = [Theta_FB]; Ylabels = ["Direction main bearing force vector [deg]"]; units = "[deg]"
-    rotor_weight = -1079.1
-    percentage = [0.3, 0.7]
+    vars = []; Ylabels = []; units = "[deg]"
 
     for perc in percentage:
         Fzs = LSShftFzs-(perc*rotor_weight)
@@ -393,11 +518,11 @@ if lineplots == True:
         FBz_perc = FBMz + FBFz_perc
         FBR_perc = np.sqrt(np.add(np.square(FBy),np.square(FBz_perc)))
         Theta_FB_perc = np.degrees(np.arctan2(FBz_perc,FBy))
+        Theta_FB_360_perc = theta_360(Theta_FB_perc)
 
-        vars.append(Theta_FB_perc)
-        Ylabels.append("Direction main bearing force vector with \n{} reduction in weight {}".format(perc, units))
+        vars.append(Theta_FB_360_perc)
+        Ylabels.append("Theta: Main bearing force with \n{} reduction in weight {}".format(perc, units))
 
-    vars.append(Theta_Aero_FB); Ylabels.append("Direction main bearing force vector [deg]")
 
     out_dir = in_dir+"Direction/"
     fig,axs = plt.subplots(4,1,figsize=(14,10))
@@ -410,10 +535,147 @@ if lineplots == True:
         axs[i].set_title("{}".format(Ylabel))
         axs[i].grid()
 
+    fig.supxlabel("Time [s]")
     plt.savefig(out_dir+"joint_Theta_lineplot.png")
     plt.close()
 
+    fig,axs = plt.subplots(4,1,figsize=(14,10))
+    fig.subplots_adjust(hspace = .5)
+    axs = axs.ravel()
 
+    for i in np.arange(0,len(vars)):
+        var = vars[i];Ylabel = Ylabels[i]
+        frq, PSD = temporal_spectra(var,dt,Ylabel)
+        axs[i].loglog(frq,PSD)
+        axs[i].axvline(0.605,linestyle="--",color="k")
+        axs[i].set_title("{}".format(Ylabel))
+        axs[i].grid()
+
+    fig.supxlabel("Frequency [Hz]")
+    plt.savefig(out_dir+"joint_spectra_theta_lineplot.png")
+    plt.close()
+
+
+if FB_correlations == True:
+
+    out_dir = in_dir+"Direction/FB_correlations/"
+    corr = correlation_coef(FBR,RtAeroMys/1000) 
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time_OF,FBR,"b")
+    ax.set_ylabel("Main bearing force magnitude [kN]",fontsize=16)
+    ax.yaxis.label.set_color('b')
+    ax.grid()
+
+    ax2=ax.twinx()
+    ax2.plot(Time_OF,RtAeroMys/1000,"r")
+    ax2.set_ylabel("Aerodynamic Rotor moment y component [kN-m]",fontsize=16)
+    ax2.yaxis.label.set_color("r")
+
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.title("correlation = {}".format(round(corr,2)))
+    plt.tight_layout()
+    plt.savefig(out_dir+"AeroMy_corr.png")
+    plt.close()
+
+
+    corr = correlation_coef(Theta_FB_360,RtAeroMzs/1000) 
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time_OF,Theta_FB_360,"b")
+    ax.set_ylabel("Main bearing force direction [deg]",fontsize=16)
+    ax.yaxis.label.set_color('b')
+    ax.grid()
+
+    ax2=ax.twinx()
+    ax2.plot(Time_OF,RtAeroMzs/1000,"r")
+    ax2.set_ylabel("Aerodynamic Rotor moment z component [kN-m]",fontsize=16)
+    ax2.yaxis.label.set_color("r")
+
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.title("correlation = {}".format(round(corr,2)))
+    plt.tight_layout()
+    plt.savefig(out_dir+"AeroMz_corr.png")
+    plt.close()
+
+
+
+if moving_stats == True:
+
+    out_dir = in_dir+"Direction/"
+    time_window = 50
+    window = int(time_window/dt)
+    dy = pd.Series(np.square(FBy))
+    dz = pd.Series(np.square(FBz))
+    vary = dy.rolling(window=window).var()
+    varz = dz.rolling(window=window).var()
+
+
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time_OF,vary)
+    plt.plot(Time_OF,varz)
+    plt.ylabel("variance of main bearing force components squared \ntime window = 50s",fontsize=16)
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.legend(["[$F_{B_y}^2$]", "[$F_{B_z}^2$]"],fontsize=14)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"variance_FB.png")
+    plt.close()
+
+
+if random_plots == True:
+    Py,Xy,muy,stdy,skewy,kry = probability_dist(np.square(FBy))
+    Pz,Xz,muz,stdz,skewz,krz = probability_dist(np.square(FBz))
+
+
+    fig=plt.figure(figsize=(14,8))
+    plt.plot(Time_OF,np.square(FBy))
+    plt.plot(Time_OF,np.square(FBz))
+    plt.xlabel("Time [s]",fontsize=16)
+    plt.ylabel("Main bearing force components squared [$kN^2$]",fontsize=16)
+    plt.title("FBy Variance = {}\nFBz Variance = {}".format(round(stdy**2,0),round(stdz**2,0)),fontsize=16)
+    plt.legend(["$FBy^2$", "$FBz^2$"])
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(in_dir+"Direction/FB_comps_squared.png")
+    plt.close()
+
+
+    fig=plt.figure(figsize=(14,8))
+    plt.plot(Xy,Py)
+    plt.plot(Xz,Pz)
+    plt.xlabel("Main bearing force components squared [$kN^2$]",fontsize=16)
+    plt.ylabel("PDF",fontsize=16)
+    plt.legend(["$FBy^2$", "$FBz^2$"])
+    plt.axvline(muy,linestyle="--",color="k")
+    plt.axvline(muz,linestyle="--",color="k")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(in_dir+"Direction/PDF_FB_comps_squared.png")
+    plt.close()
+
+
+
+
+# fig,ax = plt.subplots(figsize=(14,8))
+# y = []
+# for i in np.arange(0,len(Time_OF)):
+#     if abs(FBy[i]) >= abs(0.2*FBz[i]):
+#         y.append(abs(FBy[i]))
+#         ax.plot(Time_OF[i],FBy[i],"o",markersize=1,color="k")
+
+# #corr = correlation_coef(y,Theta_FB_360)
+
+# ax.set_ylabel("0.2FBz<=FBy")
+# ax.grid()
+# ax2=ax.twinx()
+# ax2.plot(Time_OF,Theta_FB_360)
+# ax2.set_ylabel("Theta")
+# #plt.title("correlation = {}".format(corr))
+
+
+
+
+# plt.savefig(in_dir+"Direction/FB_comps_squared_ratio.png")
+# plt.close()
 
 # #plot windrose of Bearing Force
 

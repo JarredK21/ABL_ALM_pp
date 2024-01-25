@@ -73,6 +73,17 @@ def blade_positions(it):
     return Y, Z, Y2, Z2, Y3, Z3
 
 
+def level_calc(cmin,cmax):
+    nlevs = int((cmax-cmin)/2)
+    if nlevs>abs(cmin) or nlevs>cmax:
+        nlevs = min([abs(cmin),cmax])+1
+
+    levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
+    levels = np.concatenate((levs_min,levs_max[1:]))
+
+    return levels
+
+
 start_time = time.time()
 
 #defining twist angles with height from precursor
@@ -110,7 +121,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = False; plot_r = False; plot_tr = False; plot_i = True; plot_t = True
+plot_l = False; plot_r = False; plot_tr = False; plot_i = False; plot_t = True
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -225,7 +236,7 @@ for plane in planes:
             if fluc_vel == True:
                 folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
             else:
-                folder = out_dir+"{0}_Plane_Total_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
+                folder = out_dir+"{0}_Plane_Total_{1}_{2}_2/".format(plane_labels[ip],velocity_comp,offset)
 
             isExist = os.path.exists(folder)
             if isExist == False:
@@ -245,7 +256,8 @@ for plane in planes:
                 else:
                     u = np.array(p.variables[velocity_comp][tstart_idx:tend_idx])
 
-                
+                u[u<0] = 0 #remove any negative velocities in total velocity
+
                 if fluc_vel == True:
                     u_mean = np.mean(u)
                     u = np.subtract(u,u_mean)
@@ -255,28 +267,12 @@ for plane in planes:
 
                 #find vmin and vmax for isocontour plots            
                 #min and max over data
-                #for rotor and transverse planes always set cmin = 0
                 if custom_colorbar == False:                            
-                    if fluc_vel == False:
-                        if plane != "l" and velocity_comp == "velocityx" or plane != "l" and velocity_comp == "Horizontal_velocity":
-                            cmin = 0
-                        else:
-                            cmin = math.floor(np.min(u))
-                    else:
-                        cmin = math.floor(np.min(u))
-                    
+
+                    cmin = math.floor(np.min(u))
                     cmax = math.ceil(np.max(u))
                     
-                if fluc_vel == True or velocity_comp == "velocityz":
-                    nlevs = int((cmax-cmin)/2)
-                    if nlevs>abs(cmin) or nlevs>cmax:
-                        nlevs = min([abs(cmin),cmax])+1
-                    
-                    levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
-                    levels = np.concatenate((levs_min,levs_max[1:]))
-                else:
-                    nlevs = (cmax-cmin)
-                    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
+                    levels = level_calc(cmin,cmax)
                     
                     print("line 370",cmin,cmax)
 
@@ -322,25 +318,25 @@ for plane in planes:
                         plt.clabel(CS, fontsize=9, inline=True)
 
                     #show where rotor is and reduce plot area
-                    #plt.xlim([2000,3000]); plt.ylim([2000,3000])
+                    plt.xlim([2000,3000]); plt.ylim([0,300])
                     #x_lims = [2524.5,2585.5]; y_lims = [2615.1,2504.9]
                     #plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
 
                     if normal == "x":
-                        plt.xlabel("Y axis [m]")
-                        plt.ylabel("Z axis [m]")
+                        plt.xlabel("y axis [m]")
+                        plt.ylabel("z axis [m]")
                     elif normal == "y":
-                        plt.xlabel("X axis [m]")
-                        plt.ylabel("Z axis [m]")
+                        plt.xlabel("x axis [m]")
+                        plt.ylabel("y axis [m]")
                     elif normal == "z":
-                        plt.xlabel("X axis [m]")
-                        plt.ylabel("Y axis [m]")
+                        plt.xlabel("x axis [m]")
+                        plt.ylabel("y axis [m]")
                     elif type(normal) == int and plane == "r" or type(normal) and plane == "tr": #rotor planes
-                        plt.xlabel("Y' axis (rotor frame of reference) [m]")
-                        plt.ylabel("Z' axis (rotor frame of reference) [m]")
+                        plt.xlabel("y' axis (rotor frame of reference) [m]")
+                        plt.ylabel("z' axis (rotor frame of reference) [m]")
                     elif type(normal) == int and plane == "t":
-                        plt.xlabel("X' axis (rotor frame of reference) [m]")
-                        plt.ylabel("Z' axis (rotor frame of reference) [m]")
+                        plt.xlabel("x' axis (rotor frame of reference) [m]")
+                        plt.ylabel("z' axis (rotor frame of reference) [m]")
 
                     cb = plt.colorbar(cs)
 
