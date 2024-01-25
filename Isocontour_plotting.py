@@ -274,7 +274,7 @@ for plane in planes:
                     
                     levels = level_calc(cmin,cmax)
                     
-                    print("line 370",cmin,cmax)
+                print("line 370",levels)
 
 
                 def Update(it):
