@@ -256,7 +256,8 @@ for plane in planes:
                 else:
                     u = np.array(p.variables[velocity_comp][tstart_idx:tend_idx])
 
-                u[u<0] = 0 #remove any negative velocities in total velocity
+                if velocity_comp != "velocityz":
+                    u[u<0] = 0 #remove any negative velocities in total velocity
 
                 if fluc_vel == True:
                     u_mean = np.mean(u)
