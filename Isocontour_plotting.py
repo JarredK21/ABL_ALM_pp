@@ -157,7 +157,7 @@ for plane in planes:
         #plotting option
         fluc_vel = False
         plot_contours = False
-        plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
+        plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
         #check if no velocity components selected
@@ -261,7 +261,7 @@ for plane in planes:
 
                     cmin = math.floor(np.min(u))
                     cmax = math.ceil(np.max(u))
-                    
+                
                 if fluc_vel == True or velocity_comp == "velocityz":
                     nlevs = int((cmax-cmin)/2)
                     if nlevs>abs(cmin) or nlevs>cmax:
@@ -270,7 +270,7 @@ for plane in planes:
                     levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
                     levels = np.concatenate((levs_min,levs_max[1:]))
                 else:
-                    nlevs = (cmin-cmax)
+                    nlevs = (cmax-cmin)
                     levels = np.linspace(cmin,cmax,nlevs,dtype=int)
                     
                 print("line 370",levels)
