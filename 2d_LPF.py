@@ -14,7 +14,7 @@ def butterwort_low_pass_filer(f):
 
     M,N = f.shape
     H = np.zeros((M,N), dtype=np.float32)
-    D0 = 1/30 #cut off frequency
+    D0 = 9e-03 #cut off frequency
 
     delx = 10
     freqs = fftshift(fftfreq(x, d=delx)) #mirror frequencies are equal and opposite sign in the Re, Im are zero.
@@ -41,16 +41,33 @@ def two_dim_LPF(it):
 
     U = u[it].reshape(x,y)
 
+    Z = U.reshape(x,y)
+    X,Y = np.meshgrid(xs,ys)
+
+    fig = plt.figure(figsize=(50,30))
+    cs = plt.contourf(X,Y,Z, cmap=cm.coolwarm)
+    cb = plt.colorbar(cs)
+
     #FFT
     ufft = np.fft.fftshift(np.fft.fft2(U))
 
-    ##multiply filter
+
+    #multiply filter
     H = butterwort_low_pass_filer(U)
     ufft_filt = ufft * H
 
     #IFFT
     ufft_filt_shift = np.fft.ifftshift(ufft_filt)
-    iufft_filt = np.abs(np.fft.ifft2(ufft_filt_shift))
+    iufft_filt = np.real(np.fft.ifft2(ufft_filt_shift))
+
+    Z = iufft_filt.reshape(x,y)
+    X,Y = np.meshgrid(xs,ys)
+
+    fig = plt.figure(figsize=(50,30))
+    cz = plt.contourf(X,Y,Z, cmap=cm.coolwarm)
+    cd = plt.colorbar(cz)
+
+    plt.show()
 
     return iufft_filt.flatten()
 
@@ -58,6 +75,28 @@ def two_dim_LPF(it):
 in_dir = "../../ABL_precursor_2/"
 out_dir = in_dir+"plots/"
 
+df = pd.read_csv(in_dir+"spectral_data_uu.csv")
+freq_uu_1d = df["freq"]
+mean_uu = df["mean"]
+del df
+df = pd.read_csv(in_dir+"spectral_data_ww.csv")
+freq_ww_1d = df["freq"]
+mean_ww = df["mean"]
+
+
+fig = plt.figure(figsize=(14,8))
+plt.rcParams.update({'font.size': 16})
+plt.loglog(freq_uu_1d, mean_uu,"-r")
+plt.loglog(freq_ww_1d, mean_ww,"b")
+plt.loglog(freq_uu_1d, 1e-06* freq_uu_1d**(-5./3.),"--k")
+plt.ylim([1e-09, 1])
+plt.xlabel('k - Wave number [1/m]')
+plt.ylabel('(k) - Power spectral density')
+plt.title("Energy spectra at z = 90m")
+plt.grid()
+plt.legend(["u","w", "$k^{-5/3}$"])
+plt.savefig(out_dir+"Spacial_spectra_90m.png")
+plt.close(fig)
 
 a = Dataset(in_dir+"sampling_l_85.nc")
 
