@@ -155,9 +155,9 @@ for plane in planes:
         Time = Time[tstart_idx:tend_idx]
 
         #plotting option
-        fluc_vel = False
+        fluc_vel = True
         plot_contours = False
-        plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
+        plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
         #check if no velocity components selected
@@ -223,9 +223,9 @@ for plane in planes:
             print(plane_labels[ip],velocity_comps[iv],offset,time.time()-start_time)
 
             if fluc_vel == True:
-                folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
+                folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}_2/".format(plane_labels[ip],velocity_comp,offset)
             else:
-                folder = out_dir+"{0}_Plane_Total_{1}_{2}_2/".format(plane_labels[ip],velocity_comp,offset)
+                folder = out_dir+"{0}_Plane_Total_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
 
             isExist = os.path.exists(folder)
             if isExist == False:
@@ -318,8 +318,8 @@ for plane in planes:
 
                     #show where rotor is and reduce plot area
                     plt.xlim([2000,3000]); plt.ylim([0,300])
-                    #x_lims = [2524.5,2585.5]; y_lims = [2615.1,2504.9]
-                    #plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
+                    x_lims = [2555,2555]; y_lims = [27,153]
+                    plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
 
                     if normal == "x":
                         plt.xlabel("y axis [m]")
