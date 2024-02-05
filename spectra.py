@@ -99,8 +99,8 @@ def temporal_spectra(signal,dt,Var):
     return frq, PSD
 
 
-spacial_spectra_plot = False
-temporal_spectra_plot = True
+spacial_spectra_plot = True
+temporal_spectra_plot = False
 
 if spacial_spectra_plot == True:
     #how to low pass filter spacial data

@@ -8,6 +8,7 @@ import numpy as np
 from multiprocessing import Pool
 import math
 import pandas as pd
+from scipy.signal import butter,filtfilt
 
 
 def butterwort_low_pass_filer(f):
@@ -41,16 +42,33 @@ def two_dim_LPF(it):
 
     U = u[it].reshape(x,y)
 
+    Z = U.reshape(x,y)
+    X,Y = np.meshgrid(xs,ys)
+
+    fig = plt.figure(figsize=(50,30))
+    cs = plt.contourf(X,Y,Z, cmap=cm.coolwarm)
+    cb = plt.colorbar(cs)
+
     #FFT
     ufft = np.fft.fftshift(np.fft.fft2(U))
 
-    ##multiply filter
+
+    #multiply filter
     H = butterwort_low_pass_filer(U)
     ufft_filt = ufft * H
 
     #IFFT
     ufft_filt_shift = np.fft.ifftshift(ufft_filt)
-    iufft_filt = np.abs(np.fft.ifft2(ufft_filt_shift))
+    iufft_filt = np.real(np.fft.ifft2(ufft_filt_shift))
+
+    Z = iufft_filt.reshape(x,y)
+    X,Y = np.meshgrid(xs,ys)
+
+    fig = plt.figure(figsize=(50,30))
+    cz = plt.contourf(X,Y,Z, cmap=cm.coolwarm)
+    cd = plt.colorbar(cz)
+
+    plt.show()
 
     return iufft_filt.flatten()
 
@@ -99,7 +117,9 @@ velocity_field_w = True
 
 if velocity_field_u == True:
     u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
+    u = np.subtract(u,np.mean(u))
     v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+    v = np.subtract(v,np.mean(v))
     with Pool() as pool:
         u_hvel = []
         for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
@@ -108,6 +128,7 @@ if velocity_field_u == True:
             print(len(u_hvel))
     u = np.array(u_hvel); del u_hvel; del v
 
+    two_dim_LPF(it=0)
 
     ix = 0
     with Pool() as pool:
