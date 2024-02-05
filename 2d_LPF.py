@@ -15,7 +15,7 @@ def butterwort_low_pass_filer(f):
 
     M,N = f.shape
     H = np.zeros((M,N), dtype=np.float32)
-    D0 = 1/30 #cut off frequency
+    D0 = 9e-03 #cut off frequency
 
     delx = 10
     freqs = fftshift(fftfreq(x, d=delx)) #mirror frequencies are equal and opposite sign in the Re, Im are zero.
@@ -45,9 +45,17 @@ def two_dim_LPF(it):
     Z = U.reshape(x,y)
     X,Y = np.meshgrid(xs,ys)
 
-    fig = plt.figure(figsize=(50,30))
-    cs = plt.contourf(X,Y,Z, cmap=cm.coolwarm)
-    cb = plt.colorbar(cs)
+    if it == 0:
+        plt.rcParams['font.size'] = 40
+        fig = plt.figure(figsize=(50,30))
+        cs = plt.contourf(X,Y,Z, cmap=cm.coolwarm)
+        cb = plt.colorbar(cs)
+        plt.xlabel("x axis [m]")
+        plt.ylabel("y axis [m]")
+        plt.title("fluctuating horizontal velocity [m/s]\nT = {}s".format(Time[it]))
+        plt.tight_layout()
+        plt.savefig(out_dir+"unflilted_w.png")
+        plt.close()
 
     #FFT
     ufft = np.fft.fftshift(np.fft.fft2(U))
@@ -64,11 +72,17 @@ def two_dim_LPF(it):
     Z = iufft_filt.reshape(x,y)
     X,Y = np.meshgrid(xs,ys)
 
-    fig = plt.figure(figsize=(50,30))
-    cz = plt.contourf(X,Y,Z, cmap=cm.coolwarm)
-    cd = plt.colorbar(cz)
-
-    plt.show()
+    if it == 0:
+        plt.rcParams['font.size'] = 40
+        fig = plt.figure(figsize=(50,30))
+        cz = plt.contourf(X,Y,Z, cmap=cm.coolwarm)
+        cd = plt.colorbar(cz)
+        plt.xlabel("x axis [m]")
+        plt.ylabel("y axis [m]")
+        plt.title("filtered fluctuating horizontal velocity [m/s]\nT = {}s".format(Time[it]))
+        plt.tight_layout()
+        plt.savefig(out_dir+"flilted_w.png")
+        plt.close()
 
     return iufft_filt.flatten()
 
@@ -111,7 +125,7 @@ LPF_data_uu =  pd.DataFrame(data=None, columns=col_names)
 LPF_data_ww = pd.DataFrame(data=None, columns=col_names)
 
 #velocity field
-velocity_field_u = True
+velocity_field_u = False
 velocity_field_w = True
 
 
@@ -127,8 +141,6 @@ if velocity_field_u == True:
             u_hvel.append(u_hvel_it)
             print(len(u_hvel))
     u = np.array(u_hvel); del u_hvel; del v
-
-    two_dim_LPF(it=0)
 
     ix = 0
     with Pool() as pool:

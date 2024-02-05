@@ -6,126 +6,14 @@ import netCDF4 as nc
 from scipy.fft import fft2, fftfreq, fftshift
 import numpy as np
 from multiprocessing import Pool
-import math
+from math import floor, ceil
 import pandas as pd
-
-
-def butterwort_low_pass_filer(f):
-
-    M,N = f.shape
-    H = np.zeros((M,N), dtype=np.float32)
-    D0 = 1/30 #cut off frequency
-
-    delx = 10
-    freqs = fftshift(fftfreq(x, d=delx)) #mirror frequencies are equal and opposite sign in the Re, Im are zero.
-    freq2d = np.array(np.meshgrid( freqs, freqs)) #mirror frequencies are equal in the Re, Im are zero
-    freqs2d = np.sqrt( freq2d[0]**2 + freq2d[1]**2)
-
-    for u in range(M):
-        for v in range(N):
-            D = freqs2d[u,v]
-            if D >= D0:
-                H[u,v] = 0
-            else:
-                H[u,v] = 1
-
-    return H
 
 
 def Horizontal_velocity(it):
     mag_horz_vel = u[it]*np.cos(np.radians(29)) + v[it]*np.sin(np.radians(29))
     return mag_horz_vel
 
-
-def two_dim_LPF(it):
-
-    U = u[it].reshape(x,y)
-
-    #FFT
-    ufft = np.fft.fftshift(np.fft.fft2(U))
-
-    ##multiply filter
-    H = butterwort_low_pass_filer(U)
-    ufft_filt = ufft * H
-
-    #IFFT
-    ufft_filt_shift = np.fft.ifftshift(ufft_filt)
-    iufft_filt = np.abs(np.fft.ifft2(ufft_filt_shift))
-
-    return iufft_filt
-
-
-def unfiltered_contour(it):
-
-    #plot example contour w/o filtering
-                    
-    u_plane = u[it].reshape(x,y)
-    X,Y = np.meshgrid(xs,ys)
-
-    Z = u_plane
-
-    T = Time[0]
-
-    fig = plt.figure(figsize=(50,37.5))
-    plt.rcParams['font.size'] = 40
-
-    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
-
-    plt.xlabel("X axis [m]",fontsize=50)
-    plt.ylabel("Y axis [m]",fontsize=50)
-
-    cb = plt.colorbar(cs)
-
-    if velocity_field_u == True:
-        Title = "Horizontal Plane at 90m. \n Horizontal velocity [m/s], Time = {0}[s]".format(round(T,4),fontsize=50)
-        filename = "Horizontal_plane_90m_Horizontal_velocity_{0}.png".format(round(T,4))
-    elif velocity_field_w == True:
-        Title = "Horizontal Plane at 90m. \n Vertical velocity [m/s], Time = {0}[s]".format(round(T,4),fontsize=50)
-        filename = "Horizontal_plane_90m_Vertical_velocity_{0}.png".format(round(T,4))
-
-    plt.title(Title)
-    plt.savefig(out_dir+filename)
-    plt.cla()
-    cb.remove()
-    plt.close(fig)
-
-
-def filtered_contour():
-
-    #plot example contour w filtering
-    U = iufft #velocity time step it
-
-    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
-                    
-    u_plane = U.reshape(x,y)
-    X,Y = np.meshgrid(xs,ys)
-
-    Z = u_plane
-
-    T = Time[0]
-
-    fig = plt.figure(figsize=(50,37.5))
-    plt.rcParams['font.size'] = 40
-
-    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
-
-    plt.xlabel("X axis [m]",fontsize=50)
-    plt.ylabel("Y axis [m]",fontsize=50)
-
-    cb = plt.colorbar(cs)
-
-    if velocity_field_u == True:
-        Title = "Horizontal Plane at 90m. \n Horizontal velocity [m/s], Filtered at k = 7, Time = {0}[s]".format(round(T,4),fontsize=50)
-        filename = "Horizontal_plane_90m_Filtered_Horizontal_velocity_{0}.png".format(round(T,4))
-    elif velocity_field_w == True:
-        Title = "Horizontal Plane at 90m. \n Vertical velocity [m/s], Filtered at k = 7, Time = {0}[s]".format(round(T,4),fontsize=50)
-        filename = "Horizontal_plane_90m_Filtered_Vertical_velocity_{0}.png".format(round(T,4))
-
-    plt.title(Title)
-    plt.savefig(out_dir+filename)
-    plt.cla()
-    cb.remove()
-    plt.close(fig)
 
 
 def probability_dist(it):
@@ -190,13 +78,15 @@ ys = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y)
 zs = 0
 
 #velocity field
-velocity_field_w = True
+velocity_field_w = False
 velocity_field_u = True
 
 
 if velocity_field_u == True:
     u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
     v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+    u = np.subtract(u,np.mean(u))
+    v = np.subtract(v,np.mean(v))
 
     with Pool() as pool:
         u_hvel = []
@@ -205,24 +95,6 @@ if velocity_field_u == True:
             u_hvel.append(u_hvel_it)
             print(len(u_hvel))
     u = np.array(u_hvel); del u_hvel; del v; del a
-
-    cmin = math.floor(np.min(u))
-    cmax = math.ceil(np.max(u))
-                        
-    nlevs = (cmax-cmin)
-    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
-
-    unfiltered_contour(it=0)
-
-    iufft = two_dim_LPF(it=0)
-
-    cmin = math.floor(np.min(iufft))
-    cmax = math.ceil(np.max(iufft))
-                        
-    nlevs = (cmax-cmin)
-    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
-
-    filtered_contour()
 
 
     #PDF of unfiltered data
@@ -276,8 +148,9 @@ if velocity_field_u == True:
 
     fig = plt.figure(figsize=(14,8))
     plt.plot(X,CDF)
-    plt.xlabel("Horizontal velocity [m/s]",fontsize=16)
+    plt.xlabel("Fluctuating Horizontal velocity [m/s]",fontsize=16)
     plt.ylabel("Probability filtered [-]",fontsize=16)
+    plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
     plt.title("CDF averaged over final 1000s",fontsize=18)
     plt.tight_layout()
     plt.savefig(out_dir+"CDF_Horizontal_velocity.png")
@@ -286,9 +159,10 @@ if velocity_field_u == True:
     fig = plt.figure(figsize=(14,8))
     plt.plot(X,PDF_uu_mean,"b-")
     plt.plot(X_unfilt,PDF_unfilt_mean,"r--")
+    plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
     plt.axvline(X[LSS_idx],color="k",linestyle="--"); plt.axvline(X[HSS_idx],color="k",linestyle="--")
     plt.axvline(np.mean(u),color="k",linestyle="--")
-    plt.xlabel("Horizontal velocity [m/s]",fontsize=16)
+    plt.xlabel("Fluctuating Horizontal velocity [m/s]",fontsize=16)
     plt.ylabel("Probability [-]",fontsize=16)
     plt.title("PDF averaged over final 1000s",fontsize=18)
     plt.legend(["filtered", "unfiltered"],fontsize=12)
@@ -299,24 +173,6 @@ if velocity_field_u == True:
 
 if velocity_field_w == True:
     u = np.array(p.variables["velocityz"][tstart_idx:tend_idx])
-
-    cmin = math.floor(np.min(u))
-    cmax = math.ceil(np.max(u))
-                        
-    nlevs = (cmax-cmin)
-    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
-
-    unfiltered_contour(it=0)
-
-    iufft = two_dim_LPF(it=0)
-
-    cmin = math.floor(np.min(iufft))
-    cmax = math.ceil(np.max(iufft))
-                        
-    nlevs = (cmax-cmin)
-    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
-
-    filtered_contour()
 
 
     #PDF of unfiltered data
@@ -370,8 +226,9 @@ if velocity_field_w == True:
 
     fig = plt.figure(figsize=(14,8))
     plt.plot(X,CDF)
-    plt.xlabel("Vertical velocity [m/s]",fontsize=16)
+    plt.xlabel("Fluctuating Vertical velocity [m/s]",fontsize=16)
     plt.ylabel("Probability filtered [-]",fontsize=16)
+    plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
     plt.title("CDF averaged over final 1000s",fontsize=18)
     plt.tight_layout()
     plt.savefig(out_dir+"CDF_Vertical_velocity.png")
@@ -382,8 +239,9 @@ if velocity_field_w == True:
     plt.plot(X_unfilt,PDF_unfilt_mean,"r--")
     plt.axvline(X[LSS_idx],color="k",linestyle="--"); plt.axvline(X[HSS_idx],color="k",linestyle="--")
     plt.axvline(np.mean(u),color="k",linestyle="--")
-    plt.xlabel("Vertical velocity [m/s]",fontsize=16)
+    plt.xlabel("Fluctuating Vertical velocity [m/s]",fontsize=16)
     plt.ylabel("Probability [-]",fontsize=16)
+    plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
     plt.title("PDF averaged over final 1000s",fontsize=18)
     plt.legend(["filtered", "unfiltered"],fontsize=12)
     plt.tight_layout()
