@@ -235,6 +235,13 @@ for plane in planes:
                 if velocity_comp == "Horizontal_velocity":
                     u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
                     v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+
+                    u[u<0]=0; v[v<0] #remove negative velocities
+                    
+                    if fluc_vel == True:
+                        u = np.subtract(u,np.mean(u))
+                        v = np.subtract(v,np.mean(v))
+
                     with Pool() as pool:
                         u_hvel = []
                         for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
@@ -245,13 +252,8 @@ for plane in planes:
                 else:
                     u = np.array(p.variables[velocity_comp][tstart_idx:tend_idx])
 
-                if velocity_comp != "velocityz":
-                    u[u<0] = 0 #remove any negative velocities in total velocity
-
-                if fluc_vel == True:
-                    u_mean = np.mean(u)
-                    u = np.subtract(u,u_mean)
-                
+                    if fluc_vel == True:
+                        u = np.subtract(u,np.mean(u))
 
                 print("line 328",time.time()-start_time)
 
@@ -316,10 +318,13 @@ for plane in planes:
                         CS = plt.contour(X, Y, Z, levels=levels, colors='k')  # Negative contours default to dashed.
                         plt.clabel(CS, fontsize=9, inline=True)
 
+
                     #show where rotor is and reduce plot area
                     plt.xlim([2000,3000]); plt.ylim([0,300])
-                    x_lims = [2555,2555]; y_lims = [27,153]
-                    plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
+
+                    if plane == "t":
+                        x_lims = [2555,2555]; y_lims = [27,153]
+                        plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
 
                     if normal == "x":
                         plt.xlabel("y axis [m]")

@@ -219,6 +219,7 @@ Iy_Iz = False
 correlations_weight = False
 time_shift_analysis = False
 mean_trajectories = False
+plot_stats = False
 
 
 if plot_stats == True:
@@ -866,6 +867,22 @@ if random_plots == True:
     plt.savefig(in_dir+"Ux_fluc.png")
     plt.close()
 
+    fig = plt.figure(figsize=(14,8))
+    plt.rcParams.update({'font.size': 16})
+    plt.plot(Time_OF,FBR,"-b")
+
+    LPF_FBR = low_pass_filter(FBR,0.3,dt)
+    plt.plot(Time_OF,LPF_FBR,"-r")
+
+    plt.xlabel("Time [s]")
+    plt.ylabel("Magnitude Main bearing force vector [kN]")
+    plt.legend(["Total", "Trend LPF: f=0.3Hz"])
+    plt.xlim([200,400])
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(in_dir+"FBR_trend.png")
+    plt.close()
+
 
 if plot_trajectory == True:
 
@@ -1079,11 +1096,11 @@ if plot_windrose == True:
     #plot windrose of Bearing Force
 
     ax = WindroseAxes.from_ax()
-    ax.bar(Aero_Theta,Aero_FBR/1000,normed=True,opening=0.8,edgecolor="white")
+    ax.bar(Theta,FBR,normed=True,opening=0.8,edgecolor="white")
     ax.set_xticklabels(['0', '45', '90', '135',  '180', '225', '270', '315'])
     ax.set_legend()
 
-    X,P,mu,std = probability_dist(Aero_Theta)
+    X,P,mu,std = probability_dist(Theta)
     plt.figure(figsize=(14,8))
     plt.plot(P,X)
 
@@ -1290,13 +1307,16 @@ if plot_filtered_trajectory == True:
 
     out_dir = in_dir+"Direction/Trajectories/"
 
-    start_times = [200]
-    end_times = [1200]
+    start_times = times = [200,300,375,440,540,650,810,925,990,1100,1160]
+    end_times = times = [300,375,440,540,650,810,925,990,1100,1160,1200]
 
     for time_start,time_end in zip(start_times,end_times):
 
-        FBz = low_pass_filter(FBz,0.3,dt)
-        FBy = low_pass_filter(FBy,0.3,dt)
+        LPF_FBz = low_pass_filter(FBz,1.0,dt)
+        LPF_FBy = low_pass_filter(FBy,1.0,dt)
+
+        FBz = np.subtract(FBz,LPF_FBz)
+        FBy = np.subtract(FBy,LPF_FBy)
 
         FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
         Theta = np.degrees(np.arctan2(FBz,FBy))
@@ -1314,16 +1334,16 @@ if plot_filtered_trajectory == True:
         print(time_start,time_end,std)
         
 
-        fig = plt.figure(figsize=(6,6))
-        ax = plt.subplot(111,polar=True)
-        ax.set_ylim(top=3500)
-        ax.plot(Theta_rad[Time_start_idx:Time_end_idx],FBR[Time_start_idx:Time_end_idx],marker="o",color="b",markersize=0.1)
-        ax.plot(mean_dir,mean_mag,marker="o",color="k",markersize=8)
+        # fig = plt.figure(figsize=(6,6))
+        # ax = plt.subplot(111,polar=True)
+        # ax.set_ylim(top=3500)
+        # ax.plot(Theta_rad[Time_start_idx:Time_end_idx],FBR[Time_start_idx:Time_end_idx],marker="o",color="b",markersize=0.1)
+        # ax.plot(mean_dir,mean_mag,marker="o",color="k",markersize=8)
 
-        ax.set_title("Main bearing force vector trajectory\nFiltered at 0.3Hz \nT={} - {}s".format(round(Time_OF[Time_start_idx],0),round(Time_OF[Time_end_idx-1],0)))
-        plt.tight_layout()
-        plt.savefig(out_dir+"Trend_{}-{}s.png".format(time_start,time_end))
-        plt.close()
+        # ax.set_title("Main bearing force vector trajectory\nFiltered at 0.3Hz \nT={} - {}s".format(round(Time_OF[Time_start_idx],0),round(Time_OF[Time_end_idx-1],0)))
+        # plt.tight_layout()
+        # plt.savefig(out_dir+"Trend_{}-{}s.png".format(time_start,time_end))
+        # plt.close()
 
 
 if mean_trajectories == True:
@@ -1365,118 +1385,129 @@ if mean_trajectories == True:
     plt.close()
 
 
-out_dir=in_dir+"Direction/stats/"
-times = [200,300,375,440,540,650,810,925,990,1100,1160,1200]
-variance = [575.2,561.3,501.9,588.3,533.8,915.1,949.0,808.3,607.9,424.8,588.5,588.5]
-LPF_1_ratio = [0.73,0.89,0.68,0.78,0.77,0.76,0.88,0.67,0.74,0.53,0.83,0.83]
-HPF_1_ratio = [0.66,0.44,0.69,0.59,0.58,0.59,0.42,0.67,0.55,0.74,0.54,0.54]
-HPF_2_ratio = [0.14,0.14,0.17,0.15,0.17,0.15,0.10,0.16,0.12,0.15,0.16,0.16]
+if plot_stats == True:
+
+    out_dir=in_dir+"Direction/stats/"
+    times = [200,300,375,440,540,650,810,925,990,1100,1160,1200]
+    variance = [575.2,561.3,501.9,588.3,533.8,915.1,949.0,808.3,607.9,424.8,588.5,588.5]
+    LPF_1 = [422.4,499.9,340.6,461.0,409.3,694.1,831.5,539.1,451.2,227.2,464.8,464.8]
+    HPF_1 = [381.7,244.6,347.6,347.0,307.1,543.5,394.0,538.6,355.8,316.4,298.8,298.8]
+    HPF_2 = [98.7,79.9,85.6,91.0,57.7,133.2,99.5,131.1,71.2,63.9,67.1,67.1]
 
 
-plt.rcParams.update({'font.size': 16})
-fig=plt.figure(figsize=(14,8))
-plt.plot(times,variance,"-o")
-plt.axhline(758.4)
-plt.xlabel("Time [s]")
-plt.ylabel("Local variance over period T\nMain bearing force vector")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"variance.png")
-plt.close()
+    plt.rcParams.update({'font.size': 16})
+    fig=plt.figure(figsize=(14,8))
+    plt.plot(times,variance,"-ok")
+    plt.plot(times,LPF_1,"-^b")
+    plt.plot(times,HPF_1,"-sr")
+    plt.plot(times,HPF_2,"-xg")
+    plt.xticks(np.arange(200,1300,100))
+    plt.yticks(np.arange(0,1000,100))
+    plt.xlabel("Time [s]")
+    plt.ylabel("Local variance over period T\nMain bearing force vector [kN]")
+    plt.legend(["$\sigma _{F_B} ^2$", "$\widetilde{\sigma} _{F_B} ^2$\nLPF: f = 0.3Hz", 
+                "$\widetilde{\sigma} _{F_B} ^2$\nHPF: f = 0.3Hz", "$\widetilde{\sigma} _{F_B} ^2$\nHPF: f = 1.0Hz"])
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"variances.png")
+    plt.close()
 
-plt.rcParams.update({'font.size': 16})
-fig=plt.figure(figsize=(14,8))
-plt.plot(times,LPF_1_ratio,"-o")
-plt.axhline(0.82)
-plt.xlabel("Time [s]")
-plt.ylabel("Ratio Local variance low pass filterd f = 0.3Hz,\nLocal variance over period T\nMain bearing force vector")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"Ratio_1_variance.png")
-plt.close()
+    # plt.rcParams.update({'font.size': 16})
+    # fig=plt.figure(figsize=(14,8))
+    # plt.plot(times,LPF_1_ratio,"-o")
+    # plt.axhline(0.82)
+    # plt.xlabel("Time [s]")
+    # plt.ylabel("Ratio Local variance low pass filterd f = 0.3Hz,\nLocal variance over period T\nMain bearing force vector")
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.savefig(out_dir+"Ratio_1_variance.png")
+    # plt.close()
 
-plt.rcParams.update({'font.size': 16})
-fig=plt.figure(figsize=(14,8))
-plt.plot(times,HPF_1_ratio,"-o")
-plt.axhline(0.56)
-plt.xlabel("Time [s]")
-plt.ylabel("Ratio Local variance high pass filterd f = 0.3Hz,\nLocal variance over period T\nMain bearing force vector")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"Ratio_2_variance.png")
-plt.close()
+    # plt.rcParams.update({'font.size': 16})
+    # fig=plt.figure(figsize=(14,8))
+    # plt.plot(times,HPF_1_ratio,"-o")
+    # plt.axhline(0.56)
+    # plt.xlabel("Time [s]")
+    # plt.ylabel("Ratio Local variance high pass filterd f = 0.3Hz,\nLocal variance over period T\nMain bearing force vector")
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.savefig(out_dir+"Ratio_2_variance.png")
+    # plt.close()
 
-plt.rcParams.update({'font.size': 16})
-fig=plt.figure(figsize=(14,8))
-plt.plot(times,HPF_2_ratio,"-o")
-plt.axhline(0.19)
-plt.xlabel("Time [s]")
-plt.ylabel("Ratio Local variance high pass filterd f = 1.0Hz,\nLocal variance over period T\nMain bearing force vector")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"Ratio_3_variance.png")
-plt.close()
-
-
-times = [200,300,375,440,540,650,810,925,990,1100,1160,1200]
-T = []
-for i in np.arange(0,len(times)-1):
-    T.append(times[i+1]-times[i])
-
-variance = [575.2,561.3,501.9,588.3,533.8,915.1,949.0,808.3,607.9,424.8,588.5]
-LPF_1_ratio = [0.73,0.89,0.68,0.78,0.77,0.76,0.88,0.67,0.74,0.53,0.83]
-HPF_1_ratio = [0.66,0.44,0.69,0.59,0.58,0.59,0.42,0.67,0.55,0.74,0.54]
-HPF_2_ratio = [0.14,0.14,0.17,0.15,0.17,0.15,0.10,0.16,0.12,0.15,0.16]
-
-sort_T = []; sort_var = []; sort_LPF_1_ratio = []; sort_HPF_1_ratio = []; sort_HPF_2_ratio = []
-
-for i in np.argsort(T):
-    sort_T.append(T[i])
-    sort_var.append(variance[i])
-    sort_LPF_1_ratio.append(LPF_1_ratio[i])
-    sort_HPF_1_ratio.append(HPF_1_ratio[i])
-    sort_HPF_2_ratio.append(HPF_2_ratio[i])
+    # plt.rcParams.update({'font.size': 16})
+    # fig=plt.figure(figsize=(14,8))
+    # plt.plot(times,HPF_2_ratio,"-o")
+    # plt.axhline(0.19)
+    # plt.xlabel("Time [s]")
+    # plt.ylabel("Ratio Local variance high pass filterd f = 1.0Hz,\nLocal variance over period T\nMain bearing force vector")
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.savefig(out_dir+"Ratio_3_variance.png")
+    # plt.close()
 
 
-plt.rcParams.update({'font.size': 16})
-fig=plt.figure(figsize=(14,8))
-plt.plot(sort_T,sort_var,"-o")
-plt.xlabel("Period T [s]")
-plt.ylabel("Local variance over period T\nMain bearing force vector")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"sorted_variance.png")
-plt.close()
+    # times = [200,300,375,440,540,650,810,925,990,1100,1160,1200]
+    # T = []
+    # for i in np.arange(0,len(times)-1):
+    #     T.append(times[i+1]-times[i])
 
-plt.rcParams.update({'font.size': 16})
-fig=plt.figure(figsize=(14,8))
-plt.plot(sort_T,sort_LPF_1_ratio,"-o")
-plt.xlabel("Period T [s]")
-plt.ylabel("Ratio Local variance low pass filterd f = 0.3Hz,\nLocal variance over period T\nMain bearing force vector")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"sorted_Ratio_1_variance.png")
-plt.close()
+    # variance = [575.2,561.3,501.9,588.3,533.8,915.1,949.0,808.3,607.9,424.8,588.5]
+    # LPF_1_ratio = [0.73,0.89,0.68,0.78,0.77,0.76,0.88,0.67,0.74,0.53,0.83]
+    # HPF_1_ratio = [0.66,0.44,0.69,0.59,0.58,0.59,0.42,0.67,0.55,0.74,0.54]
+    # HPF_2_ratio = [0.14,0.14,0.17,0.15,0.17,0.15,0.10,0.16,0.12,0.15,0.16]
 
-plt.rcParams.update({'font.size': 16})
-fig=plt.figure(figsize=(14,8))
-plt.plot(sort_T,sort_HPF_1_ratio,"-o")
-plt.xlabel("Period T [s]")
-plt.ylabel("Ratio Local variance high pass filterd f = 0.3Hz,\nLocal variance over period T\nMain bearing force vector")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"sorted_Ratio_2_variance.png")
-plt.close()
+    # sort_T = []; sort_var = []; sort_LPF_1_ratio = []; sort_HPF_1_ratio = []; sort_HPF_2_ratio = []
 
-plt.rcParams.update({'font.size': 16})
-fig=plt.figure(figsize=(14,8))
-plt.plot(sort_T,sort_HPF_2_ratio,"-o")
-plt.xlabel("Period T [s]")
-plt.ylabel("Ratio Local variance high pass filterd f = 1.0Hz,\nLocal variance over period T\nMain bearing force vector")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"sorted_Ratio_3_variance.png")
-plt.close()
+    # for i in np.argsort(T):
+    #     sort_T.append(T[i])
+    #     sort_var.append(variance[i])
+    #     sort_LPF_1_ratio.append(LPF_1_ratio[i])
+    #     sort_HPF_1_ratio.append(HPF_1_ratio[i])
+    #     sort_HPF_2_ratio.append(HPF_2_ratio[i])
+
+
+    # plt.rcParams.update({'font.size': 16})
+    # fig=plt.figure(figsize=(14,8))
+    # plt.plot(sort_T,sort_var,"-o")
+    # plt.xlabel("Period T [s]")
+    # plt.ylabel("Local variance over period T\nMain bearing force vector")
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.savefig(out_dir+"sorted_variance.png")
+    # plt.close()
+
+    # plt.rcParams.update({'font.size': 16})
+    # fig=plt.figure(figsize=(14,8))
+    # plt.plot(sort_T,sort_LPF_1_ratio,"-o")
+    # plt.xlabel("Period T [s]")
+    # plt.ylabel("Ratio Local variance low pass filterd f = 0.3Hz,\nLocal variance over period T\nMain bearing force vector")
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.savefig(out_dir+"sorted_Ratio_1_variance.png")
+    # plt.close()
+
+    # plt.rcParams.update({'font.size': 16})
+    # fig=plt.figure(figsize=(14,8))
+    # plt.plot(sort_T,sort_HPF_1_ratio,"-o")
+    # plt.xlabel("Period T [s]")
+    # plt.ylabel("Ratio Local variance high pass filterd f = 0.3Hz,\nLocal variance over period T\nMain bearing force vector")
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.savefig(out_dir+"sorted_Ratio_2_variance.png")
+    # plt.close()
+
+    # plt.rcParams.update({'font.size': 16})
+    # fig=plt.figure(figsize=(14,8))
+    # plt.plot(sort_T,sort_HPF_2_ratio,"-o")
+    # plt.xlabel("Period T [s]")
+    # plt.ylabel("Ratio Local variance high pass filterd f = 1.0Hz,\nLocal variance over period T\nMain bearing force vector")
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.savefig(out_dir+"sorted_Ratio_3_variance.png")
+    # plt.close()
+
+
+
 
 # time_start = 200; time_end = 300
 # Time_start_idx = np.searchsorted(Time_OF,time_start); Time_end_idx = np.searchsorted(Time_OF,time_end)
