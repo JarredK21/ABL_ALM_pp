@@ -97,7 +97,7 @@ p = a.groups["p_l"]
 
 #time options
 Time = np.array(a.variables["time"])
-tstart = 32700
+tstart = 32500
 tstart_idx = np.searchsorted(Time,tstart)
 tend = 33700
 tend_idx = np.searchsorted(Time,tend)

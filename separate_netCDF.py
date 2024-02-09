@@ -44,7 +44,7 @@ for plane in planes:
         time = ncfile.createVariable("time", np.float64, ('num_time_steps',))
 
         #open files to be combined
-        a = Dataset("./sampling76000.nc")
+        a = Dataset("./sampling70000.nc")
 
         #determine restart index
         time[:] = np.array(a.variables["time"])

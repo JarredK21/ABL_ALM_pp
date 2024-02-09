@@ -41,7 +41,7 @@ def probability_dist(it):
     return P,X
 
 
-in_dir = "../../ABL_precursor_2/"
+in_dir = "../../ABL_precursor_2_restart_sampling/"
 out_dir = in_dir+"plots/"
 
 

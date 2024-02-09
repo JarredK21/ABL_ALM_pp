@@ -9,23 +9,17 @@ import pandas as pd
 import math
 
 
-def Horizontal_velocity(it):
-    mag_horz_vel = u[it]*np.cos(np.radians(29)) + v[it]*np.sin(np.radians(29))
-    return mag_horz_vel
+def two_d_spectra(it):
+
+    if velocity == "u":
+        U = u[it]*np.cos(np.radians(29)) + v[it]*np.sin(np.radians(29))
 
 
-def calc_variance_spectra(u, u_mean, x, y):
-    u = u.reshape(x,y)
+    U = U.reshape(x,y)
 
-    ufft = np.fft.fftshift(np.fft.fft2(u - u_mean))
+    ufft = np.fft.fftshift(np.fft.fft2(U - np.mean(U)))
 
     e_uvfft = (abs(ufft)/(x*y))**2
-
-    return e_uvfft
-
-
-#define and sum over shells
-def energy_over_shells(x, delx, e):
 
     freqs = fftshift(fftfreq(x, d=delx)) #mirror frequencies are equal and opposite sign in the Re, Im are zero.
     freq2d = np.array(np.meshgrid( freqs, freqs)) #mirror frequencies are equal in the Re, Im are zero
@@ -39,19 +33,11 @@ def energy_over_shells(x, delx, e):
 
     for j,f in enumerate(freq1d):
         ff = np.where( (freqs2d >= freq1d_bins[j]) & (freqs2d < freq1d_bins[j+1]) )
-        e_1d[j] = np.sum(e[ff])
+        e_1d[j] = np.sum(e_uvfft[ff])
 
-    return freq1d, e_1d
+        fac = 1
 
-
-
-def energy_contents_check(e_fft, u, x, y, e_1d, velocity):
-
-    #check total TKE
-    fac = 1/((x*y)**2)
-    #fac = 1
-
-    E = fac*np.sum(e_fft)
+    E = fac*np.sum(e_1d)
 
     u_pri = u - np.mean(u)
     q2_uu = np.sum(np.square(u_pri))
@@ -59,109 +45,90 @@ def energy_contents_check(e_fft, u, x, y, e_1d, velocity):
     A = (x*y)
     E2_uu = (1/A)*q2_uu
 
-    delta_fft = np.sum(e_fft) - np.sum(e_1d)
+    delta_fft = np.sum(E) - np.sum(E2_uu)
+
+    print("check summation over shells = ", delta_fft)
+
+
+    return freq1d, e_1d
+    
+
+#main
+#note sampling files need to exisit in all dirs otherwise error will occur
+in_dir = "../../ABL_precursor_2/"
+
+a = nc.Dataset(in_dir+"sampling_l_85.nc") #import sampling data
+p = a.groups["p_l"] #Planer sampler
+delx = 10.0
+
+#time options
+Time = np.array(a.variables["time"])
+tstart = 32500
+tstart_idx = np.searchsorted(Time,tstart)
+tend = 33700
+tend_idx = np.searchsorted(Time,tend)
+Time_steps = np.arange(0, tend_idx-tstart_idx)
+Time = Time[tstart_idx:tend_idx]
+
+y = p.ijk_dims[1] #no. y data points
+x = p.ijk_dims[0] #no. x data points
+
+col_names = []
+for it in Time_steps:
+    col_names.append(str(Time[it]))
+
+velocities = ["u", "w"]
+
+for velocity in velocities:
 
     if velocity == "u":
-        print("check summation over shells uu = ", delta_fft)
-        print(E, E2_uu, "uu = ",(abs(E2_uu)/E))
-    elif velocity == "w":
-        print("check summation over shells ww = ", delta_fft)
-        print(E, E2_uu, "ww = ",(abs(E2_uu)/E))
+        spectra_data_uu =  pd.DataFrame(data=None, columns=col_names)
+        u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
+        v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+
+        ix = 0
+        with Pool() as pool:
+            for e,f in pool.imap(two_d_spectra, Time_steps):
+                spectra_data_uu["{}".format(Time[ix])] = e
+                ix+=1
+                print(ix)
+
+        spectra_uu_mean = spectra_data_uu.mean(axis=1)
+        spectra_data_uu["mean"] = spectra_uu_mean
+
+        spectra_data_uu['freqs'] = f
+
+        spectra_data_uu.to_csv(in_dir+'spectral_data_uu_2.csv',index=False)
 
 
-def temporal_energy_contents_check(Var,e_fft,signal,dt):
+    if velocity == "w":
+        spectra_data_ww =  pd.DataFrame(data=None, columns=col_names)
+        u = np.array(p.variables["velocityw"][tstart_idx:tend_idx])
 
-    E = (1/dt)*np.sum(e_fft)
+        ix = 0
+        with Pool() as pool:
+            for e,f in pool.imap(two_d_spectra, Time_steps):
+                spectra_data_ww["{}".format(Time[ix])] = e
+                ix+=1
+                print(ix)
 
-    q = np.sum(np.square(signal))
+        spectra_ww_mean = spectra_data_ww.mean(axis=1)
+        spectra_data_ww["mean"] = spectra_ww_mean
 
-    E2 = q
+        spectra_data_ww['freqs'] = f
 
-    print(Var, E, E2, abs(E2/E))    
-
-
-def temporal_spectra(signal,dt,Var):
-
-    fs =1/dt
-    n = len(signal) 
-    if n%2==0:
-        nhalf = int(n/2+1)
-    else:
-        nhalf = int((n+1)/2)
-    frq = np.arange(nhalf)*fs/n
-    Y   = np.fft.fft(signal)
-    PSD = abs(Y[range(nhalf)])**2 /(n*fs) # PSD
-    PSD[1:-1] = PSD[1:-1]*2
+        spectra_data_ww.to_csv(in_dir+'spectral_data_ww_2.csv',index=False)
 
 
-    temporal_energy_contents_check(Var,PSD,signal,dt)
-
-    return frq, PSD
-
-
-spacial_spectra_plot = True
-temporal_spectra_plot = False
-
-if spacial_spectra_plot == True:
-    #how to low pass filter spacial data
-
-    #main
-    #note sampling files need to exisit in all dirs otherwise error will occur
-    in_dir = "../../ABL_precursor_2/"
-    out_dir = in_dir+"plots/"
-
-    a = nc.Dataset(in_dir+"sampling_l_85.nc") #import sampling data
-    p = a.groups["p_l"] #Planer sampler
-    delx = 10.0
-
-    y = p.ijk_dims[1] #no. y data points
-    x = p.ijk_dims[0] #no. x data points
-
-    spectra_data_uu =  pd.DataFrame(data=None, columns=["85"])
-    spectra_data_ww =  pd.DataFrame(data=None, columns=["85"])
-
-    #times and averaging??
-    u = np.array(p.variables["velocityx"]); v = np.array(p.variables["velocityy"]); w = np.array(p.variables["velocityw"])
-    u = Horizontal_velocity(0); del v
-
-    u_mean = np.mean(u); w_mean = np.array(w)
-
-    #energy components
-    e_uufft = calc_variance_spectra(u, u_mean, x, y)
-    e_wwfft = calc_variance_spectra(w, w_mean, x, y)
-
-
-    #calculate energy over shells
-    freq_uu_1d, e_uu_1d = energy_over_shells(x, delx, e_uufft)
-    freq_ww_1d, e_ww_1d = energy_over_shells(x, delx, e_wwfft)
-
-        
-
-    # check energy contents
-    energy_contents_check(e_uufft, u, x, y, delx, e_uu_1d, velocity="u") #Energy in uu variance
-    energy_contents_check(e_wwfft, w, x, y, delx, e_ww_1d, velocity="w") #Energy in ww variance
-
-    #export data to csv
-    spectra_data_uu["85"] = e_uu_1d
-    spectra_data_ww["85"] = e_ww_1d
-
-    spectra_data_uu['freq'] = freq_uu_1d
-    spectra_data_ww['freq'] = freq_ww_1d
-
-
-    spectra_data_uu.to_csv(in_dir+'spectral_data_uu.csv',index=False)
-    spectra_data_ww.to_csv(in_dir+'spectral_data_ww.csv',index=False)
-
-    fig = plt.figure(figsize=(14,8))
-    plt.loglog(freq_uu_1d, e_uu_1d,"-r")
-    plt.loglog(freq_ww_1d, e_ww_1d,"b")
-    plt.loglog(freq_uu_1d, 1e-06* freq_uu_1d**(-5./3.),"--k")
-    plt.ylim([1e-09, 1])
-    plt.xlabel('k - Wave number [1/m]')
-    plt.ylabel('(k) - Power spectral density')
-    plt.title("Energy spectra at z = 90m")
-    plt.grid()
-    plt.legend(["u","w", "$k^{-5/3}$"])
-    plt.savefig(out_dir+"Spacial_spectra_90m.png")
-    plt.close(fig)
-
+fig = plt.figure(figsize=(14,8))
+plt.loglog(spectra_data_uu["freqs"], spectra_uu_mean,"-r")
+plt.loglog(spectra_data_ww["freqs"], spectra_ww_mean,"b")
+plt.loglog(spectra_data_uu["freqs"], 1e-06* spectra_data_uu["freqs"]**(-5./3.),"--k")
+plt.ylim([1e-09, 1])
+plt.xlabel('k - Wave number [1/m]')
+plt.ylabel('(k) - Power spectral density')
+plt.title("Energy spectra at z = 90m")
+plt.grid()
+plt.legend(["u","w", "$k^{-5/3}$"])
+plt.savefig(in_dir+"Spacial_spectra_90m.png")
+plt.close(fig)
