@@ -51,7 +51,7 @@ p = a.groups["p_l"]
 
 #time options
 Time = np.array(a.variables["time"])
-tstart = 32700
+tstart = 32500
 tstart_idx = np.searchsorted(Time,tstart)
 tend = 33700
 tend_idx = np.searchsorted(Time,tend)
@@ -77,173 +77,173 @@ xs = np.linspace(p.origin[0],p.origin[0]+p.axis1[0],x)
 ys = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y)
 zs = 0
 
-#velocity field
-velocity_field_w = False
-velocity_field_u = True
+
+velocities = ["u", "w"]
+for velocity in velocities:
 
 
-if velocity_field_u == True:
-    u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
-    v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
-    u = np.subtract(u,np.mean(u))
-    v = np.subtract(v,np.mean(v))
+    if velocity == "u":
+        u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
+        v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+        u = np.subtract(u,np.mean(u))
+        v = np.subtract(v,np.mean(v))
 
-    with Pool() as pool:
-        u_hvel = []
-        for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
-            
-            u_hvel.append(u_hvel_it)
-            print(len(u_hvel))
-    u = np.array(u_hvel); del u_hvel; del v; del a
-
-
-    #PDF of unfiltered data
-    data_max = np.max(u)
-    data_min = np.min(u)
-
-    filtered_data = False
-    ix = 0
-    unfilted_data = []
-    with Pool() as pool:
-        for P,X in pool.imap(probability_dist, Time_steps):
-            unfilted_data.append(P)
-            ix+=1
-            print(ix)
-
-    X_unfilt = X
-    PDF_unfilt_mean = np.mean(unfilted_data,axis=0)
+        with Pool() as pool:
+            u_hvel = []
+            for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+                
+                u_hvel.append(u_hvel_it)
+                print(len(u_hvel))
+        u = np.array(u_hvel); del u_hvel; del v; del a
 
 
-    #PDF of filtered data
-    data = pd.read_csv(in_dir+'LPF_data_uu.csv')
+        #PDF of unfiltered data
+        data_max = np.max(u)
+        data_min = np.min(u)
 
-    data_max = data.to_numpy().max()
-    data_min = data.to_numpy().min()
+        filtered_data = False
+        ix = 0
+        unfilted_data = []
+        with Pool() as pool:
+            for P,X in pool.imap(probability_dist, Time_steps):
+                unfilted_data.append(P)
+                ix+=1
+                print(ix)
 
-    filtered_data = True
-    ix = 0
-    with Pool() as pool:
-        for P,X in pool.imap(probability_dist, Time_steps):
-            PDF_data_uu["{}".format(Time[ix])] = P
-            ix+=1
-            print(ix)
-
-
-    PDF_uu_mean = PDF_data_uu.mean(axis=1)
-    PDF_data_uu["mean"] = PDF_uu_mean
-
-    PDF_data_uu['X'] = X
-
-    plt.rcParams['font.size'] = 12
-
-    CDF_i = 0
-    CDF = []
-    dx = X[1]-X[0]
-    for f in PDF_uu_mean:
-        CDF_i+=f*dx
-        CDF.append(CDF_i)
-
-    LSS_idx = np.searchsorted(CDF,0.3); HSS_idx = np.searchsorted(CDF,0.7)
-    print("LSS = ", X[LSS_idx], "HSS = ", X[HSS_idx], "mean = ", np.mean(u))
-
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(X,CDF)
-    plt.xlabel("Fluctuating Horizontal velocity [m/s]",fontsize=16)
-    plt.ylabel("Probability filtered [-]",fontsize=16)
-    plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
-    plt.title("CDF averaged over final 1000s",fontsize=18)
-    plt.tight_layout()
-    plt.savefig(out_dir+"CDF_Horizontal_velocity.png")
-    plt.close()
-
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(X,PDF_uu_mean,"b-")
-    plt.plot(X_unfilt,PDF_unfilt_mean,"r--")
-    plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
-    plt.axvline(X[LSS_idx],color="k",linestyle="--"); plt.axvline(X[HSS_idx],color="k",linestyle="--")
-    plt.axvline(np.mean(u),color="k",linestyle="--")
-    plt.xlabel("Fluctuating Horizontal velocity [m/s]",fontsize=16)
-    plt.ylabel("Probability [-]",fontsize=16)
-    plt.title("PDF averaged over final 1000s",fontsize=18)
-    plt.legend(["filtered", "unfiltered"],fontsize=12)
-    plt.tight_layout()
-    plt.savefig(out_dir+"PDF_Horizontal_velocity.png")
-    plt.close()
+        X_unfilt = X
+        PDF_unfilt_mean = np.mean(unfilted_data,axis=0)
 
 
-if velocity_field_w == True:
-    u = np.array(p.variables["velocityz"][tstart_idx:tend_idx])
+        #PDF of filtered data
+        data = pd.read_csv(in_dir+'LPF_data_uu.csv')
+
+        data_max = data.to_numpy().max()
+        data_min = data.to_numpy().min()
+
+        filtered_data = True
+        ix = 0
+        with Pool() as pool:
+            for P,X in pool.imap(probability_dist, Time_steps):
+                PDF_data_uu["{}".format(Time[ix])] = P
+                ix+=1
+                print(ix)
 
 
-    #PDF of unfiltered data
-    data_max = np.max(u)
-    data_min = np.min(u)
+        PDF_uu_mean = PDF_data_uu.mean(axis=1)
+        PDF_data_uu["mean"] = PDF_uu_mean
 
-    filtered_data = False
-    ix = 0
-    unfilted_data = []
-    with Pool() as pool:
-        for P,X in pool.imap(probability_dist, Time_steps):
-            unfilted_data.append(P)
-            ix+=1
-            print(ix)
+        PDF_data_uu['X'] = X
 
-    X_unfilt = X
-    PDF_unfilt_mean = np.mean(unfilted_data,axis=0)
+        plt.rcParams['font.size'] = 12
+
+        CDF_i = 0
+        CDF = []
+        dx = X[1]-X[0]
+        for f in PDF_uu_mean:
+            CDF_i+=f*dx
+            CDF.append(CDF_i)
+
+        LSS_idx = np.searchsorted(CDF,0.3); HSS_idx = np.searchsorted(CDF,0.7)
+        print("LSS = ", X[LSS_idx], "HSS = ", X[HSS_idx], "mean = ", np.mean(u))
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(X,CDF)
+        plt.xlabel("Fluctuating Horizontal velocity [m/s]",fontsize=16)
+        plt.ylabel("Probability filtered [-]",fontsize=16)
+        plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
+        plt.title("CDF averaged over final 1000s",fontsize=18)
+        plt.tight_layout()
+        plt.savefig(out_dir+"CDF_Horizontal_velocity.png")
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(X,PDF_uu_mean,"b-")
+        plt.plot(X_unfilt,PDF_unfilt_mean,"r--")
+        plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
+        plt.axvline(X[LSS_idx],color="k",linestyle="--"); plt.axvline(X[HSS_idx],color="k",linestyle="--")
+        plt.axvline(np.mean(u),color="k",linestyle="--")
+        plt.xlabel("Fluctuating Horizontal velocity [m/s]",fontsize=16)
+        plt.ylabel("Probability [-]",fontsize=16)
+        plt.title("PDF averaged over final 1000s",fontsize=18)
+        plt.legend(["filtered", "unfiltered"],fontsize=12)
+        plt.tight_layout()
+        plt.savefig(out_dir+"PDF_Horizontal_velocity.png")
+        plt.close()
 
 
-    #PDF of filtered data
-    data = pd.read_csv(in_dir+'LPF_data_ww.csv')
-
-    data_max = data.to_numpy().max()
-    data_min = data.to_numpy().min()
-
-    filtered_data = True
-    ix = 0
-    with Pool() as pool:
-        for P,X in pool.imap(probability_dist, Time_steps):
-            PDF_data_ww["{}".format(Time[ix])] = P
-            ix+=1
-            print(ix)
+    if velocity == "w":
+        u = np.array(p.variables["velocityz"][tstart_idx:tend_idx])
 
 
-    PDF_ww_mean = PDF_data_ww.mean(axis=1)
-    PDF_data_ww["mean"] = PDF_ww_mean
+        #PDF of unfiltered data
+        data_max = np.max(u)
+        data_min = np.min(u)
 
-    PDF_data_ww['X'] = X
+        filtered_data = False
+        ix = 0
+        unfilted_data = []
+        with Pool() as pool:
+            for P,X in pool.imap(probability_dist, Time_steps):
+                unfilted_data.append(P)
+                ix+=1
+                print(ix)
 
-    plt.rcParams['font.size'] = 12
+        X_unfilt = X
+        PDF_unfilt_mean = np.mean(unfilted_data,axis=0)
 
-    CDF_i = 0
-    CDF = []
-    dx = X[1]-X[0]
-    for f in PDF_ww_mean:
-        CDF_i+=f*dx
-        CDF.append(CDF_i)
 
-    LSS_idx = np.searchsorted(CDF,0.3); HSS_idx = np.searchsorted(CDF,0.7)
-    print("DD = ", X[LSS_idx], "UD = ", X[HSS_idx], "mean = ", np.mean(u))
+        #PDF of filtered data
+        data = pd.read_csv(in_dir+'LPF_data_ww.csv')
 
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(X,CDF)
-    plt.xlabel("Fluctuating Vertical velocity [m/s]",fontsize=16)
-    plt.ylabel("Probability filtered [-]",fontsize=16)
-    plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
-    plt.title("CDF averaged over final 1000s",fontsize=18)
-    plt.tight_layout()
-    plt.savefig(out_dir+"CDF_Vertical_velocity.png")
-    plt.close()
+        data_max = data.to_numpy().max()
+        data_min = data.to_numpy().min()
 
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(X,PDF_ww_mean,"b-")
-    plt.plot(X_unfilt,PDF_unfilt_mean,"r--")
-    plt.axvline(X[LSS_idx],color="k",linestyle="--"); plt.axvline(X[HSS_idx],color="k",linestyle="--")
-    plt.axvline(np.mean(u),color="k",linestyle="--")
-    plt.xlabel("Fluctuating Vertical velocity [m/s]",fontsize=16)
-    plt.ylabel("Probability [-]",fontsize=16)
-    plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
-    plt.title("PDF averaged over final 1000s",fontsize=18)
-    plt.legend(["filtered", "unfiltered"],fontsize=12)
-    plt.tight_layout()
-    plt.savefig(out_dir+"PDF_Vertical_velocity.png")
-    plt.close()
+        filtered_data = True
+        ix = 0
+        with Pool() as pool:
+            for P,X in pool.imap(probability_dist, Time_steps):
+                PDF_data_ww["{}".format(Time[ix])] = P
+                ix+=1
+                print(ix)
+
+
+        PDF_ww_mean = PDF_data_ww.mean(axis=1)
+        PDF_data_ww["mean"] = PDF_ww_mean
+
+        PDF_data_ww['X'] = X
+
+        plt.rcParams['font.size'] = 12
+
+        CDF_i = 0
+        CDF = []
+        dx = X[1]-X[0]
+        for f in PDF_ww_mean:
+            CDF_i+=f*dx
+            CDF.append(CDF_i)
+
+        LSS_idx = np.searchsorted(CDF,0.3); HSS_idx = np.searchsorted(CDF,0.7)
+        print("DD = ", X[LSS_idx], "UD = ", X[HSS_idx], "mean = ", np.mean(u))
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(X,CDF)
+        plt.xlabel("Fluctuating Vertical velocity [m/s]",fontsize=16)
+        plt.ylabel("Probability filtered [-]",fontsize=16)
+        plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
+        plt.title("CDF averaged over final 1000s",fontsize=18)
+        plt.tight_layout()
+        plt.savefig(out_dir+"CDF_Vertical_velocity.png")
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(X,PDF_ww_mean,"b-")
+        plt.plot(X_unfilt,PDF_unfilt_mean,"r--")
+        plt.axvline(X[LSS_idx],color="k",linestyle="--"); plt.axvline(X[HSS_idx],color="k",linestyle="--")
+        plt.axvline(np.mean(u),color="k",linestyle="--")
+        plt.xlabel("Fluctuating Vertical velocity [m/s]",fontsize=16)
+        plt.ylabel("Probability [-]",fontsize=16)
+        plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
+        plt.title("PDF averaged over final 1000s",fontsize=18)
+        plt.legend(["filtered", "unfiltered"],fontsize=12)
+        plt.tight_layout()
+        plt.savefig(out_dir+"PDF_Vertical_velocity.png")
+        plt.close()
