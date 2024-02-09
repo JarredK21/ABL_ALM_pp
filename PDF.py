@@ -134,6 +134,8 @@ for velocity in velocities:
 
         PDF_data_uu['X'] = X
 
+        PDF_data_uu.to_csv(in_dir+'PDF_data_uu.csv',index=False)
+
         plt.rcParams['font.size'] = 12
 
         PDF_uu_mean = np.array(PDF_uu_mean)
@@ -214,10 +216,12 @@ for velocity in velocities:
 
         PDF_data_ww['X'] = X
 
+        PDF_data_ww.to_csv(in_dir+'PDF_data_ww.csv',index=False)
+
         plt.rcParams['font.size'] = 12
 
         PDF_ww_mean = np.array(PDF_ww_mean)
-        
+
         CDF_i = 0
         CDF = []
         dx = X[1]-X[0]
