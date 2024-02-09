@@ -136,6 +136,8 @@ for velocity in velocities:
 
         plt.rcParams['font.size'] = 12
 
+        PDF_uu_mean = np.array(PDF_uu_mean)
+
         CDF_i = 0
         CDF = []
         dx = X[1]-X[0]
@@ -214,6 +216,8 @@ for velocity in velocities:
 
         plt.rcParams['font.size'] = 12
 
+        PDF_ww_mean = np.array(PDF_ww_mean)
+        
         CDF_i = 0
         CDF = []
         dx = X[1]-X[0]
