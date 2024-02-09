@@ -13,6 +13,8 @@ def two_d_spectra(it):
 
     if velocity == "u":
         U = u[it]*np.cos(np.radians(29)) + v[it]*np.sin(np.radians(29))
+    else:
+        U = u[it]
 
 
     U = U.reshape(x,y)
@@ -35,11 +37,11 @@ def two_d_spectra(it):
         ff = np.where( (freqs2d >= freq1d_bins[j]) & (freqs2d < freq1d_bins[j+1]) )
         e_1d[j] = np.sum(e_uvfft[ff])
 
-        fac = 1
+    fac = 1
 
     E = fac*np.sum(e_1d)
 
-    u_pri = u - np.mean(u)
+    u_pri = U - np.mean(U)
     q2_uu = np.sum(np.square(u_pri))
     
     A = (x*y)
@@ -79,6 +81,8 @@ for it in Time_steps:
 
 velocities = ["u", "w"]
 
+fig = plt.figure(figsize=(14,8))
+
 for velocity in velocities:
 
     if velocity == "u":
@@ -99,12 +103,15 @@ for velocity in velocities:
 
         spectra_data_uu['freqs'] = f
 
+        plt.loglog(f, spectra_uu_mean,"-r")
+        plt.loglog(f, 1e-06* f**(-5./3.),"--k")
+
         spectra_data_uu.to_csv(in_dir+'spectral_data_uu_2.csv',index=False)
 
 
     if velocity == "w":
         spectra_data_ww =  pd.DataFrame(data=None, columns=col_names)
-        u = np.array(p.variables["velocityw"][tstart_idx:tend_idx])
+        u = np.array(p.variables["velocityz"][tstart_idx:tend_idx])
 
         ix = 0
         with Pool() as pool:
@@ -119,13 +126,15 @@ for velocity in velocities:
 
         spectra_data_ww['freqs'] = f
 
+        plt.loglog(f, spectra_ww_mean,"b")
+
         spectra_data_ww.to_csv(in_dir+'spectral_data_ww_2.csv',index=False)
 
 
-fig = plt.figure(figsize=(14,8))
-plt.loglog(spectra_data_uu["freqs"], spectra_uu_mean,"-r")
-plt.loglog(spectra_data_ww["freqs"], spectra_ww_mean,"b")
-plt.loglog(spectra_data_uu["freqs"], 1e-06* spectra_data_uu["freqs"]**(-5./3.),"--k")
+
+
+
+
 plt.ylim([1e-09, 1])
 plt.xlabel('k - Wave number [1/m]')
 plt.ylabel('(k) - Power spectral density')
