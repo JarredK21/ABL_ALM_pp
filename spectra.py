@@ -92,7 +92,7 @@ for velocity in velocities:
 
         ix = 0
         with Pool() as pool:
-            for e,f in pool.imap(two_d_spectra, Time_steps):
+            for f,e in pool.imap(two_d_spectra, Time_steps):
                 spectra_data_uu["{}".format(Time[ix])] = e
                 ix+=1
                 print(ix)
@@ -115,7 +115,7 @@ for velocity in velocities:
 
         ix = 0
         with Pool() as pool:
-            for e,f in pool.imap(two_d_spectra, Time_steps):
+            for f,e in pool.imap(two_d_spectra, Time_steps):
                 spectra_data_ww["{}".format(Time[ix])] = e
                 ix+=1
                 print(ix)

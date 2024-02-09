@@ -52,9 +52,9 @@ def two_dim_LPF(it):
         cb = plt.colorbar(cs)
         plt.xlabel("x axis [m]")
         plt.ylabel("y axis [m]")
-        plt.title("fluctuating horizontal velocity [m/s]\nT = {}s".format(Time[it]))
+        plt.title("fluctuating {} velocity [m/s]\nT = {}s".format(velocity,Time[it]))
         plt.tight_layout()
-        plt.savefig(out_dir+"unflilted_w.png")
+        plt.savefig(out_dir+"unflilted_{}.png".format(velocity))
         plt.close()
 
     #FFT
@@ -79,9 +79,9 @@ def two_dim_LPF(it):
         cd = plt.colorbar(cz)
         plt.xlabel("x axis [m]")
         plt.ylabel("y axis [m]")
-        plt.title("filtered fluctuating horizontal velocity [m/s]\nT = {}s".format(Time[it]))
+        plt.title("filtered fluctuating {} velocity [m/s]\nT = {}s".format(velocity,Time[it]))
         plt.tight_layout()
-        plt.savefig(out_dir+"flilted_w.png")
+        plt.savefig(out_dir+"flilted_{}.png".format(velocity))
         plt.close()
 
     return iufft_filt.flatten()
@@ -128,38 +128,41 @@ LPF_data_ww = pd.DataFrame(data=None, columns=col_names)
 velocity_field_u = False
 velocity_field_w = True
 
+velocities = ["u", "w"]
 
-if velocity_field_u == True:
-    u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
-    u = np.subtract(u,np.mean(u))
-    v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
-    v = np.subtract(v,np.mean(v))
-    with Pool() as pool:
-        u_hvel = []
-        for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
-            
-            u_hvel.append(u_hvel_it)
-            print(len(u_hvel))
-    u = np.array(u_hvel); del u_hvel; del v
+for velocity in velocities:
 
-    ix = 0
-    with Pool() as pool:
-        for iufft in pool.imap(two_dim_LPF, Time_steps):
-            LPF_data_uu["{}".format(Time[ix])] = iufft
-            ix+=1
-            print(ix)
+    if velocity == "u":
+        u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
+        u = np.subtract(u,np.mean(u))
+        v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+        v = np.subtract(v,np.mean(v))
+        with Pool() as pool:
+            u_hvel = []
+            for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+                
+                u_hvel.append(u_hvel_it)
+                print(len(u_hvel))
+        u = np.array(u_hvel); del u_hvel; del v
 
-    LPF_data_uu.to_csv(in_dir+'LPF_data_uu.csv',index=False); del u; del LPF_data_uu
+        ix = 0
+        with Pool() as pool:
+            for iufft in pool.imap(two_dim_LPF, Time_steps):
+                LPF_data_uu["{}".format(Time[ix])] = iufft
+                ix+=1
+                print(ix)
+
+        LPF_data_uu.to_csv(in_dir+'LPF_data_uu.csv',index=False); del u; del LPF_data_uu
 
 
-#vertical velocity
-if velocity_field_w == True:
-    u = np.array(p.variables["velocityz"][tstart_idx:tend_idx])
-    ix = 0
-    with Pool() as pool:
-        for iufft in pool.imap(two_dim_LPF, Time_steps):
-            LPF_data_ww["{}".format(Time[ix])] = iufft
-            ix+=1
-            print(ix)
+    #vertical velocity
+    if velocity == "w":
+        u = np.array(p.variables["velocityz"][tstart_idx:tend_idx])
+        ix = 0
+        with Pool() as pool:
+            for iufft in pool.imap(two_dim_LPF, Time_steps):
+                LPF_data_ww["{}".format(Time[ix])] = iufft
+                ix+=1
+                print(ix)
 
-    LPF_data_ww.to_csv(in_dir+'LPF_data_ww.csv',index=False); del u; del LPF_data_ww
+        LPF_data_ww.to_csv(in_dir+'LPF_data_ww.csv',index=False); del u; del LPF_data_ww
