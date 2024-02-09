@@ -93,6 +93,7 @@ for velocity in velocities:
                 ix+=1
                 print(ix)
 
+        del u; del v
         spectra_uu_mean = spectra_data_uu.mean(axis=1)
         spectra_data_uu["mean"] = spectra_uu_mean
 
@@ -112,6 +113,7 @@ for velocity in velocities:
                 ix+=1
                 print(ix)
 
+        del u
         spectra_ww_mean = spectra_data_ww.mean(axis=1)
         spectra_data_ww["mean"] = spectra_ww_mean
 
