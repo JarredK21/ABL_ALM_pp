@@ -103,7 +103,7 @@ for velocity in velocities:
 
         spectra_data_uu['freqs'] = f
 
-        plt.loglog(f, spectra_uu_mean,"-r")
+        plt.loglog(f, np.array(spectra_uu_mean),"-r")
         plt.loglog(f, 1e-06* f**(-5./3.),"--k")
 
         spectra_data_uu.to_csv(in_dir+'spectral_data_uu_2.csv',index=False)
@@ -126,7 +126,7 @@ for velocity in velocities:
 
         spectra_data_ww['freqs'] = f
 
-        plt.loglog(f, spectra_ww_mean,"b")
+        plt.loglog(f, np.array(spectra_ww_mean),"b")
 
         spectra_data_ww.to_csv(in_dir+'spectral_data_ww_2.csv',index=False)
 
