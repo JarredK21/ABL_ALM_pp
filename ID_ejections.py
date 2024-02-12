@@ -50,7 +50,7 @@ h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
-print("line 126", time.time()-start_time)
+print("line 53", time.time()-start_time)
 
 
 
@@ -121,7 +121,7 @@ with Pool() as pool:
         print(len(u_hvel),time.time()-start_time)
 u = np.array(u_hvel); del u_hvel; del v
 
-print("line 328",time.time()-start_time)
+print("line 124",time.time()-start_time)
 
 #find vmin and vmax for isocontour plots            
 #min and max over data
@@ -137,7 +137,7 @@ levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nl
 levels = np.concatenate((levs_min,levs_max[1:]))
 
     
-print("line 370",levels)
+print("line 140",levels)
 
 folder = out_dir+"Rotor_Plane_Fluctutating_horz_-5.5/"
 isExist = os.path.exists(folder)
@@ -183,7 +183,7 @@ def Update(it):
             for k in np.arange(0,len(zs)):
 
                 if u_plane[j,k+1] > thresholds[t]:
-                    storage[j] = zs[int[k]]
+                    storage[j] = zs[int(k)]
                     break
         plt.plot(ys,storage)
 
@@ -214,5 +214,3 @@ with Pool() as pool:
     for T in pool.imap(Update,Time_steps):
 
         print(T,time.time()-start_time)
-
-time.sleep(30)
