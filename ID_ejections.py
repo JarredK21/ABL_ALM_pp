@@ -167,13 +167,13 @@ def Update(it):
 
     T = Time[it]
 
-    fig = plt.figure(figsize=(50,30))
+    fig,ax = plt.subplots(figsize=(50,30))
     plt.rcParams['font.size'] = 40
 
-    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+    cs = ax.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
 
-    Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
-    fig.add_artist(Drawing_uncolored_circle)
+    Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=2)
+    ax.add_artist(Drawing_uncolored_circle)
 
     thresholds = [-0.7,-2.0,-5.0]
 
@@ -185,10 +185,11 @@ def Update(it):
                 if u_plane[k+1,j] > thresholds[t]:
                     storage[j] = zs[int(k)]
                     break
-        plt.plot(ys,storage)
+        ax.plot(ys,storage,linewidth=4)
 
     plt.xlabel("y' axis (rotor frame of reference) [m]")
     plt.ylabel("z' axis (rotor frame of reference) [m]")
+    plt.legend(thresholds,loc="upper right")
 
 
     cb = plt.colorbar(cs)
