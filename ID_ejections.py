@@ -175,8 +175,6 @@ def Update(it):
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=0.5)
     fig.add_artist(Drawing_uncolored_circle)
 
-    print("line 178")
-
     thresholds = [-0.7,-2.0,-5.0]
 
     for t in np.arange(0,len(thresholds)):
@@ -188,8 +186,6 @@ def Update(it):
                     storage[j] = zs[int(k)]
                     break
         plt.plot(ys,storage)
-
-    print("line 192")
 
     plt.xlabel("y' axis (rotor frame of reference) [m]")
     plt.ylabel("z' axis (rotor frame of reference) [m]")
