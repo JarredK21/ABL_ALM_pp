@@ -184,13 +184,13 @@ def Update(it):
         for j in np.arange(0,len(ys)):
             for k in np.arange(0,len(zs)-1):
 
-                if u_plane[j,k+1] > thresholds[t]:
+                if u_plane[k+1,j] > thresholds[t]:
                     storage[j] = zs[int(k)]
                     break
         plt.plot(ys,storage)
 
     print("line 192")
-    
+
     plt.xlabel("y' axis (rotor frame of reference) [m]")
     plt.ylabel("z' axis (rotor frame of reference) [m]")
 
