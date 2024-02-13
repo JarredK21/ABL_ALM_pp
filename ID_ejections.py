@@ -36,6 +36,14 @@ def Horizontal_velocity(it):
     return mag_horz_vel
 
 
+def isInside(x, y):
+     
+    if ((x - 2) * (x - 2) +
+        (y - 2) * (y - 2) <= 1 * 1):
+        return True
+    else:
+        return False
+    
 
 start_time = time.time()
 
@@ -50,7 +58,14 @@ h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
-print("line 53", time.time()-start_time)
+print("line 61", time.time()-start_time)
+
+
+#Iy, Iz
+data = Dataset("Dataset.nc")
+groups = data.groups["5.5"]
+Iy = np.array((groups.variables["Iy"]))
+Iz = np.array((groups.variables["Iz"]))
 
 
 
@@ -121,7 +136,7 @@ with Pool() as pool:
         print(len(u_hvel),time.time()-start_time)
 u = np.array(u_hvel); del u_hvel; del v
 
-print("line 124",time.time()-start_time)
+print("line 139",time.time()-start_time)
 
 #find vmin and vmax for isocontour plots            
 #min and max over data
@@ -137,7 +152,7 @@ levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nl
 levels = np.concatenate((levs_min,levs_max[1:]))
 
     
-print("line 140",levels)
+print("line 155",levels)
 
 folder = out_dir+"Rotor_Plane_Fluctutating_horz_-5.5/"
 isExist = os.path.exists(folder)
@@ -172,10 +187,11 @@ def Update(it):
 
     cs = ax.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
 
+    cb = plt.colorbar(cs)
+
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=2)
     ax.add_artist(Drawing_uncolored_circle)
 
-    thresholds = [-0.7,-2.0,-5.0]
 
     for t in np.arange(0,len(thresholds)):
         storage = np.zeros(len(ys))
@@ -183,16 +199,15 @@ def Update(it):
             for k in np.arange(0,len(zs)-1):
 
                 if u_plane[k+1,j] > thresholds[t]:
-                    storage[j] = zs[int(k)]
+                    storage[j] = zs[k]
                     break
-        ax.plot(ys,storage,linewidth=4)
+
+        ax.plot(ys,storage,linewidth=4,label="{}m/s".format(thresholds[t]))
+
 
     plt.xlabel("y' axis (rotor frame of reference) [m]")
     plt.ylabel("z' axis (rotor frame of reference) [m]")
-    plt.legend(thresholds,loc="upper right")
-
-
-    cb = plt.colorbar(cs)
+    ax.legend(loc="upper right")
 
 
     #define titles and filenames for movie
@@ -209,8 +224,103 @@ def Update(it):
     return T
 
 
+def Update_data(it):
+
+    U = u[it] #velocity time step it
+
+    u_plane = U.reshape(y,x)
+
+    h = []
+    for j in np.arange(0,len(ys)):
+        for k in np.arange(0,len(zs)-1):
+
+            if u_plane[k+1,j] > thresholds[t]:
+
+                break
+        
+        #is coordinate inside rotor disk
+        cc = isInside(ys[j],zs[k])
+        if cc == True:
+            z = np.min( np.roots([1,-180,(90**2-63**2+(ys[j]-2560)**2)]) )
+            h.append(zs[k]-z) #height from coordinate zs to coordinate z on rotor disk
+        #is coordinate above rotor disk so it is still covering it
+        elif ys[j] > 2497 and ys[j] < 2623 and zs[k] > 90:
+            z = np.roots([1,-180,(90**2-63**2+(ys[j]-2560)**2)])
+            h.append(z[0]-z[1]) #height
+
+    #integrate over area covering rotor disk
+    A = 0
+    delta_y = ys[1] - ys[0]
+    for i in np.arange(0,len(h)-1):
+        A+=((h[i+1] + h[i])/2)*delta_y
+
+    if A == 0:
+        prop = 0.0
+    else:
+        prop = A/(np.pi*1**2) #proportion of rotor disk covered at threshold t
+
+    return it, prop
+
+
+#thresholds to plot
+thresholds = [-0.7,-2.0,-5.0]
 
 with Pool() as pool:
     for T in pool.imap(Update,Time_steps):
 
         print(T,time.time()-start_time)
+
+
+#create netcdf file
+ncfile = Dataset(out_dir+"Thresholding_Dataset.nc",mode="w",format='NETCDF4')
+ncfile.title = "Threshold data sampling output"
+
+#create global dimensions
+sampling_dim = ncfile.createDimension("sampling",None)
+
+Time_sampling = ncfile.createVariable("Time", np.float64, ('sampling',),zlib=True)
+Time_sampling[:] = Time
+
+#thresholds to output data
+thresholds = np.arange(-12.0,-0.0,2)
+thresholds = np.append(thresholds,-0.7)
+
+threshold_label = np.arange(12.0,0.0,-2)
+threshold_label = np.append(threshold_label,0.7)
+
+
+for t in np.arange(0,len(thresholds)):
+
+    group = ncfile.createGroup("{}".format(threshold_label[t]))
+
+    Iy_data = group.createVariable("Iy", np.float64, ('sampling'),zlib=True)
+    Iz_data = group.createVariable("Iz", np.float64, ('sampling'),zlib=True)
+    P_data = group.createVariable("P", np.float64, ('sampling'),zlib=True)
+
+    Iy_it = []
+    Iz_it = []
+    P_it = []
+
+    with Pool() as pool:
+        for it,P_i in pool.imap(Update_data,Time):
+
+            if P_i != 0:
+                Iy_it.append(Iy[it])
+                Iz_it.append(Iz[it])
+                P_it.append(P_i)
+            else:
+                Iy_it.append(np.nan)
+                Iz_it.append(np.nan)
+                P_it.append(P_i)
+
+            print(it,time.time()-start_time)
+
+        Iy_data[:] = np.array(Iy_it); del Iy_it
+        Iz_data[:] = np.array(Iz_it); del Iz_it 
+        P_data[:] = np.array(P_it); del P_it
+
+    print(ncfile.groups)
+
+
+print(ncfile)
+ncfile.close()
