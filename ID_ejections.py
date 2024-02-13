@@ -162,7 +162,7 @@ if isExist == False:
 
 
 #options
-plot_thresholds = True
+plot_thresholds = False
 output_data = True
 
 
@@ -195,7 +195,7 @@ def Update(it):
 
     cb = plt.colorbar(cs)
 
-    Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=2)
+    Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
     ax.add_artist(Drawing_uncolored_circle)
 
 
@@ -208,7 +208,7 @@ def Update(it):
                     storage[j] = zs[k]
                     break
 
-        ax.plot(ys,storage,linewidth=4,label="{}m/s".format(thresholds[t]))
+        ax.plot(ys,storage,linewidth=2,label="{}m/s".format(thresholds[t]))
 
 
     plt.xlabel("y' axis (rotor frame of reference) [m]",fontsize=40)
@@ -315,7 +315,7 @@ if output_data == True:
         P_it = []
 
         with Pool() as pool:
-            for ix,P_i in pool.imap(Update_data,Time):
+            for ix,P_i in pool.imap(Update_data,Time_steps):
 
                 if P_i != 0:
                     Iy_it.append(Iy[ix])
