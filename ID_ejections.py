@@ -272,7 +272,7 @@ with Pool() as pool:
 
 
 #create netcdf file
-ncfile = Dataset(out_dir+"Thresholding_Dataset.nc",mode="w",format='NETCDF4')
+ncfile = Dataset(in_dir+"Thresholding_Dataset.nc",mode="w",format='NETCDF4')
 ncfile.title = "Threshold data sampling output"
 
 #create global dimensions
