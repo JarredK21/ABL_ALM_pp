@@ -63,10 +63,13 @@ def Update(it):
 
 
 
-    plt.xlabel("y axis [m]")
-    plt.ylabel("z axis [m]")
+    plt.xlabel("y axis [m]",fontsize=40)
+    plt.ylabel("z axis [m]",fontsize=40)
+    plt.yticks(fontsize=40)
+    plt.xticks(fontsize=40)
     ax.legend(loc="upper right")
     plt.title("Time {}".format(it))
+    plt.tight_layout()
     plt.savefig(out_dir+"test_{}.png".format(it))
     plt.close(fig)
 

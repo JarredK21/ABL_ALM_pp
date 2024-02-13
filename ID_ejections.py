@@ -80,7 +80,7 @@ if isExist == False:
 
 a = Dataset("./sampling_r_-5.5.nc")
 
-p = a.groups["p_r"]; del a
+p = a.groups["p_r"]
 
 #time options
 Time = np.array(a.variables["time"])
@@ -90,7 +90,7 @@ tend = 39200
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(0, tend_idx-tstart_idx)
 Time = Time[tstart_idx:tend_idx]
-
+del a
 
 x = p.ijk_dims[0] #no. data points
 y = p.ijk_dims[1] #no. data points
@@ -161,6 +161,11 @@ if isExist == False:
     os.makedirs(folder)
 
 
+#options
+plot_thresholds = True
+output_data = True
+
+
 def Update(it):
 
     U = u[it] #velocity time step it
@@ -206,8 +211,10 @@ def Update(it):
         ax.plot(ys,storage,linewidth=4,label="{}m/s".format(thresholds[t]))
 
 
-    plt.xlabel("y' axis (rotor frame of reference) [m]")
-    plt.ylabel("z' axis (rotor frame of reference) [m]")
+    plt.xlabel("y' axis (rotor frame of reference) [m]",fontsize=40)
+    plt.ylabel("z' axis (rotor frame of reference) [m]",fontsize=40)
+    plt.xticks(fontsize=40)
+    plt.yticks(fontsize=40)
     ax.legend(loc="upper right")
 
 
@@ -217,6 +224,7 @@ def Update(it):
         
 
     plt.title(Title)
+    plt.tight_layout()
     plt.savefig(folder+filename)
     plt.cla()
     cb.remove()
@@ -263,65 +271,69 @@ def Update_data(it):
     return it, prop
 
 
-#thresholds to plot
-thresholds = [-0.7,-2.0,-5.0]
-
-with Pool() as pool:
-    for T in pool.imap(Update,Time_steps):
-
-        print(T,time.time()-start_time)
-
-
-#create netcdf file
-ncfile = Dataset(in_dir+"Thresholding_Dataset.nc",mode="w",format='NETCDF4')
-ncfile.title = "Threshold data sampling output"
-
-#create global dimensions
-sampling_dim = ncfile.createDimension("sampling",None)
-
-Time_sampling = ncfile.createVariable("Time", np.float64, ('sampling',),zlib=True)
-Time_sampling[:] = Time
-
-#thresholds to output data
-thresholds = np.arange(-12.0,-0.0,2)
-thresholds = np.append(thresholds,-0.7)
-
-threshold_label = np.arange(12.0,0.0,-2)
-threshold_label = np.append(threshold_label,0.7)
-
-
-for t in np.arange(0,len(thresholds)):
-
-    group = ncfile.createGroup("{}".format(threshold_label[t]))
-
-    Iy_data = group.createVariable("Iy", np.float64, ('sampling'),zlib=True)
-    Iz_data = group.createVariable("Iz", np.float64, ('sampling'),zlib=True)
-    P_data = group.createVariable("P", np.float64, ('sampling'),zlib=True)
-
-    Iy_it = []
-    Iz_it = []
-    P_it = []
+if plot_thresholds == True:
+    #thresholds to plot
+    thresholds = [-0.7,-2.0,-5.0]
 
     with Pool() as pool:
-        for it,P_i in pool.imap(Update_data,Time):
+        for T in pool.imap(Update,Time_steps):
 
-            if P_i != 0:
-                Iy_it.append(Iy[it])
-                Iz_it.append(Iz[it])
-                P_it.append(P_i)
-            else:
-                Iy_it.append(np.nan)
-                Iz_it.append(np.nan)
-                P_it.append(P_i)
-
-            print(it,time.time()-start_time)
-
-        Iy_data[:] = np.array(Iy_it); del Iy_it
-        Iz_data[:] = np.array(Iz_it); del Iz_it 
-        P_data[:] = np.array(P_it); del P_it
-
-    print(ncfile.groups)
+            print(T,time.time()-start_time)
 
 
-print(ncfile)
-ncfile.close()
+if output_data == True:
+    #create netcdf file
+    ncfile = Dataset(in_dir+"Thresholding_Dataset.nc",mode="w",format='NETCDF4')
+    ncfile.title = "Threshold data sampling output"
+
+    #create global dimensions
+    sampling_dim = ncfile.createDimension("sampling",None)
+
+    Time_sampling = ncfile.createVariable("Time", np.float64, ('sampling',),zlib=True)
+    Time_sampling[:] = Time
+
+    #thresholds to output data
+    thresholds = np.arange(-12.0,-0.0,2)
+    thresholds = np.append(thresholds,-0.7)
+
+    threshold_label = np.arange(12.0,0.0,-2)
+    threshold_label = np.append(threshold_label,0.7)
+
+    
+    for t in np.arange(0,len(thresholds)):
+
+        print("line 293",thresholds[t])
+
+        group = ncfile.createGroup("{}".format(threshold_label[t]))
+
+        Iy_data = group.createVariable("Iy", np.float64, ('sampling'),zlib=True)
+        Iz_data = group.createVariable("Iz", np.float64, ('sampling'),zlib=True)
+        P_data = group.createVariable("P", np.float64, ('sampling'),zlib=True)
+
+        Iy_it = []
+        Iz_it = []
+        P_it = []
+
+        with Pool() as pool:
+            for ix,P_i in pool.imap(Update_data,Time):
+
+                if P_i != 0:
+                    Iy_it.append(Iy[ix])
+                    Iz_it.append(Iz[ix])
+                    P_it.append(P_i)
+                else:
+                    Iy_it.append(np.nan)
+                    Iz_it.append(np.nan)
+                    P_it.append(P_i)
+
+                print(ix,time.time()-start_time)
+
+            Iy_data[:] = np.array(Iy_it); del Iy_it
+            Iz_data[:] = np.array(Iz_it); del Iz_it 
+            P_data[:] = np.array(P_it); del P_it
+
+        print(ncfile.groups)
+
+
+    print(ncfile)
+    ncfile.close()
