@@ -66,7 +66,7 @@ data = Dataset("Dataset.nc")
 groups = data.groups["5.5"]
 Iy = np.array((groups.variables["Iy"]))
 Iz = np.array((groups.variables["Iz"]))
-
+del data; del groups
 
 
 #directories
@@ -80,7 +80,7 @@ if isExist == False:
 
 a = Dataset("./sampling_r_-5.5.nc")
 
-p = a.groups["p_r"]
+p = a.groups["p_r"]; del a
 
 #time options
 Time = np.array(a.variables["time"])
@@ -122,6 +122,7 @@ zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
 #velocity field
 u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
 v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+del p
 
 u[u<0]=0; v[v<0] #remove negative velocities
 
