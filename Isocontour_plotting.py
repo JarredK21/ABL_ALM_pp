@@ -324,10 +324,10 @@ for plane in planes:
                     if plot_contours == True and fluc_vel == True:
                         #<-0.7 blue, <0.7 red
                         CS = plt.contour(X, Y, Z, levels=levels_neg, colors='b')
-                        plt.clabel(CS, fontsize=9, inline=True)
+                        plt.clabel(CS, fontsize=18, inline=True)
                         if plane == "l":
                             CS = plt.contour(X, Y, Z, levels=levels_pos, colors='r')
-                            plt.clabel(CS, fontsize=9, inline=True)
+                            plt.clabel(CS, fontsize=18, inline=True)
 
 
                     #show where rotor is and reduce plot area

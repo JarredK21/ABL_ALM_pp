@@ -41,8 +41,8 @@ def Update(it):
     cs = f3_ax2.contourf(X,Y,Z,levels=levels_r, cmap=cm.coolwarm,vmin=cmin_r,vmax=cmax_r)
 
     if contours == True:
-        CS = f3_ax2.contour(X, Y, Z, levels=levels_r, colors='k',linewidth=0.7)  # Negative contours default to dashed.
-        f3_ax2.clabel(CS, fontsize=9, inline=True)
+        CS = f3_ax2.contour(X, Y, Z, levels=levels_r_neg, colors='b',linewidth=0.7)  # Negative contours default to dashed.
+        f3_ax2.clabel(CS, fontsize=12, inline=True)
 
     f3_ax2.set_xlabel("y' axis (rotor frame of reference) [m]")
     f3_ax2.set_ylabel("z' axis (rotor frame of reference) [m]")
@@ -71,8 +71,10 @@ def Update(it):
     cz = f3_ax1.contourf(X,Y,Z,levels=levels_22, cmap=cm.coolwarm,vmin=cmin_22,vmax=cmax_22)
 
     if contours == True:
-        CS = f3_ax1.contour(X, Y, Z, levels=levels_22, colors='k',linewidth=0.7)  # Negative contours default to dashed.
-        f3_ax1.clabel(CS, fontsize=9, inline=True)
+        CS = f3_ax1.contour(X, Y, Z, levels=levels_22_neg, colors='b',linewidth=0.7)  # Negative contours default to dashed.
+        f3_ax1.clabel(CS, fontsize=12, inline=True)
+        CS = f3_ax1.contour(X, Y, Z, levels=levels_22_pos, colors='r',linewidth=0.7)  # Negative contours default to dashed.
+        f3_ax1.clabel(CS, fontsize=12, inline=True)
 
     f3_ax1.set_xlabel("x axis [m]")
     f3_ax1.set_ylabel("y axis [m]")
@@ -92,32 +94,32 @@ def Update(it):
 
 
     #top left
-    U_l = u_142[it]
+    U_t = u_t[it]
 
-    u_plane = U_l.reshape(x_142,y_142)
-    X,Y = np.meshgrid(xs_142,ys_142)
+    u_plane = U_t.reshape(y_t,x_t)
+    X,Y = np.meshgrid(xs_t,zs_t)
 
     Z = u_plane
 
-    cz = f3_ax3.contourf(X,Y,Z,levels=levels_142, cmap=cm.coolwarm,vmin=cmin_142,vmax=cmax_142)
+    cz = f3_ax3.contourf(X,Y,Z,levels=levels_t, cmap=cm.coolwarm,vmin=cmin_t,vmax=cmax_t)
 
     if contours == True:
-        CS = f3_ax3.contour(X, Y, Z, levels=levels_142, colors='k',linewidth=0.7)  # Negative contours default to dashed.
-        f3_ax3.clabel(CS, fontsize=9, inline=True)
+        CS = f3_ax3.contour(X, Y, Z, levels=levels_t_neg, colors='b',linewidth=0.7)  # Negative contours default to dashed.
+        f3_ax3.clabel(CS, fontsize=12, inline=True)
 
-    f3_ax3.set_xlabel("x axis [m]")
-    f3_ax3.set_ylabel("y axis [m]")
+    f3_ax3.set_xlabel("x' axis [m]")
+    f3_ax3.set_ylabel("z' axis [m]")
 
-    f3_ax3.set_xlim([2000,3000]); f3_ax3.set_ylim([2000,3000])
+    f3_ax3.set_xlim([2000,3000]); f3_ax3.set_ylim([0,300])
 
-    x = [2524.5,2585.5]; y = [2615.1,2504.9]
+    x = [2555,2555]; y = [27,153]
     f3_ax3.plot(x,y,linewidth=1.0,color="k")
 
     divider = make_axes_locatable(f3_ax3)
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cd = plt.colorbar(cz, cax=cax)
 
-    Title = "Horizontal Plane 150m from surface. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
+    Title = "Transverse Plane center of rotor disk. \nFluctuating Horizontal velocity [m/s]: Time = {}[s]".format(round(Time_sampling[it],4))
 
     f3_ax3.set_title(Title)
 
@@ -133,8 +135,10 @@ def Update(it):
     cz = f3_ax4.contourf(X,Y,Z,levels=levels_85, cmap=cm.coolwarm,vmin=cmin_85,vmax=cmax_85)
 
     if contours == True:
-        CZ = f3_ax4.contour(X, Y, Z, levels=levels_85, colors='k',linewidth=0.7)  # Negative contours default to dashed.
-        f3_ax4.clabel(CZ, fontsize=9, inline=True)
+        CZ = f3_ax4.contour(X, Y, Z, levels=levels_85_neg, colors='b',linewidth=0.7)  # Negative contours default to dashed.
+        f3_ax4.clabel(CZ, fontsize=12, inline=True)
+        CZ = f3_ax4.contour(X, Y, Z, levels=levels_85_pos, colors='r',linewidth=0.7)  # Negative contours default to dashed.
+        f3_ax4.clabel(CZ, fontsize=12, inline=True)
 
     f3_ax4.set_xlabel("x axis [m]")
     f3_ax4.set_ylabel("y axis [m]")
@@ -285,10 +289,11 @@ del a
 
 u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
 v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
+u[u<0] = 0; v[v<0] = 0
+u = np.subtract(u,np.mean(u)); v = np.subtract(v,np.mean(v))
 u_r = Horizontal_velocity(u,v,twist,x_r,normal,zs_r,h,height=90); del u; del v; 
-u_r[u_r<0] = 0
-ur_mean = np.mean(u_r)
-u_r = np.subtract(u_r,ur_mean)
+
+
 
 cmin_r = math.floor(np.min(u_r))
 cmax_r = math.ceil(np.max(u_r))
@@ -296,41 +301,10 @@ cmax_r = math.ceil(np.max(u_r))
 levels_r = level_calc(cmin_r,cmax_r)
 print("line 297", levels_r)
 
+nlevs = np.int(-0.7-cmin_r)
+levels_r_neg = np.linspace(cmin_r,-0.7,nlevs)
 
-#horizontal plane 150m data
-a = Dataset("sampling_l_142.5.nc")
-
-p = a.groups["p_l"]
-
-x_142 = p.ijk_dims[0] #no. data points
-y_142 = p.ijk_dims[1] #no. data points
-
-normal = "z"
-
-#define plotting axes
-coordinates = np.array(p.variables["coordinates"])
-
-xo = coordinates[0:x_142,0]
-yo = coordinates[0:x_142,1]
-
-xs_142 = np.linspace(p.origin[0],p.origin[0]+p.axis1[0],x_142)
-ys_142 = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y_142)
-zs_142 = 0
-
-del a
-
-u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
-v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
-u_l = Horizontal_velocity(u,v,twist,x_142,normal,zs_142,h,height=90); del u; del v; del p
-u_l[u_l<0] = 0
-u_mean = np.mean(u_l)
-u_142 = np.subtract(u_l,u_mean)
-
-cmin_142 = math.floor(np.min(u_142))
-cmax_142 = math.ceil(np.max(u_142))
-
-levels_142 = level_calc(cmin_142,cmax_142)
-print("line 330", levels_142)
+print("lind 303", levels_r_neg)
 
 
 #horizontal plane 90m data
@@ -357,16 +331,21 @@ del a
 
 u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
 v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
-u_l = Horizontal_velocity(u,v,twist,x_85,normal,zs_85,h,height=90); del u; del v; del p
-u_l[u_l<0] = 0
-u_mean = np.mean(u_l)
-u_85 = np.subtract(u_l,u_mean)
+u[u<0] = 0; v[v<0] = 0
+u = np.subtract(u,np.mean(u)); v = np.subtract(v,np.mean(v))
+u_85 = Horizontal_velocity(u,v,twist,x_85,normal,zs_85,h,height=90); del u; del v; del p
 
 cmin_85 = math.floor(np.min(u_85))
 cmax_85 = math.ceil(np.max(u_85))
 
 levels_85 = level_calc(cmin_85,cmax_85)
 print("line 366", levels_85)
+
+nlevs = int(-0.7-cmin_85)
+levels_85_neg = np.linspace(cmin_85,-0.7,nlevs)
+nlevs = int(cmax_85-0.7)
+levels_85_pos = np.linspace(0.7,cmax_85,nlevs)
+print("line 344",levels_85_neg,levels_85_pos)
 
 
 #horizontal plane 22.5m
@@ -404,6 +383,63 @@ cmax_22 = math.ceil(np.max(u_22))
 
 levels_22 = level_calc(cmin_22,cmax_22)
 print("line 403", levels_22)
+
+nlevs = int(-0.7-cmin_22)
+levels_22_neg = np.linspace(cmin_22,-0.7,nlevs)
+nlevs = int(cmax_22-0.7)
+levels_22_pos = np.linspace(0.7,cmax_22,nlevs)
+print("line 344",levels_22_neg,levels_22_pos)
+
+
+#transverse plane
+a = Dataset("sampling_t_0.0.nc")
+
+p = a.groups["p_t"]
+
+x_t = p.ijk_dims[0] #no. data points
+y_t = p.ijk_dims[1] #no. data points
+
+normal = 29
+
+#define plotting axes
+coordinates = np.array(p.variables["coordinates"])
+
+xo = coordinates[0:x_t,0]
+yo = coordinates[0:x_t,1]
+
+rotor_coordiates = [2560,2560,90]
+
+x_trans = xo - rotor_coordiates[0]
+y_trans = yo - rotor_coordiates[1]
+
+phi = np.radians(-normal)
+xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
+ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
+xs_t = xs + rotor_coordiates[0]
+ys_t = ys + rotor_coordiates[1]
+zs_t = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y_t)
+
+del a
+
+u = np.array(p.variables["velocityx"][Time_start_idx:Time_end_idx])
+v = np.array(p.variables["velocityy"][Time_start_idx:Time_end_idx])
+u[u<0] = 0; v[v<0] = 0
+u = np.subtract(u,np.mean(u)); v = np.subtract(v,np.mean(v))
+u_t = Horizontal_velocity(u,v,twist,x_t,normal,zs_t,h,height=90); del u; del v; 
+
+
+
+cmin_t = math.floor(np.min(u_t))
+cmax_t = math.ceil(np.max(u_t))
+
+levels_t = level_calc(cmin_t,cmax_t)
+print("line 297", levels_t)
+
+nlevs = np.int(-0.7-cmin_t)
+levels_t_neg = np.linspace(cmin_t,-0.7,nlevs)
+
+print("lind 303", levels_t_neg)
+
 
 
 Time_steps = np.arange(0,len(Time_sampling))
