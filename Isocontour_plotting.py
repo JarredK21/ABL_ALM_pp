@@ -110,7 +110,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = False; plot_r = False; plot_tr = False; plot_i = False; plot_t = True
+plot_l = True; plot_r = True; plot_tr = False; plot_i = False; plot_t = True
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -156,8 +156,8 @@ for plane in planes:
 
         #plotting option
         fluc_vel = True
-        plot_contours = False
-        plot_u = False; plot_v = False; plot_w = True; plot_hvelmag = True
+        plot_contours = True
+        plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
         #check if no velocity components selected
@@ -223,7 +223,7 @@ for plane in planes:
             print(plane_labels[ip],velocity_comps[iv],offset,time.time()-start_time)
 
             if fluc_vel == True:
-                folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}_2/".format(plane_labels[ip],velocity_comp,offset)
+                folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}_contour/".format(plane_labels[ip],velocity_comp,offset)
             else:
                 folder = out_dir+"{0}_Plane_Total_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
 
@@ -277,6 +277,13 @@ for plane in planes:
                     
                 print("line 370",levels)
 
+                if plot_contours == True and fluc_vel == True:
+                    nlevs = int(-0.7-cmin)
+                    levels_neg = np.linspace(cmin,-0.7,nlevs)
+
+                    nlevs = int(cmax-0.7)
+                    levels_pos = np.linspace(0.7,cmax,nlevs)
+
 
                 def Update(it):
 
@@ -315,15 +322,25 @@ for plane in planes:
                     cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
 
                     if plot_contours == True and fluc_vel == True:
-                        CS = plt.contour(X, Y, Z, levels=levels, colors='k')  # Negative contours default to dashed.
+                        #<-0.7 blue, <0.7 red
+                        CS = plt.contour(X, Y, Z, levels=levels_neg, colors='b')
                         plt.clabel(CS, fontsize=9, inline=True)
+                        if plane == "l":
+                            CS = plt.contour(X, Y, Z, levels=levels_pos, colors='r')
+                            plt.clabel(CS, fontsize=9, inline=True)
 
 
                     #show where rotor is and reduce plot area
-                    plt.xlim([2000,3000]); plt.ylim([0,300])
+                    if plane == "t":
+                        plt.xlim([2000,3000]); plt.ylim([0,300])
+                    elif plane == "l":
+                        plt.xlim([2000,3000]); plt.ylim([2000,3000])
 
                     if plane == "t":
                         x_lims = [2555,2555]; y_lims = [27,153]
+                        plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
+                    elif plane == "l":
+                        x_lims = [2524.5,2585.5]; y_lims = [2615.1,2504.9]
                         plt.plot(x_lims,y_lims,linewidth=1.0,color="k")
 
                     if normal == "x":
