@@ -168,11 +168,15 @@ for T in Time:
             Eddies_Area.append(Area)
 
     Eddies_it = {"Centroid_x_{}".format(T): Eddies_Cent_x, "Centroid_y_{}".format(T): Eddies_Cent_y, "Area_{}".format(T): Eddies_Area}
-    
+
+    x_c = [-1,-10]; y_c = [-1,-10]
+    plt.plot(x_c,y_c,"-k",label="0.7 m/s")
     #saving figure
+    plt.xlim([0,x]); plt.ylim([0,y])
     plt.xlabel("x axis")
     plt.ylabel("y axis")
     plt.title("{}".format(T))
+    plt.legend()
     plt.grid()
     plt.tight_layout()
     plt.savefig(in_dir+"{}.png".format(T))

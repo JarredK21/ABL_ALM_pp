@@ -354,8 +354,13 @@ def Update(it):
     #define titles and filenames for movie
     Title = "Rotor Plane. \nFluctuating horizontal velocity [m/s]: Offset = -63.0m, Time = {0}[s]".format(T)
     filename = "Rotor_Fluc_Horz_-63.0_{0}.png".format(Time_idx)
-        
+    
+    x_c = [-1,-10]; y_c = [-1,-10]
+    plt.plot(x_c,y_c,"-k",label="0.7 m/s")
+    plt.plot(x_c,y_c,"--k",label="-0.7 m/s")
 
+    plt.xlim([ys[0],ys[-1]]);plt.ylim(zs[0],zs[-1])
+    plt.legend()
     plt.title(Title)
     plt.tight_layout()
     plt.savefig(folder+filename)
@@ -368,10 +373,12 @@ def Update(it):
 
 
 it = 0
-df = pd.DataFrame(None)
+
 with Pool() as pool:
     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
-
+        
+        df = pd.DataFrame(None)
+        
         #df_0 = pd.DataFrame(Eddies_pos)
         #df_pos = pd.concat([df_pos,df_0],axis=1); del df_0
         #print(df_pos)
