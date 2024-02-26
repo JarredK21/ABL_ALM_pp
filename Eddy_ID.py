@@ -13,8 +13,8 @@ from matplotlib.patches import Circle
 
 def isInside(x, y):
      
-    if ((x - 50) * (x - 50) +
-        (y - 50) * (y - 50) <= 20 * 20):
+    if ((x - 2560) * (x - 2560) +
+        (y - 90) * (y - 90) <= 63 * 63):
         return True
     else:
         return False
@@ -72,6 +72,11 @@ out_dir = in_dir + "ISOplots/"
 isExist = os.path.exists(out_dir)
 if isExist == False:
     os.makedirs(out_dir)
+
+csv_out_dir = in_dir + "csv_files/"
+isExist = os.path.exists(csv_out_dir)
+if isExist == False:
+    os.makedirs(csv_out_dir)
 
 
 
@@ -372,17 +377,22 @@ df_neg = pd.DataFrame(None)
 with Pool() as pool:
     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
-        df_0 = pd.DataFrame(Eddies_pos)
-        df_pos = pd.concat([df_pos,df_0],axis=1); del df_0
-        print(df_pos)
+        #df_0 = pd.DataFrame(Eddies_pos)
+        #df_pos = pd.concat([df_pos,df_0],axis=1); del df_0
+        #print(df_pos)
+        df = pd.DataFrame(Eddies_pos)
+        df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
 
-        df_0 = pd.DataFrame(Eddies_neg)
-        df_neg = pd.concat([df_neg,df_0],axis=1); del df_0
-        print(df_neg)
+        #df_0 = pd.DataFrame(Eddies_neg)
+        #df_neg = pd.concat([df_neg,df_0],axis=1); del df_0
+        #print(df_neg)
+        df = pd.Dataframe(Eddies_neg)
+        df.to_csv(csv_out_dir+"Eddies_-0.7_{}.csv".format(it))
+        del df
 
         it+=1
         print(it)
 
 #saving data
-df_pos.to_csv(in_dir+"Eddies_{}.csv".format(0.7))
-df_neg.to_csv(in_dir+"Eddies_{}.csv".format(-0.7))
+# df_pos.to_csv(in_dir+"Eddies_{}.csv".format(0.7))
+# df_neg.to_csv(in_dir+"Eddies_{}.csv".format(-0.7))

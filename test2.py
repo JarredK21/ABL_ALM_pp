@@ -13,8 +13,8 @@ from matplotlib.patches import Circle
 
 def isInside(x, y):
      
-    if ((x - 50) * (x - 50) +
-        (y - 50) * (y - 50) <= 20 * 20):
+    if ((x - 2560) * (x - 2560) +
+        (y - 90) * (y - 90) <= 63 * 63):
         return True
     else:
         return False
