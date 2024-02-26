@@ -210,13 +210,11 @@ def Update(it):
     for line in lines:
         X, Y = line[:,0], line[:,1]
 
-        print(X,Y)
         #check if any point in line is inside circle
         cc = []
         for X_line, Y_line in zip(X,Y):
             cc.append(isInside(X_line,Y_line))
 
-        print(cc)
         X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
         #if any point is inside cirlce plot #stop points outside of circle
         res = not any(cc)
@@ -256,7 +254,6 @@ def Update(it):
                 ix+=1 #add one to increase index
 
         X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
-        print(X,Y)
 
         plt.plot(X, Y,"-k")
 
@@ -281,13 +278,12 @@ def Update(it):
     lines = CZ.allsegs[-1] #plot only threshold velocity
     for line in lines:
         X, Y = line[:,0], line[:,1]
-        print(X,Y)
 
         #check if any point in line is inside circle
         cc = []
         for X_line, Y_line in zip(X,Y):
             cc.append(isInside(X_line,Y_line))
-        print(cc)
+
         X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
         #if any point is inside cirlce plot #stop points outside of circle
         res = not any(cc)
@@ -327,7 +323,7 @@ def Update(it):
                 ix+=1 #add one to increase index
 
         X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
-        print(X,Y)
+
         plt.plot(X, Y,"--k")
 
         if len(X) > 0:
@@ -372,22 +368,24 @@ def Update(it):
 
 
 it = 0
-df_pos = pd.DataFrame(None)
-df_neg = pd.DataFrame(None)
+df = pd.DataFrame(None)
 with Pool() as pool:
     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
         #df_0 = pd.DataFrame(Eddies_pos)
         #df_pos = pd.concat([df_pos,df_0],axis=1); del df_0
         #print(df_pos)
-        df = pd.DataFrame(Eddies_pos)
-        df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
+        df_pos = pd.DataFrame(Eddies_pos)
+        df = pd.concat([df,df_pos],axis=1); del df_pos
 
         #df_0 = pd.DataFrame(Eddies_neg)
         #df_neg = pd.concat([df_neg,df_0],axis=1); del df_0
         #print(df_neg)
-        df = pd.Dataframe(Eddies_neg)
-        df.to_csv(csv_out_dir+"Eddies_-0.7_{}.csv".format(it))
+        df_neg = pd.DataFrame(Eddies_neg)
+        df = pd.concat([df,df_neg],axis=1); del df_neg
+
+        df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
+        print(df)
         del df
 
         it+=1
