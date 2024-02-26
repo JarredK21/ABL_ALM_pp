@@ -7,6 +7,14 @@ from netCDF4 import Dataset
 from matplotlib.patches import Circle
 import pandas as pd
 
+def testBoolan(x):
+    if not any(x) != True and all(x) != True:
+        return False
+    elif all(x) == True and not any(x) == False:
+        return True
+    elif all(x) == False and not any(x) == True:
+        return True
+
 
 def isInside(x, y):
      
@@ -111,46 +119,74 @@ for T in Time:
         for X_line, Y_line in zip(X,Y):
             cc.append(isInside(X_line,Y_line))
 
-        X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
-        #if any point is inside cirlce plot #stop points outside of circle
-        res = not any(cc)
-        if res == False:     
-            ix = 0
-            for ic in np.arange(0,len(cc)-1):
-                if cc[ic+1] != cc[ic]:
+        if testBoolan(cc) == False:
+            X = X[cc]; Y = Y[cc]
+            if len(X) == 1:
+                X = np.insert(X,0,X[0]-1); X = np.append(X,X[1]+1)
+            if len(Y) == 1:
+                Y = np.insert(Y,0,Y[0]-1); Y = np.append(Y,Y[1]+1)
+
+            m = (Y[0]-Y[-1])/(X[0]-X[-1])
+            if abs(m) == np.inf:
+                yline = np.arange(Y[-1],Y[0],0.3125)
+                for yl in yline:
+                    Xroots = np.roots([1, (2*-90), ((-2560)**2 - 63**2 + (yl - 90)**2)])
+                    #need a routine to determine which side
+                    X = np.append(X,Xroots[0]); Y = np.append(Y,yl)
+            else:
+                xline = np.arange(X[-1],X[0],0.3125)
+                for xl in xline:
+                    Yroots = np.roots([1, (2*-2560), ((-90)**2 - 63**2 + (xl - 2560)**2)])
+                    #need a routine to determine which side?
+                    Y = np.append(Y,Yroots[0]); X = np.append(X,xl)
+
+                
+        elif testBoolan(cc) == True:
+            X = X[cc]; Y = Y[cc]
 
 
-                    #equation of line intersecting circle
-                    m = (Y[ic+1]-Y[ic])/(X[ic+1]-X[ic])
-                    if m == np.inf or m ==-np.inf:
-                        f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
-                        c = float(f(0))
-                        x_root = c
-                    else:
-                        f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
-                        c = float(f(0))
-                        x_roots = np.roots([(1+(m)**2), ((2*-50)+(2*m*(c-50))), ((-50)**2 + (c-50)**2 - 20**2)])
-                        if x_roots[0] > np.min([X[ic], X[ic+1]]) and x_roots[0] < np.max([X[ic], X[ic+1]]):
-                            x_root = x_roots[0]
-                        else:
-                            x_root = x_roots[1]
-                        del x_roots
 
-                    #y roots    
-                    y_roots = np.roots([1, -100, (2500+(x_root-50)**2 - 20**2)])
-                    if y_roots[0] > np.min([Y[ic], Y[ic+1]]) and y_roots[0] < np.max([Y[ic], Y[ic+1]]):
-                        y_root = y_roots[0]
-                    else:
-                        y_root = y_roots[1]
-                    del y_roots
 
-                    #insert x_root,y_root into X,Y and insert true at same index in cc
-                    X_temp = np.insert(X_temp, ix+1, x_root); Y_temp = np.insert(Y_temp, ix+1, y_root); cc_temp = np.insert(cc_temp,ix+1,"True")
+        # X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
+        # #if any point is inside cirlce plot #stop points outside of circle
+        # res = not any(cc)
+        # if res == False:     
+        #     ix = 0
+        #     for ic in np.arange(0,len(cc)-1):
+        #         if cc[ic+1] != cc[ic]:
+        #             #equation of line intersecting circle
+        #             m = (Y[ic+1]-Y[ic])/(X[ic+1]-X[ic])
+        #             if m == np.inf or m ==-np.inf:
+        #                 f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
+        #                 c = float(f(0))
+        #                 x_root = c
+        #             else:
+        #                 f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
+        #                 c = float(f(0))
+        #                 x_roots = np.roots([(1+(m)**2), ((2*-50)+(2*m*(c-50))), ((-50)**2 + (c-50)**2 - 20**2)])
+        #                 if x_roots[0] > np.min([X[ic], X[ic+1]]) and x_roots[0] < np.max([X[ic], X[ic+1]]):
+        #                     x_root = x_roots[0]
+        #                 else:
+        #                     x_root = x_roots[1]
+        #                 del x_roots
 
-                    ix+=1 #add one for inserting
-                ix+=1 #add one to increase index
+        #             #y roots    
+        #             y_roots = np.roots([1, -100, (2500+(x_root-50)**2 - 20**2)])
+        #             if y_roots[0] > np.min([Y[ic], Y[ic+1]]) and y_roots[0] < np.max([Y[ic], Y[ic+1]]):
+        #                 y_root = y_roots[0]
+        #             else:
+        #                 y_root = y_roots[1]
+        #             del y_roots
 
-        X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
+        #             #insert x_root,y_root into X,Y and insert true at same index in cc
+        #             X_temp = np.insert(X_temp, ix+1, x_root); Y_temp = np.insert(Y_temp, ix+1, y_root); cc_temp = np.insert(cc_temp,ix+1,"True")
+
+        #             ix+=1 #add one for inserting
+        #         ix+=1 #add one to increase index
+
+        # X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
+
+
 
         plt.plot(X, Y,"-k")
 
