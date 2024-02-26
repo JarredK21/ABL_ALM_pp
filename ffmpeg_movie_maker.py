@@ -13,7 +13,7 @@ isExist = os.path.exists(video_folder)
 if isExist == False:
     os.makedirs(video_folder)
 
-filenames = ["longitudinal_Plane_Fluctutating_Horizontal_velocity_0.0_2", "longitudinal_Plane_Fluctutating_velocityz_0.0_2"]
+filenames = ["combined_plots_2"]
 for filename in filenames:
     plots_dir = in_dir+filename
 

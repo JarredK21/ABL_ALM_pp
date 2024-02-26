@@ -229,7 +229,7 @@ plane = -5.5
 
 contours = True
 
-out_dir = "horizontal_plane_plots/"
+out_dir = "ISOplots/combined_plots_2/"
 
 isExist = os.path.exists(out_dir)
 if isExist == False:
