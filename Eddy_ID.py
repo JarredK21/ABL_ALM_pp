@@ -150,10 +150,13 @@ if nlevs>abs(cmin) or nlevs>cmax:
 
 levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
 levels = np.concatenate((levs_min,levs_max[1:]))
+print("line 153", levels)
 
 #define thresholds with number of increments
 levels_pos = np.linspace(0.7,cmax,4)
+print("line 157", levels_pos)
 levels_neg = np.linspace(cmin,-0.7,4)
+print("line 159", levels_neg)
 
 
 folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0/"
