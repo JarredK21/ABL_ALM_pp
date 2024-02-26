@@ -306,7 +306,7 @@ def Update(it):
                     #equation of line intersecting circle
                     m = (Y[ic+1]-Y[ic])/(X[ic+1]-X[ic])
                     if m == np.inf or m ==-np.inf:
-                        f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
+                        f = interpolate.interp1d([Y[ic+1],Y[ic]], [X[ic+1],X[ic]], fill_value='extrapolate')
                         c = float(f(0))
                         y_root = c
                     else:
@@ -334,8 +334,6 @@ def Update(it):
                 ix+=1 #add one to increase index
 
         X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
-
-        X = X[cc]; Y = Y[cc]
 
         plt.plot(X, Y,"--k")
 
