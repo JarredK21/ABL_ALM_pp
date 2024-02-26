@@ -202,11 +202,13 @@ def Update(it):
     for line in lines:
         X, Y = line[:,0], line[:,1]
 
+        print(X,Y)
         #check if any point in line is inside circle
         cc = []
         for X_line, Y_line in zip(X,Y):
             cc.append(isInside(X_line,Y_line))
 
+        print(cc)
         X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
         #if any point is inside cirlce plot #stop points outside of circle
         res = not any(cc)
@@ -246,6 +248,7 @@ def Update(it):
                 ix+=1 #add one to increase index
 
         X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
+        print(X,Y)
 
         plt.plot(X, Y,"-k")
 
@@ -270,13 +273,13 @@ def Update(it):
     lines = CZ.allsegs[-1] #plot only threshold velocity
     for line in lines:
         X, Y = line[:,0], line[:,1]
-
+        print(X,Y)
 
         #check if any point in line is inside circle
         cc = []
         for X_line, Y_line in zip(X,Y):
             cc.append(isInside(X_line,Y_line))
-
+        print(cc)
         X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
         #if any point is inside cirlce plot #stop points outside of circle
         res = not any(cc)
@@ -316,7 +319,7 @@ def Update(it):
                 ix+=1 #add one to increase index
 
         X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
-
+        print(X,Y)
         plt.plot(X, Y,"--k")
 
         if len(X) > 0:
@@ -368,9 +371,11 @@ with Pool() as pool:
 
         df_0 = pd.DataFrame(Eddies_pos)
         df_pos = pd.concat([df_pos,df_0],axis=1); del df_0
+        print(df_pos)
 
-        df_0 = pd.DataFrame(Eddies_neg); del df_0
-        df_neg = pd.concat([df_neg,df_0],axis=1)
+        df_0 = pd.DataFrame(Eddies_neg)
+        df_neg = pd.concat([df_neg,df_0],axis=1); del df_0
+        print(df_neg)
 
         it+=1
         print(it)
