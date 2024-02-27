@@ -227,7 +227,7 @@ def Update(it):
                 X_temp.append(X[i]); Y_temp.append(Y[i])
             else:
                 if len(X_temp) > 0:
-                    plt.plot(X_temp, Y_temp,"-k")
+                    plt.plot(X_temp, Y_temp,"-k",linewidth=4)
                     X_contours.append(X_temp); Y_contours.append(X_temp)
                 X_temp = []; Y_temp = []
 
@@ -248,7 +248,7 @@ def Update(it):
                 X_temp.append(X[i]); Y_temp.append(Y[i])
             else:
                 if len(X_temp) > 0:
-                    plt.plot(X_temp, Y_temp,"-k")
+                    plt.plot(X_temp, Y_temp,"--k",linewidth=4)
                     X_contours.append(X_temp); Y_contours.append(X_temp)
                 X_temp = []; Y_temp = []
 
@@ -269,8 +269,8 @@ def Update(it):
     filename = "Rotor_Fluc_Horz_-63.0_{0}.png".format(Time_idx)
     
     x_c = [-1,-10]; y_c = [-1,-10]
-    plt.plot(x_c,y_c,"-k",label="0.7 m/s")
-    plt.plot(x_c,y_c,"--k",label="-0.7 m/s")
+    plt.plot(x_c,y_c,"-k",label="0.7 m/s", linewidth=4)
+    plt.plot(x_c,y_c,"--k",label="-0.7 m/s",linewidth=4)
 
     plt.xlim([ys[0],ys[-1]]);plt.ylim(zs[0],zs[-1])
     plt.legend()
