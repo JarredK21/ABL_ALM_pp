@@ -249,7 +249,7 @@ def Update(it):
                         del y_roots
 
                     #z roots    
-                    z_roots = np.roots([1, (2*-2560), (8100+(y_root-2560)**2 - 63**2)])
+                    z_roots = np.roots([1, (2*-90), ((-90)**2+(y_root-2560)**2 - 63**2)])
                     if z_roots[0] > np.min([Y[ic], Y[ic+1]]) and z_roots[0] < np.max([Y[ic], Y[ic+1]]):
                         z_root = z_roots[0]
                     else:
@@ -322,7 +322,7 @@ def Update(it):
                         del y_roots
 
                     #z roots    
-                    z_roots = np.roots([1, (2*-2560), (8100+(y_root-2560)**2 - 63**2)])
+                    z_roots = np.roots([1, (2*-90), ((-90)**2+(y_root-2560)**2 - 63**2)])
                     if z_roots[0] > np.min([Y[ic], Y[ic+1]]) and z_roots[0] < np.max([Y[ic], Y[ic+1]]):
                         z_root = z_roots[0]
                     else:
