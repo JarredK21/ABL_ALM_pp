@@ -220,12 +220,15 @@ def Update(it):
         for X_line, Y_line in zip(X,Y):
             cc.append(isInside(X_line,Y_line))
 
+        X_contours = []; Y_contours = []
         X_temp = []; Y_temp = []
         for i in np.arange(0,len(cc)):
             if cc[i] == True:
                 X_temp.append(X[i]); Y_temp.append(Y[i])
             else:
-                plt.plot(X_temp, Y_temp,"-k")
+                if len(X_temp) > 0:
+                    plt.plot(X_temp, Y_temp,"-k")
+                    X_contours.append(X_temp); Y_contours.append(X_temp)
                 X_temp = []; Y_temp = []
 
     #for -0.7m/s threshold
@@ -244,8 +247,9 @@ def Update(it):
             if cc[i] == True:
                 X_temp.append(X[i]); Y_temp.append(Y[i])
             else:
-                plt.plot(X_temp, Y_temp,"-k")
-                X_contours.append(X_temp); Y_contours.append(X_temp)
+                if len(X_temp) > 0:
+                    plt.plot(X_temp, Y_temp,"-k")
+                    X_contours.append(X_temp); Y_contours.append(X_temp)
                 X_temp = []; Y_temp = []
 
     del X_temp; del Y_temp
