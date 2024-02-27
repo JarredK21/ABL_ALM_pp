@@ -33,32 +33,32 @@ class eddy:
         self.Area = Area
 
 
-#how to track eddies that move in time and change shape and might leave rotor disk
-def eddyIndentification():
+# #how to track eddies that move in time and change shape and might leave rotor disk
+# def eddyIndentification():
 
-    #identification number for eddies at t=0
-    if T == 0:
-        for ic in np.arange(0,len(Eddies)):
-            Eddies[ic].number = ic
+#     #identification number for eddies at t=0
+#     if T == 0:
+#         for ic in np.arange(0,len(Eddies)):
+#             Eddies[ic].number = ic
 
-    else:
-        #identify eddies at t=1 from eddies at t=0
-        Centroid_diff = np.inf; Area_difference = np.inf
-        for ii in np.arange(0,len(Eddies_N)):
-            for ij in np.arange(0,len(Eddies)):
+#     else:
+#         #identify eddies at t=1 from eddies at t=0
+#         Centroid_diff = np.inf; Area_difference = np.inf
+#         for ii in np.arange(0,len(Eddies_N)):
+#             for ij in np.arange(0,len(Eddies)):
 
-                if abs(Eddies[ij].centroid - Eddies_N[ii].centroid) < Centroid_diff and abs(Eddies[ij].Area - Eddies_N[ii].Area) < Area_difference:
-                    Centroid_diff = np.average(Eddies[ij].centroid - Eddies_N[ii].centroid)
-                    Area_difference = Eddies[ij].Area - Eddies_N[ii].Area < Area_difference
-                    Eddies[ij].number = Eddies_N[ii].number
+#                 if abs(Eddies[ij].centroid - Eddies_N[ii].centroid) < Centroid_diff and abs(Eddies[ij].Area - Eddies_N[ii].Area) < Area_difference:
+#                     Centroid_diff = np.average(Eddies[ij].centroid - Eddies_N[ii].centroid)
+#                     Area_difference = Eddies[ij].Area - Eddies_N[ii].Area < Area_difference
+#                     Eddies[ij].number = Eddies_N[ii].number
 
 
-    Eddies.sort(key=lambda Eddies: Eddies.number)
+#     Eddies.sort(key=lambda Eddies: Eddies.number)
 
-    #number all new eddies
-    for ic in np.arange(0,len(Eddies)):
-        if Eddies[ic].number == np.nan:
-            Eddies[ic].number = ic
+#     #number all new eddies
+#     for ic in np.arange(0,len(Eddies)):
+#         if Eddies[ic].number == np.nan:
+#             Eddies[ic].number = ic
 
 
 
@@ -90,15 +90,12 @@ for T in Time:
 
     X,Y = np.meshgrid(xs,ys)
 
-    idx_left = np.searchsorted(xs,30,side="left"); idx_right = np.searchsorted(xs,70,side="right")
-    idx_top = np.searchsorted(ys,70,side="right"); idx_bottom = np.searchsorted(ys,30,side="left")
-    X_temp = X[idx_left:idx_right,idx_bottom:idx_top]; Y_temp = Y[idx_left:idx_right,idx_bottom:idx_top]
-    u_temp = u[idx_left:idx_right,idx_bottom:idx_top]
+    fu = interpolate.interp2d(X,Y,u)
 
     cmin = floor(np.min(u)); cmax = ceil(np.max(u)); levels = np.linspace(cmin,cmax,11)
 
     levels_pos = np.linspace(threshold,cmax,4)
-    CS = plt.contour(X_temp, Y_temp, u_temp, levels=levels_pos, colors='r')
+    CS = plt.contour(X, Y, u, levels=levels_pos, colors='r')
 
     fig,ax = plt.subplots(figsize=(40,40))
     plt.rcParams['font.size'] = 40
@@ -121,7 +118,7 @@ for T in Time:
 
         X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
         #if any point is inside cirlce plot #stop points outside of circle
-        res = not any(cc)
+        res = testBoolan(cc)
         if res == False:     
             ix = 0
             for ic in np.arange(0,len(cc)-1):
@@ -157,35 +154,60 @@ for T in Time:
                 ix+=1 #add one to increase index
 
         X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
-
-
-        if testBoolan(cc) == False:
-            m = (Y[0]-Y[-1])/(X[0]-X[-1])
-            if abs(m) == np.inf:
-                Xlower = np.copy(X); Xupper = np.copy(X)
-                yline = np.arange(Y[-1],Y[0],0.3125)
-                for yl in yline:
-                    X_roots = np.roots([1, (2*-50), ((-50)**2 - 20**2 + (yl - 50)**2)])
-                    Xlower = np.append(Xlower,np.min(X_roots)); Y = np.append(Y,yl)
-                    Xupper = np.append(Xupper,np.max(X_roots))
-            else:
-                Ylower = np.copy(Y); Yupper = np.copy(Y)
-                xline = np.arange(X[-1],X[0],0.3125)
-                for xl in xline:
-                    Yroots = np.roots([1, (2*-50), ((-50)**2 - 20**2 + (xl - 50)**2)])
-                    Ylower = np.append(Ylower,np.min(Yroots)); X = np.append(X,xl)
-                    Yupper = np.append(Yupper,np.max(Yroots))
                 
-
 
         plt.plot(X, Y,"-k")
 
+        if res == False:
+            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)] #calculate centroid
+            u_cent = fu(Centroid[0],Centroid[1])
+
+            f_line = interpolate.interp1d(X,Y)
+            y_line_cent = f_line(Centroid[0])
+
+            x_line = np.arange(X[0],X[-1],0.3125)
+            for xl in x_line:
+                Yroots = np.roots([1, (2*-50), ((-50)**2 - 20**2 + (xl - 50)**2)])
+                if u_cent >= threshold:
+                    if y_line_cent < Centroid[1]:
+                        Yroot = np.max(Yroots)
+                    else:
+                        Yroot = np.min(Yroots)
+                        
+                elif u_cent < threshold:
+
+
+                Y = np.append(Y,Yroot); X = np.append(X,xl)
+            
+
+
+            if abs(m) == np.inf:
+                yline = np.arange(Y[-1],Y[0],0.3125)
+                for yl in yline:
+                    if inside_contour == "upper":
+                        X_roots = np.max(np.roots([1, (2*-50), ((-50)**2 - 20**2 + (yl - 50)**2)]))
+                    elif inside_contour == "inside_contour":
+                        X_roots = np.min(np.roots([1, (2*-50), ((-50)**2 - 20**2 + (yl - 50)**2)]))
+
+                    X = np.append(X,X_roots); Y = np.append(Y,yl)
+
+            else:
+                xline = np.arange(X[-1],X[0],0.3125)
+                for xl in xline:
+                    inside_contour = check_line_offset()
+                    if inside_contour == "upper":
+                        Yroots = np.max(np.roots([1, (2*-50), ((-50)**2 - 20**2 + (xl - 50)**2)]))
+                    elif inside_contour == "inside_contour":
+                        Yroots = np.min(np.roots([1, (2*-50), ((-50)**2 - 20**2 + (xl - 50)**2)]))
+                    Y = np.append(Y,np.min(Yroots)); X = np.append(X,xl)
+
+
         if len(X) > 0:
             #calculate area and centroid of each contour
+            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             np.append(X,X[-1]); np.append(Y,Y[-1])
             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
-            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-
+            
             plt.plot(Centroid[0],Centroid[1],"ok",markersize=5)
             
             #fix so next time step starts at index 0

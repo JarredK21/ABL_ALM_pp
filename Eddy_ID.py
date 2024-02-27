@@ -51,7 +51,7 @@ def Horizontal_velocity(it):
 
 
 def testBoolan(x):
-    if not any(x) != True and all(x) != True:
+    if not any(x) == False and all(x) == False:
         return False
     elif all(x) == True and not any(x) == False:
         return True
@@ -211,9 +211,9 @@ def Update(it):
     cb = plt.colorbar(cs)
 
     #for +0.7m/s threshold
-    # Eddies_Cent_x = []
-    # Eddies_Cent_y = []
-    # Eddies_Area = []
+    Eddies_Cent_x = []
+    Eddies_Cent_y = []
+    Eddies_Area = []
     lines = CS.allsegs[0] #plot only threshold velocity
     for line in lines:
         X, Y = line[:,0], line[:,1]
@@ -224,68 +224,66 @@ def Update(it):
             cc.append(isInside(X_line,Y_line))
 
 
-        # X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
-        # #if any point is inside cirlce plot #stop points outside of circle
-        # res = not any(cc)
-        # if res == False:     
-        #     ix = 0
-        #     for ic in np.arange(0,len(cc)-1):
-        #         if cc[ic+1] != cc[ic]:
+        X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
+        #if any point is inside cirlce plot #stop points outside of circle
+        res = testBoolan(cc)
+        if res == False:     
+            ix = 0
+            for ic in np.arange(0,len(cc)-1):
+                if cc[ic+1] != cc[ic]:
 
-        #             #equation of line intersecting circle
-        #             m = (Y[ic+1]-Y[ic])/(X[ic+1]-X[ic])
-        #             if m == np.inf or m ==-np.inf:
-        #                 f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
-        #                 c = float(f(0))
-        #                 y_root = c
-        #             else:
-        #                 f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
-        #                 c = float(f(0))
-        #                 y_roots = np.roots([(1+(m)**2), ((2*-2560)+(2*m*(c-90))), ((-2560)**2 + (c-90)**2 - 63**2)])
-        #                 if y_roots[0] > np.min([X[ic], X[ic+1]]) and y_roots[0] < np.max([X[ic], X[ic+1]]):
-        #                     y_root = y_roots[0]
-        #                 else:
-        #                     y_root = y_roots[1]
-        #                 del y_roots
+                    #equation of line intersecting circle
+                    m = (Y[ic+1]-Y[ic])/(X[ic+1]-X[ic])
+                    if m == np.inf or m ==-np.inf:
+                        f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
+                        c = float(f(0))
+                        y_root = c
+                    else:
+                        f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
+                        c = float(f(0))
+                        y_roots = np.roots([(1+(m)**2), ((2*-2560)+(2*m*(c-90))), ((-2560)**2 + (c-90)**2 - 63**2)])
+                        if y_roots[0] > np.min([X[ic], X[ic+1]]) and y_roots[0] < np.max([X[ic], X[ic+1]]):
+                            y_root = y_roots[0]
+                        else:
+                            y_root = y_roots[1]
+                        del y_roots
 
-        #             #z roots    
-        #             z_roots = np.roots([1, (2*-2560), (8100+(y_root-2560)**2 - 63**2)])
-        #             if z_roots[0] > np.min([Y[ic], Y[ic+1]]) and z_roots[0] < np.max([Y[ic], Y[ic+1]]):
-        #                 z_root = z_roots[0]
-        #             else:
-        #                 z_root = z_roots[1]
-        #             del z_roots
+                    #z roots    
+                    z_roots = np.roots([1, (2*-2560), (8100+(y_root-2560)**2 - 63**2)])
+                    if z_roots[0] > np.min([Y[ic], Y[ic+1]]) and z_roots[0] < np.max([Y[ic], Y[ic+1]]):
+                        z_root = z_roots[0]
+                    else:
+                        z_root = z_roots[1]
+                    del z_roots
 
-        #             #insert x_root,y_root into X,Y and insert true at same index in cc
-        #             X_temp = np.insert(X_temp, ix+1, y_root); Y_temp = np.insert(Y_temp, ix+1, z_root); cc_temp = np.insert(cc_temp,ix+1,"True")
+                    #insert x_root,y_root into X,Y and insert true at same index in cc
+                    X_temp = np.insert(X_temp, ix+1, y_root); Y_temp = np.insert(Y_temp, ix+1, z_root); cc_temp = np.insert(cc_temp,ix+1,"True")
 
-        #             ix+=1 #add one for inserting
-        #         ix+=1 #add one to increase index
+                    ix+=1 #add one for inserting
+                ix+=1 #add one to increase index
 
-        # X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
+        X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
 
-        
-        X = X[cc]; Y = Y[cc]
         plt.plot(X, Y,"-k")
 
-    #     if len(X) > 0:
-    #         #calculate area and centroid of each contour
-    #         np.append(X,X[-1]); np.append(Y,Y[-1])
-    #         Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
-    #         Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+        if len(X) > 0:
+            #calculate area and centroid of each contour
+            np.append(X,X[-1]); np.append(Y,Y[-1])
+            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
 
-    #         plt.plot(Centroid[0],Centroid[1],"ok",markersize=5)
+            plt.plot(Centroid[0],Centroid[1],"ok",markersize=5)
 
-    #         Eddies_Cent_x.append(Centroid[0])
-    #         Eddies_Cent_y.append(Centroid[1])
-    #         Eddies_Area.append(Area)
+            Eddies_Cent_x.append(Centroid[0])
+            Eddies_Cent_y.append(Centroid[1])
+            Eddies_Area.append(Area)
 
-    # Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
+    Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
 
     #for -0.7m/s threshold
-    # Eddies_Cent_x = []
-    # Eddies_Cent_y = []
-    # Eddies_Area = []
+    Eddies_Cent_x = []
+    Eddies_Cent_y = []
+    Eddies_Area = []
     lines = CZ.allsegs[-1] #plot only threshold velocity
     for line in lines:
         X, Y = line[:,0], line[:,1]
@@ -295,62 +293,61 @@ def Update(it):
         for X_line, Y_line in zip(X,Y):
             cc.append(isInside(X_line,Y_line))
 
-        # X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
-        # #if any point is inside cirlce plot #stop points outside of circle
-        # res = not any(cc)
-        # if res == False:     
-        #     ix = 0
-        #     for ic in np.arange(0,len(cc)-1):
-        #         if cc[ic+1] != cc[ic]:
+        X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
+        #if any point is inside cirlce plot #stop points outside of circle
+        res = testBoolan(cc)
+        if res == False:     
+            ix = 0
+            for ic in np.arange(0,len(cc)-1):
+                if cc[ic+1] != cc[ic]:
 
-        #             #equation of line intersecting circle
-        #             m = (Y[ic+1]-Y[ic])/(X[ic+1]-X[ic])
-        #             if m == np.inf or m ==-np.inf:
-        #                 f = interpolate.interp1d([Y[ic+1],Y[ic]], [X[ic+1],X[ic]], fill_value='extrapolate')
-        #                 c = float(f(0))
-        #                 y_root = c
-        #             else:
-        #                 f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
-        #                 c = float(f(0))
-        #                 y_roots = np.roots([(1+(m)**2), ((2*-2560)+(2*m*(c-90))), ((-2560)**2 + (c-90)**2 - 63**2)])
-        #                 if y_roots[0] > np.min([X[ic], X[ic+1]]) and y_roots[0] < np.max([X[ic], X[ic+1]]):
-        #                     y_root = y_roots[0]
-        #                 else:
-        #                     y_root = y_roots[1]
-        #                 del y_roots
+                    #equation of line intersecting circle
+                    m = (Y[ic+1]-Y[ic])/(X[ic+1]-X[ic])
+                    if m == np.inf or m ==-np.inf:
+                        f = interpolate.interp1d([Y[ic+1],Y[ic]], [X[ic+1],X[ic]], fill_value='extrapolate')
+                        c = float(f(0))
+                        y_root = c
+                    else:
+                        f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
+                        c = float(f(0))
+                        y_roots = np.roots([(1+(m)**2), ((2*-2560)+(2*m*(c-90))), ((-2560)**2 + (c-90)**2 - 63**2)])
+                        if y_roots[0] > np.min([X[ic], X[ic+1]]) and y_roots[0] < np.max([X[ic], X[ic+1]]):
+                            y_root = y_roots[0]
+                        else:
+                            y_root = y_roots[1]
+                        del y_roots
 
-        #             #z roots    
-        #             z_roots = np.roots([1, (2*-2560), (8100+(y_root-2560)**2 - 63**2)])
-        #             if z_roots[0] > np.min([Y[ic], Y[ic+1]]) and z_roots[0] < np.max([Y[ic], Y[ic+1]]):
-        #                 z_root = z_roots[0]
-        #             else:
-        #                 z_root = z_roots[1]
-        #             del z_roots
+                    #z roots    
+                    z_roots = np.roots([1, (2*-2560), (8100+(y_root-2560)**2 - 63**2)])
+                    if z_roots[0] > np.min([Y[ic], Y[ic+1]]) and z_roots[0] < np.max([Y[ic], Y[ic+1]]):
+                        z_root = z_roots[0]
+                    else:
+                        z_root = z_roots[1]
+                    del z_roots
 
-        #             #insert x_root,y_root into X,Y and insert true at same index in cc
-        #             X_temp = np.insert(X_temp, ix+1, y_root); Y_temp = np.insert(Y_temp, ix+1, z_root); cc_temp = np.insert(cc_temp,ix+1,"True")
+                    #insert x_root,y_root into X,Y and insert true at same index in cc
+                    X_temp = np.insert(X_temp, ix+1, y_root); Y_temp = np.insert(Y_temp, ix+1, z_root); cc_temp = np.insert(cc_temp,ix+1,"True")
 
-        #             ix+=1 #add one for inserting
-        #         ix+=1 #add one to increase index
+                    ix+=1 #add one for inserting
+                ix+=1 #add one to increase index
 
-        # X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
+        X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
 
-        X = X[cc]; Y = Y[cc]
         plt.plot(X, Y,"--k")
 
-    #     if len(X) > 0:
-    #         #calculate area and centroid of each contour
-    #         np.append(X,X[-1]); np.append(Y,Y[-1])
-    #         Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
-    #         Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+        if len(X) > 0:
+            #calculate area and centroid of each contour
+            np.append(X,X[-1]); np.append(Y,Y[-1])
+            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
 
-    #         plt.plot(Centroid[0],Centroid[1],"ok",markersize=5)
+            plt.plot(Centroid[0],Centroid[1],"ok",markersize=5)
 
-    #         Eddies_Cent_x.append(Centroid[0])
-    #         Eddies_Cent_y.append(Centroid[1])
-    #         Eddies_Area.append(Area)
+            Eddies_Cent_x.append(Centroid[0])
+            Eddies_Cent_y.append(Centroid[1])
+            Eddies_Area.append(Area)
 
-    # Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
+    Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
 
 
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
@@ -380,37 +377,29 @@ def Update(it):
     cb.remove()
     plt.close(fig)
 
-    #return Eddies_it_pos, Eddies_it_neg
-    return T
+    return Eddies_it_pos, Eddies_it_neg
 
 
 
-#it = 0
+it = 0
 with Pool() as pool:
-    #for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
-    for T in pool.imap(Update,Time_steps):
+    for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
         
-        #df = pd.DataFrame(None)
+        df = pd.DataFrame(None)
 
-        #df_0 = pd.DataFrame(Eddies_pos)
-        #df_pos = pd.concat([df_pos,df_0],axis=1); del df_0
-        #print(df_pos)
-        # df_pos = pd.DataFrame(Eddies_pos)
-        # df = pd.concat([df,df_pos],axis=1); del df_pos
+        df_pos = pd.DataFrame(Eddies_pos)
+        df = pd.concat([df,df_pos],axis=1); del df_pos
 
-        # #df_0 = pd.DataFrame(Eddies_neg)
-        # #df_neg = pd.concat([df_neg,df_0],axis=1); del df_0
-        # #print(df_neg)
-        # df_neg = pd.DataFrame(Eddies_neg)
-        # df = pd.concat([df,df_neg],axis=1); del df_neg
+        df_neg = pd.DataFrame(Eddies_neg)
+        df = pd.concat([df,df_neg],axis=1); del df_neg
 
-        # df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
-        # print(df)
-        # del df
+        df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
+        print(df)
+        del df
 
-        #it+=1
-        print(T)
+        it+=1
+        print(it)
 
 #saving data
-# df_pos.to_csv(in_dir+"Eddies_{}.csv".format(0.7))
-# df_neg.to_csv(in_dir+"Eddies_{}.csv".format(-0.7))
+df_pos.to_csv(in_dir+"Eddies_{}.csv".format(0.7))
+df_neg.to_csv(in_dir+"Eddies_{}.csv".format(-0.7))
