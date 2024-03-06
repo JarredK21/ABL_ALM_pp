@@ -112,12 +112,14 @@ def closeContour(X, Y, cc):
         
         if i < len(cc)-1 and cc[i] != cc[i+1]:
             ix = i
+            print(ix)
 
         if ix != np.nan and i != ix and cc[i] != cc[i+1]:
             iy = i
+            print(iy)
             theta_0 = np.arctan2(Y[ix], X[ix])
             theta_2 = np.arctan2(Y[iy], X[iy])
-
+            print(theta_0,theta_2)
             theta_arc = np.arange(theta_0,theta_2,5e-03)
 
             for theta in theta_arc:
