@@ -286,8 +286,6 @@ def Update(it):
 
     Z = u_plane
 
-    f_ux = interpolate.interp2d(X,Y,Z)
-
     CS = plt.contour(X, Y, Z, levels=levels_pos)
     CZ = plt.contour(X,Y,Z, levels=levels_neg)
 
@@ -310,7 +308,7 @@ def Update(it):
 
         #check if any point in line is inside circle
         cc = []
-        for X_line, Y_line in X, Y:
+        for X_line, Y_line in zip(X, Y):
             cc.append(isInside(X_line,Y_line))
 
         #separate line into N contours if line is outside rotor disk
@@ -320,6 +318,7 @@ def Update(it):
             continue
         else:
             if C == "open":
+                print(cc,crossings)
                 for crossing in crossings:
                     if crossing[0] == "inOut":
                         Bx = X[:crossing[1]-1]
@@ -328,12 +327,15 @@ def Update(it):
                         Ay = Y[crossing[1]:]
                         Bcc = cc[:crossing[1]-1]
                         Acc = cc[crossing[1]:]
+                        break
+
                 X = np.concatenate((Ax,Bx))
                 Y = np.concatenate((Ay,By))
                 cc = np.concatenate((Acc,Bcc))
+                print(cc)
 
                 X,Y = closeContour(X,Y,cc)
-
+                print(X,Y)
 
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
@@ -358,9 +360,8 @@ def Update(it):
 
         #check if any point in line is inside circle
         cc = []
-        for X_line, Y_line in X, Y:
+        for X_line, Y_line in zip(X, Y):
             cc.append(isInside(X_line,Y_line))
-
         #separate line into N contours if line is outside rotor disk
         C, X, Y,cc,crossings = openContour(cc,X,Y)
         #all points are outside of rotor disk
@@ -368,6 +369,7 @@ def Update(it):
             continue
         else:
             if C == "open":
+                print(cc,crossings)
                 for crossing in crossings:
                     if crossing[0] == "inOut":
                         Bx = X[:crossing[1]-1]
@@ -376,10 +378,12 @@ def Update(it):
                         Ay = Y[crossing[1]:]
                         Bcc = cc[:crossing[1]-1]
                         Acc = cc[crossing[1]:]
+                        break
+
                 X = np.concatenate((Ax,Bx))
                 Y = np.concatenate((Ay,By))
                 cc = np.concatenate((Acc,Bcc))
-
+                print(cc)
                 X,Y = closeContour(X,Y,cc)
 
 
