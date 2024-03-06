@@ -9,6 +9,7 @@ import time
 from multiprocessing import Pool
 from scipy import interpolate
 from matplotlib.patches import Circle
+from math import ceil
 
 
 def isInside(x, y):
@@ -50,13 +51,100 @@ def Horizontal_velocity(it):
     return mag_horz_vel
 
 
-def testBoolan(x):
-    if not any(x) == False and all(x) == False:
-        return False
-    elif all(x) == True and not any(x) == False:
-        return True
-    elif all(x) == False and not any(x) == True:
-        return True
+def openContour(cc,X,Y):
+    crossing = []
+    if any(cc) == False and all(cc) == False: #if all points are false skip loop in array
+        return "skip", X, Y, cc, crossing
+    elif any(cc) == True and all(cc) == True:
+        return "closed", X, Y, cc, crossing
+    else:
+        #if there are points inside and outside remove points outside while interpolating between points to find points on edge of rotor
+        X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
+        ix = 0
+        for i in np.arange(0,len(cc)-1):
+
+            if cc[i+1] != cc[i]: #if next point is not the same as current (True -> False) or (False -> True) find point inbetween on rotor edge
+
+                #equation of line intersecting circle
+                m = (Y[i+1]-Y[i])/(X[i+1]-X[i])
+                if m == np.inf or m ==-np.inf:
+                    f = interpolate.interp1d([X[i+1],X[i]], [Y[i+1],Y[i]], fill_value='extrapolate')
+                    c = float(f(0))
+                    y_root = c
+                else:
+                    f = interpolate.interp1d([X[i+1],X[i]], [Y[i+1],Y[i]], fill_value='extrapolate')
+                    c = float(f(0))
+                    y_roots = np.roots([(1+(m)**2), ((2*-2560)+(2*m*(c-90))), ((-2560)**2 + (c-90)**2 - 63**2)])
+                    if y_roots[0] > np.min([X[i], X[i+1]]) and y_roots[0] < np.max([X[i], X[i+1]]):
+                        y_root = y_roots[0]
+                    else:
+                        y_root = y_roots[1]
+                    del y_roots
+
+                #z roots    
+                z_roots = np.roots([1, (2*-90), (90**2+(y_root-2560)**2 - 63**2)])
+                if z_roots[0] > np.min([Y[i], Y[i+1]]) and z_roots[0] < np.max([Y[i], Y[i+1]]):
+                    z_root = z_roots[0]
+                else:
+                    z_root = z_roots[1]
+                del z_roots
+
+                #insert x_root,y_root into temporary X,Y
+                X_temp = np.insert(X_temp,ix+1,y_root); Y_temp = np.insert(Y_temp, ix+1,z_root); cc_temp = np.insert(cc_temp, ix+1, True)
+                if cc[i] == True and cc[i+1] == False:
+                    crossing.append(["inOut", ix+1])
+                elif cc[i] == False and cc[i+1] == True:
+                    crossing.append(["outIn", ix+1])
+
+                ix+=1 #add one for inserting new value
+            ix+=1 #add one in for loop
+
+        return "open", X_temp, Y_temp, cc_temp, crossing
+
+
+def closeContour(X, Y, cc):
+
+    X_contour = []; Y_contour = []
+    ix = np.nan; iy = np.nan
+    for i in np.arange(0,len(cc)-1):
+        if cc[i] == True:
+            X_contour.append(X[i]); Y_contour.append(Y[i])
+        
+        if i < len(cc)-1 and cc[i] != cc[i+1]:
+            ix = i
+
+        if ix != np.nan and i != ix and cc[i] != cc[i+1]:
+            iy = i
+            theta_0 = np.arctan2(Y[ix], X[ix])
+            theta_2 = np.arctan2(Y[iy], X[iy])
+
+            theta_arc = np.arange(theta_0,theta_2,5e-03)
+
+            for theta in theta_arc:
+                if theta < 0.0 and theta >= -np.pi/2: #bottom right quadrant
+                    r = -63; theta = np.pi/2 - theta
+                    x_i = 2560 - r*np.sin(theta)
+                    y_i = 90 + r*np.cos(theta)
+                elif theta < 0.0 and theta < -np.pi/2: #bottom left quadrant
+                    r = -63; theta = theta - np.pi/2
+                    x_i = 2560 + r*np.sin(theta)
+                    y_i = 90 + r*np.cos(theta)
+                elif theta >= 0.0 and theta <= np.pi/2: #top right quadrant
+                    r = 63; theta = np.pi/2 - theta
+                    x_i = 2560 + r*np.sin(theta)
+                    y_i = 63 + r*np.cos(theta)
+                elif theta >= 0.0 and theta >= np.pi/2: #top left quadrant
+                    r = 63; theta = theta - np.pi/2
+                    x_i = 2560 - r*np.sin(theta)
+                    y_i = 2560 + r*np.cos(theta)
+
+                X_contour.append(x_i); Y_contour.append(y_i)
+
+            ix = np.nan; iy = np.nan
+
+    return X_contour, Y_contour
+
+
 
 
 start_time = time.time()
@@ -172,7 +260,7 @@ levels_neg = np.linspace(cmin,-0.7,4)
 print("line 159", levels_neg)
 
 
-folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0/"
+folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0_2/"
 isExist = os.path.exists(folder)
 if isExist == False:
     os.makedirs(folder)
@@ -198,6 +286,8 @@ def Update(it):
 
     Z = u_plane
 
+    f_ux = interpolate.interp2d(X,Y,Z)
+
     CS = plt.contour(X, Y, Z, levels=levels_pos)
     CZ = plt.contour(X,Y,Z, levels=levels_neg)
 
@@ -220,59 +310,37 @@ def Update(it):
 
         #check if any point in line is inside circle
         cc = []
-        for X_line, Y_line in zip(X,Y):
+        for X_line, Y_line in X, Y:
             cc.append(isInside(X_line,Y_line))
 
+        #separate line into N contours if line is outside rotor disk
+        C, X, Y,cc,crossings = openContour(cc,X,Y)
+        #all points are outside of rotor disk
+        if C == "skip":
+            continue
+        else:
+            if C == "open":
+                for crossing in crossings:
+                    if crossing[0] == "inOut":
+                        Bx = X[:crossing[1]-1]
+                        Ax = X[crossing[1]:]
+                        By = Y[:crossing[1]-1]
+                        Ay = Y[crossing[1]:]
+                        Bcc = cc[:crossing[1]-1]
+                        Acc = cc[crossing[1]:]
+                X = np.concatenate((Ax,Bx))
+                Y = np.concatenate((Ay,By))
+                cc = np.concatenate((Acc,Bcc))
 
-        X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
-        #if any point is inside cirlce plot #stop points outside of circle
-        res = testBoolan(cc)
-        if res == False:     
-            ix = 0
-            for ic in np.arange(0,len(cc)-1):
-                if cc[ic+1] != cc[ic]:
+                X,Y = closeContour(X,Y,cc)
 
-                    #equation of line intersecting circle
-                    m = (Y[ic+1]-Y[ic])/(X[ic+1]-X[ic])
-                    if m == np.inf or m ==-np.inf:
-                        f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
-                        c = float(f(0))
-                        y_root = c
-                    else:
-                        f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
-                        c = float(f(0))
-                        y_roots = np.roots([(1+(m)**2), ((2*-2560)+(2*m*(c-90))), ((-2560)**2 + (c-90)**2 - 63**2)])
-                        if y_roots[0] > np.min([X[ic], X[ic+1]]) and y_roots[0] < np.max([X[ic], X[ic+1]]):
-                            y_root = y_roots[0]
-                        else:
-                            y_root = y_roots[1]
-                        del y_roots
 
-                    #z roots    
-                    z_roots = np.roots([1, (2*-2560), (8100+(y_root-2560)**2 - 63**2)])
-                    if z_roots[0] > np.min([Y[ic], Y[ic+1]]) and z_roots[0] < np.max([Y[ic], Y[ic+1]]):
-                        z_root = z_roots[0]
-                    else:
-                        z_root = z_roots[1]
-                    del z_roots
-
-                    #insert x_root,y_root into X,Y and insert true at same index in cc
-                    X_temp = np.insert(X_temp, ix+1, y_root); Y_temp = np.insert(Y_temp, ix+1, z_root); cc_temp = np.insert(cc_temp,ix+1,"True")
-
-                    ix+=1 #add one for inserting
-                ix+=1 #add one to increase index
-
-        X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
-
-        plt.plot(X, Y,"-k")
-
-        if len(X) > 0:
-            #calculate area and centroid of each contour
-            np.append(X,X[-1]); np.append(Y,Y[-1])
-            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+            X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            plt.plot(Centroid[0],Centroid[1],"ok",markersize=5)
+            plt.plot(X,Y,"-k",linewidth=4)
+            plt.plot(Centroid[0],Centroid[1],"ok",markersize=4)
 
             Eddies_Cent_x.append(Centroid[0])
             Eddies_Cent_y.append(Centroid[1])
@@ -290,58 +358,37 @@ def Update(it):
 
         #check if any point in line is inside circle
         cc = []
-        for X_line, Y_line in zip(X,Y):
+        for X_line, Y_line in X, Y:
             cc.append(isInside(X_line,Y_line))
 
-        X_temp = np.copy(X); Y_temp = np.copy(Y); cc_temp = np.copy(cc)
-        #if any point is inside cirlce plot #stop points outside of circle
-        res = testBoolan(cc)
-        if res == False:     
-            ix = 0
-            for ic in np.arange(0,len(cc)-1):
-                if cc[ic+1] != cc[ic]:
+        #separate line into N contours if line is outside rotor disk
+        C, X, Y,cc,crossings = openContour(cc,X,Y)
+        #all points are outside of rotor disk
+        if C == "skip":
+            continue
+        else:
+            if C == "open":
+                for crossing in crossings:
+                    if crossing[0] == "inOut":
+                        Bx = X[:crossing[1]-1]
+                        Ax = X[crossing[1]:]
+                        By = Y[:crossing[1]-1]
+                        Ay = Y[crossing[1]:]
+                        Bcc = cc[:crossing[1]-1]
+                        Acc = cc[crossing[1]:]
+                X = np.concatenate((Ax,Bx))
+                Y = np.concatenate((Ay,By))
+                cc = np.concatenate((Acc,Bcc))
 
-                    #equation of line intersecting circle
-                    m = (Y[ic+1]-Y[ic])/(X[ic+1]-X[ic])
-                    if m == np.inf or m ==-np.inf:
-                        f = interpolate.interp1d([Y[ic+1],Y[ic]], [X[ic+1],X[ic]], fill_value='extrapolate')
-                        c = float(f(0))
-                        y_root = c
-                    else:
-                        f = interpolate.interp1d([X[ic+1],X[ic]], [Y[ic+1],Y[ic]], fill_value='extrapolate')
-                        c = float(f(0))
-                        y_roots = np.roots([(1+(m)**2), ((2*-2560)+(2*m*(c-90))), ((-2560)**2 + (c-90)**2 - 63**2)])
-                        if y_roots[0] > np.min([X[ic], X[ic+1]]) and y_roots[0] < np.max([X[ic], X[ic+1]]):
-                            y_root = y_roots[0]
-                        else:
-                            y_root = y_roots[1]
-                        del y_roots
+                X,Y = closeContour(X,Y,cc)
 
-                    #z roots    
-                    z_roots = np.roots([1, (2*-2560), (8100+(y_root-2560)**2 - 63**2)])
-                    if z_roots[0] > np.min([Y[ic], Y[ic+1]]) and z_roots[0] < np.max([Y[ic], Y[ic+1]]):
-                        z_root = z_roots[0]
-                    else:
-                        z_root = z_roots[1]
-                    del z_roots
 
-                    #insert x_root,y_root into X,Y and insert true at same index in cc
-                    X_temp = np.insert(X_temp, ix+1, y_root); Y_temp = np.insert(Y_temp, ix+1, z_root); cc_temp = np.insert(cc_temp,ix+1,"True")
-
-                    ix+=1 #add one for inserting
-                ix+=1 #add one to increase index
-
-        X = X_temp[cc_temp]; Y = Y_temp[cc_temp]; del X_temp; del Y_temp; del cc_temp
-
-        plt.plot(X, Y,"--k")
-
-        if len(X) > 0:
-            #calculate area and centroid of each contour
-            np.append(X,X[-1]); np.append(Y,Y[-1])
-            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-
-            plt.plot(Centroid[0],Centroid[1],"ok",markersize=5)
+            X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+            
+            plt.plot(X,Y,"--k",linewidth=4)
+            plt.plot(Centroid[0],Centroid[1],"ok",markersize=4)
 
             Eddies_Cent_x.append(Centroid[0])
             Eddies_Cent_y.append(Centroid[1])
@@ -382,23 +429,27 @@ def Update(it):
 
 
 it = 0
-with Pool() as pool:
-    for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
-        
-        df = pd.DataFrame(None)
+Time_steps = [0]
+#with Pool() as pool:
+    #for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
-        df_pos = pd.DataFrame(Eddies_pos)
-        df = pd.concat([df,df_pos],axis=1); del df_pos
+for it in Time_steps:
+    Eddies_pos, Eddies_neg = Update(it)        
 
-        df_neg = pd.DataFrame(Eddies_neg)
-        df = pd.concat([df,df_neg],axis=1); del df_neg
+    df = pd.DataFrame(None)
 
-        df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
-        print(df)
-        del df
+    df_pos = pd.DataFrame(Eddies_pos)
+    df = pd.concat([df,df_pos],axis=1); del df_pos
 
-        it+=1
-        print(it)
+    df_neg = pd.DataFrame(Eddies_neg)
+    df = pd.concat([df,df_neg],axis=1); del df_neg
+
+    df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
+    print(df)
+    del df
+
+    it+=1
+    print(it)
 
 #saving data
 df_pos.to_csv(in_dir+"Eddies_{}.csv".format(0.7))

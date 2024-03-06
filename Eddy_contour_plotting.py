@@ -228,7 +228,7 @@ def Update(it):
             else:
                 if len(X_temp) > 0:
                     plt.plot(X_temp, Y_temp,"-k",linewidth=4)
-                    X_contours.append(X_temp); Y_contours.append(X_temp)
+                    X_contours.append(X_temp); Y_contours.append(Y_temp)
                 X_temp = []; Y_temp = []
 
     #for -0.7m/s threshold
