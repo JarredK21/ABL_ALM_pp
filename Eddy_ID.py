@@ -319,7 +319,7 @@ def Update(it):
         else:
             if C == "open":
                 print(cc,crossings)
-                for crossing in crossings:
+                for crossing in crossings[1:]:
                     if crossing[0] == "inOut":
                         Bx = X[:crossing[1]-1]
                         Ax = X[crossing[1]:]
@@ -327,15 +327,17 @@ def Update(it):
                         Ay = Y[crossing[1]:]
                         Bcc = cc[:crossing[1]-1]
                         Acc = cc[crossing[1]:]
+
+                        X = np.concatenate((Ax,Bx))
+                        Y = np.concatenate((Ay,By))
+                        cc = np.concatenate((Acc,Bcc))
+
                         break
 
-                X = np.concatenate((Ax,Bx))
-                Y = np.concatenate((Ay,By))
-                cc = np.concatenate((Acc,Bcc))
                 print(cc)
-
+                print(len(X),len(Y))
                 X,Y = closeContour(X,Y,cc)
-                print(X,Y)
+                print(len(X),len(Y))
 
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
