@@ -103,20 +103,21 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
     dtheta = np.radians(5)
     r = 63
     theta = np.arctan2((Y[crossings[0]]-90), (X[crossings[0]]-2560))
+    print(theta)
     theta_anti = theta + dtheta
     if theta_anti<0:
         theta_anti+=2*np.pi
-
+    print(theta_anti)
     x_anti = 2560 + r*np.cos(theta_anti)
     y_anti = 90 + r*np.sin(theta_anti)
-
+    print(x_anti,y_anti)
     theta_clock = theta - dtheta
     if theta_clock<0:
         theta_clock+=2*np.pi
-
+    print(theta_clock)
     x_clock = 2560 + r*np.cos(theta_clock)
     y_clock = 90 + r*np.sin(theta_clock)
-
+    print(x_clock,y_clock)
     xmin = np.min([x_anti, x_clock])-1; xmax = np.max([x_anti, x_clock])+1
     ymin = np.min([y_anti, y_clock])-1; ymax = np.max([y_anti, y_clock])+1
 
@@ -156,16 +157,13 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
             return "clockwise", X,Y,crossings
 
     elif threshold < 0.0:
-        print("line 159")
         plt.plot(x_anti,y_anti,"ob",markersize=6)
         plt.plot(x_clock,y_clock,"ob",markersize=6)
 
         if ux_anti < threshold:
-            print("line 164")
             return "anticlockwise",X,Y,crossings
 
         elif ux_clock < threshold:
-            print("line 168")
             Bx = X[:crossings[0]]
             Ax = X[crossings[0]-1 :]
             By = Y[:crossings[0]]
@@ -177,6 +175,9 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
             crossings = np.concatenate((Ac,Bc))
 
             return "clockwise", X,Y,crossings
+        
+    return "anticlockwise",X,Y,crossings
+
 
 
 def closeContour(X, Y,crossings):
