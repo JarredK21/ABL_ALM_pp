@@ -64,7 +64,6 @@ def openContour(cc,X,Y):
         for i in np.arange(0,len(cc)-1):
 
             if cc[i+1] != cc[i]: #if next point is not the same as current (True -> False) or (False -> True) find point inbetween on rotor edge
-                crossings.append(ix+1)
                 #equation of line intersecting circle
                 m = (Y[i+1]-Y[i])/(X[i+1]-X[i])
                 if m == np.inf or m ==-np.inf:
@@ -112,19 +111,19 @@ def closeContour(X, Y, cc):
 
         if cc[i] == True:
             X_contour.append(X[i]); Y_contour.append(Y[i])
+        
 
         if cc[i] != cc[i+1]:
             if np.isnan(ix) == True:
                 ix = i
 
                 theta_0 = np.arctan2((Y[ix]-90), (X[ix]-2560))
-
                 if theta_0<0:
                     theta_0+=2*np.pi
 
-
-            if np.isnan(ix) == False and i != ix and cc[i] != cc[i+1]:
+            if np.isnan(ix) == False and i != ix:
                 iy = i
+
                 theta_2 = np.arctan2((Y[iy]-90), (X[iy]-2560))
                 if theta_2<0:
                     theta_2+=2*np.pi
@@ -145,6 +144,7 @@ def closeContour(X, Y, cc):
 
                 X_contours.append(X_contour); Y_contours.append(Y_contour)
                 X_contour = []; Y_contour = []
+
 
     return X_contours, Y_contours
 
@@ -340,18 +340,21 @@ def Update(it):
             if C == "open":
                 print(cc,crossings)
 
-                for crossing in crossings:
-                    if crossing[0] == "outIn":
-                        Bx = X[:crossing[1]-1]
-                        Ax = X[crossing[1]:]
-                        By = Y[:crossing[1]-1]
-                        Ay = Y[crossing[1]:]
-                        Bcc = cc[:crossing[1]-1]
-                        Acc = cc[crossing[1]:]
+                if crossings[0][0] == "inOut":
+                    Bx = X[:crossings[0][1]]
+                    Ax = X[crossings[0][1]+1 :]
+                    By = Y[:crossings[0][1]]
+                    Ay = Y[crossings[0][1]+1:]
+                    Bcc = cc[:crossings[0][1]]
+                    Acc = cc[crossings[0][1]+1:]
+                    Bcrossings = crossings[0]
+                    Acrossings = crossings[1:]
+
                 X = np.concatenate((Ax,Bx))
                 Y = np.concatenate((Ay,By))
                 cc = np.concatenate((Acc,Bcc))
-                
+                crossings = np.concatenate((Acrossings,Bcrossings))
+
                 X_contours,Y_contours = closeContour(X,Y,cc)
 
             for X,Y in zip(X_contours,Y_contours):
@@ -391,8 +394,8 @@ def Update(it):
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            plt.plot(X,Y,"-k",linewidth=4)
-            plt.plot(Centroid[0],Centroid[1],"ok",markersize=4)
+            plt.plot(X,Y,"--k",linewidth=4)
+            plt.plot(Centroid[0],Centroid[1],"ok",markersize=6)
 
             Eddies_Cent_x.append(Centroid[0])
             Eddies_Cent_y.append(Centroid[1])
@@ -405,17 +408,20 @@ def Update(it):
             if C == "open":
                 print(cc,crossings)
 
-                for crossing in crossings:
-                    if crossing[0] == "outIn":
-                        Bx = X[:crossing[1]-1]
-                        Ax = X[crossing[1]:]
-                        By = Y[:crossing[1]-1]
-                        Ay = Y[crossing[1]:]
-                        Bcc = cc[:crossing[1]-1]
-                        Acc = cc[crossing[1]:]
+                if crossings[0][0] == "inOut":
+                    Bx = X[:crossings[0][1]]
+                    Ax = X[crossings[0][1]+1 :]
+                    By = Y[:crossings[0][1]]
+                    Ay = Y[crossings[0][1]+1:]
+                    Bcc = cc[:crossings[0][1]]
+                    Acc = cc[crossings[0][1]+1:]
+                    Bcrossings = crossings[0]
+                    Acrossings = crossings[1:]
+
                 X = np.concatenate((Ax,Bx))
                 Y = np.concatenate((Ay,By))
                 cc = np.concatenate((Acc,Bcc))
+                crossings = np.concatenate((Acrossings,Bcrossings))
                 
                 X_contours,Y_contours = closeContour(X,Y,cc)
 
@@ -424,8 +430,8 @@ def Update(it):
                 X = np.append(X,X[0]); Y = np.append(Y,Y[0])
                 Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-                plt.plot(X,Y,"-k",linewidth=4)
-                plt.plot(Centroid[0],Centroid[1],"ok",markersize=4)
+                plt.plot(X,Y,"--k",linewidth=4)
+                plt.plot(Centroid[0],Centroid[1],"ok",markersize=6)
 
                 Eddies_Cent_x.append(Centroid[0])
                 Eddies_Cent_y.append(Centroid[1])
