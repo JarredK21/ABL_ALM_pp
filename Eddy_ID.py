@@ -107,8 +107,6 @@ def closeContour(X, Y, cc):
     X_contour = []; Y_contour = []
     ix = np.nan; iy = np.nan
     for i in np.arange(0,len(cc)-1):
-        if cc[i] == True:
-            X_contour.append(X[i]); Y_contour.append(Y[i])
         
         if i < len(cc)-1 and cc[i] != cc[i+1] and ix == np.nan:
             ix = i
@@ -155,6 +153,8 @@ def closeContour(X, Y, cc):
                 print(len(X_contour))
 
             ix = np.nan; iy = np.nan
+        elif cc[i] == True:
+            X_contour.append(X[i]); Y_contour.append(Y[i])
 
     return X_contour, Y_contour
 
