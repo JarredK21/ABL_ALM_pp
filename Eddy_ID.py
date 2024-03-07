@@ -112,11 +112,11 @@ def closeContour(X, Y, cc):
         
         if i < len(cc)-1 and cc[i] != cc[i+1]:
             ix = i
-            print(ix)
+            print("ix=", ix)
 
         if ix != np.nan and i != ix and cc[i] != cc[i+1]:
             iy = i
-            print(iy)
+            print("iy=", iy)
             theta_0 = np.arctan2(Y[ix], X[ix])
             theta_2 = np.arctan2(Y[iy], X[iy])
             if theta_0<0:
@@ -230,8 +230,10 @@ zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
 
 
 #velocity field
-u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
-v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+# u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
+# v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+u = np.array(p.variables["velocityx"][0])
+v = np.array(p.variables["velocityy"][0])
 del p
 
 u[u<0]=0; v[v<0] #remove negative velocities
@@ -246,7 +248,7 @@ with Pool() as pool:
         u_hvel.append(u_hvel_it)
         print(len(u_hvel),time.time()-start_time)
 u = np.array(u_hvel); del u_hvel; del v
-
+print(np.shape(u))
 print("line 139",time.time()-start_time)
 
 #find vmin and vmax for isocontour plots            
@@ -278,8 +280,8 @@ if isExist == False:
 
 def Update(it):
 
-    U = u[it] #velocity time step it
-    
+    #U = u[it] #velocity time step it
+    U = u
     if it < 10:
         Time_idx = "000{}".format(it)
     elif it >= 10 and it < 100:
@@ -308,6 +310,7 @@ def Update(it):
 
     cb = plt.colorbar(cs)
 
+    print("positive contours")
     #for +0.7m/s threshold
     Eddies_Cent_x = []
     Eddies_Cent_y = []
@@ -345,9 +348,9 @@ def Update(it):
                         break
 
                 print(cc)
-                print(len(X),len(Y))
+                print(len(X))
                 X,Y = closeContour(X,Y,cc)
-                print(len(X),len(Y))
+                print(len(X))
 
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
@@ -362,6 +365,7 @@ def Update(it):
 
     Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
 
+    print("negative contours")
     #for -0.7m/s threshold
     Eddies_Cent_x = []
     Eddies_Cent_y = []
@@ -398,9 +402,9 @@ def Update(it):
                         break
 
                 print(cc)
-                print(len(X),len(Y))
+                print(len(X))
                 X,Y = closeContour(X,Y,cc)
-                print(len(X), len(Y))
+                print(len(X))
 
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
