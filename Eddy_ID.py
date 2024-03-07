@@ -100,7 +100,7 @@ def openContour(cc,X,Y):
 
 def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
 
-    dtheta = np.radians(10)
+    dtheta = np.radians(5)
     r = 63
     theta = np.arctan2((Y[crossings[0]]-90), (X[crossings[0]]-2560))
     theta_anti = theta + dtheta
@@ -127,13 +127,11 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
 
     ux_anti = f_ux(x_anti,y_anti)
 
-    plt.plot(x_anti,y_anti,"ob",markersize=6)
-
     ux_clock = f_ux(x_clock,y_clock)
 
-    plt.plot(x_clock,y_clock,"ob",markersize=6)
-
     if threshold > 0.0:
+        plt.plot(x_anti,y_anti,"or",markersize=6)
+        plt.plot(x_clock,y_clock,"or",markersize=6)
 
         if ux_anti > threshold:
             return "anticlockwise",X,Y,crossings
@@ -153,6 +151,8 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
             return "clockwise", X,Y,crossings
 
     elif threshold < 0.0:
+        plt.plot(x_anti,y_anti,"ob",markersize=6)
+        plt.plot(x_clock,y_clock,"ob",markersize=6)
 
         if ux_anti < threshold:
             return "anticlockwise",X,Y,crossings
@@ -170,54 +170,6 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
             crossings = np.concatenate((Ac,Bc))
 
             return "clockwise", X,Y,crossings
-        
-
-# def closeContour(X, Y, cc,crossings):
-
-#     X_contours = []; Y_contours = []
-#     X_contour = []; Y_contour = []
-#     ix = np.nan; iy = np.nan
-#     for i in np.arange(0,len(cc)-1):    
-
-
-#         if cc[i] == True:
-#             X_contour.append(X[i]); Y_contour.append(Y[i])
-        
-
-#         if cc[i] != cc[i+1]:
-#             if np.isnan(ix) == True:
-#                 ix = i
-
-#                 theta_0 = np.arctan2((Y[ix]-90), (X[ix]-2560))
-#                 if theta_0<0:
-#                     theta_0+=2*np.pi
-
-#             if np.isnan(ix) == False and i != ix:
-#                 iy = i
-
-#                 theta_2 = np.arctan2((Y[iy]-90), (X[iy]-2560))
-#                 if theta_2<0:
-#                     theta_2+=2*np.pi
-
-#                 theta_arc = np.linspace(theta_2,theta_0,int(abs(theta_2-theta_0)/5e-03))
-
-#                 print(theta_arc)
-
-#                 for theta in theta_arc:
-#                     r = 63
-#                     print(theta)
-#                     x_i = 2560 + r*np.cos(theta)
-#                     y_i = 90 + r*np.sin(theta)
-#                     print(x_i,y_i)
-#                     X_contour.append(x_i); Y_contour.append(y_i)
-
-#                 ix = np.nan; iy = np.nan
-
-#                 X_contours.append(X_contour); Y_contours.append(Y_contour)
-#                 X_contour = []; Y_contour = []
-
-
-#     return X_contours, Y_contours
 
 
 def closeContour(X, Y,crossings):
@@ -456,58 +408,58 @@ def Update(it):
 
     Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
 
-    print("negative contours")
-    #for -0.7m/s threshold
-    Eddies_Cent_x = []
-    Eddies_Cent_y = []
-    Eddies_Area = []
-    lines = CZ.allsegs[-1] #plot only threshold velocity
-    for line in lines:
-        X, Y = line[:,0], line[:,1]
+    # print("negative contours")
+    # #for -0.7m/s threshold
+    # Eddies_Cent_x = []
+    # Eddies_Cent_y = []
+    # Eddies_Area = []
+    # lines = CZ.allsegs[-1] #plot only threshold velocity
+    # for line in lines:
+    #     X, Y = line[:,0], line[:,1]
 
-        #check if any point in line is inside circle
-        cc = []
-        for X_line, Y_line in zip(X, Y):
-            cc.append(isInside(X_line,Y_line))
-        #separate line into N contours if line is outside rotor disk
-        C, X, Y,cc,crossings = openContour(cc,X,Y)
-        #all points are outside of rotor disk
-        if C == "skip":
-            continue
-        elif C == "closed":
-            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-            X = np.append(X,X[0]); Y = np.append(Y,Y[0])
-            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+    #     #check if any point in line is inside circle
+    #     cc = []
+    #     for X_line, Y_line in zip(X, Y):
+    #         cc.append(isInside(X_line,Y_line))
+    #     #separate line into N contours if line is outside rotor disk
+    #     C, X, Y,cc,crossings = openContour(cc,X,Y)
+    #     #all points are outside of rotor disk
+    #     if C == "skip":
+    #         continue
+    #     elif C == "closed":
+    #         Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+    #         X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+    #         Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            plt.plot(X,Y,"--k",linewidth=3)
-            plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+    #         plt.plot(X,Y,"--k",linewidth=3)
+    #         plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
-            Eddies_Cent_x.append(Centroid[0])
-            Eddies_Cent_y.append(Centroid[1])
-            Eddies_Area.append(Area)
+    #         Eddies_Cent_x.append(Centroid[0])
+    #         Eddies_Cent_y.append(Centroid[1])
+    #         Eddies_Area.append(Area)
 
-        elif C == "open":
-            print(cc,crossings)
+    #     elif C == "open":
+    #         print(cc,crossings)
 
-            direction,X,Y,crossings = isOutside(Xs,Ys,Z,crossings,X,Y,threshold=-0.7)
-            print(direction)
-            print(crossings)
+    #         direction,X,Y,crossings = isOutside(Xs,Ys,Z,crossings,X,Y,threshold=-0.7)
+    #         print(direction)
+    #         print(crossings)
 
-            X_contours,Y_contours = closeContour(X,Y,crossings)
+    #         X_contours,Y_contours = closeContour(X,Y,crossings)
 
-            for X,Y in zip(X_contours,Y_contours):
-                Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-                X = np.append(X,X[0]); Y = np.append(Y,Y[0])
-                Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+    #         for X,Y in zip(X_contours,Y_contours):
+    #             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+    #             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+    #             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-                plt.plot(X,Y,"--k",linewidth=3)
-                plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+    #             plt.plot(X,Y,"--k",linewidth=3)
+    #             plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
-                Eddies_Cent_x.append(Centroid[0])
-                Eddies_Cent_y.append(Centroid[1])
-                Eddies_Area.append(Area)
+    #             Eddies_Cent_x.append(Centroid[0])
+    #             Eddies_Cent_y.append(Centroid[1])
+    #             Eddies_Area.append(Area)
 
-    Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
+    # Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
 
 
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
@@ -538,7 +490,7 @@ def Update(it):
     plt.close(fig)
 
     #return Eddies_it_pos, Eddies_it_neg
-    return Eddies_it_neg
+    return Eddies_it_pos
 
 
 
@@ -548,9 +500,10 @@ Time_steps = [0]
     #for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
 for it in Time_steps:
-    Eddies_neg = Update(it)        
+    Eddies_pos = Update(it)        
 
-    print(Eddies_neg)
+    print(Eddies_pos)
+    #print(Eddies_neg)
 
     # df = pd.DataFrame(None)
 
