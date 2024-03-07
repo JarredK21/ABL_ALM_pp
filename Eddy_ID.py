@@ -110,23 +110,20 @@ def closeContour(X, Y, cc):
         if cc[i] != cc[i+1]:
             if np.isnan(ix) == True:
                 ix = i
-                print(Y[ix], X[ix])
+
                 theta_0 = np.arctan2((Y[ix]-90), (X[ix]-2560))
-                print(theta_0)
+
                 if theta_0<0:
                     theta_0+=2*np.pi
 
-                print(theta_0)
 
             if np.isnan(ix) == False and i != ix and cc[i] != cc[i+1]:
                 iy = i
                 print(Y[iy], X[iy])
                 theta_2 = np.arctan2((Y[iy]-90), (X[iy]-2560))
-                print(theta_2)
                 if theta_2<0:
                     theta_2+=2*np.pi
 
-                print(theta_2)
                 theta_arc = np.linspace(theta_0,theta_2,int(abs(theta_0-theta_2)/5e-03))
 
                 print(theta_arc)
@@ -151,7 +148,6 @@ def closeContour(X, Y, cc):
                         y_i = 2560 - r*np.cos(theta)
                     print(x_i,y_i)
                     X_contour.append(x_i); Y_contour.append(y_i)
-                    print(len(X_contour))
 
                 ix = np.nan; iy = np.nan
 
