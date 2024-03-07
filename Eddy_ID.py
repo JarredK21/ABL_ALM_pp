@@ -100,7 +100,7 @@ def openContour(cc,X,Y):
 
 def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
 
-    dtheta = np.radians(5)
+    dtheta = np.radians(10)
     r = 63
     theta = np.arctan2((Y[crossings[0]]-90), (X[crossings[0]]-2560))
     theta_anti = theta + dtheta
@@ -125,26 +125,26 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
 
     f_ux = interpolate.interp2d(Xs[xmin_idx:xmax_idx,ymin_idx:ymax_idx],Ys[xmin_idx:xmax_idx,ymin_idx:ymax_idx],Z[xmin_idx:xmax_idx,ymin_idx:ymax_idx])
 
-    ux = f_ux(x_anti,y_anti)
+    ux_anti = f_ux(x_anti,y_anti)
 
-    if abs(ux) >= abs(threshold):
+    ux_clock = f_ux(x_clock,y_clock)
+
+    if abs(ux_anti) > abs(threshold):
         return "anticlockwise",X,Y,crossings
 
-    elif abs(ux) < abs(threshold):
-        ux = f_ux(x_clock,y_clock)
+    elif abs(ux_clock) > abs(threshold):
+        
+        Bx = X[:crossings[0]]
+        Ax = X[crossings[0]-1 :]
+        By = Y[:crossings[0]]
+        Ay = Y[crossings[0]-1:]
+        Bc = crossings[0]
+        Ac = crossings[1:]
+        X = np.concatenate((Ax,Bx))
+        Y = np.concatenate((Ay,By))
+        crossings = np.concatenate((Ac,Bc))
 
-        if abs(ux) >= abs(threshold):
-            Bx = X[:crossings[0]]
-            Ax = X[crossings[0]-1 :]
-            By = Y[:crossings[0]]
-            Ay = Y[crossings[0]-1:]
-            Bc = crossings[0]
-            Ac = crossings[1:]
-            X = np.concatenate((Ax,Bx))
-            Y = np.concatenate((Ay,By))
-            crossings = np.concatenate((Ac,Bc))
-
-            return "clockwise", X,Y,crossings
+        return "clockwise", X,Y,crossings
 
     else:
         print("stop error isOutside()!")
