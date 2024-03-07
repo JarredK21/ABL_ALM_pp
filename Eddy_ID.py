@@ -107,53 +107,57 @@ def closeContour(X, Y, cc):
     X_contour = []; Y_contour = []
     ix = np.nan; iy = np.nan
     for i in np.arange(0,len(cc)-1):
-        
-        if i < len(cc)-1 and cc[i] != cc[i+1] and ix == np.nan:
-            ix = i
-            print("ix=", ix)
+        print(cc[i],cc[i+1],ix,iy)
+        if cc[i] != cc[i+1]:
+            if ix == np.nan:
+                ix = i
+                print("ix=", ix)
 
-            theta_0 = np.arctan2(Y[ix], X[ix])
-            if theta_0<0:
-                theta_0+=2*np.pi
+                theta_0 = np.arctan2(Y[ix], X[ix])
+                if theta_0<0:
+                    theta_0+=2*np.pi
 
-            print(theta_0)
-        elif i< len(cc)-1 and ix != np.nan and i != ix and cc[i] != cc[i+1]:
-            iy = i
-            print("iy=", iy)
-            
-            theta_2 = np.arctan2(Y[iy], X[iy])
-            
-            if theta_2<0:
-                theta_2+=2*np.pi
+                print(theta_0)
 
-            print(theta_2)
-            theta_arc = np.arange(theta_0,theta_2,5e-03)
-            print(theta_arc)
+            print(cc[i],cc[i+1],ix,iy)
+            if ix != np.nan and i != ix and cc[i] != cc[i+1]:
+                iy = i
+                print("iy=", iy)
+                
+                theta_2 = np.arctan2(Y[iy], X[iy])
+                
+                if theta_2<0:
+                    theta_2+=2*np.pi
 
-            for theta in theta_arc:
-                print(theta)
-                if theta > np.pi and theta >= (3*np.pi)/2: #bottom right quadrant
-                    r = -63
-                    x_i = 2560 + r*np.sin(theta)
-                    y_i = 90 + r*np.cos(theta)
-                elif theta > np.pi and theta < (3*np.pi)/2: #bottom left quadrant
-                    r = -63
-                    x_i = 2560 - r*np.sin(theta)
-                    y_i = 90 - r*np.cos(theta)
-                elif theta <= 0.0 and theta < np.pi/2: #top right quadrant
-                    r = 63
-                    x_i = 2560 + r*np.sin(theta)
-                    y_i = 63 + r*np.cos(theta)
-                elif theta <= np.pi and theta >= np.pi/2: #top left quadrant
-                    r = 63
-                    x_i = 2560 - r*np.sin(theta)
-                    y_i = 2560 - r*np.cos(theta)
-                print(x_i,y_i)
-                X_contour.append(x_i); Y_contour.append(y_i)
-                print(len(X_contour))
+                print(theta_2)
+                theta_arc = np.arange(theta_0,theta_2,5e-03)
+                print(theta_arc)
 
-            ix = np.nan; iy = np.nan
-        elif cc[i] == True:
+                for theta in theta_arc:
+                    print(theta)
+                    if theta > np.pi and theta >= (3*np.pi)/2: #bottom right quadrant
+                        r = -63
+                        x_i = 2560 + r*np.sin(theta)
+                        y_i = 90 + r*np.cos(theta)
+                    elif theta > np.pi and theta < (3*np.pi)/2: #bottom left quadrant
+                        r = -63
+                        x_i = 2560 - r*np.sin(theta)
+                        y_i = 90 - r*np.cos(theta)
+                    elif theta <= 0.0 and theta < np.pi/2: #top right quadrant
+                        r = 63
+                        x_i = 2560 + r*np.sin(theta)
+                        y_i = 63 + r*np.cos(theta)
+                    elif theta <= np.pi and theta >= np.pi/2: #top left quadrant
+                        r = 63
+                        x_i = 2560 - r*np.sin(theta)
+                        y_i = 2560 - r*np.cos(theta)
+                    print(x_i,y_i)
+                    X_contour.append(x_i); Y_contour.append(y_i)
+                    print(len(X_contour))
+
+                ix = np.nan; iy = np.nan
+
+        if cc[i] == True and cc[i] == cc[i+1]:
             X_contour.append(X[i]); Y_contour.append(Y[i])
 
     return X_contour, Y_contour
