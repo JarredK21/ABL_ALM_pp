@@ -123,11 +123,16 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
     xmin_idx = np.searchsorted(ys,xmin,side="left"); xmax_idx = np.searchsorted(ys,xmax,side="right")
     ymin_idx = np.searchsorted(zs,ymin,side="left"); ymax_idx = np.searchsorted(zs,ymax,side="right")
 
+    print(np.size(Xs[xmin_idx:xmax_idx,ymin_idx:ymax_idx]))
+
     f_ux = interpolate.interp2d(Xs[xmin_idx:xmax_idx,ymin_idx:ymax_idx],Ys[xmin_idx:xmax_idx,ymin_idx:ymax_idx],Z[xmin_idx:xmax_idx,ymin_idx:ymax_idx])
 
+
     ux_anti = f_ux(x_anti,y_anti)
+    print(ux_anti)
 
     ux_clock = f_ux(x_clock,y_clock)
+    print(ux_clock)
 
     if threshold > 0.0:
         plt.plot(x_anti,y_anti,"or",markersize=6)
@@ -151,14 +156,16 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
             return "clockwise", X,Y,crossings
 
     elif threshold < 0.0:
+        print("line 159")
         plt.plot(x_anti,y_anti,"ob",markersize=6)
         plt.plot(x_clock,y_clock,"ob",markersize=6)
 
         if ux_anti < threshold:
+            print("line 164")
             return "anticlockwise",X,Y,crossings
 
         elif ux_clock < threshold:
-            
+            print("line 168")
             Bx = X[:crossings[0]]
             Ax = X[crossings[0]-1 :]
             By = Y[:crossings[0]]
@@ -440,7 +447,7 @@ def Update(it):
 
         elif C == "open":
             print(cc,crossings)
-
+            print(len(X))
             direction,X,Y,crossings = isOutside(Xs,Ys,Z,crossings,X,Y,threshold=-0.7)
             print(direction)
             print(crossings)
