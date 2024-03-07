@@ -127,7 +127,7 @@ def closeContour(X, Y, cc):
                     theta_2+=2*np.pi
 
                 print(theta_2)
-                theta_arc = np.arange(theta_0,theta_2,5e-03)
+                theta_arc = np.linspace(theta_0,theta_2,int(abs(theta_0-theta_2)/5e-03))
 
                 print(theta_arc)
 
