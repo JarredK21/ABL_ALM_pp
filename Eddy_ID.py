@@ -119,28 +119,36 @@ def closeContour(X, Y, cc):
             print(iy)
             theta_0 = np.arctan2(Y[ix], X[ix])
             theta_2 = np.arctan2(Y[iy], X[iy])
+            if theta_0<0:
+                theta_0+=2*np.pi
+            elif theta_2<0:
+                theta_2+=2*np.pi
+
             print(theta_0,theta_2)
             theta_arc = np.arange(theta_0,theta_2,5e-03)
+            print(theta_arc)
 
             for theta in theta_arc:
-                if theta < 0.0 and theta >= -np.pi/2: #bottom right quadrant
-                    r = -63; theta = np.pi/2 - theta
-                    x_i = 2560 - r*np.sin(theta)
-                    y_i = 90 + r*np.cos(theta)
-                elif theta < 0.0 and theta < -np.pi/2: #bottom left quadrant
-                    r = -63; theta = theta - np.pi/2
+                print(theta)
+                if theta > np.pi and theta >= (3*np.pi)/2: #bottom right quadrant
+                    r = -63
                     x_i = 2560 + r*np.sin(theta)
                     y_i = 90 + r*np.cos(theta)
-                elif theta >= 0.0 and theta <= np.pi/2: #top right quadrant
-                    r = 63; theta = np.pi/2 - theta
+                elif theta > np.pi and theta < (3*np.pi)/2: #bottom left quadrant
+                    r = -63
+                    x_i = 2560 - r*np.sin(theta)
+                    y_i = 90 - r*np.cos(theta)
+                elif theta <= 0.0 and theta < np.pi/2: #top right quadrant
+                    r = 63
                     x_i = 2560 + r*np.sin(theta)
                     y_i = 63 + r*np.cos(theta)
-                elif theta >= 0.0 and theta >= np.pi/2: #top left quadrant
-                    r = 63; theta = theta - np.pi/2
+                elif theta <= np.pi and theta >= np.pi/2: #top left quadrant
+                    r = 63
                     x_i = 2560 - r*np.sin(theta)
-                    y_i = 2560 + r*np.cos(theta)
-
+                    y_i = 2560 - r*np.cos(theta)
+                print(x_i,y_i)
                 X_contour.append(x_i); Y_contour.append(y_i)
+                print(len(X_contour))
 
             ix = np.nan; iy = np.nan
 
