@@ -109,7 +109,7 @@ def closeContour(X, Y, cc):
     for i in np.arange(0,len(cc)-1):
         print(cc[i],cc[i+1],ix,iy)
         if cc[i] != cc[i+1]:
-            if ix == np.nan:
+            if np.isnan(ix) == True:
                 ix = i
                 print("ix=", ix)
 
@@ -120,7 +120,7 @@ def closeContour(X, Y, cc):
                 print(theta_0)
 
             print(cc[i],cc[i+1],ix,iy)
-            if ix != np.nan and i != ix and cc[i] != cc[i+1]:
+            if np.isnan(ix) == False and i != ix and cc[i] != cc[i+1]:
                 iy = i
                 print("iy=", iy)
                 
@@ -157,7 +157,7 @@ def closeContour(X, Y, cc):
 
                 ix = np.nan; iy = np.nan
 
-        if cc[i] == True and cc[i] == cc[i+1]:
+        if cc[i] == True:
             X_contour.append(X[i]); Y_contour.append(Y[i])
 
     return X_contour, Y_contour
