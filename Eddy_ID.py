@@ -133,25 +133,43 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
 
     plt.plot(x_clock,y_clock,"ob",markersize=6)
 
-    if abs(ux_anti) > abs(threshold):
-        return "anticlockwise",X,Y,crossings
+    if threshold > 0.0:
 
-    elif abs(ux_clock) > abs(threshold):
-        
-        Bx = X[:crossings[0]]
-        Ax = X[crossings[0]-1 :]
-        By = Y[:crossings[0]]
-        Ay = Y[crossings[0]-1:]
-        Bc = crossings[0]
-        Ac = crossings[1:]
-        X = np.concatenate((Ax,Bx))
-        Y = np.concatenate((Ay,By))
-        crossings = np.concatenate((Ac,Bc))
+        if ux_anti > threshold:
+            return "anticlockwise",X,Y,crossings
 
-        return "clockwise", X,Y,crossings
+        elif ux_clock > threshold:
+            
+            Bx = X[:crossings[0]]
+            Ax = X[crossings[0]-1 :]
+            By = Y[:crossings[0]]
+            Ay = Y[crossings[0]-1:]
+            Bc = crossings[0]
+            Ac = crossings[1:]
+            X = np.concatenate((Ax,Bx))
+            Y = np.concatenate((Ay,By))
+            crossings = np.concatenate((Ac,Bc))
 
-    else:
-        print("stop error isOutside()!")
+            return "clockwise", X,Y,crossings
+
+    elif threshold < 0.0:
+
+        if ux_anti < threshold:
+            return "anticlockwise",X,Y,crossings
+
+        elif ux_clock < threshold:
+            
+            Bx = X[:crossings[0]]
+            Ax = X[crossings[0]-1 :]
+            By = Y[:crossings[0]]
+            Ay = Y[crossings[0]-1:]
+            Bc = crossings[0]
+            Ac = crossings[1:]
+            X = np.concatenate((Ax,Bx))
+            Y = np.concatenate((Ay,By))
+            crossings = np.concatenate((Ac,Bc))
+
+            return "clockwise", X,Y,crossings
         
 
 # def closeContour(X, Y, cc,crossings):
@@ -220,7 +238,7 @@ def closeContour(X, Y,crossings):
 
         theta_AB = np.linspace(theta_B,theta_A,int(abs(theta_B-theta_A)/5e-03))
 
-        print(theta_AB)
+        print("arc",theta_AB)
 
         r = 63
         Xcontour = np.concatenate((Xcontour, np.add(r*np.cos(theta_AB), 2560) ))
