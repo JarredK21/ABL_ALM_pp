@@ -98,7 +98,7 @@ def openContour(cc,X,Y):
         return "open", X_temp, Y_temp, cc_temp, crossings
 
 
-def isOutside(f_ux, crossings, X, Y,threshold):
+def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
 
     dtheta = np.radians(5)
     r = 63
@@ -107,21 +107,31 @@ def isOutside(f_ux, crossings, X, Y,threshold):
     if theta_anti<0:
         theta_anti+=2*np.pi
 
-    x_i = 2560 + r*np.cos(theta_anti)
-    y_i = 90 + r*np.sin(theta_anti)
-    ux = f_ux(x_i,y_i)
+    x_anti = 2560 + r*np.cos(theta_anti)
+    y_anti = 90 + r*np.sin(theta_anti)
+
+    theta_clock = theta - dtheta
+    if theta_clock<0:
+        theta_clock+=2*np.pi
+
+    x_clock = 2560 + r*np.cos(theta_clock)
+    y_clock = 90 + r*np.sin(theta_clock)
+
+    xmin = np.min([x_anti, x_clock])-1; xmax = np.max([x_anti, x_clock])+1
+    ymin = np.min([y_anti, y_clock])-1; ymax = np.max([y_anti, y_clock])+1
+
+    xmin_idx = np.searchsorted(ys,xmin,side="left"); xmax_idx = np.searchsorted(ys,xmax,side="right")
+    ymin_idx = np.searchsorted(zs,ymin,side="left"); ymax_idx = np.searchsorted(zs,ymax,side="right")
+
+    f_ux = interpolate.interp2d(Xs[xmin_idx:xmax_idx,ymin_idx:ymax_idx],Ys[xmin_idx:xmax_idx,ymin_idx:ymax_idx],Z[xmin_idx:xmax_idx,ymin_idx:ymax_idx])
+
+    ux = f_ux(x_anti,y_anti)
 
     if abs(ux) >= abs(threshold):
         return "anticlockwise",X,Y,crossings
 
     elif abs(ux) < abs(threshold):
-        theta_clock = theta - dtheta
-        if theta_clock<0:
-            theta_clock+=2*np.pi
-
-        x_i = 2560 + r*np.cos(theta_clock)
-        y_i = 90 + r*np.sin(theta_clock)
-        ux = f_ux(x_i,y_i)
+        ux = f_ux(x_clock,y_clock)
 
         if abs(ux) >= abs(threshold):
             Bx = X[:crossings[0]]
@@ -354,21 +364,19 @@ def Update(it):
 
 
     u_plane = U.reshape(y,x)
-    X,Y = np.meshgrid(ys,zs)
+    Xs,Ys = np.meshgrid(ys,zs)
 
     Z = u_plane
 
-    f_ux = interpolate.interp2d(X,Y,Z)
-
-    CS = plt.contour(X, Y, Z, levels=levels_pos)
-    CZ = plt.contour(X,Y,Z, levels=levels_neg)
+    CS = plt.contour(Xs, Ys, Z, levels=levels_pos)
+    CZ = plt.contour(Xs,Ys,Z, levels=levels_neg)
 
     T = round(Time[it],4)
 
     fig,ax = plt.subplots(figsize=(50,30))
     plt.rcParams['font.size'] = 40
 
-    cs = ax.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+    cs = ax.contourf(Xs,Ys,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
 
     cb = plt.colorbar(cs)
 
@@ -409,7 +417,7 @@ def Update(it):
         elif C == "open":
             print(cc,crossings)
 
-            direction,X,Y,crossings = isOutside(f_ux,crossings,X,Y,threshold=0.7)
+            direction,X,Y,crossings = isOutside(Xs,Ys,Z,crossings,X,Y,threshold=0.7)
             print(direction)
             print(crossings)
             print(X,Y)
@@ -466,7 +474,7 @@ def Update(it):
         elif C == "open":
             print(cc,crossings)
 
-            direction,X,Y,crossings = isOutside(f_ux,crossings,X,Y,threshold=-0.7)
+            direction,X,Y,crossings = isOutside(Xs,Ys,Z,crossings,X,Y,threshold=-0.7)
             print(direction)
             print(crossings)
             print(X,Y)
