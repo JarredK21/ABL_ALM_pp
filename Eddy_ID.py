@@ -110,7 +110,7 @@ def closeContour(X, Y, cc):
         if cc[i] == True:
             X_contour.append(X[i]); Y_contour.append(Y[i])
         
-        if i < len(cc)-1 and cc[i] != cc[i+1]:
+        if i < len(cc)-1 and cc[i] != cc[i+1] and ix == np.nan:
             ix = i
             print("ix=", ix)
 
