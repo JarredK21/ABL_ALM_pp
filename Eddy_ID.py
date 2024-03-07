@@ -110,7 +110,7 @@ def closeContour(X, Y, cc):
         if cc[i] != cc[i+1]:
             if np.isnan(ix) == True:
                 ix = i
-
+                print(Y[ix], X[ix])
                 theta_0 = np.arctan2(Y[ix], X[ix])
                 print(theta_0)
                 if theta_0<0:
@@ -120,7 +120,7 @@ def closeContour(X, Y, cc):
 
             if np.isnan(ix) == False and i != ix and cc[i] != cc[i+1]:
                 iy = i
-                
+                print(Y[iy], X[iy])
                 theta_2 = np.arctan2(Y[iy], X[iy])
                 print(theta_2)
                 if theta_2<0:
@@ -128,7 +128,7 @@ def closeContour(X, Y, cc):
 
                 print(theta_2)
                 theta_arc = np.arange(theta_0,theta_2,5e-03)
-                
+
                 print(theta_arc)
 
                 for theta in theta_arc:
