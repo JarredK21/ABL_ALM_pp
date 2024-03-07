@@ -103,7 +103,7 @@ def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
     dtheta = np.radians(5)
     r = 63
     theta = np.arctan2((Y[crossings[0]]-90), (X[crossings[0]]-2560))
-    theta_anti = theta_anti + dtheta
+    theta_anti = theta + dtheta
     if theta_anti<0:
         theta_anti+=2*np.pi
 
@@ -422,7 +422,7 @@ def Update(it):
             print(crossings)
             print(X,Y)
 
-            X_contours,Y_contours = closeContour(X,Y,cc,direction)
+            X_contours,Y_contours = closeContour(X,Y,crossings)
 
             for X,Y in zip(X_contours,Y_contours):
                 Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
@@ -479,15 +479,15 @@ def Update(it):
             print(crossings)
             print(X,Y)
 
-            X_contours,Y_contours = closeContour(X,Y,cc,direction)
+            X_contours,Y_contours = closeContour(X,Y,crossings)
 
             for X,Y in zip(X_contours,Y_contours):
                 Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
                 X = np.append(X,X[0]); Y = np.append(Y,Y[0])
                 Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-                plt.plot(X,Y,"-k",linewidth=4)
-                plt.plot(Centroid[0],Centroid[1],"ok",markersize=4)
+                plt.plot(X,Y,"--k",linewidth=4)
+                plt.plot(Centroid[0],Centroid[1],"ok",markersize=6)
 
                 Eddies_Cent_x.append(Centroid[0])
                 Eddies_Cent_y.append(Centroid[1])
