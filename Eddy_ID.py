@@ -128,23 +128,10 @@ def closeContour(X, Y, cc):
                 print(theta_arc)
 
                 for theta in theta_arc:
+                    r = 63
                     print(theta)
-                    if theta > np.pi and theta >= (3*np.pi)/2: #bottom right quadrant
-                        r = -63
-                        x_i = 2560 + r*np.sin(theta)
-                        y_i = 90 + r*np.cos(theta)
-                    elif theta > np.pi and theta < (3*np.pi)/2: #bottom left quadrant
-                        r = -63
-                        x_i = 2560 - r*np.sin(theta)
-                        y_i = 90 - r*np.cos(theta)
-                    elif theta <= np.pi and theta >= 0 and theta < np.pi/2: #top right quadrant
-                        r = 63
-                        x_i = 2560 + r*np.sin(theta)
-                        y_i = 90 + r*np.cos(theta)
-                    elif theta <= np.pi and theta >=0 and theta >= np.pi/2: #top left quadrant
-                        r = 63
-                        x_i = 2560 - r*np.sin(theta)
-                        y_i = 90 - r*np.cos(theta)
+                    x_i = 2560 + r*np.cos(theta)
+                    y_i = 90 + r*np.sin(theta)
                     print(x_i,y_i)
                     X_contour.append(x_i); Y_contour.append(y_i)
 
