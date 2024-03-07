@@ -230,10 +230,8 @@ zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
 
 
 #velocity field
-# u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
-# v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
-u = np.array(p.variables["velocityx"][0])
-v = np.array(p.variables["velocityy"][0])
+u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
+v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
 del p
 
 u[u<0]=0; v[v<0] #remove negative velocities
@@ -248,7 +246,7 @@ with Pool() as pool:
         u_hvel.append(u_hvel_it)
         print(len(u_hvel),time.time()-start_time)
 u = np.array(u_hvel); del u_hvel; del v
-print(np.shape(u))
+
 print("line 139",time.time()-start_time)
 
 #find vmin and vmax for isocontour plots            
@@ -280,8 +278,8 @@ if isExist == False:
 
 def Update(it):
 
-    #U = u[it] #velocity time step it
-    U = u
+    U = u[it] #velocity time step it
+
     if it < 10:
         Time_idx = "000{}".format(it)
     elif it >= 10 and it < 100:
