@@ -97,7 +97,7 @@ def openContour(cc,X,Y):
 
         return "open", X_temp, Y_temp, cc_temp, crossings
 
-
+#interpolation not working?
 def isOutside(Xs,Ys,Z,crossings, X, Y,threshold):
 
     dtheta = np.radians(5)
