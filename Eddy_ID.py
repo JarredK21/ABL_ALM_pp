@@ -98,7 +98,7 @@ def openContour(cc,X,Y):
         return "open", X_temp, Y_temp, cc_temp, crossings
 
 
-def ux_interp(i,theta_loc,theta,Xs,Ys,Z,dtheta=15):
+def ux_interp(i,theta_loc,theta,Xs,Ys,Z,dtheta):
 
     if len(theta_loc) > 3:
 
@@ -183,7 +183,7 @@ def isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold):
         elif threshold < 0:
             if ux_anti <= threshold or ux_clock<=threshold:
                 break
-
+    print(ux_anti,ux_clock)
     if threshold > 0.0:
         plt.plot(x_anti,y_anti,"or",markersize=6)
         plt.plot(x_clock,y_clock,"or",markersize=6)
