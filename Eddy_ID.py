@@ -175,10 +175,14 @@ def isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold):
     Bidx = theta_order.index(theta)
 
     for dtheta in [15,20,25,30,35,40]:
+        print(dtheta)
         ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,theta_loc,theta,Xs,Ys,Z,dtheta)
-        if abs(ux_anti) >= threshold or abs(ux_clock) >= threshold:
-            break
-
+        if threshold > 0:
+            if ux_anti >= threshold or ux_clock >= threshold:
+                break
+        elif threshold < 0:
+            if ux_anti <= threshold or ux_clock<=threshold:
+                break
 
     if threshold > 0.0:
         plt.plot(x_anti,y_anti,"or",markersize=6)
@@ -219,6 +223,8 @@ def closeContour(Xs,Ys,Z,crossings, X, Y,threshold):
 
     
     theta_order = np.sort(theta_loc)
+    print(theta_loc)
+    print(theta_order)
     theta_order = theta_order.tolist()
     theta_order.append(theta_order[0])
     theta_loc.append(theta_loc[0])
