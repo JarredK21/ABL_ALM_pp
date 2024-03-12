@@ -98,52 +98,85 @@ def openContour(cc,X,Y):
         return "open", X_temp, Y_temp, cc_temp, crossings
 
 
-def ux_interp(i,theta_loc,theta,Xs,Ys,Z,dtheta):
+def ux_interp(i,theta_loc,Xs,Ys,Z,perc):
 
     if len(theta_loc) > 3:
 
         if theta_loc[i] < theta_loc[i+1]:
+            
+            #limit on minum angle change
+            if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
+                perc = 0.5
+            
+            xAB = abs((theta_loc[i]+2*np.pi) - theta_loc[i+1]) * perc
 
-            theta_anti = (theta_loc[i+1]+theta_loc[i]+2*np.pi)/2
+            #limit on maximum angle change
+            if xAB > np.radians(25):
+                xAB = np.radians(25)
+
+            theta_anti = theta_loc[i+1] + xAB
+
+        else:
+            #limit on minum angle change
+            if abs(theta_loc[i] - theta_loc[i+1])*perc < np.radians(5):
+                perc = 0.5
+
+            xAB = abs(theta_loc[i+1]-theta_loc[i]) *perc
+
+            #limit on maximum angle change
+            if xAB > np.radians(25):
+                xAB = np.radians(25)
+
+            theta_anti = theta_loc[i+1] + xAB 
+
+        if theta_anti > 2*np.pi:
             theta_anti-=2*np.pi
-        else:
-            theta_anti = (theta_loc[i+1]+theta_loc[i])/2
 
-        if theta_loc[i] < theta_loc[i+1]:
+        #limit on minum angle change
+        if abs(theta_loc[i+1] - theta_loc[i+2])*perc < np.radians(5):
+            perc = 0.5
 
-            dtheta_anti = theta_anti+2*np.pi - theta
-        else:
-            dtheta_anti = theta_anti - theta
+        xBC = abs(theta_loc[i+1] - theta_loc[i+2]) * perc
 
-        if dtheta_anti > np.radians(dtheta):
-            theta_anti = theta + np.radians(dtheta)
+        #limit on maximum angle change
+        if xBC > np.radians(25):
+                xBC = np.radians(25)
 
-        theta_clock = (theta_loc[i+1]+theta_loc[i+2])/2
-
-        dtheta_clock = theta - theta_clock
-
-        if dtheta_clock > np.radians(dtheta):
-            theta_clock = theta - np.radians(dtheta)
+        theta_clock = theta_loc[i+1] - xBC
 
     elif len(theta_loc) < 4:
 
         if theta_loc[i] < theta_loc[i+1]:
 
-            theta_anti = (theta_loc[i+1]+theta_loc[i]+2*np.pi)/2
+            #limit on minum angle change
+            if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
+                perc = 0.5
+            
+            xAB = abs((theta_loc[i]+2*np.pi) - theta_loc[i+1]) * perc
+
+            #limit on maximum angle change
+            if xAB > np.radians(25):
+                xAB = np.radians(25)
+            theta_anti = theta_loc[i+1] + xAB
+
+        else:
+
+            #limit on minimum angle change
+            if abs(theta_loc[i] - theta_loc[i+1])*perc < np.radians(5):
+                perc = 0.5
+
+            xAB = abs(theta_loc[i]-theta_loc[i+1]) *perc
+
+            #limit on maximum angle change
+            if xAB > np.radians(25):
+                xAB = np.radians(25)
+
+            theta_anti = theta_loc[i+1] + xAB 
+
+        if theta_anti > 2*np.pi:
             theta_anti-=2*np.pi
-        else:
-            theta_anti = (theta_loc[i+1]+theta_loc[i])/2
 
-        if theta_loc[i] < theta_loc[i+1]:
-
-            dtheta_anti = theta_anti+2*np.pi - theta
-        else:
-            dtheta_anti = theta_anti - theta
-
-        if dtheta_anti > np.radians(dtheta):
-            theta_anti = theta + np.radians(dtheta)
-
-        theta_clock = theta - np.radians(dtheta)
+        theta_clock = theta_loc[i+1] - xAB
 
 
     r = 63
@@ -159,11 +192,13 @@ def ux_interp(i,theta_loc,theta,Xs,Ys,Z,dtheta):
     xmin_idx = np.searchsorted(ys,xmin,side="left"); xmax_idx = np.searchsorted(ys,xmax,side="right")
     ymin_idx = np.searchsorted(zs,ymin,side="left"); ymax_idx = np.searchsorted(zs,ymax,side="right")
 
-    f_ux = interpolate.interp2d(Xs[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Ys[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Z[ymin_idx:ymax_idx,xmin_idx:xmax_idx])
+    f_ux = interpolate.interp2d(Xs[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Ys[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Z[ymin_idx:ymax_idx,xmin_idx:xmax_idx]) #make more efficient??
 
     ux_anti = f_ux(x_anti,y_anti)
 
     ux_clock = f_ux(x_clock,y_clock)
+
+    print(ux_anti,ux_clock,perc,x_anti,y_anti,x_clock,y_clock)
 
     return ux_anti, ux_clock,x_anti,y_anti,x_clock,y_clock
 
@@ -174,16 +209,20 @@ def isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold):
     theta = theta_loc[i+1] #theta B
     Bidx = theta_order.index(theta)
 
-    for dtheta in [15,20,25,30,35,40]:
-        print(dtheta)
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,theta_loc,theta,Xs,Ys,Z,dtheta)
-        if threshold > 0:
+    for perc in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]:
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,theta_loc,Xs,Ys,Z,perc)
+        if threshold > 0.0:
+            if ux_anti >= threshold and ux_clock >= threshold:
+                continue
             if ux_anti >= threshold or ux_clock >= threshold:
                 break
-        elif threshold < 0:
-            if ux_anti <= threshold or ux_clock<=threshold:
+        elif threshold < 0.0:
+            if ux_anti<=threshold and ux_clock<=threshold:
+                continue
+            if ux_anti <= threshold or ux_clock<= threshold:
                 break
-    print(ux_anti,ux_clock)
+
+
     if threshold > 0.0:
         plt.plot(x_anti,y_anti,"or",markersize=6)
         plt.plot(x_clock,y_clock,"or",markersize=6)
@@ -195,6 +234,9 @@ def isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold):
             
         elif ux_clock > threshold:
             Atheta = theta_order[Bidx-1]
+
+        else:
+            Atheta = "skip"
             
     elif threshold < 0.0:
         plt.plot(x_anti,y_anti,"ob",markersize=6)
@@ -207,6 +249,9 @@ def isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold):
             Atheta = theta_order[Bidx+1]
             if theta > Atheta:
                 Atheta+=2*np.pi
+
+        else:
+            Atheta = "skip"
 
     return Atheta
 
@@ -232,11 +277,17 @@ def closeContour(Xs,Ys,Z,crossings, X, Y,threshold):
     Xcontours = []; Ycontours = []
     Xcontour = []; Ycontour = []    
     for i in np.arange(0,len(crossings),2):
+        
+        Atheta = isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold)
+        print(Atheta)
+
+        if Atheta == "skip":
+            break
+
+
         Xline = X[crossings[i]:crossings[i+1]]; Yline = Y[crossings[i]:crossings[i+1]]
         Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
         Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
-
-        Atheta = isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold)
 
         theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
 
