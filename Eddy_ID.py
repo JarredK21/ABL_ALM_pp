@@ -98,11 +98,11 @@ def openContour(cc,X,Y):
         return "open", X_temp, Y_temp, cc_temp, crossings
 
 
-def ux_interp(i,theta_loc,Xs,Ys,Z,perc):
+def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
 
     if len(theta_loc) > 3:
 
-        if theta_loc[i] < theta_loc[i+1]:
+        if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]: #crossing zero
             
             #limit on minum angle change
             if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
@@ -140,13 +140,13 @@ def ux_interp(i,theta_loc,Xs,Ys,Z,perc):
 
         #limit on maximum angle change
         if xBC > np.radians(25):
-                xBC = np.radians(25)
+            xBC = np.radians(25)
 
         theta_clock = theta_loc[i+1] - xBC
 
     elif len(theta_loc) < 4:
 
-        if theta_loc[i] < theta_loc[i+1]:
+        if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
 
             #limit on minum angle change
             if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
@@ -204,13 +204,14 @@ def ux_interp(i,theta_loc,Xs,Ys,Z,perc):
 
 
 
-def isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold):
+def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
 
     theta = theta_loc[i+1] #theta B
     Bidx = theta_order.index(theta)
+    print("line 211", theta)
 
     for perc in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]:
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,theta_loc,Xs,Ys,Z,perc)
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc)
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:
                 continue
@@ -259,15 +260,18 @@ def isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold):
 
 def closeContour(Xs,Ys,Z,crossings, X, Y,threshold):
 
-    theta_loc = []
+    theta_loc = []; theta_180 = []
     for crossing in crossings:
         theta = np.arctan2((Y[crossing]-90), (X[crossing]-2560))
+        theta_180.append(theta)
         if theta<0:
             theta+=2*np.pi
         theta_loc.append(theta)
+        
 
     
     theta_order = np.sort(theta_loc)
+    print(theta_180)
     print(theta_loc)
     print(theta_order)
     theta_order = theta_order.tolist()
@@ -278,7 +282,7 @@ def closeContour(Xs,Ys,Z,crossings, X, Y,threshold):
     Xcontour = []; Ycontour = []    
     for i in np.arange(0,len(crossings),2):
         
-        Atheta = isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold)
+        Atheta = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
         print(Atheta)
 
         if Atheta == "skip":
@@ -489,20 +493,21 @@ def Update(it):
             Eddies_Area.append(Area)
 
         elif C == "open":
-
+            print("line 492",crossings)
             X_contours,Y_contours = closeContour(Xs,Ys,Z,crossings, X, Y,threshold=0.7)
 
-            for X,Y in zip(X_contours,Y_contours):
-                Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-                X = np.append(X,X[0]); Y = np.append(Y,Y[0])
-                Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+            if len(X_contours) > 0:
+                for X,Y in zip(X_contours,Y_contours):
+                    Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+                    X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+                    Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-                plt.plot(X,Y,"-k",linewidth=3)
-                plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+                    plt.plot(X,Y,"-k",linewidth=3)
+                    plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
-                Eddies_Cent_x.append(Centroid[0])
-                Eddies_Cent_y.append(Centroid[1])
-                Eddies_Area.append(Area)
+                    Eddies_Cent_x.append(Centroid[0])
+                    Eddies_Cent_y.append(Centroid[1])
+                    Eddies_Area.append(Area)
 
     Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
 
@@ -540,17 +545,18 @@ def Update(it):
 
             X_contours,Y_contours = closeContour(Xs,Ys,Z,crossings, X, Y,threshold=-0.7)
 
-            for X,Y in zip(X_contours,Y_contours):
-                Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-                X = np.append(X,X[0]); Y = np.append(Y,Y[0])
-                Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+            if len(X_contours) > 0:
+                for X,Y in zip(X_contours,Y_contours):
+                    Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+                    X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+                    Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-                plt.plot(X,Y,"--k",linewidth=3)
-                plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+                    plt.plot(X,Y,"--k",linewidth=3)
+                    plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
-                Eddies_Cent_x.append(Centroid[0])
-                Eddies_Cent_y.append(Centroid[1])
-                Eddies_Area.append(Area)
+                    Eddies_Cent_x.append(Centroid[0])
+                    Eddies_Cent_y.append(Centroid[1])
+                    Eddies_Area.append(Area)
 
     Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
 
