@@ -15,7 +15,7 @@ from math import ceil
 def isInside(x, y):
      
     if ((x - 2560) * (x - 2560) +
-        (y - 90) * (y - 90) <= 63 * 63):
+        (y - 90) * (y - 90) < 63 * 63):
         return True
     else:
         return False
@@ -68,11 +68,11 @@ def openContour(cc,X,Y):
         return "open", X_temp, Y_temp, cc_temp, crossings
 
 
-def ux_interp(i,theta_loc,Xs,Ys,Z,perc):
+def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
 
     if len(theta_loc) > 3:
 
-        if theta_loc[i] < theta_loc[i+1]:
+        if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
             
             #limit on minum angle change
             if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
@@ -116,7 +116,7 @@ def ux_interp(i,theta_loc,Xs,Ys,Z,perc):
 
     elif len(theta_loc) < 4:
 
-        if theta_loc[i] < theta_loc[i+1]:
+        if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
 
             #limit on minum angle change
             if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
@@ -174,13 +174,13 @@ def ux_interp(i,theta_loc,Xs,Ys,Z,perc):
 
 
 
-def isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold):
+def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
 
     theta = theta_loc[i+1] #theta B
     Bidx = theta_order.index(theta)
 
     for perc in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]:
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,theta_loc,Xs,Ys,Z,perc)
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc)
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:
                 continue
@@ -221,11 +221,12 @@ def isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold):
 
 
 
-def closeContour(Xs,Ys,Z,crossings, X, Y,threshold):
+def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
 
-    theta_loc = []
+    theta_loc = []; theta_180 = []
     for crossing in crossings:
         theta = np.arctan2((Y[crossing]-90), (X[crossing]-2560))
+        theta_180.append(theta)
         if theta<0:
             theta+=2*np.pi
         theta_loc.append(theta)
@@ -238,12 +239,14 @@ def closeContour(Xs,Ys,Z,crossings, X, Y,threshold):
 
     Xcontours = []; Ycontours = []
     Xcontour = []; Ycontour = []    
-    for i in np.arange(0,len(crossings),2):
-        Xline = X[crossings[i]:crossings[i+1]]; Yline = Y[crossings[i]:crossings[i+1]]
+
+    if len(crossings) < 3:
+        i = 0
+        Xline = X[cc]; Yline = Y[cc]
         Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
         Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 
-        Atheta = isOutside(i,theta_loc,theta_order,Xs,Ys,Z,threshold)
+        Atheta = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
 
         theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
 
@@ -252,12 +255,30 @@ def closeContour(Xs,Ys,Z,crossings, X, Y,threshold):
         Xcontour = np.concatenate((Xcontour,Xarc))
         Ycontour = np.concatenate((Ycontour,Yarc))
 
+        Xcontours.append(Xcontour); Ycontours.append(Ycontour)
+    
+    else:
+        for i in np.arange(0,len(crossings),2):
+            Xline = X[crossings[i]:crossings[i+1]]; Yline = Y[crossings[i]:crossings[i+1]]
+            Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
+            Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
+
+            Atheta = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
+
+            theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
+
+            r = 63
+            Xarc = np.add(r*np.cos(theta_AB), 2560); Yarc = np.add(r*np.sin(theta_AB), 90)
+            Xcontour = np.concatenate((Xcontour,Xarc))
+            Ycontour = np.concatenate((Ycontour,Yarc))
+
+
         if Atheta != theta_loc[i+2]:
             Xcontours.append(Xcontour); Ycontours.append(Ycontour)
             Xcontour = []; Ycontour = []
 
-    if len(Xcontours) == 0:
-         Xcontours.append(Xcontour); Ycontours.append(Ycontour)
+        if len(Xcontours) == 0:
+            Xcontours.append(Xcontour); Ycontours.append(Ycontour)
 
     return Xcontours, Ycontours
 
@@ -348,7 +369,7 @@ levels_neg = np.linspace(cmin,-0.7,4)
 print("line 159", levels_neg)
 
 
-folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0/"
+folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0_3/"
 isExist = os.path.exists(folder)
 if isExist == False:
     os.makedirs(folder)
@@ -409,7 +430,7 @@ for line in lines:
 
     elif C == "open":
 
-        X_contours,Y_contours = closeContour(Xs,Ys,Z,crossings, X, Y,threshold=0.7)
+        X_contours,Y_contours = closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold=0.7)
 
         for X,Y in zip(X_contours,Y_contours):
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
@@ -459,7 +480,7 @@ for line in lines:
 
     elif C == "open":     
 
-        X_contours,Y_contours = closeContour(Xs,Ys,Z,crossings, X, Y,threshold=-0.7)
+        X_contours,Y_contours = closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold=-0.7)
 
         for X,Y in zip(X_contours,Y_contours):
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]

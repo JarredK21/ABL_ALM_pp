@@ -45,7 +45,7 @@ def Horizontal_velocity(it):
 def isInside(x, y):
      
     if ((x - 2560) * (x - 2560) +
-        (y - 90) * (y - 90) <= 63 * 63):
+        (y - 90) * (y - 90) < 63 * 63):
         return True
     else:
         return False
@@ -258,7 +258,7 @@ def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
 
 
 
-def closeContour(Xs,Ys,Z,crossings, X, Y,threshold):
+def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
 
     theta_loc = []; theta_180 = []
     for crossing in crossings:
@@ -279,14 +279,12 @@ def closeContour(Xs,Ys,Z,crossings, X, Y,threshold):
     theta_loc.append(theta_loc[0])
 
     Xcontours = []; Ycontours = []
-    Xcontour = []; Ycontour = []    
-    for i in np.arange(0,len(crossings),2):
-        
+    Xcontour = []; Ycontour = []   
+
+    if len(crossings) < 3:
+        i = 0
         Atheta = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
         print(Atheta)
-
-        if Atheta == "skip":
-            break
 
 
         Xline = X[crossings[i]:crossings[i+1]]; Yline = Y[crossings[i]:crossings[i+1]]
@@ -300,12 +298,37 @@ def closeContour(Xs,Ys,Z,crossings, X, Y,threshold):
         Xcontour = np.concatenate((Xcontour,Xarc))
         Ycontour = np.concatenate((Ycontour,Yarc))
 
-        if Atheta != theta_loc[i+2]:
-            Xcontours.append(Xcontour); Ycontours.append(Ycontour)
-            Xcontour = []; Ycontour = []
+        Xcontours.append(Xcontour); Ycontours.append(Ycontour)
 
-    if len(Xcontours) == 0:
-         Xcontours.append(Xcontour); Ycontours.append(Ycontour)
+    else:
+        for i in np.arange(0,len(crossings),2):
+            
+            Atheta = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
+            print(Atheta)
+
+            #this should be needed
+            if Atheta == "skip":
+                continue
+
+
+            Xline = X[crossings[i]:crossings[i+1]]; Yline = Y[crossings[i]:crossings[i+1]]
+            Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
+            Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
+
+            theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
+
+            r = 63
+            Xarc = np.add(r*np.cos(theta_AB), 2560); Yarc = np.add(r*np.sin(theta_AB), 90)
+            Xcontour = np.concatenate((Xcontour,Xarc))
+            Ycontour = np.concatenate((Ycontour,Yarc))
+
+            if Atheta != theta_loc[i+2]:
+                Xcontours.append(Xcontour); Ycontours.append(Ycontour)
+                Xcontour = []; Ycontour = []
+
+        if len(Xcontours) == 0:
+            Xcontours.append(Xcontour); Ycontours.append(Ycontour)
+
 
     return Xcontours, Ycontours
 
@@ -494,7 +517,7 @@ def Update(it):
 
         elif C == "open":
             print("line 492",crossings)
-            X_contours,Y_contours = closeContour(Xs,Ys,Z,crossings, X, Y,threshold=0.7)
+            X_contours,Y_contours = closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold=0.7)
 
             if len(X_contours) > 0:
                 for X,Y in zip(X_contours,Y_contours):
@@ -543,7 +566,7 @@ def Update(it):
 
         elif C == "open":
 
-            X_contours,Y_contours = closeContour(Xs,Ys,Z,crossings, X, Y,threshold=-0.7)
+            X_contours,Y_contours = closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold=-0.7)
 
             if len(X_contours) > 0:
                 for X,Y in zip(X_contours,Y_contours):
