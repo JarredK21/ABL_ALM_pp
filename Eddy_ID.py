@@ -131,7 +131,7 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
 
         if theta_anti > 2*np.pi:
             theta_anti-=2*np.pi
-
+        print("perc anti", perc)
         #limit on minum angle change
         if abs(theta_loc[i+1] - theta_loc[i+2])*perc < np.radians(5):
             perc = 0.5
@@ -143,7 +143,7 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
             xBC = np.radians(25)
 
         theta_clock = theta_loc[i+1] - xBC
-
+        print("perc clock",perc)
     elif len(theta_loc) < 4:
 
         if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
@@ -177,8 +177,9 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
             theta_anti-=2*np.pi
 
         theta_clock = theta_loc[i+1] - xAB
-
-
+        print("perc",perc)
+    print("theta_anti",theta_anti)
+    print("theta_clock",theta_clock)
     r = 63
     x_anti = 2560 + r*np.cos(theta_anti)
     y_anti = 90 + r*np.sin(theta_anti)
@@ -198,7 +199,7 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
 
     ux_clock = f_ux(x_clock,y_clock)
 
-    print(ux_anti,ux_clock,perc,x_anti,y_anti,x_clock,y_clock)
+    print(ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock)
 
     return ux_anti, ux_clock,x_anti,y_anti,x_clock,y_clock
 
@@ -208,7 +209,7 @@ def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
 
     theta = theta_loc[i+1] #theta B
     Bidx = theta_order.index(theta)
-    print("line 211", theta)
+    print("crossing", theta)
 
     for perc in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]:
         ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc)
@@ -271,9 +272,9 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
 
     
     theta_order = np.sort(theta_loc)
-    print(theta_180)
-    print(theta_loc)
-    print(theta_order)
+    print("theta_180",theta_180)
+    print("theta_loc",theta_loc)
+    print("theta_order",theta_order)
     theta_order = theta_order.tolist()
     theta_order.append(theta_order[0])
     theta_loc.append(theta_loc[0])
@@ -284,7 +285,7 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
     if len(crossings) < 3:
         i = 0
         Atheta = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
-        print(Atheta)
+        print("Atheta",Atheta)
 
 
         Xline = X[cc]; Yline = Y[cc]
