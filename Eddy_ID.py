@@ -100,86 +100,38 @@ def openContour(cc,X,Y):
 
 def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
 
+    if abs(theta_180[i] - theta_180[i+1])*perc < np.radians(5):
+        perc = 0.5
+
+    xAB = abs(theta_180[i] - theta_180[i+1]) * perc
+
+    #limit on maximum angle change
+    if xAB > np.radians(25):
+        xAB = np.radians(25)*(0.9+perc)
+
+    theta_anti = theta_loc[i+1] + xAB
+
+    if theta_anti > 2*np.pi:
+        theta_anti-=2*np.pi
+
+    print("anti perc",perc)
     if len(theta_loc) > 3:
-
-        if -(np.pi/2) < theta_180[i] < 0 and 0 < theta_180[i+1] < (np.pi/2) or -(np.pi/2) < theta_180[i+1] < 0 and 0 < theta_180[i] < (np.pi/2): #crossing zero
-                
-            #limit on minum angle change
-            if abs(theta_loc[i] + 2*np.pi - theta_loc[i+1])*perc < np.radians(5):
-                perc = 0.5
-            
-            xAB = abs( theta_loc[i] + 2*np.pi - theta_loc[i+1]) * perc
-
-            #limit on maximum angle change
-            if xAB > np.radians(25):
-                xAB = np.radians(25)
-
-            theta_anti = theta_loc[i+1] + xAB
-
-        else:
-            #limit on minum angle change
-            if abs(theta_loc[i] - theta_loc[i+1])*perc < np.radians(5):
-                perc = 0.5
-
-            xAB = abs(theta_loc[i+1]-theta_loc[i]) *perc
-
-            #limit on maximum angle change
-            if xAB > np.radians(25):
-                xAB = np.radians(25)
-
-            theta_anti = theta_loc[i+1] + xAB 
-
-        if theta_anti > 2*np.pi:
-            theta_anti-=2*np.pi
-        print("perc anti", perc)
         #limit on minum angle change
-        if abs(theta_loc[i+1] - theta_loc[i+2])*perc < np.radians(5):
+        if abs(theta_180[i+1] - theta_180[i+2])*perc < np.radians(5):
             perc = 0.5
 
-        xBC = abs(theta_loc[i+1] - theta_loc[i+2]) * perc
+        xBC = abs(theta_180[i+1] - theta_180[i+2]) * perc
 
         #limit on maximum angle change
         if xBC > np.radians(25):
-            xBC = np.radians(25)
+                xBC = np.radians(25)*(0.9+perc)
 
         theta_clock = theta_loc[i+1] - xBC
-        print("perc clock",perc)
-    elif len(theta_loc) < 4:
-
-        if -(np.pi/2) < theta_180[i] < 0 and 0 < theta_180[i+1] < (np.pi/2) or -(np.pi/2) < theta_180[i+1] < 0 and 0 < theta_180[i] < (np.pi/2): #crossing zero
-
-            #limit on minum angle change
-            if abs( theta_loc[i] + 2*np.pi - theta_loc[i+1])*perc < np.radians(5):
-                perc = 0.5
-            
-            xAB = abs( theta_loc[i] + 2*np.pi - theta_loc[i+1]) * perc
-
-            #limit on maximum angle change
-            if xAB > np.radians(25):
-                xAB = np.radians(25)
-            theta_anti = theta_loc[i+1] + xAB
-
-        else:
-
-            #limit on minimum angle change
-            if abs(theta_loc[i] - theta_loc[i+1])*perc < np.radians(5):
-                perc = 0.5
-
-            xAB = abs(theta_loc[i]-theta_loc[i+1]) *perc
-
-            #limit on maximum angle change
-            if xAB > np.radians(25):
-                xAB = np.radians(25)
-
-            theta_anti = theta_loc[i+1] + xAB 
-
-        if theta_anti > 2*np.pi:
-            theta_anti-=2*np.pi
-
+    
+    else:
         theta_clock = theta_loc[i+1] - xAB
-        print("perc",perc)
-    print("theta_anti",theta_anti)
-    print("theta_clock",theta_clock)
+
+    print("clock perc", perc)
     r = 63
     x_anti = 2560 + r*np.cos(theta_anti)
     y_anti = 90 + r*np.sin(theta_anti)
@@ -199,7 +151,7 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
 
     ux_clock = f_ux(x_clock,y_clock)
 
-    print(ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock)
+    print(ux_anti,ux_clock,perc,x_anti,y_anti,x_clock,y_clock)
 
     return ux_anti, ux_clock,x_anti,y_anti,x_clock,y_clock
 
@@ -306,7 +258,7 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         for i in np.arange(0,len(crossings),2):
             
             Atheta = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
-            print(Atheta)
+            print("Atheta",Atheta)
 
             #this should be needed
             if Atheta == "skip":
@@ -318,6 +270,7 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
             Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 
             theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
+            print("theta_arc",theta_AB)
 
             r = 63
             Xarc = np.add(r*np.cos(theta_AB), 2560); Yarc = np.add(r*np.sin(theta_AB), 90)

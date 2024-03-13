@@ -70,83 +70,113 @@ def openContour(cc,X,Y):
 
 def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
 
+    if abs(theta_180[i] - theta_180[i+1])*perc < np.radians(5):
+        perc = 0.5
+
+    xAB = abs(theta_180[i] - theta_180[i+1]) * perc
+
+    #limit on maximum angle change
+    if xAB > np.radians(25):
+        xAB = np.radians(25)
+
+    theta_anti = theta_loc[i+1] + xAB
+
+    if theta_anti > 2*np.pi:
+        theta_anti-=2*np.pi
+
     if len(theta_loc) > 3:
-
-        if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
-            
-            #limit on minum angle change
-            if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
-                perc = 0.5
-            
-            xAB = abs((theta_loc[i]+2*np.pi) - theta_loc[i+1]) * perc
-
-            #limit on maximum angle change
-            if xAB > np.radians(25):
-                xAB = np.radians(25)
-
-            theta_anti = theta_loc[i+1] + xAB
-
-        else:
-            #limit on minum angle change
-            if abs(theta_loc[i] - theta_loc[i+1])*perc < np.radians(5):
-                perc = 0.5
-
-            xAB = abs(theta_loc[i+1]-theta_loc[i]) *perc
-
-            #limit on maximum angle change
-            if xAB > np.radians(25):
-                xAB = np.radians(25)
-
-            theta_anti = theta_loc[i+1] + xAB 
-
-        if theta_anti > 2*np.pi:
-            theta_anti-=2*np.pi
-
         #limit on minum angle change
-        if abs(theta_loc[i+1] - theta_loc[i+2])*perc < np.radians(5):
+        if abs(theta_180[i+1] - theta_180[i+2])*perc < np.radians(5):
             perc = 0.5
 
-        xBC = abs(theta_loc[i+1] - theta_loc[i+2]) * perc
+        xBC = abs(theta_180[i+1] - theta_180[i+2]) * perc
 
         #limit on maximum angle change
         if xBC > np.radians(25):
                 xBC = np.radians(25)
 
         theta_clock = theta_loc[i+1] - xBC
-
-    elif len(theta_loc) < 4:
-
-        if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
-
-            #limit on minum angle change
-            if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
-                perc = 0.5
-            
-            xAB = abs((theta_loc[i]+2*np.pi) - theta_loc[i+1]) * perc
-
-            #limit on maximum angle change
-            if xAB > np.radians(25):
-                xAB = np.radians(25)
-            theta_anti = theta_loc[i+1] + xAB
-
-        else:
-
-            #limit on minimum angle change
-            if abs(theta_loc[i] - theta_loc[i+1])*perc < np.radians(5):
-                perc = 0.5
-
-            xAB = abs(theta_loc[i]-theta_loc[i+1]) *perc
-
-            #limit on maximum angle change
-            if xAB > np.radians(25):
-                xAB = np.radians(25)
-
-            theta_anti = theta_loc[i+1] + xAB 
-
-        if theta_anti > 2*np.pi:
-            theta_anti-=2*np.pi
-
+    
+    else:
         theta_clock = theta_loc[i+1] - xAB
+
+    # if len(theta_loc) > 3:
+
+    #     if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
+            
+    #         #limit on minum angle change
+    #         if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
+    #             perc = 0.5
+            
+    #         xAB = abs((theta_loc[i]+2*np.pi) - theta_loc[i+1]) * perc
+
+    #         #limit on maximum angle change
+    #         if xAB > np.radians(25):
+    #             xAB = np.radians(25)
+
+    #         theta_anti = theta_loc[i+1] + xAB
+
+    #     else:
+    #         #limit on minum angle change
+    #         if abs(theta_loc[i] - theta_loc[i+1])*perc < np.radians(5):
+    #             perc = 0.5
+
+    #         xAB = abs(theta_loc[i+1]-theta_loc[i]) *perc
+
+    #         #limit on maximum angle change
+    #         if xAB > np.radians(25):
+    #             xAB = np.radians(25)
+
+    #         theta_anti = theta_loc[i+1] + xAB 
+
+    #     if theta_anti > 2*np.pi:
+    #         theta_anti-=2*np.pi
+
+    #     #limit on minum angle change
+    #     if abs(theta_loc[i+1] - theta_loc[i+2])*perc < np.radians(5):
+    #         perc = 0.5
+
+    #     xBC = abs(theta_loc[i+1] - theta_loc[i+2]) * perc
+
+    #     #limit on maximum angle change
+    #     if xBC > np.radians(25):
+    #             xBC = np.radians(25)
+
+    #     theta_clock = theta_loc[i+1] - xBC
+
+    # elif len(theta_loc) < 4:
+
+    #     if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
+
+    #         #limit on minum angle change
+    #         if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
+    #             perc = 0.5
+            
+    #         xAB = abs((theta_loc[i]+2*np.pi) - theta_loc[i+1]) * perc
+
+    #         #limit on maximum angle change
+    #         if xAB > np.radians(25):
+    #             xAB = np.radians(25)
+    #         theta_anti = theta_loc[i+1] + xAB
+
+    #     else:
+
+    #         #limit on minimum angle change
+    #         if abs(theta_loc[i] - theta_loc[i+1])*perc < np.radians(5):
+    #             perc = 0.5
+
+    #         xAB = abs(theta_loc[i]-theta_loc[i+1]) *perc
+
+    #         #limit on maximum angle change
+    #         if xAB > np.radians(25):
+    #             xAB = np.radians(25)
+
+    #         theta_anti = theta_loc[i+1] + xAB 
+
+    #     if theta_anti > 2*np.pi:
+    #         theta_anti-=2*np.pi
+
+    #     theta_clock = theta_loc[i+1] - xAB
 
 
     r = 63
@@ -236,6 +266,7 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
     theta_order = theta_order.tolist()
     theta_order.append(theta_order[0])
     theta_loc.append(theta_loc[0])
+    theta_180.append(theta_180[0])
 
     Xcontours = []; Ycontours = []
     Xcontour = []; Ycontour = []    
