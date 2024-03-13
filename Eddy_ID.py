@@ -287,7 +287,7 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         print(Atheta)
 
 
-        Xline = X[crossings[i]:crossings[i+1]]; Yline = Y[crossings[i]:crossings[i+1]]
+        Xline = X[cc]; Yline = Y[cc]
         Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
         Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 
