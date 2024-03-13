@@ -224,12 +224,13 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
 
     
     theta_order = np.sort(theta_loc)
-    print("theta_180",theta_180)
-    print("theta_loc",theta_loc)
-    print("theta_order",theta_order)
     theta_order = theta_order.tolist()
     theta_order.append(theta_order[0])
     theta_loc.append(theta_loc[0])
+    theta_180.append(theta_180[0])
+    print("theta_180",theta_180)
+    print("theta_loc",theta_loc)
+    print("theta_order",theta_order)
 
     Xcontours = []; Ycontours = []
     Xcontour = []; Ycontour = []   
