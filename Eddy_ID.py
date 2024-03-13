@@ -102,13 +102,13 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
 
     if len(theta_loc) > 3:
 
-        if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]: #crossing zero
+        if theta_180[i] < 0 and theta_180[i+1] > 0 or theta_180[i] > 0 and theta_180[i+1] < 0: #crossing zero
             
             #limit on minum angle change
-            if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
+            if abs(theta_loc[i] + 2*np.pi - theta_loc[i+1])*perc < np.radians(5):
                 perc = 0.5
             
-            xAB = abs((theta_loc[i]+2*np.pi) - theta_loc[i+1]) * perc
+            xAB = abs( theta_loc[i] + 2*np.pi - theta_loc[i+1]) * perc
 
             #limit on maximum angle change
             if xAB > np.radians(25):
@@ -146,13 +146,13 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
         print("perc clock",perc)
     elif len(theta_loc) < 4:
 
-        if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
+        if theta_180[i] < 0 and theta_180[i+1] > 0 or theta_180[i] > 0 and theta_180[i+1] < 0: #crossing zero
 
             #limit on minum angle change
-            if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
+            if abs( theta_loc[i] + 2*np.pi - theta_loc[i+1])*perc < np.radians(5):
                 perc = 0.5
             
-            xAB = abs((theta_loc[i]+2*np.pi) - theta_loc[i+1]) * perc
+            xAB = abs( theta_loc[i] + 2*np.pi - theta_loc[i+1]) * perc
 
             #limit on maximum angle change
             if xAB > np.radians(25):
@@ -293,6 +293,7 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 
         theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
+        print("theta arc",theta_AB)
 
         r = 63
         Xarc = np.add(r*np.cos(theta_AB), 2560); Yarc = np.add(r*np.sin(theta_AB), 90)
@@ -621,6 +622,7 @@ it = 0
     #for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
 for it in Time_steps:
+    print("time step",it)
     Eddies_pos,Eddies_neg = Update(it)        
 
     df = pd.DataFrame(None)
@@ -636,7 +638,6 @@ for it in Time_steps:
     del df
 
     it+=1
-    print(it)
 
 #saving data
 # df_pos.to_csv(in_dir+"Eddies_{}.csv".format(0.7))
