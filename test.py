@@ -100,85 +100,6 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
     else:
         theta_clock = theta_loc[i+1] - xAB
 
-    # if len(theta_loc) > 3:
-
-    #     if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
-            
-    #         #limit on minum angle change
-    #         if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
-    #             perc = 0.5
-            
-    #         xAB = abs((theta_loc[i]+2*np.pi) - theta_loc[i+1]) * perc
-
-    #         #limit on maximum angle change
-    #         if xAB > np.radians(25):
-    #             xAB = np.radians(25)
-
-    #         theta_anti = theta_loc[i+1] + xAB
-
-    #     else:
-    #         #limit on minum angle change
-    #         if abs(theta_loc[i] - theta_loc[i+1])*perc < np.radians(5):
-    #             perc = 0.5
-
-    #         xAB = abs(theta_loc[i+1]-theta_loc[i]) *perc
-
-    #         #limit on maximum angle change
-    #         if xAB > np.radians(25):
-    #             xAB = np.radians(25)
-
-    #         theta_anti = theta_loc[i+1] + xAB 
-
-    #     if theta_anti > 2*np.pi:
-    #         theta_anti-=2*np.pi
-
-    #     #limit on minum angle change
-    #     if abs(theta_loc[i+1] - theta_loc[i+2])*perc < np.radians(5):
-    #         perc = 0.5
-
-    #     xBC = abs(theta_loc[i+1] - theta_loc[i+2]) * perc
-
-    #     #limit on maximum angle change
-    #     if xBC > np.radians(25):
-    #             xBC = np.radians(25)
-
-    #     theta_clock = theta_loc[i+1] - xBC
-
-    # elif len(theta_loc) < 4:
-
-    #     if theta_loc[i] < theta_loc[i+1] and theta_180[i+1] < theta_180[i]:
-
-    #         #limit on minum angle change
-    #         if abs((theta_loc[i]+2*np.pi) - theta_loc[i+1])*perc < np.radians(5):
-    #             perc = 0.5
-            
-    #         xAB = abs((theta_loc[i]+2*np.pi) - theta_loc[i+1]) * perc
-
-    #         #limit on maximum angle change
-    #         if xAB > np.radians(25):
-    #             xAB = np.radians(25)
-    #         theta_anti = theta_loc[i+1] + xAB
-
-    #     else:
-
-    #         #limit on minimum angle change
-    #         if abs(theta_loc[i] - theta_loc[i+1])*perc < np.radians(5):
-    #             perc = 0.5
-
-    #         xAB = abs(theta_loc[i]-theta_loc[i+1]) *perc
-
-    #         #limit on maximum angle change
-    #         if xAB > np.radians(25):
-    #             xAB = np.radians(25)
-
-    #         theta_anti = theta_loc[i+1] + xAB 
-
-    #     if theta_anti > 2*np.pi:
-    #         theta_anti-=2*np.pi
-
-    #     theta_clock = theta_loc[i+1] - xAB
-
-
     r = 63
     x_anti = 2560 + r*np.cos(theta_anti)
     y_anti = 90 + r*np.sin(theta_anti)
@@ -200,7 +121,7 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
 
     print(ux_anti,ux_clock,perc,x_anti,y_anti,x_clock,y_clock)
 
-    return ux_anti, ux_clock,x_anti,y_anti,x_clock,y_clock
+    return theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock
 
 
 
@@ -210,7 +131,7 @@ def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
     Bidx = theta_order.index(theta)
 
     for perc in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]:
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc)
+        theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc)
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:
                 continue
@@ -228,26 +149,34 @@ def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
         plt.plot(x_clock,y_clock,"or",markersize=6)
 
         if ux_anti > threshold:
+            direction = "anticlockwise"
             Atheta = theta_order[Bidx+1]
-            if theta > Atheta:
-                Atheta+=2*np.pi
             
         elif ux_clock > threshold:
+            direction = "clockwise"
             Atheta = theta_order[Bidx-1]
+
+        else:
+            direction = "nan"
+            Atheta = "skip"
             
     elif threshold < 0.0:
         plt.plot(x_anti,y_anti,"ob",markersize=6)
         plt.plot(x_clock,y_clock,"ob",markersize=6)
 
         if ux_clock < threshold:
+            direction = "clockwise"
             Atheta = theta_order[Bidx-1]
             
         elif ux_anti < threshold:
+            direction = "anticlockwise"
             Atheta = theta_order[Bidx+1]
-            if theta > Atheta:
-                Atheta+=2*np.pi
 
-    return Atheta
+        else:
+            direction = "nan"
+            Atheta = "skip"
+    print(Atheta)
+    return Atheta,direction,theta_anti,theta_clock
 
 
 
@@ -267,6 +196,9 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
     theta_order.append(theta_order[0])
     theta_loc.append(theta_loc[0])
     theta_180.append(theta_180[0])
+    print("theta_180",theta_180)
+    print("theta_loc",theta_loc)
+    print("theta_order",theta_order)
 
     Xcontours = []; Ycontours = []
     Xcontour = []; Ycontour = []    
@@ -277,9 +209,23 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
         Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 
-        Atheta = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
+        Atheta,direction,theta_anti,theta_clock = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
+        print(Atheta)
 
-        theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
+        if direction == "anticlockwise" and theta_loc[i+1] < theta_anti:
+            theta_AB = np.linspace(theta_180[i+1],theta_loc[i+2],int(abs(theta_180[i+1]-theta_180[i+2])/5e-03))
+                    
+        elif direction == "clockwise" and theta_loc[i+1] > theta_clock:
+            theta_AB = np.linspace(theta_180[i+1],theta_180[i+2],int(abs(theta_180[i+1]-theta_loc[i+2])/5e-03))
+
+        for j in np. arange(0,len(theta_AB)):
+            if theta_AB[j] < 0:
+                theta_AB[j]+=2*np.pi
+        
+        else:
+            theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
+
+        print("theta arc",theta_AB)
 
         r = 63
         Xarc = np.add(r*np.cos(theta_AB), 2560); Yarc = np.add(r*np.sin(theta_AB), 90)

@@ -3,6 +3,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 
+direction = "clockwise"
+theta_180  = [-2.35, -1.0, -2.35]
+theta_loc = [3.933, 5.28, 3.933]
+theta_order = [3.933, 5.28, 3.933]
+i = 0
+theta_anti = 0.9
+theta_clock = 6.0
+
+if direction == "anticlockwise" and theta_loc[i+1] < theta_anti:
+    thetaAB = np.linspace(theta_180[i+1],theta_loc[i+2],int(abs(theta_180[i+1]-theta_180[i+2])/5e-03))
+            
+elif direction == "clockwise" and theta_loc[i+1] > theta_clock:
+    thetaAB = np.linspace(theta_180[i+1],theta_180[i+2],int(abs(theta_180[i+1]-theta_loc[i+2])/5e-03))
+
+for j in np. arange(0,len(thetaAB)):
+    if thetaAB[j] < 0:
+        thetaAB[j]+=2*np.pi
+
 theta_loc = [2.8560959215491546, 1.4511820527916064, 2.8560959215491546]
 theta_order = [1.4511820527916064, 2.8560959215491546, 1.4511820527916064]
 fig,ax = plt.subplots(figsize=(50,30))
