@@ -102,8 +102,8 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
 
     if len(theta_loc) > 3:
 
-        if theta_180[i] < -(1/2)*np.pi and theta_180[i+1] < (1/2)*np.pi or theta_180[i] < (1/2) and theta_180[i+1] < -(1/2)*np.pi: #crossing zero
-            
+        if -(np.pi/2) < theta_180[i] < 0 and 0 < theta_180[i+1] < (np.pi/2) or -(np.pi/2) < theta_180[i+1] < 0 and 0 < theta_180[i] < (np.pi/2): #crossing zero
+                
             #limit on minum angle change
             if abs(theta_loc[i] + 2*np.pi - theta_loc[i+1])*perc < np.radians(5):
                 perc = 0.5
@@ -146,7 +146,7 @@ def ux_interp(i,theta_loc,theta_180,Xs,Ys,Z,perc):
         print("perc clock",perc)
     elif len(theta_loc) < 4:
 
-        if theta_180[i] < -(1/2)*np.pi and theta_180[i+1] < (1/2)*np.pi or theta_180[i] < (1/2) and theta_180[i+1] < -(1/2)*np.pi: #crossing zero
+        if -(np.pi/2) < theta_180[i] < 0 and 0 < theta_180[i+1] < (np.pi/2) or -(np.pi/2) < theta_180[i+1] < 0 and 0 < theta_180[i] < (np.pi/2): #crossing zero
 
             #limit on minum angle change
             if abs( theta_loc[i] + 2*np.pi - theta_loc[i+1])*perc < np.radians(5):
