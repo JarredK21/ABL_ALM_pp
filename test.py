@@ -212,11 +212,17 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         Atheta,direction,theta_anti,theta_clock = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
         print(Atheta)
 
-        if direction == "anticlockwise" and theta_loc[i+1] < theta_anti:
-            theta_AB = np.linspace(theta_180[i+1],theta_loc[i+2],int(abs(theta_180[i+1]-theta_180[i+2])/5e-03))
+        if direction == "anticlockwise":
+            if theta_loc[i+1] < theta_anti < theta_loc[i+2]:
+                theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
+            else:
+                theta_AB = np.linspace(theta_180[i+1],theta_loc[i+2],int(abs(theta_180[i+1]-theta_180[i+2])/5e-03))
                     
-        elif direction == "clockwise" and theta_loc[i+1] > theta_clock:
-            theta_AB = np.linspace(theta_180[i+1],theta_180[i+2],int(abs(theta_180[i+1]-theta_loc[i+2])/5e-03))
+        elif direction == "clockwise":
+            if theta_loc[i] < theta_clock < theta_loc[i+1]:
+                theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
+            else:
+                theta_AB = np.linspace(theta_180[i+1],theta_180[i+2],int(abs(theta_180[i+1]-theta_loc[i+2])/5e-03))
 
         for j in np. arange(0,len(theta_AB)):
             if theta_AB[j] < 0:

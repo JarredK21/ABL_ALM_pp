@@ -159,7 +159,9 @@ def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
     Bidx = theta_order.index(theta)
     print("crossing", theta)
 
-    for dtheta in [2,4,6,8,10,12,14,16,18,20,24,26]:
+    dtheta_arr = np.radians([2,4,6,8,10,12,14,16,18,20,24,26])
+
+    for dtheta in dtheta_arr:
         theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,Bidx,theta_loc,theta_180,theta_order,Xs,Ys,Z,dtheta)
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:

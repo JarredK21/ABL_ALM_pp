@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 
+dtheta_arr = np.radians([2,4,6,8,10,12,14,16,18,20,24,26])
+print(dtheta_arr)
+
 direction = "clockwise"
 theta_180  = [-2.35, -1.0, -2.35]
 theta_loc = [3.933, 5.28, 3.933]
