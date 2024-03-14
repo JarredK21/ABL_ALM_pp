@@ -225,7 +225,6 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
 
     theta_loc.append(theta_loc[0])
     theta_180.append(theta_180[0])
-    theta_order.append(theta_order[0]+2*np.pi)
     print(theta_180)
     print(theta_loc)
     print(theta_order)
@@ -239,8 +238,8 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
     Xcontour = []; Ycontour = []   
 
     if len(crossings) < 3:
+        theta_order.append(theta_order[0]+2*np.pi)
         theta = theta_loc[1] #theta B
-        Bidx = theta_order.index(theta)
         print("crossing", theta)
         Atheta,direction = isOutside(type,theta_loc,theta_order,Xs,Ys,Z,threshold)
         print("Atheta",Atheta)
@@ -280,7 +279,15 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
             theta = theta_loc[i+1] #theta B
             Bidx = theta_order.index(theta)
             print("crossing", theta)
-            theta_O = theta_order[Bidx-1:Bidx+2]
+
+            if Bidx == 0:
+                theta_O = [theta_order[Bidx-1],theta_order[Bidx],theta_order[Bidx+1]]
+            elif Bidx == len(theta_order):
+                theta_O = [theta_order[Bidx-1],theta_order[Bidx],theta_order[0]+2*np.pi]
+            else:
+                theta_order.append(theta_order[0]+2*np.pi)
+                theta_O = theta_order[Bidx-1:Bidx+2]
+
             theta_L = theta_loc[i:i+3]
             print("theta_loc",theta_L)
             print("theta_order",theta_O)
