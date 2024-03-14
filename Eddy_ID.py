@@ -98,36 +98,36 @@ def openContour(cc,X,Y):
         return "open", X_temp, Y_temp, cc_temp, crossings
 
 
-def ux_interp(i,Bidx,theta_loc,theta_180,theta_order,Xs,Ys,Z,dtheta):
+def ux_interp(type,theta_loc,theta_order,Xs,Ys,Z,dtheta):
 
-    theta_anti = theta_loc[i+1] + dtheta
+    theta_anti = theta_loc[1] + dtheta
 
-    if theta_anti >= theta_order[Bidx+1]:
+    if round(theta_anti,2) >= round(theta_order[2],2):
         
-        theta_anti = theta_loc[i+1] + abs(theta_180[i+2] - theta_180[i+1]) / 2
+        theta_anti = theta_loc[1] + abs(theta_order[2] - theta_order[1]) / 2
 
-        print("anti dtheta",abs(theta_180[i+2] - theta_180[i+1]) / 2)
+        print("anti dtheta",abs(theta_order[2] - theta_order[1]) / 2)
 
     
     if theta_anti > 2*np.pi:
         theta_anti-=2*np.pi
 
-    print("anti perc",dtheta)
+    print("anti dtheta",dtheta)
 
-    if len(theta_loc) > 3:
+    if type == 2:
 
-        theta_clock = theta_loc[i+1] - dtheta
+        theta_clock = theta_loc[1] - dtheta
 
-        if theta_clock <= theta_order[Bidx-1]:
+        if round(theta_clock,2) <= round(theta_order[0],2):
             
-            theta_clock = theta_loc[i+1] - abs(theta_180[i+1] - theta_180[i]) / 2
+            theta_clock = theta_loc[1] - abs(theta_order[1] - theta_order[0]) / 2
 
-            print("clock dtheta", abs(theta_180[i+1] - theta_180[i]) / 2)
-    
+            print("clock dtheta", abs(theta_order[1] - theta_order[0]) / 2)
+        
     else:
-        theta_clock = theta_loc[i+1] - dtheta
+        theta_clock = theta_loc[1] - dtheta
 
-    print("clock perc", dtheta)
+    print("clock dtheta", dtheta)
 
     r = 63
     x_anti = 2560 + r*np.cos(theta_anti)
@@ -154,16 +154,12 @@ def ux_interp(i,Bidx,theta_loc,theta_180,theta_order,Xs,Ys,Z,dtheta):
 
 
 
-def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
-
-    theta = theta_loc[i+1] #theta B
-    Bidx = theta_order.index(theta)
-    print("crossing", theta)
+def isOutside(type,theta_loc,theta_order,Xs,Ys,Z,threshold):
 
     dtheta_arr = np.radians([2,4,6,8,10,12,14,16,18,20,24,26])
 
     for dtheta in dtheta_arr:
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,Bidx,theta_loc,theta_180,theta_order,Xs,Ys,Z,dtheta)
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(type,theta_loc,theta_order,Xs,Ys,Z,dtheta)
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:
                 continue
@@ -182,11 +178,11 @@ def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
 
         if ux_anti > threshold:
             direction = "anticlockwise"
-            Atheta = theta_order[Bidx+1]
+            Atheta = theta_order[2]
             
         elif ux_clock > threshold:
             direction = "clockwise"
-            Atheta = theta_order[Bidx-1]
+            Atheta = theta_order[0]
 
         else:
             direction = "nan"
@@ -198,16 +194,16 @@ def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
 
         if ux_clock < threshold:
             direction = "clockwise"
-            Atheta = theta_order[Bidx-1]
+            Atheta = theta_order[0]
             
         elif ux_anti < threshold:
             direction = "anticlockwise"
-            Atheta = theta_order[Bidx+1]
+            Atheta = theta_order[2]
 
         else:
             direction = "nan"
             Atheta = "skip"
-    print(direction,Bidx)
+    print(direction)
     return Atheta,direction
 
 
@@ -226,18 +222,27 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
     
     theta_order = np.sort(theta_loc)
     theta_order = theta_order.tolist()
+
     theta_loc.append(theta_loc[0])
     theta_180.append(theta_180[0])
-    print("theta_180",theta_180)
-    print("theta_loc",theta_loc)
-    print("theta_order",theta_order)
+    theta_order.append(theta_order[0]+2*np.pi)
+    print(theta_180)
+    print(theta_loc)
+    print(theta_order)
+
+    if len(theta_loc) > 3:
+        type = 2
+    else:
+        type = 1
 
     Xcontours = []; Ycontours = []
     Xcontour = []; Ycontour = []   
 
     if len(crossings) < 3:
-        i = 0
-        Atheta,direction = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
+        theta = theta_loc[1] #theta B
+        Bidx = theta_order.index(theta)
+        print("crossing", theta)
+        Atheta,direction = isOutside(type,theta_loc,theta_order,Xs,Ys,Z,threshold)
         print("Atheta",Atheta)
 
 
@@ -246,19 +251,19 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 
         if direction == "anticlockwise":
-            if theta_loc[i+1] < theta_loc[i]:
+            if theta_loc[1] < theta_loc[0]:
             
-                theta_AB = np.linspace(theta_loc[i+1],theta_loc[i],int(abs(theta_180[i+1]-theta_180[i])/5e-03))
-            elif theta_loc[i+1] > theta_loc[i]:
-                theta_AB1 = np.linspace(theta_loc[i+1],0,int(abs(theta_180[i+1])/5e-03))
-                theta_AB2 = np.linspace(0,theta_loc[i],int(theta_loc[i]/5e-03))
+                theta_AB = np.linspace(theta_loc[1],theta_loc[0],int(abs(theta_180[1]-theta_180[0])/5e-03))
+            elif theta_loc[1] > theta_loc[0]:
+                theta_AB1 = np.linspace(theta_loc[1],0,int(abs(theta_180[1])/5e-03))
+                theta_AB2 = np.linspace(0,theta_loc[0],int(theta_loc[0]/5e-03))
                 theta_AB = np.concatenate((theta_AB1,theta_AB2))
         elif direction == "clockwise":
-            if theta_loc[i+1] > theta_loc[i]:
-                theta_AB = np.linspace(theta_loc[i+1],theta_loc[i],int(abs(theta_180[i+1]-theta_180[i])/5e-03))
-            elif theta_loc[i+1] < theta_loc[i]:
-                theta_AB1 = np.linspace(theta_loc[i+1],0,int(abs(theta_180[i+1])/5e-03))
-                theta_AB2 = np.linspace(0,theta_loc[i],int(theta_loc[i]/5e-03))
+            if theta_loc[1] > theta_loc[0]:
+                theta_AB = np.linspace(theta_loc[1],theta_loc[0],int(abs(theta_180[1]-theta_180[0])/5e-03))
+            elif theta_loc[1] < theta_loc[0]:
+                theta_AB1 = np.linspace(theta_loc[1],0,int(abs(theta_180[1])/5e-03))
+                theta_AB2 = np.linspace(0,theta_loc[0],int(theta_loc[0]/5e-03))
                 theta_AB = np.concatenate((theta_AB1,theta_AB2))
 
         print("theta arc",theta_AB)
@@ -271,10 +276,16 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         Xcontours.append(Xcontour); Ycontours.append(Ycontour)
 
     else:
-        theta_order.append(theta_order[0])
         for i in np.arange(0,len(crossings),2):
+            theta = theta_loc[i+1] #theta B
+            Bidx = theta_order.index(theta)
+            print("crossing", theta)
+            theta_O = theta_order[Bidx-1:Bidx+2]
+            theta_L = theta_loc[i:i+3]
+            print("theta_loc",theta_L)
+            print("theta_order",theta_O)
             
-            Atheta,direction = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
+            Atheta,direction = isOutside(type,theta_L,theta_O,Xs,Ys,Z,threshold)
             print("Atheta",Atheta)
 
             #this should be needed
