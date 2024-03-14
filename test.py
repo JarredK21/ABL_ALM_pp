@@ -72,15 +72,18 @@ def ux_interp(type,theta_loc,theta_order,Xs,Ys,Z,dtheta):
 
     theta_anti = theta_loc[1] + dtheta
 
+    if theta_anti > 2*np.pi:
+        theta_anti-=2*np.pi
+
+
     if round(theta_anti,2) >= round(theta_order[2],2):
         
         theta_anti = theta_loc[1] + abs(theta_order[2] - theta_order[1]) / 2
 
         print("anti dtheta",abs(theta_order[2] - theta_order[1]) / 2)
 
-    
-    if theta_anti > 2*np.pi:
-        theta_anti-=2*np.pi
+        if theta_anti > 2*np.pi:
+            theta_anti-=2*np.pi
 
     print("anti dtheta",dtheta)
 
@@ -88,14 +91,24 @@ def ux_interp(type,theta_loc,theta_order,Xs,Ys,Z,dtheta):
 
         theta_clock = theta_loc[1] - dtheta
 
+        if theta_clock < 0:
+            theta_clock +=2*np.pi
+
         if round(theta_clock,2) <= round(theta_order[0],2):
             
             theta_clock = theta_loc[1] - abs(theta_order[1] - theta_order[0]) / 2
 
             print("clock dtheta", abs(theta_order[1] - theta_order[0]) / 2)
+
+            if theta_clock < 0:
+                theta_clock +=2*np.pi
         
     else:
         theta_clock = theta_loc[1] - dtheta
+
+        if theta_clock < 0:
+            theta_clock +=2*np.pi
+
 
     print("clock dtheta", dtheta)
 
@@ -195,7 +208,6 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
 
     theta_loc.append(theta_loc[0])
     theta_180.append(theta_180[0])
-    theta_order.append(theta_order[0]+2*np.pi)
     print(theta_180)
     print(theta_loc)
     print(theta_order)
@@ -209,8 +221,8 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
     Xcontour = []; Ycontour = []   
 
     if len(crossings) < 3:
+        theta_order.append(theta_order[0]+2*np.pi)
         theta = theta_loc[1] #theta B
-        Bidx = theta_order.index(theta)
         print("crossing", theta)
         Atheta,direction = isOutside(type,theta_loc,theta_order,Xs,Ys,Z,threshold)
         print("Atheta",Atheta)
@@ -250,7 +262,14 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
             theta = theta_loc[i+1] #theta B
             Bidx = theta_order.index(theta)
             print("crossing", theta)
-            theta_O = theta_order[Bidx-1:Bidx+2]
+
+            if Bidx == 0:
+                theta_O = [theta_order[Bidx-1]-2*np.pi,theta_order[Bidx],theta_order[Bidx+1]]
+            elif Bidx == len(theta_order)-1:
+                theta_O = [theta_order[Bidx-1],theta_order[Bidx],theta_order[0]+2*np.pi]
+            else:
+                theta_O = theta_order[Bidx-1:Bidx+2]
+
             theta_L = theta_loc[i:i+3]
             print("theta_loc",theta_L)
             print("theta_order",theta_O)
