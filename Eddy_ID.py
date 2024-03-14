@@ -150,7 +150,7 @@ def ux_interp(i,Bidx,theta_loc,theta_180,theta_order,Xs,Ys,Z,dtheta):
 
     print(theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock)
 
-    return theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock
+    return ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock
 
 
 
@@ -163,7 +163,7 @@ def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
     dtheta_arr = np.radians([2,4,6,8,10,12,14,16,18,20,24,26])
 
     for dtheta in dtheta_arr:
-        theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,Bidx,theta_loc,theta_180,theta_order,Xs,Ys,Z,dtheta)
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(i,Bidx,theta_loc,theta_180,theta_order,Xs,Ys,Z,dtheta)
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:
                 continue
@@ -208,7 +208,7 @@ def isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
             direction = "nan"
             Atheta = "skip"
     print(direction,Bidx)
-    return Atheta,direction,theta_anti,theta_clock
+    return Atheta,direction
 
 
 
@@ -237,7 +237,7 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
 
     if len(crossings) < 3:
         i = 0
-        Atheta,direction,theta_anti,theta_clock = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
+        Atheta,direction = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
         print("Atheta",Atheta)
 
 
@@ -245,19 +245,21 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
         Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 
-        # if direction == "anticlockwise" and theta_loc[i+1] < theta_anti:
-        #     thetaAB = np.linspace(theta_180[i+1],theta_loc[i+2],int(abs(theta_180[i+1]-theta_180[i+2])/5e-03))
-                    
-        # elif direction == "clockwise" and theta_loc[i+1] > theta_clock:
-        #     thetaAB = np.linspace(theta_180[i+1],theta_180[i+2],int(abs(theta_180[i+1]-theta_loc[i+2])/5e-03))
-
-        # for j in np. arange(0,len(thetaAB)):
-        #     if thetaAB[j] < 0:
-        #         thetaAB[j]+=2*np.pi
-        
-        # else:
+        if direction == "anticlockwise":
+            if theta_loc[i+1] < theta_loc[i]:
             
-        theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
+                theta_AB = np.linspace(theta_loc[i+1],theta_loc[i],int(abs(theta_180[i+1]-theta_180[i])/5e-03))
+            elif theta_loc[i+1] > theta_loc[i]:
+                theta_AB1 = np.linspace(theta_loc[i+1],0,int(abs(theta_180[i+1])/5e-03))
+                theta_AB2 = np.linspace(0,theta_loc[i],int(theta_loc[i]/5e-03))
+                theta_AB = np.concatenate((theta_AB1,theta_AB2))
+        elif direction == "clockwise":
+            if theta_loc[i+1] > theta_loc[i]:
+                theta_AB = np.linspace(theta_loc[i+1],theta_loc[i],int(abs(theta_180[i+1]-theta_180[i])/5e-03))
+            elif theta_loc[i+1] < theta_loc[i]:
+                theta_AB1 = np.linspace(theta_loc[i+1],0,int(abs(theta_180[i+1])/5e-03))
+                theta_AB2 = np.linspace(0,theta_loc[i],int(theta_loc[i]/5e-03))
+                theta_AB = np.concatenate((theta_AB1,theta_AB2))
 
         print("theta arc",theta_AB)
 
@@ -269,9 +271,10 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         Xcontours.append(Xcontour); Ycontours.append(Ycontour)
 
     else:
+        theta_order.append(theta_order[0])
         for i in np.arange(0,len(crossings),2):
             
-            Atheta,direction,theta_anti,theta_clock = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
+            Atheta,direction = isOutside(i,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold)
             print("Atheta",Atheta)
 
             #this should be needed
