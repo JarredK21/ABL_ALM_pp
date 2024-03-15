@@ -98,6 +98,21 @@ def openContour(cc,X,Y):
         return "open", X_temp, Y_temp, cc_temp, crossings
 
 
+def ux_closed(Centroid,Xs,Ys,Z):
+    #need better way
+    xmin = Centroid[0]-1; xmax = Centroid[0]+1
+    ymin = Centroid[1]-1; ymax = Centroid[1]+1
+
+    xmin_idx = np.searchsorted(ys,xmin,side="left"); xmax_idx = np.searchsorted(ys,xmax,side="right")
+    ymin_idx = np.searchsorted(zs,ymin,side="left"); ymax_idx = np.searchsorted(zs,ymax,side="right")
+
+    f_ux = interpolate.interp2d(Xs[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Ys[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Z[ymin_idx:ymax_idx,xmin_idx:xmax_idx]) #make more efficient??
+
+    ux_closed = f_ux(Centroid[0],Centroid[1])
+
+    return ux_closed
+
+
 def ux_interp(type,theta_loc,theta_order,Xs,Ys,Z,dtheta):
 
     theta_anti = theta_loc[1] + dtheta
@@ -230,11 +245,10 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         if theta<0:
             theta+=2*np.pi
         theta_loc.append(theta)
-        
 
-    
     theta_order = np.sort(theta_loc)
     theta_order = theta_order.tolist()
+
 
     theta_loc.append(theta_loc[0])
     theta_180.append(theta_180[0])
@@ -262,21 +276,28 @@ def closeContour(Xs,Ys,Z,crossings,cc, X, Y,threshold):
         Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
         Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 
+        #check this part not working all the time
         if direction == "anticlockwise":
             if theta_loc[1] < theta_loc[0]:
             
                 theta_AB = np.linspace(theta_loc[1],theta_loc[0],int(abs(theta_180[1]-theta_180[0])/5e-03))
             elif theta_loc[1] > theta_loc[0]:
-                theta_AB1 = np.linspace(theta_loc[1],0,int(abs(theta_180[1])/5e-03))
+                theta_AB1 = np.linspace(theta_180[1],0,int(abs(theta_180[1])/5e-03))
                 theta_AB2 = np.linspace(0,theta_loc[0],int(theta_loc[0]/5e-03))
                 theta_AB = np.concatenate((theta_AB1,theta_AB2))
         elif direction == "clockwise":
             if theta_loc[1] > theta_loc[0]:
                 theta_AB = np.linspace(theta_loc[1],theta_loc[0],int(abs(theta_180[1]-theta_180[0])/5e-03))
             elif theta_loc[1] < theta_loc[0]:
-                theta_AB1 = np.linspace(theta_loc[1],0,int(abs(theta_180[1])/5e-03))
-                theta_AB2 = np.linspace(0,theta_loc[0],int(theta_loc[0]/5e-03))
+                theta_AB1 = np.linspace(theta_loc[1],0,int(abs(theta_loc[1])/5e-03))
+                theta_AB2 = np.linspace(0,theta_180[0],int(theta_180[0]/5e-03))
                 theta_AB = np.concatenate((theta_AB1,theta_AB2))
+
+        for i in np.arange(0,len(theta_AB)):
+            if theta_AB[i] < 0:
+                theta_AB[i]+=2*np.pi
+            elif theta_AB[i] >= 2*np.pi:
+                theta_AB[i]-=2*np.pi
 
         print("theta arc",theta_AB)
 
@@ -510,7 +531,15 @@ def Update(it):
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            plt.plot(X,Y,"-k",linewidth=3)
+            ux_c = ux_closed(Xs,Ys,Z)
+
+            if ux_c >= 0.7:
+                plt.plot(X,Y,"-k",linewidth=3)
+            elif ux_c <= -0.7:
+                plt.plot(X,Y,"--k",linewidth=3)
+            else:
+                plt.plot(X,Y,"-.k",linewidth=3)
+
             plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
             Eddies_Cent_x.append(Centroid[0])
@@ -559,7 +588,15 @@ def Update(it):
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            plt.plot(X,Y,"--k",linewidth=3)
+            ux_c = ux_closed(Xs,Ys,Z)
+
+            if ux_c <= -0.7:
+                plt.plot(X,Y,"--k",linewidth=3)
+            elif ux_c >= 0.7:
+                plt.plot(X,Y,"-k",linewidth=3)
+            else:
+                plt.plot(X,Y,"-.k",linewidth=3)
+
             plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
             Eddies_Cent_x.append(Centroid[0])
@@ -601,8 +638,9 @@ def Update(it):
     filename = "Rotor_Fluc_Horz_-63.0_{0}.png".format(Time_idx)
     
     x_c = [-1,-10]; y_c = [-1,-10]
-    plt.plot(x_c,y_c,"-k",linewidth=5,label="0.7 m/s")
-    plt.plot(x_c,y_c,"--k",linewidth=5,label="-0.7 m/s")
+    plt.plot(x_c,y_c,"-k",linewidth=5,label="$u_x' \geq 0.7 m/s$")
+    plt.plot(x_c,y_c,"--k",linewidth=5,label="$u_x' \leq -0.7 m/s$")
+    plt.plot(x_c,y_c,"-.k",linewidth=5,label="$-0.7 < u_x' < 0.7 m/s")
 
     plt.xlim([ys[0],ys[-1]]);plt.ylim(zs[0],zs[-1])
     plt.legend()
