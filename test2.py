@@ -3,22 +3,31 @@ import matplotlib.pyplot as plt
 
 direction = "clockwise"
 
-theta_180 = [-2.1235069656598324, -0.01788330627834868, -0.15272079523787366, -0.16297432102583254]
-theta_loc = [4.159678341519754, 6.2653020009012375, 6.130464511941713, 6.1202109861537535]
-theta_order = [4.159678341519754, 6.1202109861537535, 6.130464511941713, 6.2653020009012375]
+theta_180 = [-0.8312255436829765, 0.4142869849226743, -2.2174038593554912]
+theta_loc = [5.4519597634966095, 0.4142869849226743, 4.0657814478240955]
+theta_order = [-0.8312255436829767, 0.4142869849226743, 3.779925796744674]
 
-#remove if dtheta < one grid cell (radians)
-i = 0
-while i < len(theta_order)-1:
-    if theta_order[i+1] - theta_order[i] < 0.047:
-        theta_order.remove(theta_order[i+1])
-        theta_idx = theta_loc.index(theta_order[i+1])
-        theta_loc.remove(theta_loc[theta_idx])
-        theta_180.remove(theta_180[theta_idx])
-    else:
-        i+=1
+#check this part not working all the time
+if direction == "anticlockwise":
+    if theta_loc[1] < theta_loc[0]:
+    
+        theta_AB = np.linspace(theta_loc[1],theta_loc[0],int(abs(theta_180[1]-theta_180[0])/5e-03))
+    elif theta_loc[1] > theta_loc[0]:
+        theta_AB1 = np.linspace(theta_180[1],0,int(abs(theta_180[1])/5e-03))
+        theta_AB2 = np.linspace(0,theta_loc[0],int(theta_loc[0]/5e-03))
+        theta_AB = np.concatenate((theta_AB1,theta_AB2))
+elif direction == "clockwise":
+    if theta_loc[1] > theta_loc[0]:
+        theta_AB = np.linspace(theta_loc[1],theta_loc[0],int(abs(theta_180[1]-theta_180[0])/5e-03))
+    elif theta_loc[1] < theta_loc[0]:
+        theta_AB1 = np.linspace(theta_loc[1],0,int(abs(theta_loc[1])/5e-03))
+        theta_AB2 = np.linspace(0,theta_180[0],int(abs(theta_180[0])/5e-03))
+        theta_AB = np.concatenate((theta_AB1,theta_AB2))
+print(theta_AB)
+for i in np.arange(0,len(theta_AB)):
+    if theta_AB[i] < 0:
+        theta_AB[i]+=2*np.pi
+    elif theta_AB[i] >= 2*np.pi:
+        theta_AB[i]-=2*np.pi
 
-
-print(theta_180)
-print(theta_loc)
-print(theta_order)
+print("theta arc",theta_AB)
