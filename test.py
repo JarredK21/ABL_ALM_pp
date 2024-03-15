@@ -201,11 +201,6 @@ def isOutside(type,theta_loc,theta_order,Xs,Ys,Z,threshold):
             direction = "nan"
             Atheta = "skip"
 
-    if Atheta < 0:
-        Atheta+=2*np.pi
-    elif Atheta >= 2*np.pi:
-        Atheta-=2*np.pi
-
     print("direction",direction)
     return Atheta,direction
 
@@ -221,7 +216,7 @@ def closeContour(theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
     Xcontour = []; Ycontour = []   
 
     if type == 1:
-        theta_order.append(theta_order[0]+2*np.pi)
+        theta_order.append(theta_order[0])
 
         print("crossing", theta_loc[1])
         Atheta,direction = isOutside(type,theta_loc,theta_order,Xs,Ys,Z,threshold)
@@ -237,21 +232,21 @@ def closeContour(theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
                 theta_AB = np.linspace(theta_loc[1],theta_loc[0],int(abs(theta_180[1]-theta_180[0])/5e-03))
             elif theta_loc[1] > theta_loc[0]:
                 theta_AB1 = np.linspace(theta_180[1],0,int(abs(theta_180[1])/5e-03))
-                theta_AB2 = np.linspace(0,theta_loc[0],int(theta_loc[0]/5e-03))
+                theta_AB2 = np.linspace(0,theta_loc[2],int(abs(theta_loc[2])/5e-03))
                 theta_AB = np.concatenate((theta_AB1,theta_AB2))
         elif direction == "clockwise":
             if theta_loc[1] > theta_loc[0]:
                 theta_AB = np.linspace(theta_loc[1],theta_loc[0],int(abs(theta_180[1]-theta_180[0])/5e-03))
             elif theta_loc[1] < theta_loc[0]:
                 theta_AB1 = np.linspace(theta_loc[1],0,int(abs(theta_loc[1])/5e-03))
-                theta_AB2 = np.linspace(0,theta_180[0],int(theta_180[0]/5e-03))
+                theta_AB2 = np.linspace(0,theta_180[0],int(abs(theta_180[0])/5e-03))
                 theta_AB = np.concatenate((theta_AB1,theta_AB2))
 
-        for i in np.arange(0,len(theta_AB)):
-            if theta_AB[i] < 0:
-                theta_AB[i]+=2*np.pi
-            elif theta_AB[i] >= 2*np.pi:
-                theta_AB[i]-=2*np.pi
+        for j in np.arange(0,len(theta_AB)):
+            if theta_AB[j] < 0:
+                theta_AB[j]+=2*np.pi
+            elif theta_AB[j] >= 2*np.pi:
+                theta_AB[j]-=2*np.pi
 
         print("theta arc",theta_AB)
 
@@ -290,8 +285,29 @@ def closeContour(theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
             Xcontour = np.concatenate((Xcontour,X[idx])) #plot A->B
             Ycontour = np.concatenate((Ycontour,Y[idx])) #plot A->B
 
-            theta_AB = np.linspace(theta_loc[i+1],Atheta,int(abs(theta_loc[i+1]-Atheta)/5e-03))
-            print("theta_arc",theta_AB)
+            if direction == "anticlockwise":
+                if theta_loc[1] < Atheta:
+                
+                    theta_AB = np.linspace(theta_loc[1],Atheta,int(abs(theta_180[1]-theta_180[0])/5e-03))
+                elif theta_loc[1] > Atheta:
+                    theta_AB1 = np.linspace(theta_180[1],0,int(abs(theta_180[1])/5e-03))
+                    theta_AB2 = np.linspace(0,Atheta,int(abs(Atheta)/5e-03))
+                    theta_AB = np.concatenate((theta_AB1,theta_AB2))
+            elif direction == "clockwise":
+                if theta_loc[1] > Atheta:
+                    theta_AB = np.linspace(theta_loc[1],Atheta,int(abs(theta_loc[1]-Atheta)/5e-03))
+                elif theta_loc[1] < Atheta:
+                    theta_AB1 = np.linspace(theta_loc[1],0,int(abs(theta_180[1])/5e-03))
+                    theta_AB2 = np.linspace(0,theta_180[0],int(abs(theta_180[0])/5e-03))
+                    theta_AB = np.concatenate((theta_AB1,theta_AB2))
+
+            for j in np.arange(0,len(theta_AB)):
+                if theta_AB[j] < 0:
+                    theta_AB[j]+=2*np.pi
+                elif theta_AB[j] >= 2*np.pi:
+                    theta_AB[j]-=2*np.pi
+
+            print("theta arc",theta_AB)
 
             r = 63
             Xarc = np.add(r*np.cos(theta_AB), 2560); Yarc = np.add(r*np.sin(theta_AB), 90)
