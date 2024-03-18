@@ -121,6 +121,29 @@ def ux_closed(Centroid,Xs,Ys,Z):
     return ux_closed
 
 
+def UX_interp(x_anti,y_anti,x_clock,y_clock,Xs,Ys,Z):
+
+    xmin = x_anti - 4; xmax = x_anti + 4; ymin = y_anti - 4; ymax = y_anti + 4
+
+    xmin_idx = np.searchsorted(ys,xmin,side="left"); xmax_idx = np.searchsorted(ys,xmax,side="right")
+    ymin_idx = np.searchsorted(zs,ymin,side="left"); ymax_idx = np.searchsorted(zs,ymax,side="right")
+
+    f_ux = interpolate.interp2d(Xs[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Ys[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Z[ymin_idx:ymax_idx,xmin_idx:xmax_idx])
+
+    ux_anti = f_ux(x_anti,y_anti)
+
+    xmin = x_clock - 4; xmax = x_clock + 4; ymin = y_clock - 4; ymax = y_clock + 4
+
+    xmin_idx = np.searchsorted(ys,xmin,side="left"); xmax_idx = np.searchsorted(ys,xmax,side="right")
+    ymin_idx = np.searchsorted(zs,ymin,side="left"); ymax_idx = np.searchsorted(zs,ymax,side="right")
+
+    f_ux = interpolate.interp2d(Xs[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Ys[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Z[ymin_idx:ymax_idx,xmin_idx:xmax_idx])
+
+    ux_clock = f_ux(x_clock,y_clock)
+
+    return ux_anti,ux_clock
+
+
 def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
 
     theta_anti = theta_loc[1] + dtheta
@@ -156,9 +179,6 @@ def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
         if theta_clock < 0:
             theta_clock +=2*np.pi
 
-
-    print("clock dtheta", dtheta)
-
     r = 63
     x_anti = 2560 + r*np.cos(theta_anti)
     y_anti = 90 + r*np.sin(theta_anti)
@@ -166,20 +186,10 @@ def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
     x_clock = 2560 + r*np.cos(theta_clock)
     y_clock = 90 + r*np.sin(theta_clock)
 
-    xmin = np.min([x_anti, x_clock])-1; xmax = np.max([x_anti, x_clock])+1
-    ymin = np.min([y_anti, y_clock])-1; ymax = np.max([y_anti, y_clock])+1
-
-    xmin_idx = np.searchsorted(ys,xmin,side="left"); xmax_idx = np.searchsorted(ys,xmax,side="right")
-    ymin_idx = np.searchsorted(zs,ymin,side="left"); ymax_idx = np.searchsorted(zs,ymax,side="right")
-
-    f_ux = interpolate.interp2d(Xs[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Ys[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Z[ymin_idx:ymax_idx,xmin_idx:xmax_idx]) #make more efficient??
-
-    ux_anti = f_ux(x_anti,y_anti)
-
-    ux_clock = f_ux(x_clock,y_clock)
+    ux_anti,ux_clock = UX_interp(x_anti,y_anti,x_clock,y_clock,Xs,Ys,Z)
 
     f.write("{} {} {} {} {} {} {} {} \n".format(theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock))
-
+    print(theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock)
     return ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock
 
 
@@ -236,14 +246,36 @@ def isOutside(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
     return Atheta,direction
 
 
-def closeContour(type,crossings,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
+def isInlist(theta_not,theta):
+    theta_in_list = False
+    for theta_val in theta_not:
+        if theta_val == theta:
+            theta_in_list = True
+
+    return theta_in_list
+
+
+def closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
 
     Xcontours = []; Ycontours = []
     Xcontour = []; Ycontour = []
-    
+
+    theta_not = []
     for i in np.arange(0,len(theta_loc)-1,2):
-        
+
         theta = theta_loc[i+1]
+
+        if type == 2:
+            #check if theta is in theta not
+            if isInlist(theta_not,theta) == True:
+                theta_temp = theta_loc[i:i+1]
+                idx_temp = theta_temp.index(theta)
+                if idx_temp == 0:
+                    theta = theta_temp[1]
+                else:
+                    theta = theta_temp[0]
+                del theta_temp; del idx_temp
+
         Bidx = theta_order.index(theta)
         f.write("crossing {} \n".format(theta))
 
@@ -253,6 +285,9 @@ def closeContour(type,crossings,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,th
             theta_O = [theta_order[Bidx-1],theta_order[Bidx],theta_order[0]+2*np.pi]
         else:
             theta_O = theta_order[Bidx-1:Bidx+2]
+
+        if type == 2:
+            theta_not = np.concatenate((theta_not,theta_O))
 
         theta_L = theta_loc[i:i+3]
         theta_B = theta_180[i:i+3]
@@ -268,12 +303,8 @@ def closeContour(type,crossings,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,th
         #     continue
         
         idx = int(i/2)
-        if X[idx].index(crossings[i+1][0]) == 0: 
-            Xline = X[idx][::-1]; Yline = Y[idx][::-1]
-        else:
-            Xline = X[idx]; Yline = Y[idx]
-        Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
-        Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
+        Xcontour = np.concatenate((Xcontour,X[idx])) #plot A->B
+        Ycontour = np.concatenate((Ycontour,Y[idx])) #plot A->B
 
 
         if direction == "anticlockwise":
@@ -299,6 +330,7 @@ def closeContour(type,crossings,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,th
                 theta_AB[j]-=2*np.pi
 
         f.write("theta arc {} \n".format(theta_AB))
+        print("theta arc",theta_AB)
 
         r = 63
         Xarc = np.add(r*np.cos(theta_AB), 2560); Yarc = np.add(r*np.sin(theta_AB), 90)
@@ -469,6 +501,7 @@ def Update(it):
     cb = plt.colorbar(cs)
 
     f.write("positive contours \n")
+    print("positive contours")
     #for +0.7m/s threshold
     Eddies_Cent_x = []
     Eddies_Cent_y = []
@@ -537,6 +570,13 @@ def Update(it):
     theta_loc.append(theta_loc[0])
     theta_180.append(theta_180[0])
 
+    print("theta_180",theta_180)
+    print("theta_loc",theta_loc)
+    print("theta_order",theta_order)
+    f.write("theta 180 {} \n".format(str(theta_180)))
+    f.write("theta loc {} \n".format(str(theta_loc)))
+    f.write("theta order {} \n".format(str(theta_order)))
+
     if len(theta_loc) > 3:
         type = 2
     else:
@@ -558,9 +598,10 @@ def Update(it):
 
     Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
     f.write("{} \n".format(str(Eddies_it_pos)))
-
+    print(Eddies_it_pos)
 
     f.write("negative contours \n")
+    print("Negative contours")
     #for +0.7m/s threshold
     Eddies_Cent_x = []
     Eddies_Cent_y = []
@@ -651,7 +692,7 @@ def Update(it):
 
     Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
     f.write("{} \n".format(str(Eddies_it_neg)))
-
+    print(Eddies_it_pos)
 
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
     ax.add_artist(Drawing_uncolored_circle)
@@ -691,6 +732,7 @@ it = 0
 
 for it in Time_steps:
     f.write("Time step {} \n".format(str(it)))
+    print("Time step = ",it)
     Eddies_pos,Eddies_neg = Update(it)        
 
     df = pd.DataFrame(None)
@@ -707,6 +749,7 @@ for it in Time_steps:
 
     it+=1
 
+f.close()
 #saving data
 # df_pos.to_csv(in_dir+"Eddies_{}.csv".format(0.7))
 # df_neg.to_csv(in_dir+"Eddies_{}.csv".format(-0.7))
