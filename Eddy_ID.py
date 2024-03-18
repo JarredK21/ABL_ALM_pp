@@ -585,6 +585,7 @@ def Update(it):
 
         Xcontour,Ycontour = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=0.7)
 
+    if len(Xcontour) > 0:
         for X,Y in zip(Xcontour,Ycontour):
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
@@ -688,6 +689,7 @@ def Update(it):
 
         Xcontour,Ycontour = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=-0.7)
 
+    if len(Xcontour) > 0:
         for X,Y in zip(Xcontour,Ycontour):
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
@@ -702,7 +704,7 @@ def Update(it):
 
     Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
     f.write("{} \n".format(str(Eddies_it_neg)))
-    print(Eddies_it_pos)
+    print(Eddies_it_neg)
 
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
     ax.add_artist(Drawing_uncolored_circle)
