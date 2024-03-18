@@ -263,9 +263,9 @@ def closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
 
         theta_L = theta_loc[i:i+3]
         theta_B = theta_180[i:i+3]
-        f.write("theta 180 {} \n".format(str(theta_180)))
-        f.write("theta loc {} \n".format(str(theta_loc)))
-        f.write("theta order {} \n".format(str(theta_order)))
+        f.write("theta 180 {} \n".format(str(theta_B)))
+        f.write("theta loc {} \n".format(str(theta_L)))
+        f.write("theta order {} \n".format(str(theta_O)))
         
         Atheta,direction = isOutside(type,theta_L,theta_O,theta_B,Xs,Ys,Z,threshold)
         f.write("Atheta {}, direction {} \n".format(Atheta,direction))

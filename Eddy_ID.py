@@ -223,9 +223,9 @@ def isOutside(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
             direction = "clockwise"
             Atheta = theta_order[0]
 
-        # else:
-        #     direction = "nan"
-        #     Atheta = "skip"
+        else:
+            direction = "nan"
+            Atheta = "skip"
             
     elif threshold < 0.0:
         plt.plot(x_anti,y_anti,"ob",markersize=6)
@@ -239,9 +239,9 @@ def isOutside(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
             direction = "anticlockwise"
             Atheta = theta_order[2]
 
-        # else:
-        #     direction = "nan"
-        #     Atheta = "skip"
+        else:
+            direction = "nan"
+            Atheta = "skip"
 
     return Atheta,direction
 
@@ -268,7 +268,7 @@ def closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
         if type == 2:
             #check if theta is in theta not
             if isInlist(theta_not,theta) == True:
-                theta_temp = theta_loc[i:i+1]
+                theta_temp = theta_loc[i:i+2]
                 idx_temp = theta_temp.index(theta)
                 if idx_temp == 0:
                     theta = theta_temp[1]
@@ -291,16 +291,16 @@ def closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
 
         theta_L = theta_loc[i:i+3]
         theta_B = theta_180[i:i+3]
-        f.write("theta 180 {} \n".format(str(theta_180)))
-        f.write("theta loc {} \n".format(str(theta_loc)))
-        f.write("theta order {} \n".format(str(theta_order)))
+        f.write("theta B {} \n".format(str(theta_B)))
+        f.write("theta L {} \n".format(str(theta_L)))
+        f.write("theta O {} \n".format(str(theta_O)))
         
         Atheta,direction = isOutside(type,theta_L,theta_O,theta_B,Xs,Ys,Z,threshold)
         f.write("Atheta {}, direction {} \n".format(Atheta,direction))
 
-        # #this should not be needed
-        # if Atheta == "skip":
-        #     continue
+        #this should not be needed
+        if Atheta == "skip":
+            continue
         
         idx = int(i/2)
         Xcontour = np.concatenate((Xcontour,X[idx])) #plot A->B
@@ -582,19 +582,20 @@ def Update(it):
     else:
         type = 1
 
-    Xcontour,Ycontour = closeContour(type,crossings,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=0.7)
+    Xcontour,Ycontour = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=0.7)
 
-    for X,Y in zip(Xcontour,Ycontour):
-        Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-        X = np.append(X,X[0]); Y = np.append(Y,Y[0])
-        Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+    if len(Xcontour) > 0:
+        for X,Y in zip(Xcontour,Ycontour):
+            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+            X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-        plt.plot(X,Y,"-k",linewidth=3)
-        plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+            plt.plot(X,Y,"-k",linewidth=3)
+            plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
-        Eddies_Cent_x.append(Centroid[0])
-        Eddies_Cent_y.append(Centroid[1])
-        Eddies_Area.append(Area)
+            Eddies_Cent_x.append(Centroid[0])
+            Eddies_Cent_y.append(Centroid[1])
+            Eddies_Area.append(Area)
 
     Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
     f.write("{} \n".format(str(Eddies_it_pos)))
@@ -667,6 +668,15 @@ def Update(it):
     theta_order = np.sort(theta_loc)
     theta_order = theta_order.tolist()
 
+
+    print("theta_180",theta_180)
+    print("theta_loc",theta_loc)
+    print("theta_order",theta_order)
+    f.write("theta 180 {} \n".format(str(theta_180)))
+    f.write("theta loc {} \n".format(str(theta_loc)))
+    f.write("theta order {} \n".format(str(theta_order)))
+
+
     theta_loc.append(theta_loc[0])
     theta_180.append(theta_180[0])
 
@@ -675,20 +685,20 @@ def Update(it):
     else:
         type = 1
 
-    Xcontour,Ycontour = closeContour(type,crossings,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=-0.7)
+    Xcontour,Ycontour = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=-0.7)
 
+    if len(Xcontour) > 0:
+        for X,Y in zip(Xcontour,Ycontour):
+            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+            X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-    for X,Y in zip(Xcontour,Ycontour):
-        Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-        X = np.append(X,X[0]); Y = np.append(Y,Y[0])
-        Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+            plt.plot(X,Y,"--k",linewidth=3)
+            plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
-        plt.plot(X,Y,"--k",linewidth=3)
-        plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
-
-        Eddies_Cent_x.append(Centroid[0])
-        Eddies_Cent_y.append(Centroid[1])
-        Eddies_Area.append(Area)
+            Eddies_Cent_x.append(Centroid[0])
+            Eddies_Cent_y.append(Centroid[1])
+            Eddies_Area.append(Area)
 
     Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
     f.write("{} \n".format(str(Eddies_it_neg)))
