@@ -554,37 +554,37 @@ def Update(it):
                 crossings.append(crossing)
             del Xtemp; del Ytemp; del crossings_temp
 
-    #set up arrays
-    theta_180 = []
-    theta_loc = []
-    for crossing in crossings:
-        theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
-        theta_180.append(theta)
-        if theta<0:
-            theta+=2*np.pi
-        theta_loc.append(theta)
-
-    theta_order = np.sort(theta_loc)
-    theta_order = theta_order.tolist()
-
-    theta_loc.append(theta_loc[0])
-    theta_180.append(theta_180[0])
-
-    print("theta_180",theta_180)
-    print("theta_loc",theta_loc)
-    print("theta_order",theta_order)
-    f.write("theta 180 {} \n".format(str(theta_180)))
-    f.write("theta loc {} \n".format(str(theta_loc)))
-    f.write("theta order {} \n".format(str(theta_order)))
-
-    if len(theta_loc) > 3:
-        type = 2
-    else:
-        type = 1
-
-    Xcontour,Ycontour = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=0.7)
-
     if len(Xcontour) > 0:
+        #set up arrays
+        theta_180 = []
+        theta_loc = []
+        for crossing in crossings:
+            theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
+            theta_180.append(theta)
+            if theta<0:
+                theta+=2*np.pi
+            theta_loc.append(theta)
+
+        theta_order = np.sort(theta_loc)
+        theta_order = theta_order.tolist()
+
+        theta_loc.append(theta_loc[0])
+        theta_180.append(theta_180[0])
+
+        print("theta_180",theta_180)
+        print("theta_loc",theta_loc)
+        print("theta_order",theta_order)
+        f.write("theta 180 {} \n".format(str(theta_180)))
+        f.write("theta loc {} \n".format(str(theta_loc)))
+        f.write("theta order {} \n".format(str(theta_order)))
+
+        if len(theta_loc) > 3:
+            type = 2
+        else:
+            type = 1
+
+        Xcontour,Ycontour = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=0.7)
+
         for X,Y in zip(Xcontour,Ycontour):
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
@@ -655,39 +655,39 @@ def Update(it):
                 crossings.append(crossing)
             del Xtemp; del Ytemp; del crossings_temp
 
-    #set up arrays
-    theta_180 = []
-    theta_loc = []
-    for crossing in crossings:
-        theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
-        theta_180.append(theta)
-        if theta<0:
-            theta+=2*np.pi
-        theta_loc.append(theta)
-
-    theta_order = np.sort(theta_loc)
-    theta_order = theta_order.tolist()
-
-
-    print("theta_180",theta_180)
-    print("theta_loc",theta_loc)
-    print("theta_order",theta_order)
-    f.write("theta 180 {} \n".format(str(theta_180)))
-    f.write("theta loc {} \n".format(str(theta_loc)))
-    f.write("theta order {} \n".format(str(theta_order)))
-
-
-    theta_loc.append(theta_loc[0])
-    theta_180.append(theta_180[0])
-
-    if len(theta_loc) > 3:
-        type = 2
-    else:
-        type = 1
-
-    Xcontour,Ycontour = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=-0.7)
-
     if len(Xcontour) > 0:
+        #set up arrays
+        theta_180 = []
+        theta_loc = []
+        for crossing in crossings:
+            theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
+            theta_180.append(theta)
+            if theta<0:
+                theta+=2*np.pi
+            theta_loc.append(theta)
+
+        theta_order = np.sort(theta_loc)
+        theta_order = theta_order.tolist()
+
+
+        print("theta_180",theta_180)
+        print("theta_loc",theta_loc)
+        print("theta_order",theta_order)
+        f.write("theta 180 {} \n".format(str(theta_180)))
+        f.write("theta loc {} \n".format(str(theta_loc)))
+        f.write("theta order {} \n".format(str(theta_order)))
+
+
+        theta_loc.append(theta_loc[0])
+        theta_180.append(theta_180[0])
+
+        if len(theta_loc) > 3:
+            type = 2
+        else:
+            type = 1
+
+        Xcontour,Ycontour = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=-0.7)
+
         for X,Y in zip(Xcontour,Ycontour):
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
