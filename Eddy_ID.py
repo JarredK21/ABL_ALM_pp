@@ -135,9 +135,9 @@ def UX_interp(x,y,Xs,Ys,Z):
     return ux
 
 
-def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
+def ux_interp(type,theta,theta_order,theta_180,Xs,Ys,Z,dtheta):
 
-    theta_anti = theta_loc[1] + dtheta
+    theta_anti = theta + dtheta
 
     if theta_anti > 2*np.pi:
         theta_anti-=2*np.pi
@@ -145,27 +145,27 @@ def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
 
     if round(theta_anti,2) >= round(theta_order[2],2):
         
-        theta_anti = theta_loc[1] + abs(theta_180[2] - theta_180[1]) / 2
+        theta_anti = theta + abs(theta_180[2] - theta_180[1]) / 2
 
         if theta_anti > 2*np.pi:
             theta_anti-=2*np.pi
 
     if type == 2:
 
-        theta_clock = theta_loc[1] - dtheta
+        theta_clock = theta - dtheta
 
         if theta_clock < 0:
             theta_clock +=2*np.pi
 
         if round(theta_clock,2) <= round(theta_order[0],2):
             
-            theta_clock = theta_loc[1] - abs(theta_180[1] - theta_180[0]) / 2
+            theta_clock = theta - abs(theta_180[1] - theta_180[0]) / 2
 
             if theta_clock < 0:
                 theta_clock +=2*np.pi
         
     else:
-        theta_clock = theta_loc[1] - dtheta
+        theta_clock = theta - dtheta
 
         if theta_clock < 0:
             theta_clock +=2*np.pi
@@ -186,12 +186,12 @@ def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
     return ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock
 
 
-def isOutside(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
+def isOutside(type,theta,theta_order,theta_180,Xs,Ys,Z,threshold):
 
     dtheta_arr = np.radians([2,4,6,8,10,12,14,16,18,20,24,26])
 
     for dtheta in dtheta_arr:
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta)
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(type,theta,theta_order,theta_180,Xs,Ys,Z,dtheta)
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:
                 continue
