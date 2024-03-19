@@ -114,9 +114,9 @@ def UX_interp(x_anti,y_anti,x_clock,y_clock,Xs,Ys,Z):
     return ux_anti,ux_clock
 
 
-def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
+def ux_interp(type,theta,theta_order,theta_180,Xs,Ys,Z,dtheta):
 
-    theta_anti = theta_loc[1] + dtheta
+    theta_anti = theta + dtheta
 
     if theta_anti > 2*np.pi:
         theta_anti-=2*np.pi
@@ -124,27 +124,27 @@ def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
 
     if round(theta_anti,2) >= round(theta_order[2],2):
         
-        theta_anti = theta_loc[1] + abs(theta_180[2] - theta_180[1]) / 2
+        theta_anti = theta + abs(theta_180[2] - theta_180[1]) / 2
 
         if theta_anti > 2*np.pi:
             theta_anti-=2*np.pi
 
     if type == 2:
 
-        theta_clock = theta_loc[1] - dtheta
+        theta_clock = theta - dtheta
 
         if theta_clock < 0:
             theta_clock +=2*np.pi
 
         if round(theta_clock,2) <= round(theta_order[0],2):
             
-            theta_clock = theta_loc[1] - abs(theta_180[1] - theta_180[0]) / 2
+            theta_clock = theta - abs(theta_180[1] - theta_180[0]) / 2
 
             if theta_clock < 0:
                 theta_clock +=2*np.pi
         
     else:
-        theta_clock = theta_loc[1] - dtheta
+        theta_clock = theta - dtheta
 
         if theta_clock < 0:
             theta_clock +=2*np.pi
@@ -165,12 +165,12 @@ def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
     return ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock
 
 
-def isOutside(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
+def isOutside(type,theta,theta_order,theta_180,Xs,Ys,Z,threshold):
 
     dtheta_arr = np.radians([2,4,6,8,10,12,14,16,18,20,24,26])
 
     for dtheta in dtheta_arr:
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta)
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(type,theta,theta_order,theta_180,Xs,Ys,Z,dtheta)
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:
                 continue
@@ -195,9 +195,9 @@ def isOutside(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
             direction = "clockwise"
             Atheta = theta_order[0]
 
-        # else:
-        #     direction = "nan"
-        #     Atheta = "skip"
+        else:
+            direction = "nan"
+            Atheta = "skip"
             
     elif threshold < 0.0:
         plt.plot(x_anti,y_anti,"ob",markersize=6)
@@ -211,9 +211,9 @@ def isOutside(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,threshold):
             direction = "anticlockwise"
             Atheta = theta_order[2]
 
-        # else:
-        #     direction = "nan"
-        #     Atheta = "skip"
+        else:
+            direction = "nan"
+            Atheta = "skip"
 
     return Atheta,direction
 
@@ -240,7 +240,7 @@ def closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
         if type == 2:
             #check if theta is in theta not
             if isInlist(theta_not,theta) == True:
-                theta_temp = theta_loc[i:i+1]
+                theta_temp = theta_loc[i:i+2]
                 idx_temp = theta_temp.index(theta)
                 if idx_temp == 0:
                     theta = theta_temp[1]
@@ -248,31 +248,34 @@ def closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
                     theta = theta_temp[0]
                 del theta_temp; del idx_temp
 
-        Bidx = theta_order.index(theta)
+        Oidx = theta_order.index(theta)
         f.write("crossing {} \n".format(theta))
 
-        if Bidx == 0:
-            theta_O = [theta_order[-1]-2*np.pi,theta_order[Bidx],theta_order[Bidx+1]]
-        elif Bidx == len(theta_order)-1:
-            theta_O = [theta_order[Bidx-1],theta_order[Bidx],theta_order[0]+2*np.pi]
+        if Oidx == 0:
+            theta_O = [theta_order[-1]-2*np.pi,theta_order[Oidx],theta_order[Oidx+1]]
+            theta_B = [theta_180[-1],theta_180[Oidx],theta_180[Oidx+1]]
+        elif Oidx == len(theta_order)-1:
+            theta_O = [theta_order[Oidx-1],theta_order[Oidx],theta_order[0]+2*np.pi]
+            theta_B = [theta_180[Oidx-1],theta_180[Oidx],theta_180[0]]
         else:
-            theta_O = theta_order[Bidx-1:Bidx+2]
+            theta_O = theta_order[Oidx-1:Oidx+2]
+            theta_B = theta_180[Oidx-1:Oidx+2]
 
-        if type == 2:
-            theta_not = np.concatenate((theta_not,theta_O))
+        if type == 1:
+            theta_B = theta_O
 
-        theta_L = theta_loc[i:i+3]
-        theta_B = theta_180[i:i+3]
         f.write("theta 180 {} \n".format(str(theta_B)))
-        f.write("theta loc {} \n".format(str(theta_L)))
         f.write("theta order {} \n".format(str(theta_O)))
         
-        Atheta,direction = isOutside(type,theta_L,theta_O,theta_B,Xs,Ys,Z,threshold)
+        Atheta,direction = isOutside(type,theta,theta_O,theta_B,Xs,Ys,Z,threshold)
         f.write("Atheta {}, direction {} \n".format(Atheta,direction))
 
-        # #this should not be needed
-        # if Atheta == "skip":
-        #     continue
+        if type == 2:
+            theta_not.append(theta);theta_not.append(Atheta)
+
+        #this should not be needed
+        if Atheta == "skip":
+            continue
         
         idx = int(i/2)
         Xcontour = np.concatenate((Xcontour,X[idx])) #plot A->B
@@ -282,14 +285,14 @@ def closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
         if direction == "anticlockwise":
             if theta < Atheta:
             
-                theta_AB = np.linspace(theta,Atheta,int(abs(theta_B[1]-theta_B[0])/5e-03))
+                theta_AB = np.linspace(theta,Atheta,int(abs(theta_B[2]-theta_B[1])/5e-03))
             elif theta > Atheta:
                 theta_AB1 = np.linspace(theta_B[1],0,int(abs(theta_B[1])/5e-03))
                 theta_AB2 = np.linspace(0,Atheta,int(abs(Atheta)/5e-03))
                 theta_AB = np.concatenate((theta_AB1,theta_AB2))
         elif direction == "clockwise":
             if theta > Atheta:
-                theta_AB = np.linspace(theta,Atheta,int(abs(theta-Atheta)/5e-03))
+                theta_AB = np.linspace(theta,Atheta,int(abs(theta_B[1]-theta_B[0])/5e-03))
             elif theta < Atheta:
                 theta_AB1 = np.linspace(theta,0,int(abs(theta_B[1])/5e-03))
                 theta_AB2 = np.linspace(0,theta_B[0],int(abs(theta_B[0])/5e-03))
@@ -491,21 +494,24 @@ for line in lines:
 
 if len(X_contour) > 0:
     #set up arrays
-    theta_180 = []
     theta_loc = []
     for crossing in crossings:
         theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
-        theta_180.append(theta)
         if theta<0:
             theta+=2*np.pi
         theta_loc.append(theta)
 
-
     theta_order = np.sort(theta_loc)
     theta_order = theta_order.tolist()
-                
+
+    theta_180 = []
+    for theta in theta_order:
+        if theta > np.pi:
+            theta_180.append(theta-(2*np.pi))
+        else:
+            theta_180.append(theta)
+
     theta_loc.append(theta_loc[0])
-    theta_180.append(theta_180[0])
 
     if len(theta_loc) > 3:
         type = 2
@@ -588,28 +594,29 @@ for line in lines:
 
 if len(X_contour) > 0:
     #set up arrays
-    theta_180 = []
     theta_loc = []
     for crossing in crossings:
         theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
-        theta_180.append(theta)
         if theta<0:
             theta+=2*np.pi
         theta_loc.append(theta)
 
-
     theta_order = np.sort(theta_loc)
     theta_order = theta_order.tolist()
 
-    theta_loc.append(theta_loc[0])
-    theta_180.append(theta_180[0])
+    theta_180 = []
+    for theta in theta_order:
+        if theta > np.pi:
+            theta_180.append(theta-(2*np.pi))
+        else:
+            theta_180.append(theta)
 
+    theta_loc.append(theta_loc[0])
 
     if len(theta_loc) > 3:
         type = 2
     else:
         type = 1
-
 
     X_contours,Y_contours = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,X_contour,Y_contour,threshold=-0.7)
 
@@ -630,6 +637,18 @@ if len(X_contours) > 0:
 Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
 f.write("{} \n".format(str(Eddies_it_neg)))
 
+if len(Eddies_it_pos["Area_pos"]) == 0 and len(Eddies_it_neg["Area_neg"] == 0):
+    ux_cent,ux_cl = UX_interp(2560,90,2560,90,Xs,Ys,Z)
+    if -0.7 < ux_cent < 0.7:
+        Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="-.",edgecolor="k")
+    elif ux_cent <= -0.7:
+        Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="--",edgecolor="k")
+    elif ux_cent >= 0.7:
+        Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="-",edgecolor="k")
+
+    ax.add_artist(Drawing_uncolored_circle)
+
+
 Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
 ax.add_artist(Drawing_uncolored_circle)
 
@@ -647,6 +666,7 @@ filename = "Rotor_Fluc_Horz_-63.0_{0}.png".format(Time_idx)
 x_c = [-1,-10]; y_c = [-1,-10]
 plt.plot(x_c,y_c,"-k",label="0.7 m/s")
 plt.plot(x_c,y_c,"--k",label="-0.7 m/s")
+plt.plot(x_c,y_c,"-.k",linewidth=5,label="$-0.7 < u_x' < 0.7 m/s$")
 
 plt.xlim([ys[0],ys[-1]]);plt.ylim(zs[0],zs[-1])
 plt.legend()

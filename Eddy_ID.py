@@ -276,27 +276,30 @@ def closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
                     theta = theta_temp[0]
                 del theta_temp; del idx_temp
 
-        Bidx = theta_order.index(theta)
+        Oidx = theta_order.index(theta)
         f.write("crossing {} \n".format(theta))
 
-        if Bidx == 0:
-            theta_O = [theta_order[-1]-2*np.pi,theta_order[Bidx],theta_order[Bidx+1]]
-        elif Bidx == len(theta_order)-1:
-            theta_O = [theta_order[Bidx-1],theta_order[Bidx],theta_order[0]+2*np.pi]
+        if Oidx == 0:
+            theta_O = [theta_order[-1]-2*np.pi,theta_order[Oidx],theta_order[Oidx+1]]
+            theta_B = [theta_180[-1],theta_180[Oidx],theta_180[Oidx+1]]
+        elif Oidx == len(theta_order)-1:
+            theta_O = [theta_order[Oidx-1],theta_order[Oidx],theta_order[0]+2*np.pi]
+            theta_B = [theta_180[Oidx-1],theta_180[Oidx],theta_180[0]]
         else:
-            theta_O = theta_order[Bidx-1:Bidx+2]
+            theta_O = theta_order[Oidx-1:Oidx+2]
+            theta_B = theta_180[Oidx-1:Oidx+2]
+
+        if type == 1:
+            theta_B = theta_O
+
+        f.write("theta 180 {} \n".format(str(theta_B)))
+        f.write("theta order {} \n".format(str(theta_O)))
+        
+        Atheta,direction = isOutside(type,theta,theta_O,theta_B,Xs,Ys,Z,threshold)
+        f.write("Atheta {}, direction {} \n".format(Atheta,direction))
 
         if type == 2:
-            theta_not = np.concatenate((theta_not,theta_O))
-
-        theta_L = theta_loc[i:i+3]
-        theta_B = theta_180[i:i+3]
-        f.write("theta B {} \n".format(str(theta_B)))
-        f.write("theta L {} \n".format(str(theta_L)))
-        f.write("theta O {} \n".format(str(theta_O)))
-        
-        Atheta,direction = isOutside(type,theta_L,theta_O,theta_B,Xs,Ys,Z,threshold)
-        f.write("Atheta {}, direction {} \n".format(Atheta,direction))
+            theta_not.append(theta);theta_not.append(Atheta)
 
         #this should not be needed
         if Atheta == "skip":
@@ -310,14 +313,14 @@ def closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
         if direction == "anticlockwise":
             if theta < Atheta:
             
-                theta_AB = np.linspace(theta,Atheta,int(abs(theta_B[1]-theta_B[0])/5e-03))
+                theta_AB = np.linspace(theta,Atheta,int(abs(theta_B[2]-theta_B[1])/5e-03))
             elif theta > Atheta:
                 theta_AB1 = np.linspace(theta_B[1],0,int(abs(theta_B[1])/5e-03))
                 theta_AB2 = np.linspace(0,Atheta,int(abs(Atheta)/5e-03))
                 theta_AB = np.concatenate((theta_AB1,theta_AB2))
         elif direction == "clockwise":
             if theta > Atheta:
-                theta_AB = np.linspace(theta,Atheta,int(abs(theta-Atheta)/5e-03))
+                theta_AB = np.linspace(theta,Atheta,int(abs(theta_B[1]-theta_B[0])/5e-03))
             elif theta < Atheta:
                 theta_AB1 = np.linspace(theta,0,int(abs(theta_B[1])/5e-03))
                 theta_AB2 = np.linspace(0,theta_B[0],int(abs(theta_B[0])/5e-03))
@@ -556,11 +559,9 @@ def Update(it):
 
     if len(Xcontour) > 0:
         #set up arrays
-        theta_180 = []
         theta_loc = []
         for crossing in crossings:
             theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
-            theta_180.append(theta)
             if theta<0:
                 theta+=2*np.pi
             theta_loc.append(theta)
@@ -568,15 +569,14 @@ def Update(it):
         theta_order = np.sort(theta_loc)
         theta_order = theta_order.tolist()
 
-        theta_loc.append(theta_loc[0])
-        theta_180.append(theta_180[0])
+        theta_180 = []
+        for theta in theta_order:
+            if theta > np.pi:
+                theta_180.append(theta-(2*np.pi))
+            else:
+                theta_180.append(theta)
 
-        print("theta_180",theta_180)
-        print("theta_loc",theta_loc)
-        print("theta_order",theta_order)
-        f.write("theta 180 {} \n".format(str(theta_180)))
-        f.write("theta loc {} \n".format(str(theta_loc)))
-        f.write("theta order {} \n".format(str(theta_order)))
+        theta_loc.append(theta_loc[0])
 
         if len(theta_loc) > 3:
             type = 2
@@ -584,6 +584,7 @@ def Update(it):
             type = 1
 
         Xcontour,Ycontour = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,Xcontour,Ycontour,threshold=0.7)
+
 
     if len(Xcontour) > 0:
         for X,Y in zip(Xcontour,Ycontour):
@@ -659,11 +660,9 @@ def Update(it):
 
     if len(Xcontour) > 0:
         #set up arrays
-        theta_180 = []
         theta_loc = []
         for crossing in crossings:
             theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
-            theta_180.append(theta)
             if theta<0:
                 theta+=2*np.pi
             theta_loc.append(theta)
@@ -671,17 +670,14 @@ def Update(it):
         theta_order = np.sort(theta_loc)
         theta_order = theta_order.tolist()
 
-
-        print("theta_180",theta_180)
-        print("theta_loc",theta_loc)
-        print("theta_order",theta_order)
-        f.write("theta 180 {} \n".format(str(theta_180)))
-        f.write("theta loc {} \n".format(str(theta_loc)))
-        f.write("theta order {} \n".format(str(theta_order)))
-
+        theta_180 = []
+        for theta in theta_order:
+            if theta > np.pi:
+                theta_180.append(theta-(2*np.pi))
+            else:
+                theta_180.append(theta)
 
         theta_loc.append(theta_loc[0])
-        theta_180.append(theta_180[0])
 
         if len(theta_loc) > 3:
             type = 2
@@ -707,6 +703,17 @@ def Update(it):
     Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
     f.write("{} \n".format(str(Eddies_it_neg)))
     print(Eddies_it_neg)
+
+    if len(Eddies_it_pos["Area_pos"]) == 0 and len(Eddies_it_neg["Area_neg"] == 0):
+        ux_cent,ux_cl = UX_interp(2560,90,2560,90,Xs,Ys,Z)
+        if -0.7 < ux_cent < 0.7:
+            Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="-.",edgecolor="k")
+        elif ux_cent <= -0.7:
+            Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="--",edgecolor="k")
+        elif ux_cent >= 0.7:
+            Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="-",edgecolor="k")
+
+        ax.add_artist(Drawing_uncolored_circle)
 
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
     ax.add_artist(Drawing_uncolored_circle)
