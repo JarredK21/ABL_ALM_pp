@@ -587,16 +587,17 @@ def Update(it):
 
     if len(Xcontour) > 0:
         for X,Y in zip(Xcontour,Ycontour):
-            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-            X = np.append(X,X[0]); Y = np.append(Y,Y[0])
-            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+            if len(X) > 0:
+                Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+                X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+                Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            plt.plot(X,Y,"-k",linewidth=3)
-            plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+                plt.plot(X,Y,"-k",linewidth=3)
+                plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
-            Eddies_Cent_x.append(Centroid[0])
-            Eddies_Cent_y.append(Centroid[1])
-            Eddies_Area.append(Area)
+                Eddies_Cent_x.append(Centroid[0])
+                Eddies_Cent_y.append(Centroid[1])
+                Eddies_Area.append(Area)
 
     Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
     f.write("{} \n".format(str(Eddies_it_pos)))
@@ -691,16 +692,17 @@ def Update(it):
 
     if len(Xcontour) > 0:
         for X,Y in zip(Xcontour,Ycontour):
-            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-            X = np.append(X,X[0]); Y = np.append(Y,Y[0])
-            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+            if len(X) > 0:
+                Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+                X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+                Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            plt.plot(X,Y,"--k",linewidth=3)
-            plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+                plt.plot(X,Y,"--k",linewidth=3)
+                plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
-            Eddies_Cent_x.append(Centroid[0])
-            Eddies_Cent_y.append(Centroid[1])
-            Eddies_Area.append(Area)
+                Eddies_Cent_x.append(Centroid[0])
+                Eddies_Cent_y.append(Centroid[1])
+                Eddies_Area.append(Area)
 
     Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
     f.write("{} \n".format(str(Eddies_it_neg)))

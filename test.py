@@ -489,41 +489,45 @@ for line in lines:
             crossings.append(crossing)
         del X_temp; del Y_temp; del crossings_temp
 
-#set up arrays
-theta_180 = []
-theta_loc = []
-for crossing in crossings:
-    theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
-    theta_180.append(theta)
-    if theta<0:
-        theta+=2*np.pi
-    theta_loc.append(theta)
+if len(X_contour) > 0:
+    #set up arrays
+    theta_180 = []
+    theta_loc = []
+    for crossing in crossings:
+        theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
+        theta_180.append(theta)
+        if theta<0:
+            theta+=2*np.pi
+        theta_loc.append(theta)
 
 
-theta_order = np.sort(theta_loc)
-theta_order = theta_order.tolist()
-            
-theta_loc.append(theta_loc[0])
-theta_180.append(theta_180[0])
+    theta_order = np.sort(theta_loc)
+    theta_order = theta_order.tolist()
+                
+    theta_loc.append(theta_loc[0])
+    theta_180.append(theta_180[0])
 
-if len(theta_loc) > 3:
-    type = 2
-else:
-    type = 1
+    if len(theta_loc) > 3:
+        type = 2
+    else:
+        type = 1
 
-X_contours,Y_contours = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,X_contour,Y_contour,threshold=0.7)
+    X_contours,Y_contours = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,X_contour,Y_contour,threshold=0.7)
 
-for X,Y in zip(X_contours,Y_contours):
-    Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-    X = np.append(X,X[0]); Y = np.append(Y,Y[0])
-    Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-    plt.plot(X,Y,"-k",linewidth=3)
-    plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+if len(X_contours) > 0:
+    for X,Y in zip(X_contours,Y_contours):
+        if len(X) > 0:
+            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+            X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-    Eddies_Cent_x.append(Centroid[0])
-    Eddies_Cent_y.append(Centroid[1])
-    Eddies_Area.append(Area)
+            plt.plot(X,Y,"-k",linewidth=3)
+            plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+
+            Eddies_Cent_x.append(Centroid[0])
+            Eddies_Cent_y.append(Centroid[1])
+            Eddies_Area.append(Area)
 
 Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
 f.write("{} \n".format(str(Eddies_it_pos)))
@@ -582,44 +586,46 @@ for line in lines:
             crossings.append(crossing)
         del X_temp; del Y_temp; del crossings_temp
 
-#set up arrays
-theta_180 = []
-theta_loc = []
-for crossing in crossings:
-    theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
-    theta_180.append(theta)
-    if theta<0:
-        theta+=2*np.pi
-    theta_loc.append(theta)
+if len(X_contour) > 0:
+    #set up arrays
+    theta_180 = []
+    theta_loc = []
+    for crossing in crossings:
+        theta = np.arctan2((crossing[1]-90), (crossing[0]-2560))
+        theta_180.append(theta)
+        if theta<0:
+            theta+=2*np.pi
+        theta_loc.append(theta)
 
 
-theta_order = np.sort(theta_loc)
-theta_order = theta_order.tolist()
+    theta_order = np.sort(theta_loc)
+    theta_order = theta_order.tolist()
 
-theta_loc.append(theta_loc[0])
-theta_180.append(theta_180[0])
-
-
-if len(theta_loc) > 3:
-    type = 2
-else:
-    type = 1
+    theta_loc.append(theta_loc[0])
+    theta_180.append(theta_180[0])
 
 
-X_contours,Y_contours = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,X_contour,Y_contour,threshold=-0.7)
+    if len(theta_loc) > 3:
+        type = 2
+    else:
+        type = 1
 
 
-for X,Y in zip(X_contours,Y_contours):
-    Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
-    X = np.append(X,X[0]); Y = np.append(Y,Y[0])
-    Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+    X_contours,Y_contours = closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z,X_contour,Y_contour,threshold=-0.7)
 
-    plt.plot(X,Y,"--k",linewidth=3)
-    plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+if len(X_contours) > 0:
+    for X,Y in zip(X_contours,Y_contours):
+        if len(X) > 0:
+            Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
+            X = np.append(X,X[0]); Y = np.append(Y,Y[0])
+            Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-    Eddies_Cent_x.append(Centroid[0])
-    Eddies_Cent_y.append(Centroid[1])
-    Eddies_Area.append(Area)
+            plt.plot(X,Y,"--k",linewidth=3)
+            plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
+
+            Eddies_Cent_x.append(Centroid[0])
+            Eddies_Cent_y.append(Centroid[1])
+            Eddies_Area.append(Area)
 
 Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
 f.write("{} \n".format(str(Eddies_it_neg)))
