@@ -121,27 +121,18 @@ def ux_closed(Centroid,Xs,Ys,Z):
     return ux_closed
 
 
-def UX_interp(x_anti,y_anti,x_clock,y_clock,Xs,Ys,Z):
+def UX_interp(x,y,Xs,Ys,Z):
 
-    xmin = x_anti - 4; xmax = x_anti + 4; ymin = y_anti - 4; ymax = y_anti + 4
-
-    xmin_idx = np.searchsorted(ys,xmin,side="left"); xmax_idx = np.searchsorted(ys,xmax,side="right")
-    ymin_idx = np.searchsorted(zs,ymin,side="left"); ymax_idx = np.searchsorted(zs,ymax,side="right")
-
-    f_ux = interpolate.interp2d(Xs[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Ys[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Z[ymin_idx:ymax_idx,xmin_idx:xmax_idx])
-
-    ux_anti = f_ux(x_anti,y_anti)
-
-    xmin = x_clock - 4; xmax = x_clock + 4; ymin = y_clock - 4; ymax = y_clock + 4
+    xmin = x - 4; xmax = x + 4; ymin = y - 4; ymax = y + 4
 
     xmin_idx = np.searchsorted(ys,xmin,side="left"); xmax_idx = np.searchsorted(ys,xmax,side="right")
     ymin_idx = np.searchsorted(zs,ymin,side="left"); ymax_idx = np.searchsorted(zs,ymax,side="right")
 
     f_ux = interpolate.interp2d(Xs[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Ys[ymin_idx:ymax_idx,xmin_idx:xmax_idx],Z[ymin_idx:ymax_idx,xmin_idx:xmax_idx])
 
-    ux_clock = f_ux(x_clock,y_clock)
+    ux = f_ux(x,y)
 
-    return ux_anti,ux_clock
+    return ux
 
 
 def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
@@ -186,7 +177,9 @@ def ux_interp(type,theta_loc,theta_order,theta_180,Xs,Ys,Z,dtheta):
     x_clock = 2560 + r*np.cos(theta_clock)
     y_clock = 90 + r*np.sin(theta_clock)
 
-    ux_anti,ux_clock = UX_interp(x_anti,y_anti,x_clock,y_clock,Xs,Ys,Z)
+    ux_anti = UX_interp(x_anti,y_anti,Xs,Ys,Z)
+
+    ux_clock = UX_interp(x_clock,y_clock,Xs,Ys,Z)
 
     f.write("{} {} {} {} {} {} {} {} \n".format(theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock))
     print(theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock)
@@ -349,6 +342,7 @@ def closeContour(type,theta_180,theta_loc,theta_order,Xs,Ys,Z, X, Y,threshold):
 
 
     return Xcontours, Ycontours
+      
 
 
 start_time = time.time()
@@ -536,8 +530,6 @@ def Update(it):
                 plt.plot(X,Y,"-k",linewidth=3)
             elif ux_c <= -0.7:
                 plt.plot(X,Y,"--k",linewidth=3)
-            else:
-                plt.plot(X,Y,"-.k",linewidth=3)
 
             plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
@@ -593,6 +585,9 @@ def Update(it):
                 X = np.append(X,X[0]); Y = np.append(Y,Y[0])
                 Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
+                #average velocity calc
+                Ux_avg = 0
+
                 plt.plot(X,Y,"-k",linewidth=3)
                 plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
@@ -600,7 +595,7 @@ def Update(it):
                 Eddies_Cent_y.append(Centroid[1])
                 Eddies_Area.append(Area)
 
-    Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
+    Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area, "Ux_avg": Ux_avg}
     f.write("{} \n".format(str(Eddies_it_pos)))
     print(Eddies_it_pos)
 
@@ -637,8 +632,6 @@ def Update(it):
                 plt.plot(X,Y,"-k",linewidth=3)
             elif ux_c <= -0.7:
                 plt.plot(X,Y,"--k",linewidth=3)
-            else:
-                plt.plot(X,Y,"-.k",linewidth=3)
 
             plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
@@ -693,6 +686,9 @@ def Update(it):
                 X = np.append(X,X[0]); Y = np.append(Y,Y[0])
                 Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
+                #average velocity calc
+                Ux_avg = 0
+
                 plt.plot(X,Y,"--k",linewidth=3)
                 plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
@@ -700,20 +696,26 @@ def Update(it):
                 Eddies_Cent_y.append(Centroid[1])
                 Eddies_Area.append(Area)
 
-    Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
+    Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area, "Ux_avg": Ux_avg}
     f.write("{} \n".format(str(Eddies_it_neg)))
     print(Eddies_it_neg)
 
     if len(Eddies_it_pos["Area_pos"]) == 0 and len(Eddies_it_neg["Area_neg"] == 0):
-        ux_cent,ux_cl = UX_interp(2560,90,2560,90,Xs,Ys,Z)
-        if -0.7 < ux_cent < 0.7:
-            Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="-.",edgecolor="k")
-        elif ux_cent <= -0.7:
+        ux_cent = UX_interp(2560,90,Xs,Ys,Z)
+        if ux_cent <= -0.7:
             Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="--",edgecolor="k")
+            Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]; Ux_avg = 0
+            Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area, "Ux_avg": Ux_avg}
+            f.write("{} \n".format(str(Eddies_it_neg)))
+            plt.plot(2560,90,"+k",markersize=8)
+            ax.add_artist(Drawing_uncolored_circle)
         elif ux_cent >= 0.7:
             Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="-",edgecolor="k")
-
-        ax.add_artist(Drawing_uncolored_circle)
+            Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]; Ux_avg = 0
+            Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area, "Ux_avg": Ux_avg}
+            f.write("{} \n".format(str(Eddies_it_pos)))
+            plt.plot(2560,90,"+k",markersize=8)
+            ax.add_artist(Drawing_uncolored_circle)
 
     Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
     ax.add_artist(Drawing_uncolored_circle)
@@ -732,7 +734,6 @@ def Update(it):
     x_c = [-1,-10]; y_c = [-1,-10]
     plt.plot(x_c,y_c,"-k",linewidth=5,label="$u_x' \geq 0.7 m/s$")
     plt.plot(x_c,y_c,"--k",linewidth=5,label="$u_x' \leq -0.7 m/s$")
-    plt.plot(x_c,y_c,"-.k",linewidth=5,label="$-0.7 < u_x' < 0.7 m/s$")
 
     plt.xlim([ys[0],ys[-1]]);plt.ylim(zs[0],zs[-1])
     plt.legend()
