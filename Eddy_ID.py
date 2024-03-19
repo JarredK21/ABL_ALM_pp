@@ -505,7 +505,7 @@ def Update(it):
     Eddies_Area = []
     lines = CS.allsegs[0] #plot only threshold velocity
 
-    Xcontour = []; Ycontour = []; crossings = []
+    Xcontour = []; Ycontour = []; crossings = []; Ux_avg = []
     for line in lines:
         X, Y = line[:,0], line[:,1]
 
@@ -585,9 +585,6 @@ def Update(it):
                 X = np.append(X,X[0]); Y = np.append(Y,Y[0])
                 Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-                #average velocity calc
-                Ux_avg = 0
-
                 plt.plot(X,Y,"-k",linewidth=3)
                 plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
@@ -607,7 +604,7 @@ def Update(it):
     Eddies_Area = []
     lines = CZ.allsegs[-1] #plot only threshold velocity
 
-    Xcontour = []; Ycontour = []; crossings = []
+    Xcontour = []; Ycontour = []; crossings = []; Ux_avg = []
     for line in lines:
         X, Y = line[:,0], line[:,1]
 
@@ -686,9 +683,6 @@ def Update(it):
                 X = np.append(X,X[0]); Y = np.append(Y,Y[0])
                 Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-                #average velocity calc
-                Ux_avg = 0
-
                 plt.plot(X,Y,"--k",linewidth=3)
                 plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
 
@@ -704,14 +698,14 @@ def Update(it):
         ux_cent = UX_interp(2560,90,Xs,Ys,Z)
         if ux_cent <= -0.7:
             Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="--",edgecolor="k")
-            Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]; Ux_avg = 0
+            Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]; Ux_avg = []
             Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area, "Ux_avg": Ux_avg}
             f.write("{} \n".format(str(Eddies_it_neg)))
             plt.plot(2560,90,"+k",markersize=8)
             ax.add_artist(Drawing_uncolored_circle)
         elif ux_cent >= 0.7:
             Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="-",edgecolor="k")
-            Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]; Ux_avg = 0
+            Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]; Ux_avg = []
             Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area, "Ux_avg": Ux_avg}
             f.write("{} \n".format(str(Eddies_it_pos)))
             plt.plot(2560,90,"+k",markersize=8)
