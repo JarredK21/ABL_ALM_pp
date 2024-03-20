@@ -335,6 +335,8 @@ def ux_average_calc(X,Y):
     xmin = np.min(X); xmax = np.max(X)
     f.write("xmin {}".format(xmin))
     f.write("xmax {}".format(xmax))
+    print(xmin)
+    print(xmax)
     xlist = np.arange(xmin+deltax,xmax-(2*deltax),deltax)
     coordinates = []
     for xr in xlist:
@@ -343,6 +345,7 @@ def ux_average_calc(X,Y):
         xidx = (X>(xr-0.3125))*(X<xr)
         xidxlist = np.where(xidx)
         f.write("xidxlist {}".format(xidxlist))
+        print(xidxlist)
 
         ymin = np.min(Y[xidxlist]); ymax = np.max(Y[xidxlist])
         f.write("ymin {}".format(ymin))
@@ -353,8 +356,6 @@ def ux_average_calc(X,Y):
             
             for yr in ylist:
                 coordinates.append([xr,yr])
-
-                f.write("coordinates {}".format(coordinate))
 
     
     # Ux_avg = []
@@ -801,27 +802,27 @@ def Update(it):
 
 
 
-#it = 0
-# with Pool() as pool:
-#     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
+it = 0
+with Pool() as pool:
+    for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
-for it in Time_steps:
-    Eddies_pos,Eddies_neg = Update(it)
-    f.write("Time step {} \n".format(str(it)))
-    print("Time step = ",it)     
+#for it in Time_steps:
+        Eddies_pos,Eddies_neg = Update(it)
+        f.write("Time step {} \n".format(str(it)))
+        print("Time step = ",it)     
 
-    df = pd.DataFrame(None)
+        df = pd.DataFrame(None)
 
-    df_pos = pd.DataFrame(Eddies_pos)
-    df = pd.concat([df,df_pos],axis=1); del df_pos
+        df_pos = pd.DataFrame(Eddies_pos)
+        df = pd.concat([df,df_pos],axis=1); del df_pos
 
-    df_neg = pd.DataFrame(Eddies_neg)
-    df = pd.concat([df,df_neg],axis=1); del df_neg
+        df_neg = pd.DataFrame(Eddies_neg)
+        df = pd.concat([df,df_neg],axis=1); del df_neg
 
-    df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
-    f.write("{} \n".format(str(df)))
-    del df
+        df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
+        f.write("{} \n".format(str(df)))
+        del df
 
-    #it+=1
+        it+=1
 
 f.close()
