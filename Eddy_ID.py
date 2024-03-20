@@ -346,6 +346,8 @@ def ux_average_calc(X,Y):
         xidxlist = np.where(xidx)
         f.write("xidxlist {}".format(xidxlist))
         print(xidxlist)
+        if len(xidxlist) == 0:
+            continue
 
         ymin = np.min(Y[xidxlist]); ymax = np.max(Y[xidxlist])
         f.write("ymin {}".format(ymin))
@@ -807,7 +809,7 @@ with Pool() as pool:
     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
 #for it in Time_steps:
-        Eddies_pos,Eddies_neg = Update(it)
+        #Eddies_pos,Eddies_neg = Update(it)
         f.write("Time step {} \n".format(str(it)))
         print("Time step = ",it)     
 
