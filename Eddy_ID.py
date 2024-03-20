@@ -346,7 +346,7 @@ def ux_average_calc(X,Y):
         xidxlist = np.where(xidx)
         f.write("xidxlist {}".format(xidxlist))
         print(xidxlist)
-        if len(xidxlist) == 0:
+        if len(xidxlist[0]) == 0:
             continue
 
         ymin = np.min(Y[xidxlist]); ymax = np.max(Y[xidxlist])
@@ -750,7 +750,7 @@ def Update(it):
     f.write("{} \n".format(str(Eddies_it_neg)))
     print(Eddies_it_neg)
 
-    if len(Eddies_it_pos["Area_pos"]) == 0 and len(Eddies_it_neg["Area_neg"] == 0):
+    if len(Eddies_it_pos["Area_pos"]) == 0 and len(Eddies_it_neg["Area_neg"]) == 0:
         ux_cent = UX_interp([2560,90])
         if ux_cent <= -0.7:
             theta = np.linspace(0,2*np.pi,360)
