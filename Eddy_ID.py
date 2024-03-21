@@ -345,7 +345,7 @@ def ux_average_calc(X,Y):
         xidx = (X>(xlist[i]))*(X<xlist[i+1])
         xidxlist = np.where(xidx)
         f.write("xidxlist {}".format(xidxlist[0]))
-        print(xidxlist[0])
+        print("xidxlist",xidxlist[0])
         if len(xidxlist[0]) == 0:
             continue
 
@@ -795,7 +795,6 @@ it = 0
 with Pool() as pool:
     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
-        f.write("Time step {} \n".format(it))
         print("Time step = ",it)     
 
         num = np.max([len(Eddies_pos["Area_pos"]),len(Eddies_neg["Area_neg"])])
@@ -806,11 +805,9 @@ with Pool() as pool:
         df = pd.DataFrame(None)
 
         df_pos = pd.DataFrame(Eddies_pos,index=indexs)
-        f.write("positive dataframe \n{} \n".format(df_pos))
         df = pd.concat([df,df_pos],axis=1); del df_pos
 
         df_neg = pd.DataFrame(Eddies_neg,index=indexs)
-        f.write("negative dataframe \n{} \n".format(df_neg))
         df = pd.concat([df,df_neg],axis=1); del df_neg
 
         df.loc[df.duplicated(subset=["Area_pos"]),["Centroid_x_pos","Centroid_y_pos","Area_pos","Ux_avg_pos"]] = pd.NA
