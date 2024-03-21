@@ -339,10 +339,10 @@ def ux_average_calc(X,Y):
     print(xmax)
     xlist = np.arange(xmin+deltax,xmax-deltax,deltax)
     coordinates = []
-    for i in np.arange(0,len(xlist)-1):
+    for xr in xlist:
         
-        f.write("xr {}".format(xlist[i]))
-        xidx = (X>(xlist[i]))*(X<xlist[i+1])
+        f.write("xr {}".format(xr))
+        xidx = (X>(xr-0.15625))*(X<xr+0.15625)
         xidxlist = np.where(xidx)
         f.write("xidxlist {}".format(xidxlist[0]))
         print("xidxlist",xidxlist[0])
@@ -357,7 +357,7 @@ def ux_average_calc(X,Y):
             ylist = np.arange(ymin+deltay,ymax-deltay,deltay)
             
             for yr in ylist:
-                coordinates.append([xlist[i],yr])
+                coordinates.append([xr,yr])
 
     Ux_avg = []
     for coordinate in coordinates:
@@ -791,30 +791,54 @@ def Update(it):
 
 
 
+# it = 0
+# with Pool() as pool:
+#     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
+
+#         print("Time step = ",it)     
+
+#         num = np.max([len(Eddies_pos["Area_pos"]),len(Eddies_neg["Area_neg"])])
+#         indexs = []
+#         for no in np.arange(0,num):
+#             indexs.append("{}".format(it))
+
+#         df = pd.DataFrame(None)
+
+#         df_pos = pd.DataFrame(Eddies_pos,index=indexs)
+#         df = pd.concat([df,df_pos],axis=1); del df_pos
+
+#         df_neg = pd.DataFrame(Eddies_neg,index=indexs)
+#         df = pd.concat([df,df_neg],axis=1); del df_neg
+
+#         df.loc[df.duplicated(subset=["Area_pos"]),["Centroid_x_pos","Centroid_y_pos","Area_pos","Ux_avg_pos"]] = pd.NA
+#         df.loc[df.duplicated(subset=["Area_neg"]),["Centroid_x_neg","Centroid_y_neg","Area_neg","Ux_avg_neg"]] = pd.NA
+
+#         it+=1
+
+# df.to_csv(csv_out_dir+"Eddies_0.7.csv")
+
+# f.close()
+
+
 it = 0
 with Pool() as pool:
     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
+        f.write("Time step {} \n".format(str(it)))
         print("Time step = ",it)     
-
-        num = np.max([len(Eddies_pos["Area_pos"]),len(Eddies_neg["Area_neg"])])
-        indexs = []
-        for no in np.arange(0,num):
-            indexs.append("{}".format(it))
 
         df = pd.DataFrame(None)
 
-        df_pos = pd.DataFrame(Eddies_pos,index=indexs)
+        df_pos = pd.DataFrame(Eddies_pos)
         df = pd.concat([df,df_pos],axis=1); del df_pos
 
-        df_neg = pd.DataFrame(Eddies_neg,index=indexs)
+        df_neg = pd.DataFrame(Eddies_neg)
         df = pd.concat([df,df_neg],axis=1); del df_neg
 
-        df.loc[df.duplicated(subset=["Area_pos"]),["Centroid_x_pos","Centroid_y_pos","Area_pos","Ux_avg_pos"]] = pd.NA
-        df.loc[df.duplicated(subset=["Area_neg"]),["Centroid_x_neg","Centroid_y_neg","Area_neg","Ux_avg_neg"]] = pd.NA
+        df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
+        f.write("{} \n".format(str(df)))
+        del df
 
         it+=1
-
-df.to_csv(csv_out_dir+"Eddies_0.7.csv")
 
 f.close()
