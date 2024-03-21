@@ -346,18 +346,21 @@ def ux_average_calc(X,Y):
         xidxlist = np.where(xidx)
         f.write("xidxlist {}".format(xidxlist[0]))
         print("xidxlist",xidxlist[0])
+        print("len xidxlist",len(xidxlist[0]))
         if len(xidxlist[0]) == 0:
             continue
 
-        ymin = np.min(Y[xidxlist][0]); ymax = np.max(Y[xidxlist][0])
+        ymin = np.min(Y[xidxlist[0]]); ymax = np.max(Y[xidxlist[0]])
         f.write("ymin {}".format(ymin))
         f.write("ymax {}".format(ymax))
+        print("ymin",ymin);print("ymax",ymax)
 
         if ymin+deltay < ymax-deltay:
             ylist = np.arange(ymin+deltay,ymax-deltay,deltay)
             
             for yr in ylist:
                 coordinates.append([xr,yr])
+                print(xr,yr)
 
     Ux_avg = []
     for coordinate in coordinates:
