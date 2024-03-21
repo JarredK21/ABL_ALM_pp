@@ -337,36 +337,27 @@ def ux_average_calc(X,Y):
     f.write("xmax {}".format(xmax))
     print(xmin)
     print(xmax)
-    xlist = np.arange(xmin+deltax,xmax-(2*deltax),deltax)
+    xlist = np.arange(xmin+deltax,xmax-deltax,deltax)
     coordinates = []
-    for xr in xlist:
+    for i in np.arange(0,len(xlist)-1):
         
-        f.write("xr {}".format(xr))
-        xidx = (X>(xr-0.3125))*(X<xr)
+        f.write("xr {}".format(xlist[i]))
+        xidx = (X>(xlist[i]))*(X<xlist[i+1])
         xidxlist = np.where(xidx)
-        f.write("xidxlist {}".format(xidxlist))
-        print(xidxlist)
+        f.write("xidxlist {}".format(xidxlist[0]))
+        print(xidxlist[0])
         if len(xidxlist[0]) == 0:
             continue
 
-        ymin = np.min(Y[xidxlist]); ymax = np.max(Y[xidxlist])
+        ymin = np.min(Y[xidxlist][0]); ymax = np.max(Y[xidxlist][0])
         f.write("ymin {}".format(ymin))
         f.write("ymax {}".format(ymax))
 
-        if ymin+(2*deltay) < ymax-deltay:
+        if ymin+deltay < ymax-deltay:
             ylist = np.arange(ymin+deltay,ymax-deltay,deltay)
             
             for yr in ylist:
-                coordinates.append([xr,yr])
-
-    
-    # Ux_avg = []
-    # with Pool() as pool:
-    #     for velx in pool.imap(UX_interp,coordinates):
-    #         if threshold > 0 and velx[0] >= threshold and velx[0] <= cmax:
-    #             Ux_avg.append(velx[0])
-    #         elif threshold < 0 and velx[0] <= threshold and velx[0] >= cmin:
-    #             Ux_avg.append(velx[0])
+                coordinates.append([xlist[i],yr])
 
     Ux_avg = []
     for coordinate in coordinates:
@@ -643,7 +634,6 @@ def Update(it):
                 Eddies_Area.append(Area)
 
     Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area, "Ux_avg_pos": Ux_avg}
-    f.write("{} \n".format(str(Eddies_it_pos)))
     print(Eddies_it_pos)
 
     f.write("negative contours \n")
@@ -747,7 +737,6 @@ def Update(it):
                 Eddies_Area.append(Area)
 
     Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area, "Ux_avg_neg": Ux_avg}
-    f.write("{} \n".format(str(Eddies_it_neg)))
     print(Eddies_it_neg)
 
     if len(Eddies_it_pos["Area_pos"]) == 0 and len(Eddies_it_neg["Area_neg"]) == 0:
@@ -759,7 +748,6 @@ def Update(it):
             Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]
             Ux_avg.append(ux_average_calc(X,Y))
             Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area, "Ux_avg_neg": Ux_avg}
-            f.write("{} \n".format(str(Eddies_it_neg)))
             plt.plot(2560,90,"+k",markersize=8)
             ax.add_artist(Drawing_uncolored_circle)
         elif ux_cent >= 0.7:
@@ -769,7 +757,6 @@ def Update(it):
             Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]
             Ux_avg.append(ux_average_calc(X,Y))
             Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area, "Ux_avg_pos": Ux_avg}
-            f.write("{} \n".format(str(Eddies_it_pos)))
             plt.plot(2560,90,"+k",markersize=8)
             ax.add_artist(Drawing_uncolored_circle)
 
@@ -808,23 +795,29 @@ it = 0
 with Pool() as pool:
     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
-#for it in Time_steps:
-        #Eddies_pos,Eddies_neg = Update(it)
-        f.write("Time step {} \n".format(str(it)))
+        f.write("Time step {} \n".format(it))
         print("Time step = ",it)     
+
+        num = np.max([len(Eddies_pos["Area_pos"]),len(Eddies_neg["Area_neg"])])
+        indexs = []
+        for no in np.arange(0,num):
+            indexs.append("{}".format(it))
 
         df = pd.DataFrame(None)
 
-        df_pos = pd.DataFrame(Eddies_pos)
+        df_pos = pd.DataFrame(Eddies_pos,index=indexs)
+        f.write("positive dataframe \n{} \n".format(df_pos))
         df = pd.concat([df,df_pos],axis=1); del df_pos
 
-        df_neg = pd.DataFrame(Eddies_neg)
+        df_neg = pd.DataFrame(Eddies_neg,index=indexs)
+        f.write("negative dataframe \n{} \n".format(df_neg))
         df = pd.concat([df,df_neg],axis=1); del df_neg
 
-        df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
-        f.write("{} \n".format(str(df)))
-        del df
+        df.loc[df.duplicated(subset=["Area_pos"]),["Centroid_x_pos","Centroid_y_pos","Area_pos","Ux_avg_pos"]] = pd.NA
+        df.loc[df.duplicated(subset=["Area_neg"]),["Centroid_x_neg","Centroid_y_neg","Area_neg","Ux_avg_neg"]] = pd.NA
 
         it+=1
+
+df.to_csv(csv_out_dir+"Eddies_0.7.csv")
 
 f.close()
