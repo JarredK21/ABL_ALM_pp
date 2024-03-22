@@ -290,7 +290,7 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
             continue
 
         idx = int(i/2)
-        f.write("first and last point {} {}".format([X[idx][0],Y[idx][0]],[X[idx][-1],Y[idx][-1]]))
+        f.write("first and last point {} {} \n".format([X[idx][0],Y[idx][0]],[X[idx][-1],Y[idx][-1]]))
         print("first and last point {} {}".format([X[idx][0],Y[idx][0]],[X[idx][-1],Y[idx][-1]]))
         if round(X[idx][0],2) == round(r*np.cos(theta_loc[i])+2560,2) and round(X[idx][-1],2) == round(r*np.cos(theta)+2560,2):
             Xline = X[idx]; Yline = Y[idx]
@@ -343,8 +343,8 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
 def ux_average_calc(X,Y,C):
     deltax = 1.25; deltay = 1.25
     xmin = np.min(X); xmax = np.max(X)
-    f.write("xmin {}".format(xmin))
-    f.write("xmax {}".format(xmax))
+    f.write("xmin {} \n".format(xmin))
+    f.write("xmax {} \n".format(xmax))
     print(xmin)
     print(xmax)
     xlist = np.arange(xmin+deltax,xmax-deltax,deltax)
@@ -354,15 +354,15 @@ def ux_average_calc(X,Y,C):
         f.write("xr {}".format(xr))
         xidx = (X>(xr-0.15625))*(X<xr+0.15625)
         xidxlist = np.where(xidx)
-        f.write("xidxlist {}".format(xidxlist[0]))
+        f.write("xidxlist {} \n".format(xidxlist[0]))
         print("xidxlist",xidxlist[0])
         print("len xidxlist",len(xidxlist[0]))
         if len(xidxlist[0]) == 0:
             continue
 
         ymin = np.min(Y[xidxlist[0]]); ymax = np.max(Y[xidxlist[0]])
-        f.write("ymin {}".format(ymin))
-        f.write("ymax {}".format(ymax))
+        f.write("ymin {} \n".format(ymin))
+        f.write("ymax {} \n".format(ymax))
         print("ymin",ymin);print("ymax",ymax)
 
         if ymin+deltay < ymax-deltay:
