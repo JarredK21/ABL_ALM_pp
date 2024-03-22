@@ -628,7 +628,7 @@ def Update(it):
 
         theta_loc.append(theta_loc[0])
 
-        f.write("theta_loc {}".format(theta_loc))
+        f.write("theta_loc {} \n".format(theta_loc))
         print("theta_loc {}".format(theta_loc))
 
         if len(theta_loc) > 3:
@@ -737,6 +737,9 @@ def Update(it):
                 theta_180.append(theta)
 
         theta_loc.append(theta_loc[0])
+
+        f.write("theta_loc {} \n".format(theta_loc))
+        print("theta_loc {}".format(theta_loc))
 
         if len(theta_loc) > 3:
             type = 2
