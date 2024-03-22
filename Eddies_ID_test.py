@@ -121,7 +121,7 @@ def UX_interp(coordinates):
     return ux
 
 
-def ux_interp(type,theta,theta_order,theta_180,dtheta):
+def ux_interp(type,theta,theta_order,theta_180,dtheta,perc):
 
     theta_anti = theta + dtheta
 
@@ -131,7 +131,7 @@ def ux_interp(type,theta,theta_order,theta_180,dtheta):
 
     if round(theta_anti,2) >= round(theta_order[2],2):
         
-        theta_anti = theta + abs(theta_180[2] - theta_180[1]) / 2
+        theta_anti = (theta_180[2] + theta_180[1]) * perc
 
         if theta_anti > 2*np.pi:
             theta_anti-=2*np.pi
@@ -145,7 +145,7 @@ def ux_interp(type,theta,theta_order,theta_180,dtheta):
 
         if round(theta_clock,2) <= round(theta_order[0],2):
             
-            theta_clock = theta - abs(theta_180[1] - theta_180[0]) / 2
+            theta_clock = (theta_180[1] + theta_180[0]) * perc
 
             if theta_clock < 0:
                 theta_clock +=2*np.pi
@@ -175,9 +175,10 @@ def ux_interp(type,theta,theta_order,theta_180,dtheta):
 def isOutside(type,theta,theta_order,theta_180):
 
     dtheta_arr = np.radians([2,4,6,8,10,12,14,16,18,20,24,26])
+    percentage = [0.5,0.55,0.45,0.60,0.40,0.65,0.35,0.70,0.30,0.75,0.35,0.80]
 
-    for dtheta in dtheta_arr:
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(type,theta,theta_order,theta_180,dtheta)
+    for dtheta,perc in zip(dtheta_arr,percentage):
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(type,theta,theta_order,theta_180,dtheta,perc)
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:
                 continue

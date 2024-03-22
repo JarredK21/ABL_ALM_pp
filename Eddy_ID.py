@@ -688,8 +688,6 @@ def Update(it):
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            ux_c = UX_interp(Centroid)
-
             if ux_c >= 0.7:
                 plt.plot(X,Y,"-k",linewidth=3)
             elif ux_c < 0.7:
