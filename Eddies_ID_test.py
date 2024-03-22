@@ -131,7 +131,7 @@ def ux_interp(type,theta,theta_order,theta_180,dtheta,perc):
 
     if round(theta_anti,2) >= round(theta_order[2],2):
         
-        theta_anti = (theta_180[2] + theta_180[1]) * perc
+        theta_anti = theta + abs(theta_180[2] - theta_180[1]) / (1/perc)
 
         if theta_anti > 2*np.pi:
             theta_anti-=2*np.pi
@@ -145,7 +145,7 @@ def ux_interp(type,theta,theta_order,theta_180,dtheta,perc):
 
         if round(theta_clock,2) <= round(theta_order[0],2):
             
-            theta_clock = (theta_180[1] + theta_180[0]) * perc
+            theta_clock = theta - abs(theta_180[1] - theta_180[0]) / (1/perc)
 
             if theta_clock < 0:
                 theta_clock +=2*np.pi
