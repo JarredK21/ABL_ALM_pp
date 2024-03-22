@@ -290,12 +290,12 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
             continue
 
         idx = int(i/2)
-        f.write("first and last point {} {} \n".format([X[idx][0],Y[idx][0]],[X[idx][-1],Y[idx][-1]]))
-        print("first and last point {} {}".format([X[idx][0],Y[idx][0]],[X[idx][-1],Y[idx][-1]]))
-        if round(X[idx][0],2) == round(r*np.cos(theta_loc[i])+2560,2) and round(X[idx][-1],2) == round(r*np.cos(theta)+2560,2):
-            Xline = X[idx]; Yline = Y[idx]
-        elif round(X[idx][-1],2) == round(r*np.cos(theta_loc[-1])+2560,2) and round(X[idx][0],2) == round(r*np.cos(theta)+2560,2):
+        f.write("first and last point {} {} \n".format([round(X[idx][0],2),round(r*np.cos(theta_loc[i])+2560,2)],[round(X[idx][-1],2),round(r*np.cos(theta_loc[i])+2560,2)]))
+        print("first and last point {} {} \n".format([round(X[idx][0],2),round(r*np.cos(theta_loc[i])+2560,2)],[round(X[idx][-1],2),round(r*np.cos(theta_loc[i])+2560,2)]))
+        if round(X[idx][-1],2) == round(r*np.cos(theta_loc[i])+2560,2) and round(X[idx][0],2) == round(r*np.cos(theta)+2560,2):
             Xline = X[idx][::-1]; Yline = Y[idx][::-1]
+        else:
+            Xline = X[idx]; Yline = Y[idx]
         Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
         Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 

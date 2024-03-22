@@ -814,7 +814,7 @@ it = 0
 with Pool() as pool:
     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
-        f.write("Time step {} \n".format(str(it)))
+        f.write("Time step {} \n".format(it))
         print("Time step = ",it)     
 
         df = pd.DataFrame(None)
@@ -826,7 +826,7 @@ with Pool() as pool:
         df = pd.concat([df,df_neg],axis=1); del df_neg
 
         df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
-        f.write("{} \n".format(str(df)))
+        f.write("{} \n".format(df))
         del df
 
         it+=1
