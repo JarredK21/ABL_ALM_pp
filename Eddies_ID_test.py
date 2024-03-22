@@ -413,7 +413,7 @@ isExist = os.path.exists(out_dir)
 if isExist == False:
     os.makedirs(out_dir)
 
-csv_out_dir = in_dir + "csv_files/"
+csv_out_dir = in_dir + "csv_files_2/"
 isExist = os.path.exists(csv_out_dir)
 if isExist == False:
     os.makedirs(csv_out_dir)
@@ -820,25 +820,47 @@ def Update(it):
 
 
 
-it = 0
-with Pool() as pool:
-    for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
+# it = 0
+# with Pool() as pool:
+#     for Eddies_pos, Eddies_neg in pool.imap(Update,Time_steps):
 
-        f.write("Time step {} \n".format(str(it)))
-        print("Time step = ",it)     
+#         f.write("Time step {} \n".format(str(it)))
+#         print("Time step = ",it)     
 
-        df = pd.DataFrame(None)
+#         df = pd.DataFrame(None)
 
-        df_pos = pd.DataFrame(Eddies_pos)
-        df = pd.concat([df,df_pos],axis=1); del df_pos
+#         df_pos = pd.DataFrame(Eddies_pos)
+#         df = pd.concat([df,df_pos],axis=1); del df_pos
 
-        df_neg = pd.DataFrame(Eddies_neg)
-        df = pd.concat([df,df_neg],axis=1); del df_neg
+#         df_neg = pd.DataFrame(Eddies_neg)
+#         df = pd.concat([df,df_neg],axis=1); del df_neg
 
-        df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
-        f.write("{} \n".format(str(df)))
-        del df
+#         df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
+#         f.write("{} \n".format(str(df)))
+#         del df
 
-        it+=1
+#         it+=1
+
+# f.close()
+
+
+for it in Time_steps:
+
+    Eddies_pos,Eddies_neg = Update(it)
+
+    f.write("Time step {} \n".format(str(it)))
+    print("Time step = ",it)     
+
+    df = pd.DataFrame(None)
+
+    df_pos = pd.DataFrame(Eddies_pos)
+    df = pd.concat([df,df_pos],axis=1); del df_pos
+
+    df_neg = pd.DataFrame(Eddies_neg)
+    df = pd.concat([df,df_neg],axis=1); del df_neg
+
+    df.to_csv(csv_out_dir+"Eddies_0.7_{}.csv".format(it))
+    f.write("{} \n".format(str(df)))
+    del df
 
 f.close()

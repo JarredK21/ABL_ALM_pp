@@ -91,7 +91,7 @@ def UX_interp(coordinates):
     return ux
 
 
-def ux_interp(type,theta,theta_order,theta_180,dtheta):
+def ux_interp(type,theta,theta_order,theta_180,dtheta,perc):
 
     theta_anti = theta + dtheta
 
@@ -101,7 +101,7 @@ def ux_interp(type,theta,theta_order,theta_180,dtheta):
 
     if round(theta_anti,2) >= round(theta_order[2],2):
         
-        theta_anti = theta + abs(theta_180[2] - theta_180[1]) / 2
+        theta_anti = (theta_180[2] + theta_180[1]) * perc
 
         if theta_anti > 2*np.pi:
             theta_anti-=2*np.pi
@@ -115,7 +115,7 @@ def ux_interp(type,theta,theta_order,theta_180,dtheta):
 
         if round(theta_clock,2) <= round(theta_order[0],2):
             
-            theta_clock = theta - abs(theta_180[1] - theta_180[0]) / 2
+            theta_clock = (theta_180[1] + theta_180[0]) * perc
 
             if theta_clock < 0:
                 theta_clock +=2*np.pi
@@ -147,9 +147,10 @@ def ux_interp(type,theta,theta_order,theta_180,dtheta):
 def isOutside(type,theta,theta_order,theta_180):
 
     dtheta_arr = np.radians([2,4,6,8,10,12,14,16,18,20,24,26])
+    percentage = [0.5,0.55,0.45,0.60,0.40,0.65,0.35,0.70,0.30,0.75,0.35,0.80]
 
-    for dtheta in dtheta_arr:
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(type,theta,theta_order,theta_180,dtheta)
+    for dtheta,perc in zip(dtheta_arr,percentage):
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(type,theta,theta_order,theta_180,dtheta,perc)
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:
                 continue
@@ -210,7 +211,7 @@ def closeContour(type,theta_180,theta_loc,theta_order,X, Y):
 
     Xcontours = []; Ycontours = []
     Xcontour = []; Ycontour = []
-
+    r = 63
     theta_not = []
     for i in np.arange(0,len(theta_loc)-1,2):
 
@@ -257,8 +258,13 @@ def closeContour(type,theta_180,theta_loc,theta_order,X, Y):
             continue
         
         idx = int(i/2)
-        Xcontour = np.concatenate((Xcontour,X[idx])) #plot A->B
-        Ycontour = np.concatenate((Ycontour,Y[idx])) #plot A->B
+        print("first and last point {} {}".format([X[idx][0],Y[idx][0]],[X[idx][-1],Y[idx][-1]]))
+        if round(X[idx][0],2) == round(r*np.cos(theta_loc[i])+2560,2) and round(X[idx][-1],2) == round(r*np.cos(theta)+2560,2):
+            Xline = X[idx]; Yline = Y[idx]
+        elif round(X[idx][-1],2) == round(r*np.cos(theta_loc[-1])+2560,2) and round(X[idx][0],2) == round(r*np.cos(theta)+2560,2):
+            Xline = X[idx][::-1]; Yline = Y[idx][::-1]
+        Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
+        Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 
 
         if direction == "anticlockwise":
@@ -286,7 +292,7 @@ def closeContour(type,theta_180,theta_loc,theta_order,X, Y):
         f.write("theta arc {} \n".format(theta_AB))
         print("theta arc",theta_AB)
 
-        r = 63
+
         Xarc = np.add(r*np.cos(theta_AB), 2560); Yarc = np.add(r*np.sin(theta_AB), 90)
         Xcontour = np.concatenate((Xcontour,Xarc))
         Ycontour = np.concatenate((Ycontour,Yarc))
@@ -302,34 +308,48 @@ def closeContour(type,theta_180,theta_loc,theta_order,X, Y):
     return Xcontours, Ycontours
 
 
-def ux_average_calc(X,Y):
+def ux_average_calc(X,Y,C):
     deltax = 1.25; deltay = 1.25
     xmin = np.min(X); xmax = np.max(X)
+    f.write("xmin {}".format(xmin))
+    f.write("xmax {}".format(xmax))
+    print(xmin)
+    print(xmax)
     xlist = np.arange(xmin+deltax,xmax-deltax,deltax)
     coordinates = []
-    for i in np.arange(0,len(xlist)-1):
+    for xr in xlist:
         
-        xidx = (X>(xlist[i]))*(X<xlist[i+1])
+        f.write("xr {}".format(xr))
+        xidx = (X>(xr-0.15625))*(X<xr+0.15625)
         xidxlist = np.where(xidx)
-
+        f.write("xidxlist {}".format(xidxlist[0]))
+        print("xidxlist",xidxlist[0])
+        print("len xidxlist",len(xidxlist[0]))
         if len(xidxlist[0]) == 0:
             continue
 
-        ymin = np.min(Y[xidxlist]); ymax = np.max(Y[xidxlist])
+        ymin = np.min(Y[xidxlist[0]]); ymax = np.max(Y[xidxlist[0]])
+        f.write("ymin {}".format(ymin))
+        f.write("ymax {}".format(ymax))
+        print("ymin",ymin);print("ymax",ymax)
 
         if ymin+deltay < ymax-deltay:
             ylist = np.arange(ymin+deltay,ymax-deltay,deltay)
             
             for yr in ylist:
-                coordinates.append([xlist[i],yr])
-    
+                coordinates.append([xr,yr])
+                print(xr,yr)
+
     Ux_avg = []
     for coordinate in coordinates:
         velx = UX_interp(coordinate)
-        if threshold > 0 and velx[0] >= threshold and velx[0] <= cmax:
+        if C == "closed":
             Ux_avg.append(velx[0])
-        elif threshold < 0 and velx[0] <= threshold and velx[0] >= cmin:
-            Ux_avg.append(velx[0])
+        else:
+            if threshold > 0 and velx[0] >= threshold and velx[0] <= cmax:
+                Ux_avg.append(velx[0])
+            elif threshold < 0 and velx[0] <= threshold and velx[0] >= cmin:
+                Ux_avg.append(velx[0])
 
 
     if len(Ux_avg) == 0:
@@ -484,7 +504,7 @@ for line in lines:
         continue
     elif C == "closed":
 
-        Ux_avg.append(ux_average_calc(X,Y))
+        Ux_avg.append(ux_average_calc(X,Y,C))
 
         Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
         X = np.append(X,X[0]); Y = np.append(Y,Y[0])
@@ -492,7 +512,7 @@ for line in lines:
 
         ux_c = UX_interp(Centroid)
 
-        if ux_c >= 0.7:
+        if ux_c > -0.7:
             plt.plot(X,Y,"-k",linewidth=3)
         elif ux_c <= -0.7:
             plt.plot(X,Y,"--k",linewidth=3)
@@ -551,7 +571,7 @@ if len(X_contours) > 0:
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            Ux_avg.append(ux_average_calc(X,Y))
+            Ux_avg.append(ux_average_calc(X,Y,C))
 
             plt.plot(X,Y,"-k",linewidth=3)
             plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
@@ -589,7 +609,7 @@ for line in lines:
         continue
     elif C == "closed":
         
-        Ux_avg.append(ux_average_calc(X,Y))
+        Ux_avg.append(ux_average_calc(X,Y,C))
 
         Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
         X = np.append(X,X[0]); Y = np.append(Y,Y[0])
@@ -599,7 +619,7 @@ for line in lines:
 
         if ux_c >= 0.7:
             plt.plot(X,Y,"-k",linewidth=3)
-        elif ux_c <= -0.7:
+        elif ux_c < 0.7:
             plt.plot(X,Y,"--k",linewidth=3)
 
         plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
@@ -655,7 +675,7 @@ if len(X_contours) > 0:
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            Ux_avg.append(ux_average_calc(X,Y))
+            Ux_avg.append(ux_average_calc(X,Y,C))
 
             plt.plot(X,Y,"--k",linewidth=3)
             plt.plot(Centroid[0],Centroid[1],"+k",markersize=8)
@@ -668,13 +688,13 @@ Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_
 f.write("{} \n".format(str(Eddies_it_neg)))
 
 if len(Eddies_it_pos["Area_pos"]) == 0 and len(Eddies_it_neg["Area_neg"]) == 0:
-    ux_cent = UX_interp(2560,90,Xs,Ys,Z)
+    ux_cent = UX_interp(2560,90)
     if ux_cent <= -0.7:
         theta = np.linspace(0,2*np.pi,360)
         X = 63*np.cos(theta) + 2560; Y = 63*np.sin(theta) + 90
         Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="--",edgecolor="k")
         Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]
-        Ux_avg.append(ux_average_calc(X,Y))
+        Ux_avg.append(ux_average_calc(X,Y,C="closed"))
         Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area, "Ux_avg_neg": Ux_avg}
         f.write("{} \n".format(str(Eddies_it_neg)))
         plt.plot(2560,90,"+k",markersize=8)
@@ -684,7 +704,7 @@ if len(Eddies_it_pos["Area_pos"]) == 0 and len(Eddies_it_neg["Area_neg"]) == 0:
         X = 63*np.cos(theta) + 2560; Y = 63*np.sin(theta) + 90
         Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="-",edgecolor="k")
         Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]
-        Ux_avg.append(ux_average_calc(X,Y)) #add coordiantes for rotor
+        Ux_avg.append(ux_average_calc(X,Y,C="closed")) #add coordiantes for rotor
         Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area, "Ux_avg_pos": Ux_avg}
         f.write("{} \n".format(str(Eddies_it_pos)))
         plt.plot(2560,90,"+k",markersize=8)
