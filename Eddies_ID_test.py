@@ -553,7 +553,7 @@ def Update(it):
     Eddies_Cent_x = []
     Eddies_Cent_y = []
     Eddies_Area = []
-    Ux_avg = []
+    #Ux_avg = []
     threshold = 0.7
     lines = CS.allsegs[0] #plot only threshold velocity
 
@@ -573,13 +573,15 @@ def Update(it):
             continue
         elif C == "closed":
                 
-            ux_c = ux_average_calc(X,Y,C)
+            #ux_c = ux_average_calc(X,Y,C)
 
-            Ux_avg.append(ux_c)
+            #Ux_avg.append(ux_c)
 
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
+
+            ux_c = UX_interp(Centroid)
 
             if ux_c > -0.7:
                 plt.plot(X,Y,"-k",linewidth=3)
@@ -639,7 +641,7 @@ def Update(it):
     if len(Xcontour) > 0:
         for X,Y in zip(Xcontour,Ycontour):
             if len(X) > 0:
-                Ux_avg.append(ux_average_calc(X,Y,C))
+                #Ux_avg.append(ux_average_calc(X,Y,C))
                 Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
                 X = np.append(X,X[0]); Y = np.append(Y,Y[0])
                 Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
@@ -651,7 +653,8 @@ def Update(it):
                 Eddies_Cent_y.append(Centroid[1])
                 Eddies_Area.append(Area)
 
-    Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area, "Ux_avg_pos": Ux_avg}
+    #Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area, "Ux_avg_pos": Ux_avg}
+    Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
     print(Eddies_it_pos)
 
     f.write("negative contours \n")
@@ -660,7 +663,7 @@ def Update(it):
     Eddies_Cent_x = []
     Eddies_Cent_y = []
     Eddies_Area = []
-    Ux_avg = []
+    #Ux_avg = []
     threshold = -0.7
     lines = CZ.allsegs[-1] #plot only threshold velocity
 
@@ -680,9 +683,9 @@ def Update(it):
             continue
         elif C == "closed":
 
-            ux_c = ux_average_calc(X,Y,C)
+            #ux_c = ux_average_calc(X,Y,C)
 
-            Ux_avg.append(ux_c)
+            #Ux_avg.append(ux_c)
 
             Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
@@ -744,7 +747,7 @@ def Update(it):
     if len(Xcontour) > 0:
         for X,Y in zip(Xcontour,Ycontour):
             if len(X) > 0:
-                Ux_avg.append(ux_average_calc(X,Y,C))
+                #Ux_avg.append(ux_average_calc(X,Y,C))
                 Centroid = [np.sum(X)/len(X), np.sum(Y)/len(Y)]
                 X = np.append(X,X[0]); Y = np.append(Y,Y[0])
                 Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
@@ -756,7 +759,8 @@ def Update(it):
                 Eddies_Cent_y.append(Centroid[1])
                 Eddies_Area.append(Area)
 
-    Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area, "Ux_avg_neg": Ux_avg}
+    #Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area, "Ux_avg_neg": Ux_avg}
+    Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
     print(Eddies_it_neg)
 
     if len(Eddies_it_pos["Area_pos"]) == 0 and len(Eddies_it_neg["Area_neg"]) == 0:
@@ -766,8 +770,10 @@ def Update(it):
             X = 63*np.cos(theta) + 2560; Y = 63*np.sin(theta) + 90
             Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="--",edgecolor="k")
             Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]
-            Ux_avg.append(ux_average_calc(X,Y,C="closed"))
-            Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area, "Ux_avg_neg": Ux_avg}
+            #Ux_avg.append(ux_average_calc(X,Y,C="closed"))
+            #Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area, "Ux_avg_neg": Ux_avg}
+            Eddies_it_neg = {"Centroid_x_neg": Eddies_Cent_x, "Centroid_y_neg": Eddies_Cent_y, "Area_neg": Eddies_Area}
+            plt.plot(2560,90,"+k",markersize=8)
             plt.plot(2560,90,"+k",markersize=8)
             ax.add_artist(Drawing_uncolored_circle)
         elif ux_cent >= 0.7:
@@ -775,8 +781,9 @@ def Update(it):
             X = 63*np.cos(theta) + 2560; Y = 63*np.sin(theta) + 90
             Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=3,linestyle="-",edgecolor="k")
             Eddies_Cent_x = [2560]; Eddies_Cent_y = [90]; Eddies_Area = [(np.pi*63**2)]
-            Ux_avg.append(ux_average_calc(X,Y,C="closed"))
-            Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area, "Ux_avg_pos": Ux_avg}
+            #Ux_avg.append(ux_average_calc(X,Y,C="closed"))
+            #Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area, "Ux_avg_pos": Ux_avg}
+            Eddies_it_pos = {"Centroid_x_pos": Eddies_Cent_x, "Centroid_y_pos": Eddies_Cent_y, "Area_pos": Eddies_Area}
             plt.plot(2560,90,"+k",markersize=8)
             ax.add_artist(Drawing_uncolored_circle)
 
