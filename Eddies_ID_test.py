@@ -121,7 +121,7 @@ def ux_interp(coordinates):
     return ux
 
 
-def ux_offset_perc(type,ux_anti,ux_clock,theta,theta_180,perc):
+def ux_offset_perc(ux_anti,ux_clock,theta,theta_180,perc):
     r = 63
 
     if ux_anti == np.nan:
@@ -136,12 +136,11 @@ def ux_offset_perc(type,ux_anti,ux_clock,theta,theta_180,perc):
         ux_anti = ux_interp([x_anti,y_anti])
 
     if ux_clock == np.nan:
-        if type == 2:
             
-            theta_clock = theta - abs(theta_180[1] - theta_180[0]) / (1/perc)
+        theta_clock = theta - abs(theta_180[1] - theta_180[0]) / (1/perc)
 
-            if theta_clock < 0:
-                theta_clock +=2*np.pi
+        if theta_clock < 0:
+            theta_clock +=2*np.pi
 
         x_clock = 2560 + r*np.cos(theta_clock)
         y_clock = 90 + r*np.sin(theta_clock)     
@@ -165,6 +164,8 @@ def ux_offset_deg(type,theta,theta_order,dtheta):
 
     if round(theta_clock,2) <= round(theta_order[0],2):
         ux_clock = np.nan
+        x_clock = np.nan
+        y_clock = np.nan
     else:
         if theta_clock < 0:
             theta_clock +=2*np.pi
@@ -174,6 +175,8 @@ def ux_offset_deg(type,theta,theta_order,dtheta):
     
     if round(theta_anti,2) >= round(theta_order[2],2):
         ux_anti = np.nan
+        x_anti = np.nan
+        y_anti = np.nan
     else:
         if theta_anti > 2*np.pi:
             theta_anti-=2*np.pi
@@ -197,7 +200,7 @@ def isOutside(type,theta,theta_order,theta_180):
         ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_offset_deg(type,theta,theta_order,dtheta)
 
         if ux_anti == np.nan or ux_clock == np.nan:
-            ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_offset_perc(type,ux_anti,ux_clock,theta,theta_180,percentage[ip])
+            ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_offset_perc(ux_anti,ux_clock,theta,theta_180,percentage[ip])
             ip+=1
 
         if threshold > 0.0:
