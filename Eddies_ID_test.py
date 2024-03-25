@@ -106,7 +106,7 @@ def openContour(cc,X,Y):
     return X_contour, Y_contour, crossings
             
 
-def UX_interp(coordinates):
+def ux_interp(coordinates):
 
     x = coordinates[0]; y = coordinates[1]
     xmin = x - 4; xmax = x + 4; ymin = y - 4; ymax = y + 4
@@ -121,51 +121,66 @@ def UX_interp(coordinates):
     return ux
 
 
-def ux_interp(type,theta,theta_order,theta_180,dtheta,perc):
+def ux_offset_perc(type,ux_anti,ux_clock,theta,theta_180,perc):
+    r = 63
 
-    theta_anti = theta + dtheta
-
-    if theta_anti > 2*np.pi:
-        theta_anti-=2*np.pi
-
-
-    if round(theta_anti,2) >= round(theta_order[2],2):
-        
+    if ux_anti == np.nan:
         theta_anti = theta + abs(theta_180[2] - theta_180[1]) / (1/perc)
 
         if theta_anti > 2*np.pi:
             theta_anti-=2*np.pi
 
-    if type == 2:
+        x_anti = 2560 + r*np.cos(theta_anti)
+        y_anti = 90 + r*np.sin(theta_anti)
 
-        theta_clock = theta - dtheta
+        ux_anti = ux_interp([x_anti,y_anti])
 
-        if theta_clock < 0:
-            theta_clock +=2*np.pi
-
-        if round(theta_clock,2) <= round(theta_order[0],2):
+    if ux_clock == np.nan:
+        if type == 2:
             
             theta_clock = theta - abs(theta_180[1] - theta_180[0]) / (1/perc)
 
             if theta_clock < 0:
                 theta_clock +=2*np.pi
-        
+
+        x_clock = 2560 + r*np.cos(theta_clock)
+        y_clock = 90 + r*np.sin(theta_clock)     
+        ux_clock = ux_interp([x_clock,y_clock])
+
+    f.write("{} {} {} {} {} {} {} {} \n".format(theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock))
+    print(theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock)
+    return ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock
+
+
+def ux_offset_deg(type,theta,theta_order,dtheta):
+    r = 63
+
+    theta_anti = theta + dtheta
+
+    if type == 2:
+
+        theta_clock = theta - dtheta      
     else:
         theta_clock = theta - dtheta
 
+    if round(theta_clock,2) <= round(theta_order[0],2):
+        ux_clock = np.nan
+    else:
         if theta_clock < 0:
             theta_clock +=2*np.pi
+        x_clock = 2560 + r*np.cos(theta_clock)
+        y_clock = 90 + r*np.sin(theta_clock)
+        ux_clock = ux_interp([x_clock,y_clock])
+    
+    if round(theta_anti,2) >= round(theta_order[2],2):
+        ux_anti = np.nan
+    else:
+        if theta_anti > 2*np.pi:
+            theta_anti-=2*np.pi
+        x_anti = 2560 + r*np.cos(theta_anti)
+        y_anti = 90 + r*np.sin(theta_anti)
+        ux_anti = ux_interp([x_anti,y_anti])
 
-    r = 63
-    x_anti = 2560 + r*np.cos(theta_anti)
-    y_anti = 90 + r*np.sin(theta_anti)
-
-    x_clock = 2560 + r*np.cos(theta_clock)
-    y_clock = 90 + r*np.sin(theta_clock)
-
-    ux_anti = UX_interp([x_anti,y_anti])
-
-    ux_clock = UX_interp([x_clock,y_clock])
 
     f.write("{} {} {} {} {} {} {} {} \n".format(theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock))
     print(theta_anti,theta_clock,ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock)
@@ -177,8 +192,14 @@ def isOutside(type,theta,theta_order,theta_180):
     dtheta_arr = np.radians([2,4,6,8,10,12,14,16,18,20,24,26])
     percentage = [0.5,0.55,0.45,0.60,0.40,0.65,0.35,0.70,0.30,0.75,0.35,0.80]
 
-    for dtheta,perc in zip(dtheta_arr,percentage):
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_interp(type,theta,theta_order,theta_180,dtheta,perc)
+    ip = 0
+    for dtheta in dtheta_arr:
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_offset_deg(type,theta,dtheta)
+
+        if ux_anti == np.nan or ux_clock == np.nan:
+            ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_offset_perc(type,ux_anti,ux_clock,theta,theta_180,percentage[ip])
+            ip+=1
+
         if threshold > 0.0:
             if ux_anti >= threshold and ux_clock >= threshold:
                 continue
@@ -189,8 +210,7 @@ def isOutside(type,theta,theta_order,theta_180):
                 continue
             if ux_anti <= threshold or ux_clock<= threshold:
                 break
-
-
+    
     if threshold > 0.0:
         plt.plot(x_anti,y_anti,"or",markersize=6)
         plt.plot(x_clock,y_clock,"or",markersize=6)
@@ -290,8 +310,8 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
             continue
 
         idx = int(i/2)
-        f.write("first and last point {} {} \n".format([round(X[idx][0],2),round(r*np.cos(theta_loc[i])+2560,2)],[round(X[idx][-1],2),round(r*np.cos(theta_loc[i])+2560,2)]))
-        print("first and last point {} {} \n".format([round(X[idx][0],2),round(r*np.cos(theta_loc[i])+2560,2)],[round(X[idx][-1],2),round(r*np.cos(theta_loc[i])+2560,2)]))
+        f.write("first and last point {} {} \n".format([round(X[idx][0],2),round(r*np.cos(theta_loc[i])+2560,2)],[round(X[idx][-1],2),round(r*np.cos(theta)+2560,2)]))
+        print("first and last point {} {} \n".format([round(X[idx][0],2),round(r*np.cos(theta_loc[i])+2560,2)],[round(X[idx][-1],2),round(r*np.cos(theta)+2560,2)]))
         if round(X[idx][-1],2) == round(r*np.cos(theta_loc[i])+2560,2) and round(X[idx][0],2) == round(r*np.cos(theta)+2560,2):
             Xline = X[idx][::-1]; Yline = Y[idx][::-1]
         else:
@@ -329,7 +349,12 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
         Xcontour = np.concatenate((Xcontour,Xarc))
         Ycontour = np.concatenate((Ycontour,Yarc))
 
-        if Atheta != theta_loc[i+2]:
+        if Atheta < 0:
+            Atheta+=2*np.pi
+        elif Atheta > 2*np.pi:
+            Atheta-=2*np.pi
+
+        if Atheta == theta_loc[i]:
             Xcontours.append(Xcontour); Ycontours.append(Ycontour)
             Xcontour = []; Ycontour = []
 
@@ -374,7 +399,7 @@ def ux_average_calc(X,Y,C):
 
     Ux_avg = []
     for coordinate in coordinates:
-        velx = UX_interp(coordinate)
+        velx = ux_interp(coordinate)
         if C == "closed":
             Ux_avg.append(velx[0])
         else:
@@ -582,7 +607,7 @@ def Update(it):
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            ux_c = UX_interp(Centroid)
+            ux_c = ux_interp(Centroid)
 
             if ux_c > -0.7:
                 plt.plot(X,Y,"-k",linewidth=3)
@@ -692,7 +717,7 @@ def Update(it):
             X = np.append(X,X[0]); Y = np.append(Y,Y[0])
             Area = np.abs((np.sum(X[1:]*Y[:-1]) - np.sum(Y[1:]*X[:-1]))/2)
 
-            ux_c = UX_interp(Centroid)
+            ux_c = ux_interp(Centroid)
 
             if ux_c >= 0.7:
                 plt.plot(X,Y,"-k",linewidth=3)
@@ -768,7 +793,7 @@ def Update(it):
     print(Eddies_it_neg)
 
     if len(Eddies_it_pos["Area_pos"]) == 0 and len(Eddies_it_neg["Area_neg"]) == 0:
-        ux_cent = UX_interp([2560,90])
+        ux_cent = ux_interp([2560,90])
         if ux_cent <= -0.7:
             theta = np.linspace(0,2*np.pi,360)
             X = 63*np.cos(theta) + 2560; Y = 63*np.sin(theta) + 90
