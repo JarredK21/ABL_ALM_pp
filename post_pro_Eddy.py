@@ -3,10 +3,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
 
+
+def correlation_coef(x,y):
+    
+    r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
+
+    return r
+
+
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 a = Dataset(in_dir+"Dataset.nc")
 Time = np.array(a.variables["time_sampling"])
+group = a.groups["63.0"]
+Iy_data = np.array(group.variables["Iy"])
+Iz_data = np.array(group.variables["Iz"])
 
 Time_steps = np.arange(0,3077)
 
@@ -18,6 +29,8 @@ Iy_pos = []
 Iy_neg = []
 Iz_pos = []
 Iz_neg = []
+Iy = []
+Iz = []
 
 area_g_rot = []
 for it in Time_steps:
@@ -25,14 +38,14 @@ for it in Time_steps:
 
     df = pd.read_csv(in_dir+filename)
 
-    df["Centroid_x_pos"].dropna()
-    index = df["Ux_avg_pos"].isin([0.000000])
-    for i in np.arange(0,len(index.values)):
-        if index.values[i] == True:
-            df["Centroid_x_pos"].drop([i])
+    # df["Centroid_x_pos"].dropna()
+    # index = df["Ux_avg_pos"].isin([0.000000])
+    # for i in np.arange(0,len(index.values)):
+    #     if index.values[i] == True:
+    #         df["Centroid_x_pos"].drop([i])
 
 
-    Centroids_x_pos = np.array(df["Centroid_x_pos"])
+    Centroids_x_pos = np.array(df["Centroid_x_pos"].dropna())
     Centroids_y_pos = np.array(df["Centroid_y_pos"].dropna())
     Area_pos = np.array(df["Area_pos"].dropna())
     Ux_avg_pos = np.array(df["Ux_avg_pos"].dropna())
@@ -45,39 +58,7 @@ for it in Time_steps:
     Rot_Area = np.pi * 63**2
 
     Frac_pos_area.append(np.sum(Area_pos)/Rot_Area)
-    Frac_neg_area.append(np.sum(Area_neg)/Rot_Area)
-
-    if Frac_neg_area[it] > 1.0:
-        area_g_rot.append(["neg"])
-    elif Frac_pos_area[it] > 1.0:
-        area_g_rot.append(["pos"])
-    elif Frac_neg_area[it]+Frac_pos_area[it] > 1.0:
-        area_g_rot.append(["both"])
-
-    if area_g_rot[it] == "pos":
-        Area_pos_sorted = np.sort(Area_pos)
-        second_largest = Area_pos_sorted[-2]
-        idx = np.where(Area_pos == second_largest)[0]
-        np.delete(Area_pos,idx)
-        np.delete(Centroids_x_pos,idx)
-        np.delete(Centroids_y_pos,idx)
-        np.delete(Ux_avg_pos,idx)
-
-        Frac_pos_area[it] = (np.sum(Area_pos)/Rot_Area)
-    elif area_g_rot[it] == "neg":
-        Area_neg_sorted = np.sort(Area_neg)
-        second_largest = Area_neg_sorted[-2]
-        idx = np.where(Area_neg == second_largest)[0]
-        np.delete(Area_neg,idx)
-        np.delete(Centroids_x_neg,idx)
-        np.delete(Centroids_y_neg,idx)
-        np.delete(Ux_avg_neg,idx)
-
-        Frac_neg_area[it] = (np.sum(Area_neg)/Rot_Area)
-    #elif area_g_rot[it] == "both":
-
-
-    
+    Frac_neg_area.append(np.sum(Area_neg)/Rot_Area)  
 
 
     ux = 0
@@ -96,22 +77,16 @@ for it in Time_steps:
     
     ux_neg.append(ux)
 
-    Centroids_x_pos = np.subtract(Centroids_x_pos,2560)
-    Iy_pos.append(ux_pos[it]*np.average(Centroids_x_pos))
-    
+    y = np.concatenate((np.subtract(Centroids_x_pos,2560),np.subtract(Centroids_x_neg,2560)))
+    z = np.concatenate((np.subtract(Centroids_y_pos,90),np.subtract(Centroids_y_neg,90)))
+    dA = np.concatenate((Area_pos,Area_neg))
+    Ux_avg = np.concatenate((Ux_avg_pos,Ux_avg_neg))
 
-    Centroids_x_neg = np.subtract(Centroids_x_neg,2560)
-    Iy_neg.append(ux_neg[it]*np.average(Centroids_x_neg))
+    num = np.multiply(Ux_avg,(np.multiply(y,dA)))
+    Iz.append(np.sum(num)/Rot_Area)
+    num = np.multiply(Ux_avg,(np.multiply(z,dA)))
+    Iy.append(np.sum(num)/Rot_Area)
 
-    Centroids_y_pos = np.subtract(Centroids_y_pos,90)
-    Iz_pos.append(ux_pos[it]*np.average(Centroids_y_pos))
-    
-
-    Centroids_y_neg = np.subtract(Centroids_y_neg,90)
-    Iz_neg.append(ux_neg[it]*np.average(Centroids_y_neg))
-    
-print("areas greater than rotor")
-print(area_g_rot)
 
 fig,ax = plt.subplots(figsize=(14,8))
 
@@ -140,14 +115,20 @@ plt.grid()
 plt.savefig(in_dir+"csv_files/plots/velocity.png")
 plt.close()
 
+Iy_corr = correlation_coef(Iy_data,Iy)
+Iz_corr = correlation_coef(Iz,Iz_data)
 
 fig,ax = plt.subplots(figsize=(14,8))
 
-ax.plot(Time,Iy_pos,'-b')
-ax.set_ylabel("Asymmetry around y axis created by contours [m2/s]",fontsize=14)
-ax.plot(Time,Iy_neg,"-r")
+ax.plot(Time,Iy,'-b')
+ax.axhline(y=np.mean(Iy),linestyle="--",color="b")
+ax.set_ylabel("Asymmetry around y axis [m2/s]",fontsize=14)
+ax2 = ax.twinx()
+ax2.plot(Time,Iy_data,"-r")
+ax2.axhline(y=np.mean(Iy_data),linestyle="--",color="r")
+ax2.set_ylabel("Asymmetry around y axis [m4/s]",fontsize=14)
+plt.title("Correlation coefficient {}".format(Iy_corr),fontsize=16)
 ax.set_xlabel("Time [s]",fontsize=16)
-ax.legend(["High speed areas (ux'>0.7m/s)","low speed areas (ux'<-0.7 m/s)"])
 plt.tight_layout()
 plt.grid()
 plt.savefig(in_dir+"csv_files/plots/Iy.png")
@@ -156,11 +137,15 @@ plt.close()
 
 fig,ax = plt.subplots(figsize=(14,8))
 
-ax.plot(Time,Iz_pos,'-b')
-ax.set_ylabel("Asymmetry around z axis created by contours [m2/s]",fontsize=14)
-ax.plot(Time,Iz_neg,"-r")
+ax.plot(Time,Iz,'-b')
+ax.axhline(y=np.mean(Iz),linestyle="--",color="b")
+ax.set_ylabel("Asymmetry around z axis [m2/s]",fontsize=14)
+ax2 = ax.twinx()
+ax2.plot(Time,Iz_data,"-r")
+ax2.axhline(y=np.mean(Iz_data),linestyle="--",color="r")
+ax2.set_ylabel("Asymmetry around z axis [m4/s]",fontsize=14)
+plt.title("Correlation coefficient {}".format(Iz_corr),fontsize=16)
 ax.set_xlabel("Time [s]",fontsize=16)
-ax.legend(["High speed areas (ux'>0.7m/s)","low speed areas (ux'<-0.7 m/s)"])
 plt.tight_layout()
 plt.grid()
 plt.savefig(in_dir+"csv_files/plots/Iz.png")

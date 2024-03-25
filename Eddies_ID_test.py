@@ -264,7 +264,10 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
     Xcontour = []; Ycontour = []
     r = 63
     theta_not = []
+    istart = 0
     for i in np.arange(0,len(theta_loc)-1,2):
+
+        theta_start = theta_loc[istart]
 
         theta = theta_loc[i+1]
 
@@ -280,6 +283,7 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
                 del theta_temp; del idx_temp
 
         Oidx = theta_order.index(theta)
+        f.write("theta start {} \n".format(theta_start))
         f.write("crossing {} \n".format(theta))
 
         if Oidx == 0:
@@ -357,9 +361,10 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
         elif Atheta > 2*np.pi:
             Atheta-=2*np.pi
 
-        if Atheta == theta_loc[i]:
+        if Atheta == theta_start:
             Xcontours.append(Xcontour); Ycontours.append(Ycontour)
             Xcontour = []; Ycontour = []
+            istart = i+2
 
     if len(Xcontours) == 0:
         Xcontours.append(Xcontour); Ycontours.append(Ycontour)
