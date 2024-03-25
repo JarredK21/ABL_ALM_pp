@@ -194,7 +194,7 @@ def isOutside(type,theta,theta_order,theta_180):
 
     ip = 0
     for dtheta in dtheta_arr:
-        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_offset_deg(type,theta,dtheta)
+        ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_offset_deg(type,theta,theta_order,dtheta)
 
         if ux_anti == np.nan or ux_clock == np.nan:
             ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock = ux_offset_perc(type,ux_anti,ux_clock,theta,theta_180,percentage[ip])
@@ -401,7 +401,8 @@ def ux_average_calc(X,Y,C):
     for coordinate in coordinates:
         velx = ux_interp(coordinate)
         if C == "closed":
-            Ux_avg.append(velx[0])
+            if cmin<=velx<=cmax:
+                Ux_avg.append(velx[0])
         else:
             if threshold > 0 and velx[0] >= threshold and velx[0] <= cmax:
                 Ux_avg.append(velx[0])
