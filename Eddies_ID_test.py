@@ -492,11 +492,12 @@ del p
 
 u[u<0]=0; v[v<0] #remove negative velocities
 
-u = np.subtract(u,np.mean(u))
 print("mean u {}".format(np.mean(u)))
-v = np.subtract(v,np.mean(v))
 print("mean v {}".format(np.mean(v)))
 print("Ux' {}".format(np.mean(u)*np.cos(np.radians(29)) + np.mean(v)*np.sin(np.radians(29))))
+
+u = np.subtract(u,np.mean(u))
+v = np.subtract(v,np.mean(v))
 
 with Pool() as pool:
     u_hvel = []
