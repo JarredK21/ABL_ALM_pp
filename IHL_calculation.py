@@ -28,8 +28,8 @@ def Horizontal_velocity(it):
             twist_h = f(zs[i])
             mean_ux_h = f_mean_ux(zs[i])
 
-        mag_horz_vel_i = np.add(np.multiply(u_i,np.cos(twist_h)), np.multiply(v_i,np.sin(twist_h)))
-        fluc_mag_horz_vel_i = np.subtract(mag_horz_vel_i,mean_ux_h)
+        mag_horz_vel_i = u_i * np.cos(twist_h) + v_i * np.sin(twist_h)
+        fluc_mag_horz_vel_i = mag_horz_vel_i - mean_ux_h
         mag_horz_vel.extend(mag_horz_vel_i)
         fluc_mag_horz_vel.extend(fluc_mag_horz_vel_i)
     mag_horz_vel = np.array(mag_horz_vel)
@@ -78,8 +78,7 @@ def Update(it):
 start_time = time.time()
 
 #defining twist angles with height from precursor
-#precursor = Dataset("../../convective_precursor_2_restart/post_processing/abl_statistics70000.nc")
-precursor = Dataset("../../ABL_precursor_2_restart/abl_statistics70000.nc")
+precursor = Dataset("../../convective_precursor_2_restart/post_processing/abl_statistics70000.nc")
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
 t_start = np.searchsorted(precursor.variables["time"],38200)
 t_end = np.searchsorted(precursor.variables["time"],39200)
