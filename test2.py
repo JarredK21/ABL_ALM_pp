@@ -1,5 +1,14 @@
 import numpy as np
 
+theta_start = 3.2944793534995145 
+
+Atheta = 9.577664660679101
+
+Atheta-=2*np.pi
+
+if round(Atheta,2) == round(theta_start,2):
+    print(theta_start)
+
 def ux_offset_perc(ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock,theta,theta_180,perc):
     r = 63
 
@@ -29,4 +38,4 @@ def ux_offset_perc(ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock,theta,theta_18
     return ux_anti,ux_clock,x_anti,y_anti,x_clock,y_clock
 
 
-ux_offset_perc(ux_anti=0.7,ux_clock=0.7,x_anti=1,y_anti=1,x_clock=0,y_clock=0,theta=0.5,theta_180=1,perc=0.5)
+#ux_offset_perc(ux_anti=0.7,ux_clock=0.7,x_anti=1,y_anti=1,x_clock=0,y_clock=0,theta=0.5,theta_180=1,perc=0.5)

@@ -252,7 +252,7 @@ def isOutside(type,theta,theta_order,theta_180):
 def isInlist(theta_not,theta):
     theta_in_list = False
     for theta_val in theta_not:
-        if theta_val == theta:
+        if round(theta_val,4) == round(theta,4):
             theta_in_list = True
 
     return theta_in_list
@@ -309,6 +309,8 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
             theta_not.append(theta)
             if Atheta < 0:
                 theta_not.append(Atheta+2*np.pi)
+            elif Atheta >= 2*np.pi:
+                theta_not.append(Atheta-2*np.pi)
             else:
                 theta_not.append(Atheta)
 
@@ -343,10 +345,10 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
 
         if Atheta < 0:
             Atheta+=2*np.pi
-        elif Atheta > 2*np.pi:
+        elif Atheta >= 2*np.pi:
             Atheta-=2*np.pi
 
-        if Atheta == theta_start:
+        if round(Atheta,4) == round(theta_start,4):
             Xcontours.append(Xcontour); Ycontours.append(Ycontour)
             Xcontour = []; Ycontour = []
         
@@ -491,7 +493,10 @@ del p
 u[u<0]=0; v[v<0] #remove negative velocities
 
 u = np.subtract(u,np.mean(u))
+print("mean u {}".format(np.mean(u)))
 v = np.subtract(v,np.mean(v))
+print("mean v {}".format(np.mean(v)))
+print("Ux' {}".format(np.mean(u)*np.cos(np.radians(29)) + np.mean(v)*np.sin(np.radians(29))))
 
 with Pool() as pool:
     u_hvel = []
