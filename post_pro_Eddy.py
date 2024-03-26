@@ -11,10 +11,41 @@ def correlation_coef(x,y):
     return r
 
 
+def energy_contents_check(Var,e_fft,signal,dt):
+
+    E = (1/dt)*np.sum(e_fft)
+
+    q = np.sum(np.square(signal))
+
+    E2 = q
+
+    print(Var, E, E2, abs(E2/E))    
+
+
+def temporal_spectra(signal,dt,Var):
+
+    fs =1/dt
+    n = len(signal) 
+    if n%2==0:
+        nhalf = int(n/2+1)
+    else:
+        nhalf = int((n+1)/2)
+    frq = np.arange(nhalf)*fs/n
+    Y   = np.fft.fft(signal)
+    PSD = abs(Y[range(nhalf)])**2 /(n*fs) # PSD
+    PSD[1:-1] = PSD[1:-1]*2
+
+
+    energy_contents_check(Var,PSD,signal,dt)
+
+    return frq, PSD
+
+
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 a = Dataset(in_dir+"Dataset.nc")
 Time = np.array(a.variables["time_sampling"])
+dt = Time[1] - Time[0]
 group = a.groups["63.0"]
 Iy_data = np.array(group.variables["Iy"])
 Iz_data = np.array(group.variables["Iz"])
@@ -25,10 +56,10 @@ Frac_pos_area = []
 Frac_neg_area = []
 ux_neg = []
 ux_pos = []
-Iy_pos = []
-Iy_neg = []
-Iz_pos = []
-Iz_neg = []
+Iy_high = []
+Iy_low = []
+Iz_high = []
+Iz_low = []
 Iy = []
 Iz = []
 
@@ -86,6 +117,21 @@ for it in Time_steps:
     Iz.append(np.sum(num)/Rot_Area)
     num = np.multiply(Ux_avg,(np.multiply(z,dA)))
     Iy.append(np.sum(num)/Rot_Area)
+
+    num = np.multiply(Ux_avg_neg,(np.multiply(np.subtract(Centroids_x_neg,2560),Area_neg)))
+    Iz_low.append((np.sum(num)/Rot_Area)/Iz[it])
+
+    num = np.multiply(Ux_avg_pos,(np.multiply(np.subtract(Centroids_x_pos,2560),Area_pos)))
+    Iz_high.append((np.sum(num)/Rot_Area)/Iz[it])
+
+    num = np.multiply(Ux_avg_neg,(np.multiply(np.subtract(Centroids_y_neg,90),Area_neg)))
+    Iy_low.append((np.sum(num)/Rot_Area)/Iy[it])
+
+    num = np.multiply(Ux_avg_pos,(np.multiply(np.subtract(Centroids_y_pos,90),Area_pos)))
+    Iy_high.append((np.sum(num)/Rot_Area)/Iy[it])
+
+
+
 
 
 fig,ax = plt.subplots(figsize=(14,8))
@@ -149,4 +195,32 @@ ax.set_xlabel("Time [s]",fontsize=16)
 plt.tight_layout()
 plt.grid()
 plt.savefig(in_dir+"csv_files/plots/Iz.png")
+plt.close()
+
+
+fig,ax = plt.subplots(figsize=(14,8))
+
+ax.plot(Time,Iy_low,'-b')
+ax.set_ylabel("Proportion of Asymmetry around y axis [m2/s]",fontsize=14)
+ax.plot(Time,Iy_high,"-r")
+ax.set_xlabel("Time [s]",fontsize=16)
+ax.legend(["Low speed areas", "high speed areas"])
+plt.ylim([-1,1])
+plt.tight_layout()
+plt.grid()
+plt.savefig(in_dir+"csv_files/plots/Iy_prop.png")
+plt.close()
+
+
+fig,ax = plt.subplots(figsize=(14,8))
+
+ax.plot(Time,Iz_low,'-b')
+ax.set_ylabel("Proportion of Asymmetry around z axis [m2/s]",fontsize=14)
+ax.plot(Time,Iz_high,"-r")
+ax.set_xlabel("Time [s]",fontsize=16)
+ax.legend(["Low speed areas", "high speed areas"])
+plt.ylim([-1,1])
+plt.tight_layout()
+plt.grid()
+plt.savefig(in_dir+"csv_files/plots/Iz_prop.png")
 plt.close()

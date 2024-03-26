@@ -317,31 +317,16 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
             continue
 
         idx = int(i/2)
-        f.write("first and last point {} {} \n".format([round(X[idx][0],2),round(r*np.cos(theta_loc[i])+2560,2)],[round(X[idx][-1],2),round(r*np.cos(theta)+2560,2)]))
-        print("first and last point {} {} \n".format([round(X[idx][0],2),round(r*np.cos(theta_loc[i])+2560,2)],[round(X[idx][-1],2),round(r*np.cos(theta)+2560,2)]))
-        if round(X[idx][-1],2) == round(r*np.cos(theta_loc[i])+2560,2) and round(X[idx][0],2) == round(r*np.cos(theta)+2560,2):
-            Xline = X[idx][::-1]; Yline = Y[idx][::-1]
-        else:
-            Xline = X[idx]; Yline = Y[idx]
+        # f.write("first and last point {} {} \n".format([round(X[idx][0],2),round(r*np.cos(theta_loc[i])+2560,2)],[round(X[idx][-1],2),round(r*np.cos(theta)+2560,2)]))
+        # print("first and last point {} {} \n".format([round(X[idx][0],2),round(r*np.cos(theta_loc[i])+2560,2)],[round(X[idx][-1],2),round(r*np.cos(theta)+2560,2)]))
+        # if round(X[idx][-1],2) == round(r*np.cos(theta_loc[i])+2560,2) and round(X[idx][0],2) == round(r*np.cos(theta)+2560,2):
+        #     Xline = X[idx][::-1]; Yline = Y[idx][::-1]
+        # else:
+        Xline = X[idx]; Yline = Y[idx]
         Xcontour = np.concatenate((Xcontour,Xline)) #plot A->B
         Ycontour = np.concatenate((Ycontour,Yline)) #plot A->B
 
-
-        if direction == "anticlockwise":
-            if theta < Atheta:
-            
-                theta_AB = np.linspace(theta,Atheta,int(abs(theta_B[2]-theta_B[1])/5e-03))
-            elif theta > Atheta:
-                theta_AB1 = np.linspace(theta_B[1],0,int(abs(theta_B[1])/5e-03))
-                theta_AB2 = np.linspace(0,Atheta,int(abs(Atheta)/5e-03))
-                theta_AB = np.concatenate((theta_AB1,theta_AB2))
-        elif direction == "clockwise":
-            if theta > Atheta:
-                theta_AB = np.linspace(theta,Atheta,int(abs(theta_B[1]-theta_B[0])/5e-03))
-            elif theta < Atheta:
-                theta_AB1 = np.linspace(theta,0,int(abs(theta_B[1])/5e-03))
-                theta_AB2 = np.linspace(0,theta_B[0],int(abs(theta_B[0])/5e-03))
-                theta_AB = np.concatenate((theta_AB1,theta_AB2))
+        theta_AB = np.linspace(theta,Atheta,int(abs(theta-Atheta)/5e-03))
 
         for j in np.arange(0,len(theta_AB)):
             if theta_AB[j] < 0:
@@ -364,6 +349,7 @@ def closeContour(type,theta_180,theta_loc,theta_order,X,Y):
         if Atheta == theta_start:
             Xcontours.append(Xcontour); Ycontours.append(Ycontour)
             Xcontour = []; Ycontour = []
+        
             istart = i+2
 
     if len(Xcontours) == 0:
