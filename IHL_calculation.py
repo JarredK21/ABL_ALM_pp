@@ -22,8 +22,7 @@ def Horizontal_velocity(it):
             twist_h = f(h[-1])
         else:
             twist_h = f(zs[i])
-
-        mag_horz_vel.extend(np.add(np.multiply(u_i, np.cos(twist_h)), np.multiply(v_i, np.sin(twist_h))))
+        mag_horz_vel.extend(u_i*np.cos(twist_h) + v_i*np.sin(twist_h))
     return mag_horz_vel
 
 
@@ -107,39 +106,10 @@ print("line 70",time.time()-start_time)
 
 del precursor; del mean_profiles; del t_start; del u; del v
 
-
-
 #directories
 in_dir = "./"
 
 out_dir = in_dir
-
-ncfile = Dataset(out_dir+"Asymmetry_Dataset.nc",mode="w",format='NETCDF4')
-ncfile.title = "Asymmetry data sampling output"
-
-#create global dimensions
-sampling_dim = ncfile.createDimension("sampling",None)
-
-#create variables
-Time_sampling = ncfile.createVariable("time", np.float64, ('sampling',),zlib=True)
-
-Area_high = ncfile.createVariable("Area_high", np.float64, ('sampling',),zlib=True)
-Area_low = ncfile.createVariable("Area_low", np.float64, ('sampling',),zlib=True)
-Area_int = ncfile.createVariable("Area_int", np.float64, ('sampling',),zlib=True)
-
-Iy_high = ncfile.createVariable("Iy_high", np.float64, ('sampling',),zlib=True)
-Iy_low = ncfile.createVariable("Iy_low", np.float64, ('sampling',),zlib=True)
-Iy_int = ncfile.createVariable("Iy_int", np.float64, ('sampling',),zlib=True)
-
-Iz_high = ncfile.createVariable("Iz_high", np.float64, ('sampling',),zlib=True)
-Iz_low = ncfile.createVariable("Iz_low", np.float64, ('sampling',),zlib=True)
-Iz_int = ncfile.createVariable("Iz_int", np.float64, ('sampling',),zlib=True)
-
-Iy = ncfile.createVariable("Iy", np.float64, ('sampling',),zlib=True)
-Iz = ncfile.createVariable("Iz", np.float64, ('sampling',),zlib=True)
-
-
-
 
 a = Dataset("./sampling_r_-63.0.nc")
 
@@ -151,8 +121,6 @@ tend = 39200
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(0, tend_idx-tstart_idx)
 Time = Time[tstart_idx:tend_idx]
-
-Time_sampling[:] = np.array(Time)
 
 #rotor data
 p = a.groups["p_r"]; del a
@@ -197,6 +165,16 @@ u[u<0]=0; v[v<0] #remove negative velocities
 # u = np.array(u_hvel); del u_hvel; del v
 # u_pri = np.array(u_pri_hvel); del u_pri_hvel
 
+with Pool() as pool:
+    u_hvel = []
+    for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+        
+        u_hvel.append(u_hvel_it)
+        print(len(u_hvel),time.time()-start_time)
+u = np.array(u_hvel); del u_hvel
+
+print("line 139",time.time()-start_time)
+
 
 with Pool() as pool:
     u_pri_hvel = []
@@ -204,19 +182,35 @@ with Pool() as pool:
         
         u_pri_hvel.append(fluc_u_hvel_it)
         print(len(u_pri_hvel),time.time()-start_time)
-u_pri = np.array(u_pri_hvel); del u_pri_hvel
-
-
-with Pool() as pool:
-    u_hvel = []
-    for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
-        
-        u_hvel.append(u_hvel_it)
-        print(len(u_hvel),time.time()-start_time)
-u = np.array(u_hvel); del u_hvel; del v
+u_pri = np.array(u_pri_hvel); del u_pri_hvel; del v
 
 print("line 139",time.time()-start_time)
 
+
+ncfile = Dataset(out_dir+"Asymmetry_Dataset.nc",mode="w",format='NETCDF4')
+ncfile.title = "Asymmetry data sampling output"
+
+#create global dimensions
+sampling_dim = ncfile.createDimension("sampling",None)
+
+#create variables
+Time_sampling = ncfile.createVariable("time", np.float64, ('sampling',),zlib=True)
+Time_sampling[:] = np.array(Time)
+
+Area_high = ncfile.createVariable("Area_high", np.float64, ('sampling',),zlib=True)
+Area_low = ncfile.createVariable("Area_low", np.float64, ('sampling',),zlib=True)
+Area_int = ncfile.createVariable("Area_int", np.float64, ('sampling',),zlib=True)
+
+Iy_high = ncfile.createVariable("Iy_high", np.float64, ('sampling',),zlib=True)
+Iy_low = ncfile.createVariable("Iy_low", np.float64, ('sampling',),zlib=True)
+Iy_int = ncfile.createVariable("Iy_int", np.float64, ('sampling',),zlib=True)
+
+Iz_high = ncfile.createVariable("Iz_high", np.float64, ('sampling',),zlib=True)
+Iz_low = ncfile.createVariable("Iz_low", np.float64, ('sampling',),zlib=True)
+Iz_int = ncfile.createVariable("Iz_int", np.float64, ('sampling',),zlib=True)
+
+Iy = ncfile.createVariable("Iy", np.float64, ('sampling',),zlib=True)
+Iz = ncfile.createVariable("Iz", np.float64, ('sampling',),zlib=True)
 
 it = 0
 A_High_arr = []; A_Low_arr = []; A_Int_arr = []
