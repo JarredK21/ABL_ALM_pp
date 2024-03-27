@@ -13,19 +13,26 @@ def coriolis_twist(u,v):
 
 def Horizontal_velocity(it):
     f = interpolate.interp1d(h,twist)
-    mag_horz_vel = []
+    f_ux = interpolate(h,ux_mean_profile)
+    mag_horz_vel = []; mag_fluc_horz_vel = []
     for i in np.arange(0,len(zs)):
         u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
         if zs[i] < h[0]:
             twist_h = f(h[0])
+            ux_mean = f_ux(h[0])
         elif zs[i] > h[-1]:
             twist_h = f(h[-1])
+            ux_mean = f(h[-1])
         else:
             twist_h = f(zs[i])
+            ux_mean = f(zs[i])
         mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
+        mag_fluc_vel_i = np.subtract(mag_fluc_vel_i,ux_mean)
         mag_horz_vel.extend(mag_horz_vel_i)
+        mag_fluc_horz_vel.extend(mag_fluc_vel_i)
     mag_horz_vel = np.array(mag_horz_vel)
-    return mag_horz_vel
+    mag_fluc_horz_vel = np.array(mag_fluc_horz_vel)
+    return mag_horz_vel, mag_fluc_horz_vel
 
 
 def Update(it):
@@ -89,10 +96,8 @@ u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-f_u = interpolate.interp1d(h,u); f_v = interpolate.interp1d(h,v)
-u_90 = f_u(90); v_90 = f_v(90)
-ux_mean = u_90*np.cos(np.radians(29))+v_90*np.sin(np.radians(29))
-print("ux_mean",ux_mean)
+ux_mean_profile = u * np.cos(np.radians(29)) + v * np.sin(np.radians(29))
+print("ux_mean",ux_mean_profile)
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 
@@ -146,9 +151,6 @@ xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
 ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
 zs = zo - rotor_coordiates[2]
 
-print(np.shape(ys))
-print(np.shape(zs))
-
 dy = ys[1] - ys[0]
 dz = zs[1] - zs[0]
 dA= dy*dz
@@ -162,10 +164,10 @@ u[u<0]=0; v[v<0] #remove negative velocities
 
 u_hvel = []; u_pri = []
 with Pool() as pool:
-    for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+    for u_hvel_it,u_fluc_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
         
         u_hvel.append(u_hvel_it)
-        u_pri.append(np.subtract(u_hvel_it,ux_mean))
+        u_pri.append(u_fluc_hvel_it)
         print(len(u_hvel),time.time()-start_time)
 u = np.array(u_hvel); del u_hvel; del v
 u_pri = np.array(u_pri)
@@ -176,7 +178,7 @@ print(np.shape(u_pri))
 print(u_pri[0])
 print(u_pri[100])
 
-# print("line 139",time.time()-start_time)
+print("line 139",time.time()-start_time)
 
 
 # ncfile = Dataset(out_dir+"Asymmetry_Dataset.nc",mode="w",format='NETCDF4')
@@ -209,6 +211,7 @@ print(u_pri[100])
 # Iz = ncfile.createVariable("Iz", np.float64, ('sampling',),zlib=True)
 
 # #it = 0
+# Time_steps = [0,1]
 # A_High_arr = []; A_Low_arr = []; A_Int_arr = []
 # Iy_High_arr = []; Iy_Low_arr = []; Iy_Int_arr = []
 # Iz_High_arr = []; Iz_Low_arr = []; Iz_Int_arr = []
