@@ -130,20 +130,24 @@ normal = 29
 coordinates = np.array(p.variables["coordinates"])
 
 
-xo = coordinates[0:x,0]
-yo = coordinates[0:x,1]
+coordinates = np.array(p.variables["coordinates"])
+
+xo = coordinates[:,0]
+yo = coordinates[:,1]
+zo = coordinates[:,2]
 
 rotor_coordiates = [2560,2560,90]
 
 x_trans = xo - rotor_coordiates[0]
 y_trans = yo - rotor_coordiates[1]
 
-phi = np.radians(-normal)
+phi = np.radians(-29)
 xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
 ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
-xs = xs + rotor_coordiates[0]
-ys = ys + rotor_coordiates[1]
-zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
+zs = zo - rotor_coordiates[2]
+
+print(ys)
+print(zs)
 
 dy = ys[1] - ys[0]
 dz = zs[1] - zs[0]
