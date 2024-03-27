@@ -160,14 +160,15 @@ del p
 
 u[u<0]=0; v[v<0] #remove negative velocities
 
-u_hvel = []
+u_hvel = []; u_pri = []
 with Pool() as pool:
     for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
         
         u_hvel.append(u_hvel_it)
+        u_pri.append(np.subtract(u_hvel_it,ux_mean))
         print(len(u_hvel),time.time()-start_time)
 u = np.array(u_hvel); del u_hvel; del v
-u_pri = np.subtract(u_hvel_it,ux_mean)
+u_pri = np.array(u_pri)
 
 print(np.shape(u))
 print(np.shape(u_pri))
