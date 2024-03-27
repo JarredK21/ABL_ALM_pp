@@ -171,6 +171,12 @@ with Pool() as pool:
 u = np.array(u_hvel); del u_hvel; del v
 u_pri = np.array(u_pri)
 
+print(np.shape(u))
+print(np.shape(u_pri))
+
+print(u_pri[0])
+print(u_pri[100])
+
 print("line 139",time.time()-start_time)
 
 
