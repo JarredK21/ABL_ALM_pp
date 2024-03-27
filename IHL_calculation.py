@@ -156,8 +156,8 @@ del p
 
 u[u<0]=0; v[v<0] #remove negative velocities
 
+u_hvel = []; u_pri = []
 with Pool() as pool:
-    u_hvel = []; u_pri = []
     for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
         
         u_hvel.append(u_hvel_it)
