@@ -58,6 +58,7 @@ def Update(it):
     AH = 0; AL = 0; AI = 0
     IyH = 0; IyL = 0; IyI = 0; Iy = 0
     IzH = 0; IzL = 0; IzI = 0; Iz = 0
+    UxH = []; UxL = []; UxI = []
     ijk = 0
     for j,k in zip(ys,zs):
         r = np.sqrt(j**2 + k**2)
@@ -72,17 +73,20 @@ def Update(it):
                 AH+=dA
                 IyH+=(u[it,ijk]*k*dA)
                 IzH+=(u[it,ijk]*j*dA)
+                UxH.append(u[it,ijk])
             elif u_pri_ijk <= -0.7:
                 AL+=dA
                 IyL+=(u[it,ijk]*k*dA)
                 IzL+=(u[it,ijk]*j*dA)
+                UxL.append(u[it,ijk])
             else:
                 AI+=dA
                 IyI+=(u[it,ijk]*k*dA)
                 IzI+=(u[it,ijk]*j*dA)
+                UxI.append(u[it,ijk])
         ijk+=1
 
-    return AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy,Iz
+    return AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy,Iz,np.average(UxH), np.average(UxL), np.average(UxI)
 
 
 
@@ -209,6 +213,10 @@ Iz_high = ncfile.createVariable("Iz_high", np.float64, ('sampling',),zlib=True)
 Iz_low = ncfile.createVariable("Iz_low", np.float64, ('sampling',),zlib=True)
 Iz_int = ncfile.createVariable("Iz_int", np.float64, ('sampling',),zlib=True)
 
+Ux_high = ncfile.createVariable("Ux_high", np.float64, ('sampling',),zlib=True)
+Ux_low = ncfile.createVariable("Ux_low", np.float64, ('sampling',),zlib=True)
+Ux_int = ncfile.createVariable("Ux_int", np.float64, ('sampling',),zlib=True)
+
 Iy = ncfile.createVariable("Iy", np.float64, ('sampling',),zlib=True)
 Iz = ncfile.createVariable("Iz", np.float64, ('sampling',),zlib=True)
 
@@ -216,13 +224,15 @@ it = 0
 A_High_arr = []; A_Low_arr = []; A_Int_arr = []
 Iy_High_arr = []; Iy_Low_arr = []; Iy_Int_arr = []
 Iz_High_arr = []; Iz_Low_arr = []; Iz_Int_arr = []
+Ux_High_arr = []; Ux_Low_arr = []; Ux_Int_arr = []
 Iy_arr = []; Iz_arr = []
 with Pool() as pool:
-    for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it in pool.imap(Update,Time_steps):
+    for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it in pool.imap(Update,Time_steps):
 
         A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
         Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
         Iz_High_arr.append(IyH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
+        Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
         Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
 
         print(it)
@@ -239,6 +249,10 @@ Iy_int[:] = np.array(Iy_Int_arr); del Iy_Int_arr
 Iz_high[:] = np.array(Iz_High_arr); del Iz_High_arr
 Iz_low[:] = np.array(Iz_Low_arr); del Iz_Low_arr
 Iz_int[:] = np.array(Iz_Int_arr); del Iz_Int_arr
+
+Ux_high[:] = np.array(Ux_High_arr); del Ux_High_arr
+Ux_low[:] = np.array(Ux_Low_arr); del Ux_Low_arr
+Ux_int[:] = np.array(Ux_Int_arr); del Ux_Int_arr
 
 Iy[:] = np.array(Iy_arr); del Iy_arr
 Iz[:] = np.array(Iz_arr); del Iz_arr
