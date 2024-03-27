@@ -11,35 +11,19 @@ from scipy import interpolate
 from matplotlib.patches import Circle
 from math import ceil
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
+in_dir = "../../ABL_precursor_2_restart/"
 
-a = Dataset(in_dir+"sampling_r_-63.0_0.nc")
+#defining twist angles with height from precursor
+precursor = Dataset(in_dir+"abl_statistics70000.nc")
+Time_pre = np.array(precursor.variables["time"])
+mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
+t_start = np.searchsorted(precursor.variables["time"],38200)
+t_end = np.searchsorted(precursor.variables["time"],39200)
+u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
+v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
+h = mean_profiles["h"][:]
+f_u = interpolate.interp1d(h,u); f_v = interpolate.interp1d(h,v)
+u_90 = f_u(90); v_90 = f_v(90)
+print(u_90*np.cos(np.radians(29))+v_90*np.sin(np.radians(29)))
 
-p_rotor = a.groups["p_r"]; del a
-
-x = p_rotor.ijk_dims[0] #no. data points
-y = p_rotor.ijk_dims[1] #no. data points
-
-coordinates = np.array(p_rotor.variables["coordinates"])
-
-xo = coordinates[:,0]
-yo = coordinates[:,1]
-zo = coordinates[:,2]
-
-rotor_coordiates = [2560,2560,90]
-
-x_trans = xo - rotor_coordiates[0]
-y_trans = yo - rotor_coordiates[1]
-
-phi = np.radians(-29)
-xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
-ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
-zs = zo - rotor_coordiates[2]
-
-fig = plt.figure()
-for j,k in zip(ys,zs):
-    r = np.sqrt(j**2 + k**2)
-    if r <= 63 and r > 1.5:
-        plt.plot(j,k,"ok")
-
-plt.show()
+del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
