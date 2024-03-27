@@ -43,6 +43,7 @@ def Update(it):
             Iz+=(u[it,ijk]*j*dA)
 
             u_pri_ijk = u_pri[it,ijk]
+            print(u_pri_ijk)
 
             if u_pri_ijk >= 0.7:
                 AH+=dA
@@ -59,7 +60,19 @@ def Update(it):
                 IyI+=(u[it,ijk]*k*dA)
                 IzI+=(u[it,ijk]*j*dA)
                 UxI.append(u[it,ijk])
+        print(AH)
+        print(AL)
+        print(AI)
+        print(IyH)
+        print(IyL)
+        print(IyI)
+        print(IzH)
+        print(IzL)
+        print(IzI)
+        print(Iy)
+        print(Iz)
         ijk+=1
+        print(ijk)
 
     return AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy,Iz,np.average(UxH), np.average(UxL), np.average(UxI)
 
@@ -79,6 +92,7 @@ twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulat
 f_u = interpolate.interp1d(h,u); f_v = interpolate.interp1d(h,v)
 u_90 = f_u(90); v_90 = f_v(90)
 ux_mean = u_90*np.cos(np.radians(29))+v_90*np.sin(np.radians(29))
+print("ux_mean",ux_mean)
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 
@@ -184,23 +198,27 @@ Ux_int = ncfile.createVariable("Ux_int", np.float64, ('sampling',),zlib=True)
 Iy = ncfile.createVariable("Iy", np.float64, ('sampling',),zlib=True)
 Iz = ncfile.createVariable("Iz", np.float64, ('sampling',),zlib=True)
 
-it = 0
+#it = 0
 A_High_arr = []; A_Low_arr = []; A_Int_arr = []
 Iy_High_arr = []; Iy_Low_arr = []; Iy_Int_arr = []
 Iz_High_arr = []; Iz_Low_arr = []; Iz_Int_arr = []
 Ux_High_arr = []; Ux_Low_arr = []; Ux_Int_arr = []
 Iy_arr = []; Iz_arr = []
-with Pool() as pool:
-    for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it in pool.imap(Update,Time_steps):
+# with Pool() as pool:
+#     for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it in pool.imap(Update,Time_steps):
 
-        A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
-        Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
-        Iz_High_arr.append(IyH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
-        Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
-        Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
+for it in Time_steps:
+        
 
-        print(it)
-        it+=1
+    AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it = Update(it)
+    A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
+    Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
+    Iz_High_arr.append(IyH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
+    Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
+    Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
+
+    print(it)
+        #it+=1
 
 Area_high[:] = np.array(A_High_arr); del A_High_arr
 Area_low[:] = np.array(A_Low_arr); del A_Low_arr
