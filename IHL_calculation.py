@@ -43,12 +43,6 @@ def Update(it):
     U = u[it]
     U_pri = u_pri[it]
 
-    print(np.shape(U))
-    print(U)
-
-    print(np.shape(U_pri))
-    print(U_pri)
-
     AH = 0; AL = 0; AI = 0
     IyH = 0; IyL = 0; IyI = 0; Iy = 0
     IzH = 0; IzL = 0; IzI = 0; Iz = 0
@@ -131,7 +125,7 @@ tstart = 38000
 tstart_idx = np.searchsorted(Time,tstart)
 tend = 39200
 tend_idx = np.searchsorted(Time,tend)
-Time_steps = np.arange(tstart_idx, tstart_idx+100)
+Time_steps = np.arange(tstart_idx, tend_idx)
 Time = Time[tstart_idx:tend_idx]
 print(Time_steps)
 
@@ -180,10 +174,7 @@ with Pool() as pool:
         u_pri.append(u_fluc_hvel_it)
         print(len(u_hvel),time.time()-start_time)
 u = np.array(u_hvel); del u_hvel; del v
-u_pri = np.array(u_pri); del v
-
-print(np.shape(u))
-print(np.shape(u_pri))
+u_pri = np.array(u_pri)
 
 print("line 139",time.time()-start_time)
 
@@ -209,67 +200,52 @@ with Pool() as pool:
         it+=1
 
 
-print(A_High_arr)
-print(A_Low_arr)
-print(A_Int_arr)
-print(Iy_High_arr)
-print(Iy_Low_arr)
-print(Iy_Int_arr)
-print(Iz_High_arr)
-print(Iz_Low_arr)
-print(Iz_Int_arr)
-print(Iy_arr)
-print(Iz_arr)
-print(Ux_High_arr)
-print(Ux_Low_arr)
-print(Ux_Int_arr)
+ncfile = Dataset(out_dir+"Asymmetry_Dataset.nc",mode="w",format='NETCDF4')
+ncfile.title = "Asymmetry data sampling output"
 
-# ncfile = Dataset(out_dir+"Asymmetry_Dataset.nc",mode="w",format='NETCDF4')
-# ncfile.title = "Asymmetry data sampling output"
+#create global dimensions
+sampling_dim = ncfile.createDimension("sampling",None)
 
-# #create global dimensions
-# sampling_dim = ncfile.createDimension("sampling",None)
+#create variables
+Time_sampling = ncfile.createVariable("time", np.float64, ('sampling',),zlib=True)
+Time_sampling[:] = np.array(Time)
 
-# #create variables
-# Time_sampling = ncfile.createVariable("time", np.float64, ('sampling',),zlib=True)
-# Time_sampling[:] = np.array(Time)
+Area_high = ncfile.createVariable("Area_high", np.float64, ('sampling',),zlib=True)
+Area_low = ncfile.createVariable("Area_low", np.float64, ('sampling',),zlib=True)
+Area_int = ncfile.createVariable("Area_int", np.float64, ('sampling',),zlib=True)
 
-# Area_high = ncfile.createVariable("Area_high", np.float64, ('sampling',),zlib=True)
-# Area_low = ncfile.createVariable("Area_low", np.float64, ('sampling',),zlib=True)
-# Area_int = ncfile.createVariable("Area_int", np.float64, ('sampling',),zlib=True)
+Iy_high = ncfile.createVariable("Iy_high", np.float64, ('sampling',),zlib=True)
+Iy_low = ncfile.createVariable("Iy_low", np.float64, ('sampling',),zlib=True)
+Iy_int = ncfile.createVariable("Iy_int", np.float64, ('sampling',),zlib=True)
 
-# Iy_high = ncfile.createVariable("Iy_high", np.float64, ('sampling',),zlib=True)
-# Iy_low = ncfile.createVariable("Iy_low", np.float64, ('sampling',),zlib=True)
-# Iy_int = ncfile.createVariable("Iy_int", np.float64, ('sampling',),zlib=True)
+Iz_high = ncfile.createVariable("Iz_high", np.float64, ('sampling',),zlib=True)
+Iz_low = ncfile.createVariable("Iz_low", np.float64, ('sampling',),zlib=True)
+Iz_int = ncfile.createVariable("Iz_int", np.float64, ('sampling',),zlib=True)
 
-# Iz_high = ncfile.createVariable("Iz_high", np.float64, ('sampling',),zlib=True)
-# Iz_low = ncfile.createVariable("Iz_low", np.float64, ('sampling',),zlib=True)
-# Iz_int = ncfile.createVariable("Iz_int", np.float64, ('sampling',),zlib=True)
+Ux_high = ncfile.createVariable("Ux_high", np.float64, ('sampling',),zlib=True)
+Ux_low = ncfile.createVariable("Ux_low", np.float64, ('sampling',),zlib=True)
+Ux_int = ncfile.createVariable("Ux_int", np.float64, ('sampling',),zlib=True)
 
-# Ux_high = ncfile.createVariable("Ux_high", np.float64, ('sampling',),zlib=True)
-# Ux_low = ncfile.createVariable("Ux_low", np.float64, ('sampling',),zlib=True)
-# Ux_int = ncfile.createVariable("Ux_int", np.float64, ('sampling',),zlib=True)
+Iy = ncfile.createVariable("Iy", np.float64, ('sampling',),zlib=True)
+Iz = ncfile.createVariable("Iz", np.float64, ('sampling',),zlib=True)
+Area_high[:] = np.array(A_High_arr); del A_High_arr
+Area_low[:] = np.array(A_Low_arr); del A_Low_arr
+Area_int[:] = np.array(A_Int_arr); del A_Int_arr
 
-# Iy = ncfile.createVariable("Iy", np.float64, ('sampling',),zlib=True)
-# Iz = ncfile.createVariable("Iz", np.float64, ('sampling',),zlib=True)
-# Area_high[:] = np.array(A_High_arr); del A_High_arr
-# Area_low[:] = np.array(A_Low_arr); del A_Low_arr
-# Area_int[:] = np.array(A_Int_arr); del A_Int_arr
+Iy_high[:] = np.array(Iy_High_arr); del Iy_High_arr
+Iy_low[:] = np.array(Iy_Low_arr); del Iy_Low_arr
+Iy_int[:] = np.array(Iy_Int_arr); del Iy_Int_arr
 
-# Iy_high[:] = np.array(Iy_High_arr); del Iy_High_arr
-# Iy_low[:] = np.array(Iy_Low_arr); del Iy_Low_arr
-# Iy_int[:] = np.array(Iy_Int_arr); del Iy_Int_arr
+Iz_high[:] = np.array(Iz_High_arr); del Iz_High_arr
+Iz_low[:] = np.array(Iz_Low_arr); del Iz_Low_arr
+Iz_int[:] = np.array(Iz_Int_arr); del Iz_Int_arr
 
-# Iz_high[:] = np.array(Iz_High_arr); del Iz_High_arr
-# Iz_low[:] = np.array(Iz_Low_arr); del Iz_Low_arr
-# Iz_int[:] = np.array(Iz_Int_arr); del Iz_Int_arr
+Ux_high[:] = np.array(Ux_High_arr); del Ux_High_arr
+Ux_low[:] = np.array(Ux_Low_arr); del Ux_Low_arr
+Ux_int[:] = np.array(Ux_Int_arr); del Ux_Int_arr
 
-# Ux_high[:] = np.array(Ux_High_arr); del Ux_High_arr
-# Ux_low[:] = np.array(Ux_Low_arr); del Ux_Low_arr
-# Ux_int[:] = np.array(Ux_Int_arr); del Ux_Int_arr
+Iy[:] = np.array(Iy_arr); del Iy_arr
+Iz[:] = np.array(Iz_arr); del Iz_arr
 
-# Iy[:] = np.array(Iy_arr); del Iy_arr
-# Iz[:] = np.array(Iz_arr); del Iz_arr
-
-# print(ncfile)
-# ncfile.close()
+print(ncfile)
+ncfile.close()
