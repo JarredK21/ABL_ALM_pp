@@ -161,9 +161,9 @@ xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
 ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
 zs = zo - rotor_coordiates[2]
 
-dy = ys[1] - ys[0]
-dz = zs[1] - zs[0]
-dA= dy*dz
+dy = (max(ys) - min(ys))/x
+dz = (max(zs) - min(zs))/y
+dA = dy * dz
 
 print(dA)
 
