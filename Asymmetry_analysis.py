@@ -108,6 +108,7 @@ FBMz_LPF = -LSSTipMys_LPF/L2; FBFz_LPF = -LSShftFzs_LPF*((L1+L2)/L2)
 FBy_LPF = FBMy_LPF + FBFy_LPF; FBz_LPF = FBMz_LPF + FBFz_LPF
 FBR_LPF = np.sqrt(np.add(np.square(FBy_LPF),np.square(FBz_LPF)))
 
+
 offset = "63.0"
 group = a.groups["{}".format(offset)]
 IA = np.array(group.variables["IA"])
@@ -139,7 +140,35 @@ Iz = -Iz[Time_start_idx:Time_end_idx]
 I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
 
 
-with PdfPages(out_dir+'precursor_plots_restart.pdf') as pdf:
+
+a = Dataset(in_dir+"Asymmetry_Dataset.nc")
+
+Time_Asy = np.array(a.variables["time"])
+Time_Asy = Time_Asy - Time_Asy[0]
+Iy_Asy = np.array(a.variables["Iy"])
+Iz_Asy = np.array(a.variables["Iz"])
+
+f = interpolate.interp1d(Time_Asy,Iy_Asy)
+Iy_Asy_interp = f(Time_OF)
+Iy_Asy_LPF = low_pass_filter(Iy_Asy_interp,cutoff)
+
+f = interpolate.interp1d(Time_Asy,Iz_Asy)
+Iz_Asy_interp = f(Time_OF)
+Iz_Asy_LPF = low_pass_filter(Iz_Asy_interp,cutoff)
+Iz_Asy_LPF = -Iz_Asy_LPF
+
+I_Asy_LPF = np.sqrt(np.add(np.square(Iy_Asy_LPF),np.square(Iz_Asy_LPF)))
+
+Time_start_idx = np.searchsorted(Time_Asy,Time_start)
+Time_end_idx = np.searchsorted(Time_Asy,Time_end)
+
+Time_Asy = Time_Asy[Time_start_idx:Time_end_idx]
+Iy_Asy = Iy_Asy[Time_start_idx:Time_end_idx]
+Iz_Asy = -Iz_Asy[Time_start_idx:Time_end_idx]
+I_Asy = np.sqrt(np.add(np.square(Iy_Asy),np.square(Iz_Asy)))
+
+
+with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     #plot Time varying quanities
     #IA vs I(t)
     cc = round(correlation_coef(IA_LPF,I_LPF),2)
@@ -162,6 +191,7 @@ with PdfPages(out_dir+'precursor_plots_restart.pdf') as pdf:
     cc = round(correlation_coef(Iy_LPF[:-time_shift_idx],LSSTipMys_LPF[time_shift_idx:]),2)
     fig,ax = plt.subplots(figsize=(14,8))
 
+    ax.set_title("Iy: (-63m plane), time shifted 4.78s, Low pass filtered 0.3Hz")
     ax.plot(Time_OF[:-time_shift_idx],LSSTipMys_LPF[time_shift_idx:],'-b')
     ax.set_ylabel("Rotor moment around y axis (My) [$kN-m$]",fontsize=14)
     ax.yaxis.label.set_color('blue')
@@ -178,7 +208,7 @@ with PdfPages(out_dir+'precursor_plots_restart.pdf') as pdf:
 
     cc = round(correlation_coef(Iy_LPF[:-time_shift_idx],FBz_LPF[time_shift_idx:]),2)
     fig,ax = plt.subplots(figsize=(14,8))
-
+    ax.set_title("Iy: (-63m plane), time shifted 4.78s, Low pass filtered 0.3Hz")
     ax.plot(Time_OF[:-time_shift_idx],FBz_LPF[time_shift_idx:],'-b')
     ax.set_ylabel("Bearing force component z [$kN$]",fontsize=14)
     ax.yaxis.label.set_color('blue')
@@ -195,7 +225,7 @@ with PdfPages(out_dir+'precursor_plots_restart.pdf') as pdf:
 
     cc = round(correlation_coef(Iz_LPF[:-time_shift_idx],LSSTipMzs_LPF[time_shift_idx:]),2)
     fig,ax = plt.subplots(figsize=(14,8))
-
+    ax.set_title("Iz: (-63m plane), time shifted 4.78s, Low pass filtered 0.3Hz")
     ax.plot(Time_OF[:-time_shift_idx],LSSTipMzs_LPF[time_shift_idx:],'-b')
     ax.set_ylabel("Rotor moment around z axis (My) [$kN-m$]",fontsize=14)
     ax.yaxis.label.set_color('blue')
@@ -213,6 +243,7 @@ with PdfPages(out_dir+'precursor_plots_restart.pdf') as pdf:
     cc = round(correlation_coef(Iz_LPF[:-time_shift_idx],FBy_LPF[time_shift_idx:]),2)
     fig,ax = plt.subplots(figsize=(14,8))
 
+    ax.set_title("Iz: (-63m plane), time shifted 4.78s, Low pass filtered 0.3Hz")
     ax.plot(Time_OF[:-time_shift_idx],FBy_LPF[time_shift_idx:],'-b')
     ax.set_ylabel("Bearing force component y [$kN$]",fontsize=14)
     ax.yaxis.label.set_color('blue')
@@ -319,6 +350,41 @@ with PdfPages(out_dir+'precursor_plots_restart.pdf') as pdf:
     pdf.savefig()
     plt.close()
 
+
+    #new asymmetry parameters
+    cc = round(correlation_coef(Iy,Iy_Asy),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_sampling,Iy,'-b')
+    ax.set_ylabel("Iy [$m^4/s$]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_Asy,Iy_Asy,"-r")
+    ax2.set_ylabel("Iy Asym [$m^4/s$]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+    cc = round(correlation_coef(Iz,Iz_Asy),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_sampling,Iz,'-b')
+    ax.set_ylabel("Iz [$m^4/s$]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_Asy,Iz_Asy,"-r")
+    ax2.set_ylabel("Iz Asym [$m^4/s$]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
 
 
 

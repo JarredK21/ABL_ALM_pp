@@ -110,7 +110,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = True; plot_r = True; plot_tr = False; plot_i = False; plot_t = True
+plot_l = True; plot_r = False; plot_tr = False; plot_i = False; plot_t = False
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -128,7 +128,7 @@ for plane in planes:
         continue
 
     if plane == "l":
-        offsets = [22.5, 85, 142.5]
+        offsets = [85]
     elif plane == "r":
         offsets = [-5.5,-63.0]
     elif plane == "tr":
@@ -147,16 +147,16 @@ for plane in planes:
 
         #time options
         Time = np.array(a.variables["time"])
-        tstart = 38000
+        tstart = 38200
         tstart_idx = np.searchsorted(Time,tstart)
-        tend = 39200
+        tend = 38400
         tend_idx = np.searchsorted(Time,tend)
         Time_steps = np.arange(0, tend_idx-tstart_idx)
         Time = Time[tstart_idx:tend_idx]
 
         #plotting option
         fluc_vel = True
-        plot_contours = True
+        plot_contours = False
         plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
@@ -223,7 +223,7 @@ for plane in planes:
             print(plane_labels[ip],velocity_comps[iv],offset,time.time()-start_time)
 
             if fluc_vel == True:
-                folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}_contour/".format(plane_labels[ip],velocity_comp,offset)
+                folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
             else:
                 folder = out_dir+"{0}_Plane_Total_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
 
