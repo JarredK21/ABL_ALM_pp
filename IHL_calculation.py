@@ -47,14 +47,6 @@ def Update(it):
     u = np.array(u); del v
     u_pri = np.array(u_pri)
 
-    print(np.shape(u))
-    print(np.shape(u_pri))
-
-    print(u)
-    print(u_pri)
-
-    time.sleep(20)
-
     AH = 0; AL = 0; AI = 0
     IyH = 0; IyL = 0; IyI = 0; Iy = 0
     IzH = 0; IzL = 0; IzI = 0; Iz = 0
@@ -64,6 +56,7 @@ def Update(it):
         r = np.sqrt(j**2 + k**2)
 
         if r <= 63 and r > 1.5:
+            print(j,k,r)
             Iy+=(u[ijk]*k*dA)
             Iz+=(u[ijk]*j*dA)
 
@@ -74,7 +67,7 @@ def Update(it):
                 AH+=dA
                 IyH+=(u[ijk]*k*dA)
                 IzH+=(u[ijk]*j*dA)
-                UxH.append(u[it,ijk])
+                UxH.append(u[ijk])
             elif u_pri_ijk <= -0.7:
                 AL+=dA
                 IyL+=(u[ijk]*k*dA)
@@ -86,9 +79,23 @@ def Update(it):
                 IzI+=(u[ijk]*j*dA)
                 UxI.append(u[ijk])
         ijk+=1
-        print(ijk)
 
-    return AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy,Iz,np.average(UxH), np.average(UxL), np.average(UxI)
+    if len(UxH) > 0:
+        UxH = np.average(UxH)
+    else:
+        UxH = 0
+
+    if len(UxL) > 0:
+        UxL = np.average(UxL)
+    else:
+        UxL = 0
+
+    if len(UxI) > 0:
+        UxI = np.average(UxI)
+    else:
+        UxI = 0
+
+    return AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy,Iz,UxH,UxL,UxI
 
 
 
@@ -157,6 +164,8 @@ zs = zo - rotor_coordiates[2]
 dy = ys[1] - ys[0]
 dz = zs[1] - zs[0]
 dA= dy*dz
+
+print(dA)
 
 print("line 139",time.time()-start_time)
 
