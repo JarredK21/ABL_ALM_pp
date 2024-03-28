@@ -40,7 +40,6 @@ def Update(it):
     #velocity field
     u = np.array(p.variables["velocityx"][it])
     v = np.array(p.variables["velocityy"][it])
-    del p
 
     u[u<0]=0; v[v<0] #remove negative velocities
 
@@ -54,6 +53,8 @@ def Update(it):
     print(u)
     print(u_pri)
 
+    time.sleep(20)
+
     AH = 0; AL = 0; AI = 0
     IyH = 0; IyL = 0; IyI = 0; Iy = 0
     IzH = 0; IzL = 0; IzI = 0; Iz = 0
@@ -63,27 +64,27 @@ def Update(it):
         r = np.sqrt(j**2 + k**2)
 
         if r <= 63 and r > 1.5:
-            Iy+=(u[it,ijk]*k*dA)
-            Iz+=(u[it,ijk]*j*dA)
+            Iy+=(u[ijk]*k*dA)
+            Iz+=(u[ijk]*j*dA)
 
-            u_pri_ijk = u_pri[it,ijk]
+            u_pri_ijk = u_pri[ijk]
             print(u_pri_ijk)
 
             if u_pri_ijk >= 0.7:
                 AH+=dA
-                IyH+=(u[it,ijk]*k*dA)
-                IzH+=(u[it,ijk]*j*dA)
+                IyH+=(u[ijk]*k*dA)
+                IzH+=(u[ijk]*j*dA)
                 UxH.append(u[it,ijk])
             elif u_pri_ijk <= -0.7:
                 AL+=dA
-                IyL+=(u[it,ijk]*k*dA)
-                IzL+=(u[it,ijk]*j*dA)
-                UxL.append(u[it,ijk])
+                IyL+=(u[ijk]*k*dA)
+                IzL+=(u[ijk]*j*dA)
+                UxL.append(u[ijk])
             else:
                 AI+=dA
-                IyI+=(u[it,ijk]*k*dA)
-                IzI+=(u[it,ijk]*j*dA)
-                UxI.append(u[it,ijk])
+                IyI+=(u[ijk]*k*dA)
+                IzI+=(u[ijk]*j*dA)
+                UxI.append(u[ijk])
         ijk+=1
         print(ijk)
 
