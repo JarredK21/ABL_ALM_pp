@@ -165,25 +165,28 @@ dA = dy * dz
 
 print("line 139",time.time()-start_time)
 
-it = 0
+
 A_High_arr = []; A_Low_arr = []; A_Int_arr = []
 Iy_High_arr = []; Iy_Low_arr = []; Iy_Int_arr = []
 Iz_High_arr = []; Iz_Low_arr = []; Iz_Int_arr = []
 Ux_High_arr = []; Ux_Low_arr = []; Ux_Int_arr = []
 Iy_arr = []; Iz_arr = []
-with Pool() as pool:
-    for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it in pool.imap(Update,Time_steps):
+# with Pool() as pool:
+#     for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it in pool.imap(Update,Time_steps):
+for it in Time_steps:
+        
+    
+    print("time step",it)
 
-        print("time step",it)
+    AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it = Update(it)
+    A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
+    Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
+    Iz_High_arr.append(IzH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
+    Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
+    Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
 
-        AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it = Update(it)
-        A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
-        Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
-        Iz_High_arr.append(IzH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
-        Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
-        Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
+    print("line 188",time.time()-start_time)
 
-        it+=1
 
 
 

@@ -25,27 +25,31 @@ def coriolis_twist(u,v):
     return twist
 
 
-def mean_velocity_profile():
-    mean_ux_profile = u*np.cos(twist) + v*np.sin(twist)
-
-    return mean_ux_profile
-
-
 def Horizontal_velocity(it):
     f = interpolate.interp1d(h,twist)
-    mag_horz_vel = []
+    f_ux = interpolate.interp1d(h,ux_mean_profile)
+    #mag_horz_vel = []
+    mag_fluc_horz_vel = []
     for i in np.arange(0,len(zs)):
         u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
         if zs[i] < h[0]:
             twist_h = f(h[0])
+            ux_mean = f_ux(h[0])
+
         elif zs[i] > h[-1]:
             twist_h = f(h[-1])
+            ux_mean = f_ux(h[-1])
         else:
             twist_h = f(zs[i])
+            ux_mean = f_ux(zs[i])
+
         mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
-        mag_horz_vel.extend(mag_horz_vel_i)
-    mag_horz_vel = np.array(mag_horz_vel)
-    return mag_horz_vel
+        mag_fluc_horz_vel_i = np.subtract(mag_horz_vel_i,ux_mean)
+        #mag_horz_vel.extend(mag_horz_vel_i)
+        mag_fluc_horz_vel.extend(mag_fluc_horz_vel_i)
+    #mag_horz_vel = np.array(mag_horz_vel)
+    mag_fluc_horz_vel = np.array(mag_fluc_horz_vel)
+    return mag_fluc_horz_vel
 
 
 def isInside(x, y):
@@ -430,9 +434,8 @@ u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-f_u = interpolate.interp1d(h,u); f_v = interpolate.interp1d(h,v)
-u_90 = f_u(90); v_90 = f_v(90)
-ux_mean = u_90*np.cos(np.radians(29))+v_90*np.sin(np.radians(29))
+ux_mean_profile = u*np.cos(np.radians(29))+v*np.sin(np.radians(29))
+print(ux_mean_profile)
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 print("line 67", time.time()-start_time)
@@ -502,14 +505,15 @@ del p
 u[u<0]=0; v[v<0] #remove negative velocities
 
 with Pool() as pool:
-    u_hvel = []
-    for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+    u_pri = []
+    for u_fluc_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
         
-        u_hvel.append(u_hvel_it)
-        print(len(u_hvel),time.time()-start_time)
-u = np.array(u_hvel); del u_hvel; del v
+        #u_hvel.append(u_hvel_it)
+        u_pri.append(u_fluc_hvel_it)
+        print(len(u_pri),time.time()-start_time)
+#u = np.array(u_hvel); del u_hvel; del v
+u = np.array(u_pri); del v
 
-u_pri = np.subtract(u,ux_mean)
 
 print("line 139",time.time()-start_time)
 
