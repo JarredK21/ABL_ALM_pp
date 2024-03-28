@@ -47,6 +47,10 @@ def Update(it):
     u = np.array(u); del v
     u_pri = np.array(u_pri)
 
+    print(u_pri)
+
+    time.sleep(20)
+
     AH = 0; AL = 0; AI = 0
     IyH = 0; IyL = 0; IyI = 0; Iy = 0
     IzH = 0; IzL = 0; IzI = 0; Iz = 0
@@ -56,7 +60,6 @@ def Update(it):
         r = np.sqrt(j**2 + k**2)
 
         if r <= 63 and r > 1.5:
-            print(j,k,r)
             Iy+=(u[ijk]*k*dA)
             Iz+=(u[ijk]*j*dA)
 
@@ -131,7 +134,7 @@ tstart = 38000
 tstart_idx = np.searchsorted(Time,tstart)
 tend = 39200
 tend_idx = np.searchsorted(Time,tend)
-Time_steps = np.arange(tstart_idx, tstart_idx+2)
+Time_steps = np.arange(tstart_idx, tstart_idx+4)
 Time = Time[tstart_idx:tend_idx]
 print(Time_steps)
 
@@ -165,8 +168,6 @@ dy = (max(ys) - min(ys))/x
 dz = (max(zs) - min(zs))/y
 dA = dy * dz
 
-print(dA)
-
 print("line 139",time.time()-start_time)
 
 #it = 0
@@ -184,7 +185,7 @@ for it in Time_steps:
     AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it = Update(it)
     A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
     Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
-    Iz_High_arr.append(IyH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
+    Iz_High_arr.append(IzH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
     Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
     Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
 
@@ -201,6 +202,9 @@ print(Iz_Low_arr)
 print(Iz_Int_arr)
 print(Iy_arr)
 print(Iz_arr)
+print(Ux_High_arr)
+print(Ux_Low_arr)
+print(Ux_Int_arr)
 
 
 # ncfile = Dataset(out_dir+"Asymmetry_Dataset.nc",mode="w",format='NETCDF4')
