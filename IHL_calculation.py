@@ -11,25 +11,28 @@ def coriolis_twist(u,v):
     return twist
 
 
-def Horizontal_velocity(u,v):
+def Horizontal_velocity(it):
     f = interpolate.interp1d(h,twist)
     f_ux = interpolate.interp1d(h,ux_mean_profile)
-    mag_horz_vel = []; mag_fluc_horz_vel = []
+    mag_horz_vel = []
+    mag_fluc_horz_vel = []
     for i in np.arange(0,len(zs)):
-        u_i = u[i*x:(i+1)*x]; v_i = v[i*x:(i+1)*x]
+        u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
         if zs[i] < h[0]:
             twist_h = f(h[0])
             ux_mean = f_ux(h[0])
+
         elif zs[i] > h[-1]:
             twist_h = f(h[-1])
             ux_mean = f_ux(h[-1])
         else:
             twist_h = f(zs[i])
             ux_mean = f_ux(zs[i])
+
         mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
-        mag_fluc_vel_i = np.subtract(mag_horz_vel_i,ux_mean)
+        mag_fluc_horz_vel_i = np.subtract(mag_horz_vel_i,ux_mean)
         mag_horz_vel.extend(mag_horz_vel_i)
-        mag_fluc_horz_vel.extend(mag_fluc_vel_i)
+        mag_fluc_horz_vel.extend(mag_fluc_horz_vel_i)
     mag_horz_vel = np.array(mag_horz_vel)
     mag_fluc_horz_vel = np.array(mag_fluc_horz_vel)
     return mag_horz_vel, mag_fluc_horz_vel
@@ -37,15 +40,14 @@ def Horizontal_velocity(u,v):
 
 def Update(it):
 
-    #velocity field
-    u = np.array(p.variables["velocityx"][it])
-    v = np.array(p.variables["velocityy"][it])
+    U = u[it]
+    U_pri = u_pri[it]
 
-    u[u<0]=0; v[v<0] #remove negative velocities
+    print(np.shape(U))
+    print(U)
 
-    u, u_pri = Horizontal_velocity(u,v)
-    u = np.array(u); del v
-    u_pri = np.array(u_pri)
+    print(np.shape(U_pri))
+    print(U_pri)
 
     AH = 0; AL = 0; AI = 0
     IyH = 0; IyL = 0; IyI = 0; Iy = 0
@@ -56,26 +58,26 @@ def Update(it):
         r = np.sqrt(j**2 + k**2)
 
         if r <= 63 and r > 1.5:
-            Iy+=(u[ijk]*k*dA)
-            Iz+=(u[ijk]*j*dA)
+            Iy+=(U[ijk]*k*dA)
+            Iz+=(U[ijk]*j*dA)
 
-            u_pri_ijk = u_pri[ijk]
+            U_pri_ijk = U_pri[ijk]
 
-            if u_pri_ijk >= 0.7:
+            if U_pri_ijk >= 0.7:
                 AH+=dA
-                IyH+=(u[ijk]*k*dA)
-                IzH+=(u[ijk]*j*dA)
-                UxH.append(u[ijk])
-            elif u_pri_ijk <= -0.7:
+                IyH+=(U[ijk]*k*dA)
+                IzH+=(U[ijk]*j*dA)
+                UxH.append(U[ijk])
+            elif U_pri_ijk <= -0.7:
                 AL+=dA
-                IyL+=(u[ijk]*k*dA)
-                IzL+=(u[ijk]*j*dA)
-                UxL.append(u[ijk])
+                IyL+=(U[ijk]*k*dA)
+                IzL+=(U[ijk]*j*dA)
+                UxL.append(U[ijk])
             else:
                 AI+=dA
-                IyI+=(u[ijk]*k*dA)
-                IzI+=(u[ijk]*j*dA)
-                UxI.append(u[ijk])
+                IyI+=(U[ijk]*k*dA)
+                IzI+=(U[ijk]*j*dA)
+                UxI.append(U[ijk])
         ijk+=1
 
     if len(UxH) > 0:
@@ -129,7 +131,7 @@ tstart = 38000
 tstart_idx = np.searchsorted(Time,tstart)
 tend = 39200
 tend_idx = np.searchsorted(Time,tend)
-Time_steps = np.arange(tstart_idx, tend_idx)
+Time_steps = np.arange(tstart_idx, tstart_idx+100)
 Time = Time[tstart_idx:tend_idx]
 print(Time_steps)
 
@@ -163,79 +165,111 @@ dy = (max(ys) - min(ys))/x
 dz = (max(zs) - min(zs))/y
 dA = dy * dz
 
+#velocity field
+u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
+v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+del p
+
+u[u<0]=0; v[v<0] #remove negative velocities
+
+with Pool() as pool:
+    u_hvel = []; u_pri = []
+    for u_hvel_it, u_fluc_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+        
+        u_hvel.append(u_hvel_it)
+        u_pri.append(u_fluc_hvel_it)
+        print(len(u_hvel),time.time()-start_time)
+u = np.array(u_hvel); del u_hvel; del v
+u_pri = np.array(u_pri); del v
+
+print(np.shape(u))
+print(np.shape(u_pri))
+
 print("line 139",time.time()-start_time)
 
-
+it = 0
 A_High_arr = []; A_Low_arr = []; A_Int_arr = []
 Iy_High_arr = []; Iy_Low_arr = []; Iy_Int_arr = []
 Iz_High_arr = []; Iz_Low_arr = []; Iz_Int_arr = []
 Ux_High_arr = []; Ux_Low_arr = []; Ux_Int_arr = []
 Iy_arr = []; Iz_arr = []
-# with Pool() as pool:
-#     for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it in pool.imap(Update,Time_steps):
-for it in Time_steps:
-        
+with Pool() as pool:
+    for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it in pool.imap(Update,Time_steps):        
     
-    print("time step",it)
+        print("time step",it)
 
-    AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it = Update(it)
-    A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
-    Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
-    Iz_High_arr.append(IzH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
-    Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
-    Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
+        AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it = Update(it)
+        A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
+        Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
+        Iz_High_arr.append(IzH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
+        Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
+        Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
 
-    print("line 188",time.time()-start_time)
+        print("line 188",time.time()-start_time)
+        it+=1
 
 
+print(A_High_arr)
+print(A_Low_arr)
+print(A_Int_arr)
+print(Iy_High_arr)
+print(Iy_Low_arr)
+print(Iy_Int_arr)
+print(Iz_High_arr)
+print(Iz_Low_arr)
+print(Iz_Int_arr)
+print(Iy_arr)
+print(Iz_arr)
+print(Ux_High_arr)
+print(Ux_Low_arr)
+print(Ux_Int_arr)
 
+# ncfile = Dataset(out_dir+"Asymmetry_Dataset.nc",mode="w",format='NETCDF4')
+# ncfile.title = "Asymmetry data sampling output"
 
-ncfile = Dataset(out_dir+"Asymmetry_Dataset.nc",mode="w",format='NETCDF4')
-ncfile.title = "Asymmetry data sampling output"
+# #create global dimensions
+# sampling_dim = ncfile.createDimension("sampling",None)
 
-#create global dimensions
-sampling_dim = ncfile.createDimension("sampling",None)
+# #create variables
+# Time_sampling = ncfile.createVariable("time", np.float64, ('sampling',),zlib=True)
+# Time_sampling[:] = np.array(Time)
 
-#create variables
-Time_sampling = ncfile.createVariable("time", np.float64, ('sampling',),zlib=True)
-Time_sampling[:] = np.array(Time)
+# Area_high = ncfile.createVariable("Area_high", np.float64, ('sampling',),zlib=True)
+# Area_low = ncfile.createVariable("Area_low", np.float64, ('sampling',),zlib=True)
+# Area_int = ncfile.createVariable("Area_int", np.float64, ('sampling',),zlib=True)
 
-Area_high = ncfile.createVariable("Area_high", np.float64, ('sampling',),zlib=True)
-Area_low = ncfile.createVariable("Area_low", np.float64, ('sampling',),zlib=True)
-Area_int = ncfile.createVariable("Area_int", np.float64, ('sampling',),zlib=True)
+# Iy_high = ncfile.createVariable("Iy_high", np.float64, ('sampling',),zlib=True)
+# Iy_low = ncfile.createVariable("Iy_low", np.float64, ('sampling',),zlib=True)
+# Iy_int = ncfile.createVariable("Iy_int", np.float64, ('sampling',),zlib=True)
 
-Iy_high = ncfile.createVariable("Iy_high", np.float64, ('sampling',),zlib=True)
-Iy_low = ncfile.createVariable("Iy_low", np.float64, ('sampling',),zlib=True)
-Iy_int = ncfile.createVariable("Iy_int", np.float64, ('sampling',),zlib=True)
+# Iz_high = ncfile.createVariable("Iz_high", np.float64, ('sampling',),zlib=True)
+# Iz_low = ncfile.createVariable("Iz_low", np.float64, ('sampling',),zlib=True)
+# Iz_int = ncfile.createVariable("Iz_int", np.float64, ('sampling',),zlib=True)
 
-Iz_high = ncfile.createVariable("Iz_high", np.float64, ('sampling',),zlib=True)
-Iz_low = ncfile.createVariable("Iz_low", np.float64, ('sampling',),zlib=True)
-Iz_int = ncfile.createVariable("Iz_int", np.float64, ('sampling',),zlib=True)
+# Ux_high = ncfile.createVariable("Ux_high", np.float64, ('sampling',),zlib=True)
+# Ux_low = ncfile.createVariable("Ux_low", np.float64, ('sampling',),zlib=True)
+# Ux_int = ncfile.createVariable("Ux_int", np.float64, ('sampling',),zlib=True)
 
-Ux_high = ncfile.createVariable("Ux_high", np.float64, ('sampling',),zlib=True)
-Ux_low = ncfile.createVariable("Ux_low", np.float64, ('sampling',),zlib=True)
-Ux_int = ncfile.createVariable("Ux_int", np.float64, ('sampling',),zlib=True)
+# Iy = ncfile.createVariable("Iy", np.float64, ('sampling',),zlib=True)
+# Iz = ncfile.createVariable("Iz", np.float64, ('sampling',),zlib=True)
+# Area_high[:] = np.array(A_High_arr); del A_High_arr
+# Area_low[:] = np.array(A_Low_arr); del A_Low_arr
+# Area_int[:] = np.array(A_Int_arr); del A_Int_arr
 
-Iy = ncfile.createVariable("Iy", np.float64, ('sampling',),zlib=True)
-Iz = ncfile.createVariable("Iz", np.float64, ('sampling',),zlib=True)
-Area_high[:] = np.array(A_High_arr); del A_High_arr
-Area_low[:] = np.array(A_Low_arr); del A_Low_arr
-Area_int[:] = np.array(A_Int_arr); del A_Int_arr
+# Iy_high[:] = np.array(Iy_High_arr); del Iy_High_arr
+# Iy_low[:] = np.array(Iy_Low_arr); del Iy_Low_arr
+# Iy_int[:] = np.array(Iy_Int_arr); del Iy_Int_arr
 
-Iy_high[:] = np.array(Iy_High_arr); del Iy_High_arr
-Iy_low[:] = np.array(Iy_Low_arr); del Iy_Low_arr
-Iy_int[:] = np.array(Iy_Int_arr); del Iy_Int_arr
+# Iz_high[:] = np.array(Iz_High_arr); del Iz_High_arr
+# Iz_low[:] = np.array(Iz_Low_arr); del Iz_Low_arr
+# Iz_int[:] = np.array(Iz_Int_arr); del Iz_Int_arr
 
-Iz_high[:] = np.array(Iz_High_arr); del Iz_High_arr
-Iz_low[:] = np.array(Iz_Low_arr); del Iz_Low_arr
-Iz_int[:] = np.array(Iz_Int_arr); del Iz_Int_arr
+# Ux_high[:] = np.array(Ux_High_arr); del Ux_High_arr
+# Ux_low[:] = np.array(Ux_Low_arr); del Ux_Low_arr
+# Ux_int[:] = np.array(Ux_Int_arr); del Ux_Int_arr
 
-Ux_high[:] = np.array(Ux_High_arr); del Ux_High_arr
-Ux_low[:] = np.array(Ux_Low_arr); del Ux_Low_arr
-Ux_int[:] = np.array(Ux_Int_arr); del Ux_Int_arr
+# Iy[:] = np.array(Iy_arr); del Iy_arr
+# Iz[:] = np.array(Iz_arr); del Iz_arr
 
-Iy[:] = np.array(Iy_arr); del Iy_arr
-Iz[:] = np.array(Iz_arr); del Iz_arr
-
-print(ncfile)
-ncfile.close()
+# print(ncfile)
+# ncfile.close()
