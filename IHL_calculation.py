@@ -3,6 +3,7 @@ import numpy as np
 import time
 from multiprocessing import Pool
 from scipy import interpolate
+import math
 
 
 def coriolis_twist(u,v):
@@ -61,17 +62,20 @@ def Update(it):
                 AH+=dA
                 IyH+=(U[ijk]*k*dA)
                 IzH+=(U[ijk]*j*dA)
-                UxH.append(U[ijk])
+                if cmin < U_pri_ijk < cmax:
+                    UxH.append(U[ijk])
             elif U_pri_ijk <= -0.7:
                 AL+=dA
                 IyL+=(U[ijk]*k*dA)
                 IzL+=(U[ijk]*j*dA)
-                UxL.append(U[ijk])
+                if cmin < U_pri_ijk < cmax:
+                    UxL.append(U[ijk])
             else:
                 AI+=dA
                 IyI+=(U[ijk]*k*dA)
                 IzI+=(U[ijk]*j*dA)
-                UxI.append(U[ijk])
+                if cmin < U_pri_ijk < cmax:
+                    UxI.append(U[ijk])
         ijk+=1
 
     if len(UxH) > 0:
@@ -177,6 +181,10 @@ u = np.array(u_hvel); del u_hvel; del v
 u_pri = np.array(u_pri)
 
 print("line 139",time.time()-start_time)
+
+cmin = math.floor(np.min(u))
+cmax = math.ceil(np.max(u))
+print("line 184",cmin,cmax)
 
 it = 0
 A_High_arr = []; A_Low_arr = []; A_Int_arr = []

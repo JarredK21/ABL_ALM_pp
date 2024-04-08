@@ -28,7 +28,6 @@ def coriolis_twist(u,v):
 def Horizontal_velocity(it):
     f = interpolate.interp1d(h,twist)
     f_ux = interpolate.interp1d(h,ux_mean_profile)
-    #mag_horz_vel = []
     mag_fluc_horz_vel = []
     for i in np.arange(0,len(zs)):
         u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
@@ -45,9 +44,7 @@ def Horizontal_velocity(it):
 
         mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
         mag_fluc_horz_vel_i = np.subtract(mag_horz_vel_i,ux_mean)
-        #mag_horz_vel.extend(mag_horz_vel_i)
         mag_fluc_horz_vel.extend(mag_fluc_horz_vel_i)
-    #mag_horz_vel = np.array(mag_horz_vel)
     mag_fluc_horz_vel = np.array(mag_fluc_horz_vel)
     return mag_fluc_horz_vel
 
@@ -434,8 +431,7 @@ u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-ux_mean_profile = u*np.cos(np.radians(29))+v*np.sin(np.radians(29))
-print(ux_mean_profile)
+ux_mean_profile = u * np.cos(np.radians(29)) + v * np.sin(np.radians(29))
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 print("line 67", time.time()-start_time)
@@ -508,11 +504,9 @@ with Pool() as pool:
     u_pri = []
     for u_fluc_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
         
-        #u_hvel.append(u_hvel_it)
         u_pri.append(u_fluc_hvel_it)
         print(len(u_pri),time.time()-start_time)
-#u = np.array(u_hvel); del u_hvel; del v
-u = np.array(u_pri); del v
+u = np.array(u_pri); del u_pri; del v
 
 
 print("line 139",time.time()-start_time)

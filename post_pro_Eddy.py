@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 def correlation_coef(x,y):
@@ -43,184 +44,97 @@ def temporal_spectra(signal,dt,Var):
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
-a = Dataset(in_dir+"Dataset.nc")
-Time = np.array(a.variables["time_sampling"])
-dt = Time[1] - Time[0]
-group = a.groups["63.0"]
-Iy_data = np.array(group.variables["Iy"])
-Iz_data = np.array(group.variables["Iz"])
+a = Dataset(in_dir+"Asymmetry_Dataset.nc")
 
-Time_steps = np.arange(0,3077)
+print(a)
 
-Frac_pos_area = []
-Frac_neg_area = []
-ux_neg = []
-ux_pos = []
-Iy_high = []
-Iy_low = []
-Iz_high = []
-Iz_low = []
-Iy = []
-Iz = []
+Time = np.array(a.variables["time"])
+Time = Time - Time[0]
+Time_steps = np.arange(0,len(Time))
 
-area_g_rot = []
-for it in Time_steps:
-    filename = "csv_files/Eddies_0.7_{}.csv".format(it)
+A_high = np.array(a.variables["Area_high"])
+A_low = np.array(a.variables["Area_low"])
+A_int = np.array(a.variables["Area_int"])
 
-    df = pd.read_csv(in_dir+filename)
+Iy_high = np.array(a.variables["Area_high"])
+Iy_low = np.array(a.variables["Area_low"])
+Iy_int = np.array(a.variables["Area_int"])
 
-    # df["Centroid_x_pos"].dropna()
-    # index = df["Ux_avg_pos"].isin([0.000000])
-    # for i in np.arange(0,len(index.values)):
-    #     if index.values[i] == True:
-    #         df["Centroid_x_pos"].drop([i])
+Iz_high = np.array(a.variables["Area_high"])
+Iz_low = np.array(a.variables["Area_low"])
+Iz_int = np.array(a.variables["Area_int"])
+
+Ux_high = np.array(a.variables["Area_high"])
+Ux_low = np.array(a.variables["Area_low"])
+Ux_int = np.array(a.variables["Area_int"])
+
+Iy = np.array(a.variables["Iy"])
+Iz = np.array(a.variables["Iz"])
 
 
-    Centroids_x_pos = np.array(df["Centroid_x_pos"].dropna())
-    Centroids_y_pos = np.array(df["Centroid_y_pos"].dropna())
-    Area_pos = np.array(df["Area_pos"].dropna())
-    Ux_avg_pos = np.array(df["Ux_avg_pos"].dropna())
+A_rot = np.pi*63**2
 
-    Centroids_x_neg = np.array(df["Centroid_x_neg"].dropna())
-    Centroids_y_neg = np.array(df["Centroid_y_neg"].dropna())
-    Area_neg = np.array(df["Area_neg"].dropna())
-    Ux_avg_neg = np.array(df["Ux_avg_neg"].dropna())
+Frac_high_area = np.true_divide(A_high,A_rot)
+Frac_low_area = np.true_divide(A_low,A_rot)
+Frac_int_area = np.true_divide(A_int,A_rot)
+Tot_area = np.add(np.add(Frac_high_area,Frac_low_area),Frac_int_area)
 
-    Rot_Area = np.pi * 63**2
+P_high_Iy = np.true_divide(Iy_high,Iy)
+P_low_Iy = np.true_divide(Iy_low,Iy)
+P_int_Iy = np.true_divide(Iy_int,Iy)
+P_Tot_Iy = np.add(np.add(P_high_Iy,P_low_Iy),P_int_Iy)
 
-    Frac_pos_area.append(np.sum(Area_pos)/Rot_Area)
-    Frac_neg_area.append(np.sum(Area_neg)/Rot_Area)  
-
-
-    ux = 0
-    Tot_area = np.sum(Area_pos)
-    for i in np.arange(0,len(Area_pos)):
-        frac_area = Area_pos[i]/Tot_area
-        ux+=Ux_avg_pos[i]*frac_area
+P_high_Iz = np.true_divide(Iz_high,Iz)
+P_low_Iz = np.true_divide(Iz_low,Iz)
+P_int_Iz = np.true_divide(Iz_int,Iz)
+P_Tot_Iz = np.add(np.add(P_high_Iz,P_low_Iz),P_int_Iz)
     
-    ux_pos.append(ux)
-
-    ux = 0
-    Tot_area = np.sum(Area_neg)
-    for i in np.arange(0,len(Area_neg)):
-        frac_area = Area_neg[i]/Tot_area
-        ux+=Ux_avg_neg[i]*frac_area
-    
-    ux_neg.append(ux)
-
-    y = np.concatenate((np.subtract(Centroids_x_pos,2560),np.subtract(Centroids_x_neg,2560)))
-    z = np.concatenate((np.subtract(Centroids_y_pos,90),np.subtract(Centroids_y_neg,90)))
-    dA = np.concatenate((Area_pos,Area_neg))
-    Ux_avg = np.concatenate((Ux_avg_pos,Ux_avg_neg))
-
-    num = np.multiply(Ux_avg,(np.multiply(y,dA)))
-    Iz.append(np.sum(num)/Rot_Area)
-    num = np.multiply(Ux_avg,(np.multiply(z,dA)))
-    Iy.append(np.sum(num)/Rot_Area)
-
-    num = np.multiply(Ux_avg_neg,(np.multiply(np.subtract(Centroids_x_neg,2560),Area_neg)))
-    Iz_low.append((np.sum(num)/Rot_Area)/Iz[it])
-
-    num = np.multiply(Ux_avg_pos,(np.multiply(np.subtract(Centroids_x_pos,2560),Area_pos)))
-    Iz_high.append((np.sum(num)/Rot_Area)/Iz[it])
-
-    num = np.multiply(Ux_avg_neg,(np.multiply(np.subtract(Centroids_y_neg,90),Area_neg)))
-    Iy_low.append((np.sum(num)/Rot_Area)/Iy[it])
-
-    num = np.multiply(Ux_avg_pos,(np.multiply(np.subtract(Centroids_y_pos,90),Area_pos)))
-    Iy_high.append((np.sum(num)/Rot_Area)/Iy[it])
 
 
+out_dir = in_dir+"Asymmetry_analysis/"
+with PdfPages(out_dir+'Eddy_analysis.pdf') as pdf:
+
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time,Frac_high_area,'-r')
+    ax.plot(Time,Frac_low_area,"-b")
+    ax.plot(Time,Frac_int_area,"-g")
+    ax.plot(Time,Tot_area,"--k")
+    ax.set_ylabel("Fraction of rotor disk area [-]",fontsize=14)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.legend(["High speed area", "Low speed area", "intermediate area","Total area"])
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time,P_high_Iy,'-r')
+    ax.plot(Time,P_low_Iy,"-b")
+    ax.plot(Time,P_int_Iy,"-g")
+    ax.plot(Time,P_Tot_Iy,"--k")
+    ax.set_ylabel("Fraction of Asymmetry around y axis [-]",fontsize=14)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.legend(["High speed area", "Low speed area", "intermediate area","Total"])
+    ax.set_ylim([-1,1])
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
 
 
+    fig,ax = plt.subplots(figsize=(14,8))
 
-fig,ax = plt.subplots(figsize=(14,8))
-
-ax.plot(Time,Frac_pos_area,'-b')
-ax.set_ylabel("Fraction of rotor disk covered by contours [-]",fontsize=14)
-ax.plot(Time,Frac_neg_area,"-r")
-ax.set_xlabel("Time [s]",fontsize=16)
-ax.legend(["High speed areas (ux'>0.7m/s)","low speed areas (ux'<-0.7 m/s)"])
-plt.tight_layout()
-plt.grid()
-plt.savefig(in_dir+"csv_files/plots/Area.png")
-plt.close()
-
-
-fig,ax = plt.subplots(figsize=(14,8))
-
-ax.plot(Time,ux_pos,'-b')
-ax.set_ylabel("Average velocity of contours weighted by area fraction [m/s]",fontsize=14)
-ax.plot(Time,ux_neg,"-r")
-ax.set_xlabel("Time [s]",fontsize=16)
-ax.legend(["High speed areas (ux'>0.7m/s)","low speed areas (ux'<-0.7 m/s)"])
-ax.axhline(y=np.mean(ux_pos),linestyle="--",color="k")
-ax.axhline(y=np.mean(ux_neg),linestyle="--",color="k")
-plt.tight_layout()
-plt.grid()
-plt.savefig(in_dir+"csv_files/plots/velocity.png")
-plt.close()
-
-Iy_corr = correlation_coef(Iy_data,Iy)
-Iz_corr = correlation_coef(Iz,Iz_data)
-
-fig,ax = plt.subplots(figsize=(14,8))
-
-ax.plot(Time,Iy,'-b')
-ax.axhline(y=np.mean(Iy),linestyle="--",color="b")
-ax.set_ylabel("Asymmetry around y axis [m2/s]",fontsize=14)
-ax2 = ax.twinx()
-ax2.plot(Time,Iy_data,"-r")
-ax2.axhline(y=np.mean(Iy_data),linestyle="--",color="r")
-ax2.set_ylabel("Asymmetry around y axis [m4/s]",fontsize=14)
-plt.title("Correlation coefficient {}".format(Iy_corr),fontsize=16)
-ax.set_xlabel("Time [s]",fontsize=16)
-plt.tight_layout()
-plt.grid()
-plt.savefig(in_dir+"csv_files/plots/Iy.png")
-plt.close()
-
-
-fig,ax = plt.subplots(figsize=(14,8))
-
-ax.plot(Time,Iz,'-b')
-ax.axhline(y=np.mean(Iz),linestyle="--",color="b")
-ax.set_ylabel("Asymmetry around z axis [m2/s]",fontsize=14)
-ax2 = ax.twinx()
-ax2.plot(Time,Iz_data,"-r")
-ax2.axhline(y=np.mean(Iz_data),linestyle="--",color="r")
-ax2.set_ylabel("Asymmetry around z axis [m4/s]",fontsize=14)
-plt.title("Correlation coefficient {}".format(Iz_corr),fontsize=16)
-ax.set_xlabel("Time [s]",fontsize=16)
-plt.tight_layout()
-plt.grid()
-plt.savefig(in_dir+"csv_files/plots/Iz.png")
-plt.close()
-
-
-fig,ax = plt.subplots(figsize=(14,8))
-
-ax.plot(Time,Iy_low,'-b')
-ax.set_ylabel("Proportion of Asymmetry around y axis [m2/s]",fontsize=14)
-ax.plot(Time,Iy_high,"-r")
-ax.set_xlabel("Time [s]",fontsize=16)
-ax.legend(["Low speed areas", "high speed areas"])
-plt.ylim([-1,1])
-plt.tight_layout()
-plt.grid()
-plt.savefig(in_dir+"csv_files/plots/Iy_prop.png")
-plt.close()
-
-
-fig,ax = plt.subplots(figsize=(14,8))
-
-ax.plot(Time,Iz_low,'-b')
-ax.set_ylabel("Proportion of Asymmetry around z axis [m2/s]",fontsize=14)
-ax.plot(Time,Iz_high,"-r")
-ax.set_xlabel("Time [s]",fontsize=16)
-ax.legend(["Low speed areas", "high speed areas"])
-plt.ylim([-1,1])
-plt.tight_layout()
-plt.grid()
-plt.savefig(in_dir+"csv_files/plots/Iz_prop.png")
-plt.close()
+    ax.plot(Time,P_high_Iz,'-r')
+    ax.plot(Time,P_low_Iz,"-b")
+    ax.plot(Time,P_int_Iz,"-g")
+    ax.plot(Time,P_Tot_Iz,"--k")
+    ax.set_ylabel("Fraction of Asymmetry around z axis [-]",fontsize=14)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.legend(["High speed area", "Low speed area", "intermediate area","Total"])
+    ax.set_ylim([-1,1])
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
