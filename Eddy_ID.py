@@ -435,6 +435,7 @@ ux_mean_profile = u * np.cos(np.radians(29)) + v * np.sin(np.radians(29))
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 print("line 67", time.time()-start_time)
+print(ux_mean_profile)
 
 #directories
 in_dir = "./"
