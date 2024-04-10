@@ -175,7 +175,7 @@ tend = 39201
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(0, tend_idx-tstart_idx)
 Time = Time[tstart_idx:tend_idx]
-print(Time_steps)
+
 #rotor data
 p = a.groups["p_r"]; del a
 
@@ -221,7 +221,7 @@ with Pool() as pool:
         u_hvel.append(u_hvel_it)
         print(len(u_hvel),time.time()-start_time)
 u_pri = np.array(u_pri)
-u = np.array(u_hvel); del u_pri; del v
+u = np.array(u_hvel); del u_hvel; del v
 
 
 cmin = math.floor(np.min(u_pri))

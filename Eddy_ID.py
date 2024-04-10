@@ -457,9 +457,9 @@ a = Dataset("./sampling_r_-63.0.nc")
 #time options
 Time = np.array(a.variables["time"])
 dt = Time[1] - Time[0]
-tstart = 38000
+tstart = 38200
 tstart_idx = np.searchsorted(Time,tstart)
-tend = 39200
+tend = 39201
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(0, tend_idx-tstart_idx)
 Time = Time[tstart_idx:tend_idx]
