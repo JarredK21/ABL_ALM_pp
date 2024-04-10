@@ -47,12 +47,6 @@ def Update(it):
     U = u[it]
     U_pri = u_pri[it]
 
-    fig,ax = plt.subplots(figsize=(50,30))
-    plt.rcParams['font.size'] = 40
-
-    Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
-    ax.add_artist(Drawing_uncolored_circle)
-
 
     AH = 0; AL = 0; AI = 0
     IyH = 0; IyL = 0; IyI = 0; Iy = 0
@@ -75,19 +69,16 @@ def Update(it):
                     IyH+=(Uijk*k*dA)
                     IzH+=(Uijk*j*dA)
                     UxH.append(Uijk)
-                    plt.plot(ys[ijk],zs[ijk],"ok")
                 elif U_pri_ijk <= -0.7:
                     AL+=dA
                     IyL+=(Uijk*k*dA)
                     IzL+=(Uijk*j*dA)
                     UxL.append(Uijk)
-                    plt.plot(ys[ijk],zs[ijk],"+k")
                 else:
                     AI+=dA
                     IyI+=(Uijk*k*dA)
                     IzI+=(Uijk*j*dA)
                     UxI.append(Uijk)
-                    plt.plot(ys[ijk],zs[ijk],"sk")
         ijk+=1
 
     if len(UxH) > 0:
@@ -105,22 +96,6 @@ def Update(it):
     else:
         UxI = 0
 
-
-    plt.xlabel("y' axis (rotor frame of reference) [m]",fontsize=40)
-    plt.ylabel("z' axis (rotor frame of reference) [m]",fontsize=40)
-    plt.xticks(fontsize=40)
-    plt.yticks(fontsize=40)
-
-
-    #define titles and filenames for movie
-    Title = "Rotor Plane. \nFluctuating horizontal velocity [m/s]: Offset = -63.0m, Time = {}[s]".format(it)
-    filename = "Rotor_Fluc_Horz_-63.0_{}.png".format(it)
-
-    plt.xlim([ys[0],ys[-1]]);plt.ylim(zs[0],zs[-1])
-    plt.title(Title)
-    plt.tight_layout()
-    plt.savefig(in_dir+filename)
-    plt.close(fig)
 
     return AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy,Iz,UxH,UxL,UxI
 
@@ -148,7 +123,7 @@ print("line 67", time.time()-start_time)
 
 #directories
 in_dir = "./"
-out_dir = in_dir+"ISOplots/"
+out_dir = in_dir
 
 
 
@@ -159,7 +134,7 @@ Time = np.array(a.variables["time"])
 dt = Time[1] - Time[0]
 tstart = 38200
 tstart_idx = np.searchsorted(Time,tstart)
-tend = 38400
+tend = 39201
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(0, tend_idx-tstart_idx)
 Time = Time[tstart_idx:tend_idx]
@@ -221,20 +196,7 @@ cmin = math.floor(np.min(u))
 cmax = math.ceil(np.max(u))
 print("line 249",cmin,cmax)
 
-nlevs = int((cmax-cmin)/2)
-if nlevs>abs(cmin) or nlevs>cmax:
-    nlevs = min([abs(cmin),cmax])+1
-
-levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
-levels = np.concatenate((levs_min,levs_max[1:]))
-print("line 153", levels)
-
 time.sleep(5)
-
-folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0_3/"
-isExist = os.path.exists(folder)
-if isExist == False:
-    os.makedirs(folder)
 
 it = 0
 A_High_arr = []; A_Low_arr = []; A_Int_arr = []
@@ -242,34 +204,19 @@ Iy_High_arr = []; Iy_Low_arr = []; Iy_Int_arr = []
 Iz_High_arr = []; Iz_Low_arr = []; Iz_Int_arr = []
 Ux_High_arr = []; Ux_Low_arr = []; Ux_Int_arr = []
 Iy_arr = []; Iz_arr = []
-#with Pool() as pool:
-    #for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it in pool.imap(Update,Time_steps):        
+with Pool() as pool:
+    for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it in pool.imap(Update,Time_steps):        
     
-print("time step",it)
-AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it = Update(it)
-A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
-Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
-Iz_High_arr.append(IzH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
-Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
-Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
+        print("time step",it)
+        AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it = Update(it)
+        A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
+        Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
+        Iz_High_arr.append(IzH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
+        Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
+        Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
 
-print(AH)
-print(AL)
-print(AI)
-print(IyH)
-print(IyL)
-print(IyI)
-print(IzH)
-print(IzL)
-print(IzI)
-print(Iy_it)
-print(Iz_it)
-print(UxH_it)
-print(UxL_it)
-print(UxI_it)
-
-print("line 188",time.time()-start_time)
-it+=1
+        print("line 188",time.time()-start_time)
+        it+=1
 
 
 ncfile = Dataset(out_dir+"Asymmetry_Dataset.nc",mode="w",format='NETCDF4')
