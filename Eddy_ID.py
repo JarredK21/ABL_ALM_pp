@@ -431,7 +431,9 @@ u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-ux_mean_profile = u * np.cos(np.radians(29)) + v * np.sin(np.radians(29))
+ux_mean_profile = []
+for i in np.arange(0,len(twist)):
+    ux_mean_profile.append(u[i] * np.cos(twist[i]) + v[i] * np.sin(twist))
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 print("line 67", time.time()-start_time)
