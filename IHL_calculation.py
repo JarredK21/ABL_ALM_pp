@@ -6,6 +6,7 @@ from scipy import interpolate
 import math
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import os
 
 
 def coriolis_twist(u,v):
@@ -175,7 +176,7 @@ print(ux_mean_profile)
 
 #directories
 in_dir = "./"
-out_dir = in_dir
+out_dir = in_dir+"ISOplots/"
 
 
 
@@ -274,6 +275,11 @@ levels = np.concatenate((levs_min,levs_max[1:]))
 print("line 153", levels)
 
 time.sleep(5)
+
+folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0_3/"
+isExist = os.path.exists(folder)
+if isExist == False:
+    os.makedirs(folder)
 
 it = 0
 A_High_arr = []; A_Low_arr = []; A_Int_arr = []
