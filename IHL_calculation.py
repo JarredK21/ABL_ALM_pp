@@ -213,13 +213,14 @@ del p
 u[u<0]=0; v[v<0]=0 #remove negative velocities
 
 #fluctuating streamwise velocity
-with Pool() as pool:
-    u_hvel = []; u_pri = []
-    for u_hvel_it,u_fluc_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+#with Pool() as pool:
+u_hvel = []; u_pri = []
+for it in Time_steps:
+    u_hvel_it,u_fluc_hvel_it = Horizontal_velocity(it)
         
-        u_pri.append(u_fluc_hvel_it)
-        u_hvel.append(u_hvel_it)
-        print(len(u_hvel),time.time()-start_time)
+    u_pri.append(u_fluc_hvel_it)
+    u_hvel.append(u_hvel_it)
+    print(len(u_hvel),time.time()-start_time)
 u_pri = np.array(u_pri)
 u = np.array(u_hvel); del u_pri; del v
 
