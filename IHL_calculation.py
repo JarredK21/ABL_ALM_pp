@@ -145,6 +145,7 @@ precursor = Dataset("./abl_statistics76000.nc")
 Time_pre = np.array(precursor.variables["time"])
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
 t_start = np.searchsorted(precursor.variables["time"],38200)
+t_end = np.searchsorted(precursor.variables["time"],39201)
 u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
 h = mean_profiles["h"][:]
@@ -168,9 +169,9 @@ a = Dataset("./sampling_r_-63.0.nc")
 #time options
 Time = np.array(a.variables["time"])
 dt = Time[1] - Time[0]
-tstart = 38000
+tstart = 38200
 tstart_idx = np.searchsorted(Time,tstart)
-tend = 39200
+tend = 39201
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(tstart_idx, tend_idx)
 Time = Time[tstart_idx:tend_idx]
@@ -213,14 +214,13 @@ del p
 u[u<0]=0; v[v<0]=0 #remove negative velocities
 
 #fluctuating streamwise velocity
-#with Pool() as pool:
-u_hvel = []; u_pri = []
-for it in Time_steps:
-    u_hvel_it,u_fluc_hvel_it = Horizontal_velocity(it)
+with Pool() as pool:
+    u_hvel = []; u_pri = []
+    for u_hvel_it,u_fluc_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
         
-    u_pri.append(u_fluc_hvel_it)
-    u_hvel.append(u_hvel_it)
-    print(len(u_hvel),time.time()-start_time)
+        u_pri.append(u_fluc_hvel_it)
+        u_hvel.append(u_hvel_it)
+        print(len(u_hvel),time.time()-start_time)
 u_pri = np.array(u_pri)
 u = np.array(u_hvel); del u_pri; del v
 
