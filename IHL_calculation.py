@@ -5,8 +5,8 @@ from multiprocessing import Pool
 from scipy import interpolate
 import math
 import matplotlib.pyplot as plt
-from matplotlib import cm
 import os
+from matplotlib.patches import Circle
 
 
 def coriolis_twist(u,v):
@@ -47,17 +47,12 @@ def Update(it):
     U = u[it]
     U_pri = u_pri[it]
 
-    u_plane = U.reshape(y,x)
-    Xs,Ys = np.meshgrid(ys,zs)
-
-    Z = u_plane
-
     fig,ax = plt.subplots(figsize=(50,30))
     plt.rcParams['font.size'] = 40
 
-    cs = ax.contourf(Xs,Ys,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+    Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
+    ax.add_artist(Drawing_uncolored_circle)
 
-    cb = plt.colorbar(cs)
 
     AH = 0; AL = 0; AI = 0
     IyH = 0; IyL = 0; IyI = 0; Iy = 0
@@ -120,18 +115,11 @@ def Update(it):
     #define titles and filenames for movie
     Title = "Rotor Plane. \nFluctuating horizontal velocity [m/s]: Offset = -63.0m, Time = {}[s]".format(it)
     filename = "Rotor_Fluc_Horz_-63.0_{}.png".format(it)
-    
-    x_c = [-1,-10]; y_c = [-1,-10]
-    plt.plot(x_c,y_c,"-k",linewidth=5,label="$u_x' \geq 0.7 m/s$")
-    plt.plot(x_c,y_c,"--k",linewidth=5,label="$u_x' \leq -0.7 m/s$")
 
     plt.xlim([ys[0],ys[-1]]);plt.ylim(zs[0],zs[-1])
-    plt.legend()
     plt.title(Title)
     plt.tight_layout()
     plt.savefig(in_dir+filename)
-    plt.cla()
-    cb.remove()
     plt.close(fig)
 
     return AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy,Iz,UxH,UxL,UxI
@@ -171,7 +159,7 @@ Time = np.array(a.variables["time"])
 dt = Time[1] - Time[0]
 tstart = 38200
 tstart_idx = np.searchsorted(Time,tstart)
-tend = 39201
+tend = 38400
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(0, tend_idx-tstart_idx)
 Time = Time[tstart_idx:tend_idx]
