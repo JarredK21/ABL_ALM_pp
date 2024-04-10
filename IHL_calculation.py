@@ -53,29 +53,28 @@ def Update(it):
         r = np.sqrt(j**2 + k**2)
 
         if r <= 63 and r > 1.5:
-            Iy+=(U[ijk]*k*dA)
-            Iz+=(U[ijk]*j*dA)
 
+            Uijk = U[ijk]
             U_pri_ijk = U_pri[ijk]
+            if cmin<=Uijk<=cmax:
+                Iy+=(Uijk*k*dA)
+                Iz+=(Uijk*j*dA)
 
-            if U_pri_ijk >= 0.7:
-                AH+=dA
-                IyH+=(U[ijk]*k*dA)
-                IzH+=(U[ijk]*j*dA)
-                if cmin < U_pri_ijk < cmax:
-                    UxH.append(U[ijk])
-            elif U_pri_ijk <= -0.7:
-                AL+=dA
-                IyL+=(U[ijk]*k*dA)
-                IzL+=(U[ijk]*j*dA)
-                if cmin < U_pri_ijk < cmax:
-                    UxL.append(U[ijk])
-            else:
-                AI+=dA
-                IyI+=(U[ijk]*k*dA)
-                IzI+=(U[ijk]*j*dA)
-                if cmin < U_pri_ijk < cmax:
-                    UxI.append(U[ijk])
+                if U_pri_ijk >= 0.7:
+                    AH+=dA
+                    IyH+=(Uijk*k*dA)
+                    IzH+=(Uijk*j*dA)
+                    UxH.append(Uijk)
+                elif U_pri_ijk <= -0.7:
+                    AL+=dA
+                    IyL+=(Uijk*k*dA)
+                    IzL+=(Uijk*j*dA)
+                    UxL.append(Uijk)
+                else:
+                    AI+=dA
+                    IyI+=(Uijk*k*dA)
+                    IzI+=(Uijk*j*dA)
+                    UxI.append(Uijk)
         ijk+=1
 
     if len(UxH) > 0:
@@ -108,11 +107,14 @@ u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-ux_mean_profile = u * np.cos(np.radians(29)) + v * np.sin(np.radians(29))
+ux_mean_profile = []
+for i in np.arange(0,len(twist)):
+    ux_mean_profile.append(u[i] * np.cos(twist[i]) + v[i] * np.sin(twist[i]))
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 
 print("line 67", time.time()-start_time)
+print(ux_mean_profile)
 
 #directories
 in_dir = "./"
@@ -159,9 +161,17 @@ xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
 ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
 zs = zo - rotor_coordiates[2]
 
+print("line 165",ys)
+time.sleep(10)
+print("line 167",zs)
+time.sleep(10)
+
 dy = (max(ys) - min(ys))/x
 dz = (max(zs) - min(zs))/y
 dA = dy * dz
+
+print("line 174",dA)
+time.sleep(5)
 
 #velocity field
 u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
@@ -197,7 +207,6 @@ with Pool() as pool:
     
         print("time step",it)
 
-        AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it = Update(it)
         A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
         Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
         Iz_High_arr.append(IzH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
@@ -236,6 +245,7 @@ Ux_int = ncfile.createVariable("Ux_int", np.float64, ('sampling',),zlib=True)
 
 Iy = ncfile.createVariable("Iy", np.float64, ('sampling',),zlib=True)
 Iz = ncfile.createVariable("Iz", np.float64, ('sampling',),zlib=True)
+
 Area_high[:] = np.array(A_High_arr); del A_High_arr
 Area_low[:] = np.array(A_Low_arr); del A_Low_arr
 Area_int[:] = np.array(A_Int_arr); del A_Int_arr
