@@ -17,26 +17,8 @@ def coriolis_twist(u,v):
 
 def Horizontal_velocity(it):
     f = interpolate.interp1d(h,twist)
-    mag_horz_vel = []
-    for i in np.arange(0,len(zs)):
-        u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
-        if zs[i] < h[0]:
-            twist_h = f(h[0])
-
-        elif zs[i] > h[-1]:
-            twist_h = f(h[-1])
-        else:
-            twist_h = f(zs[i])
-
-        mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
-        mag_horz_vel.extend(mag_horz_vel_i)
-    mag_horz_vel = np.array(mag_horz_vel)
-    return mag_horz_vel
-
-
-def Fluc_Horizontal_velocity(it):
-    f = interpolate.interp1d(h,twist)
     f_ux = interpolate.interp1d(h,ux_mean_profile)
+    mag_horz_vel = []
     mag_fluc_horz_vel = []
     for i in np.arange(0,len(zs)):
         u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
@@ -53,9 +35,11 @@ def Fluc_Horizontal_velocity(it):
 
         mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
         mag_fluc_horz_vel_i = np.subtract(mag_horz_vel_i,ux_mean)
+        mag_horz_vel.extend(mag_horz_vel_i)
         mag_fluc_horz_vel.extend(mag_fluc_horz_vel_i)
+    mag_horz_vel = np.array(mag_horz_vel)
     mag_fluc_horz_vel = np.array(mag_fluc_horz_vel)
-    return mag_fluc_horz_vel
+    return mag_horz_vel,mag_fluc_horz_vel
 
 
 def Update(it):
@@ -172,7 +156,6 @@ del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 
 print("line 67", time.time()-start_time)
-print(ux_mean_profile)
 
 #directories
 in_dir = "./"
@@ -191,7 +174,6 @@ tend = 39200
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(tstart_idx, tend_idx)
 Time = Time[tstart_idx:tend_idx]
-print(Time_steps)
 
 #rotor data
 p = a.groups["p_r"]; del a
@@ -219,52 +201,36 @@ xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
 ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
 zs = zo - rotor_coordiates[2]
 
-print("line 165",ys)
-time.sleep(10)
-print("line 167",zs)
-time.sleep(10)
-
 dy = (max(ys) - min(ys))/x
 dz = (max(zs) - min(zs))/y
 dA = dy * dz
-
-print("line 174",dA)
-time.sleep(5)
 
 #velocity field
 u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
 v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
 del p
 
-u[u<0]=0; v[v<0] #remove negative velocities
+u[u<0]=0; v[v<0]=0 #remove negative velocities
 
 #fluctuating streamwise velocity
 with Pool() as pool:
-    u_pri = []
-    for u_fluc_hvel_it in pool.imap(Fluc_Horizontal_velocity,Time_steps):
+    u_hvel = []; u_pri = []
+    for u_hvel_it,u_fluc_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
         
         u_pri.append(u_fluc_hvel_it)
-        print(len(u_pri),time.time()-start_time)
+        u_hvel.append(u_hvel_it)
+        print(len(u_hvel),time.time()-start_time)
 u_pri = np.array(u_pri)
+u = np.array(u_hvel); del u_pri; del v
 
 cmin = math.floor(np.min(u_pri))
 cmax = math.ceil(np.max(u_pri))
-print("line 184",cmin,cmax)
+print("line 244",cmin,cmax)
 
-#streamwise velocity
-with Pool() as pool:
-    u_hvel = []
-    for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
-        
-        u_hvel.append(u_hvel_it)
-        print(len(u_hvel),time.time()-start_time)
-u = np.array(u_hvel); del u_pri; del v
-
-print("line 139",time.time()-start_time)
 
 cmin = math.floor(np.min(u))
 cmax = math.ceil(np.max(u))
-print("line 184",cmin,cmax)
+print("line 249",cmin,cmax)
 
 nlevs = int((cmax-cmin)/2)
 if nlevs>abs(cmin) or nlevs>cmax:

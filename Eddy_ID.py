@@ -437,7 +437,6 @@ for i in np.arange(0,len(twist)):
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 print("line 67", time.time()-start_time)
-print(ux_mean_profile)
 
 #directories
 in_dir = "./"
@@ -501,7 +500,7 @@ u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
 v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
 del p
 
-u[u<0]=0; v[v<0] #remove negative velocities
+u[u<0]=0; v[v<0]=0 #remove negative velocities
 
 with Pool() as pool:
     u_pri = []
