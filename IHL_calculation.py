@@ -173,9 +173,9 @@ tstart = 38200
 tstart_idx = np.searchsorted(Time,tstart)
 tend = 39201
 tend_idx = np.searchsorted(Time,tend)
-Time_steps = np.arange(tstart_idx, tend_idx)
+Time_steps = np.arange(0, tend_idx-tstart_idx)
 Time = Time[tstart_idx:tend_idx]
-
+print(Time_steps)
 #rotor data
 p = a.groups["p_r"]; del a
 
@@ -210,7 +210,6 @@ dA = dy * dz
 u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
 v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
 del p
-
 u[u<0]=0; v[v<0]=0 #remove negative velocities
 
 #fluctuating streamwise velocity
@@ -223,6 +222,7 @@ with Pool() as pool:
         print(len(u_hvel),time.time()-start_time)
 u_pri = np.array(u_pri)
 u = np.array(u_hvel); del u_pri; del v
+
 
 cmin = math.floor(np.min(u_pri))
 cmax = math.ceil(np.max(u_pri))
