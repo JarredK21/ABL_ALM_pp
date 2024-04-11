@@ -26,9 +26,9 @@ def Horizontal_velocity():
             twist_h = f(h[0])
             ux_mean = f_ux(h[0])
 
-        elif ZS[i] > h[-1]:
-            twist_h = f(h[-1])
-            ux_mean = f_ux(h[-1])
+        # elif ZS[i] > h[-1]:
+        #     twist_h = f(h[-1])
+        #     ux_mean = f_ux(h[-1])
         else:
             twist_h = f(ZS[i])
             ux_mean = f_ux(ZS[i])
@@ -77,6 +77,7 @@ def Update():
                     IzH+=(Uijk*j*dA)
                     UxH.append(Uijk)
                 elif U_pri_ijk < -0.7:
+                    plt.plot(ys[ijk],zs[ijk],"+k")
                     AL+=dA
                     IyL+=(Uijk*k*dA)
                     IzL+=(Uijk*j*dA)

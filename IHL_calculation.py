@@ -4,9 +4,6 @@ import time
 from multiprocessing import Pool
 from scipy import interpolate
 import math
-import matplotlib.pyplot as plt
-import os
-from matplotlib.patches import Circle
 
 
 def coriolis_twist(u,v):
@@ -198,7 +195,6 @@ cmin = math.floor(np.min(u))
 cmax = math.ceil(np.max(u))
 print("line 249",cmin,cmax)
 
-time.sleep(5)
 
 it = 0
 A_High_arr = []; A_Low_arr = []; A_Int_arr = []
@@ -210,7 +206,6 @@ with Pool() as pool:
     for AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it in pool.imap(Update,Time_steps):        
     
         print("time step",it)
-        AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy_it,Iz_it,UxH_it,UxL_it,UxI_it = Update(it)
         A_High_arr.append(AH); A_Low_arr.append(AL); A_Int_arr.append(AI)
         Iy_High_arr.append(IyH); Iy_Low_arr.append(IyL); Iy_Int_arr.append(IyI)
         Iz_High_arr.append(IzH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
