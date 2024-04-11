@@ -132,7 +132,7 @@ a = Dataset("./sampling_r_-63.0.nc")
 #time options
 Time = np.array(a.variables["time"])
 dt = Time[1] - Time[0]
-tstart = 38200
+tstart = 38000
 tstart_idx = np.searchsorted(Time,tstart)
 tend = 39201
 tend_idx = np.searchsorted(Time,tend)
