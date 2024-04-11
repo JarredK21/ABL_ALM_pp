@@ -46,8 +46,6 @@ in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 a = Dataset(in_dir+"Asymmetry_Dataset.nc")
 
-print(a)
-
 Time = np.array(a.variables["time"])
 Time = Time - Time[0]
 Time_steps = np.arange(0,len(Time))
@@ -88,11 +86,54 @@ P_high_Iz = np.true_divide(Iz_high,Iz)
 P_low_Iz = np.true_divide(Iz_low,Iz)
 P_int_Iz = np.true_divide(Iz_int,Iz)
 P_Tot_Iz = np.add(np.add(P_high_Iz,P_low_Iz),P_int_Iz)
+
+
+df = Dataset(in_dir+"Dataset.nc")
+Time_sampling = np.array(df.variables["time_sampling"])
+group = df.groups["63.0"]
+Iy_df = np.array(group.variables["Iy"])
+Iz_df = np.array(group.variables["Iz"])
     
 
 
 out_dir = in_dir+"Asymmetry_analysis/"
 with PdfPages(out_dir+'Eddy_analysis.pdf') as pdf:
+
+    #new asymmetry parameters
+    #cc = round(correlation_coef(Iy,Iy_Asy),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time,Iy,'-b')
+    ax.set_ylabel("Iy [$m^4/s$]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_sampling,Iy_df,"-r")
+    ax2.set_ylabel("Iy dataset [$m^4/s$]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    #plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+    #cc = round(correlation_coef(Iz,Iz_Asy),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time,Iz,'-b')
+    ax.set_ylabel("Iz [$m^4/s$]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_sampling,Iz_df,"-r")
+    ax2.set_ylabel("Iz Dataset [$m^4/s$]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    #plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
 
     fig,ax = plt.subplots(figsize=(14,8))
 
