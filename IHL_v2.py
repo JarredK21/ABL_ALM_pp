@@ -20,18 +20,18 @@ def Horizontal_velocity(it):
     f_ux = interpolate.interp1d(h,ux_mean_profile)
     mag_horz_vel = []
     mag_fluc_horz_vel = []
-    for i in np.arange(0,len(zs)):
+    for i in np.arange(0,len(ZS)):
         u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
-        if zs[i] < h[0]:
+        if ZS[i] < h[0]:
             twist_h = f(h[0])
             ux_mean = f_ux(h[0])
 
-        elif zs[i] > h[-1]:
+        elif ZS[i] > h[-1]:
             twist_h = f(h[-1])
             ux_mean = f_ux(h[-1])
         else:
-            twist_h = f(zs[i])
-            ux_mean = f_ux(zs[i])
+            twist_h = f(ZS[i])
+            ux_mean = f_ux(ZS[i])
 
         mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
         mag_fluc_horz_vel_i = np.subtract(mag_horz_vel_i,ux_mean)
@@ -70,13 +70,13 @@ def Update(it):
                 Iy+=(Uijk*k*dA)
                 Iz+=(Uijk*j*dA)
 
-                if U_pri_ijk >= 0.7:
+                if U_pri_ijk > 0.7:
                     plt.plot(ys[ijk],zs[ijk],"ok")
                     AH+=dA
                     IyH+=(Uijk*k*dA)
                     IzH+=(Uijk*j*dA)
                     UxH.append(Uijk)
-                elif U_pri_ijk <= -0.7:
+                elif U_pri_ijk < -0.7:
                     AL+=dA
                     IyL+=(Uijk*k*dA)
                     IzL+=(Uijk*j*dA)
@@ -176,6 +176,8 @@ phi = np.radians(-29)
 xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
 ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
 zs = zo - rotor_coordiates[2]
+
+ZS = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
 
 dy = (max(ys) - min(ys))/x
 dz = (max(zs) - min(zs))/y
