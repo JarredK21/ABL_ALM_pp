@@ -79,22 +79,22 @@ def Update(it):
         ijk+=1
 
     if len(UxH) > 0:
-        UxH = np.average(UxH)
+        UxH_avg = np.average(UxH)
     else:
-        UxH = 0
+        UxH_avg = 0
 
     if len(UxL) > 0:
-        UxL = np.average(UxL)
+        UxL_avg = np.average(UxL)
     else:
-        UxL = 0
+        UxL_avg = 0
 
     if len(UxI) > 0:
-        UxI = np.average(UxI)
+        UxI_avg = np.average(UxI)
     else:
-        UxI = 0
+        UxI_avg = 0
 
 
-    return AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy,Iz,UxH,UxL,UxI
+    return AH,AL,AI,IyH,IyL,IyI,IzH,IzL,IzI,Iy,Iz,UxH_avg,UxL_avg,UxI_avg
 
 
 
@@ -211,6 +211,10 @@ with Pool() as pool:
         Iz_High_arr.append(IzH); Iz_Low_arr.append(IzL); Iz_Int_arr.append(IzI)
         Ux_High_arr.append(UxH_it); Ux_Low_arr.append(UxL_it); Ux_Int_arr.append(UxI_it)
         Iy_arr.append(Iy_it); Iz_arr.append(Iz_it)
+
+        print(UxH_it)
+        print(UxL_it)
+        print(UxI_it)
 
         print("line 188",time.time()-start_time)
         it+=1
