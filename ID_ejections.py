@@ -85,7 +85,7 @@ Time = np.array(a.variables["time"])
 dt = Time[1] - Time[0]
 tstart = 38000
 tstart_idx = np.searchsorted(Time,tstart)
-tend = 39200
+tend = 39201
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(0, tend_idx-tstart_idx)
 Time = Time[tstart_idx:tend_idx]
@@ -156,7 +156,7 @@ levels = np.concatenate((levs_min,levs_max[1:]))
 print("line 155",levels)
 
 
-folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0/"
+folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0_surface_flucs/"
 isExist = os.path.exists(folder)
 if isExist == False:
     os.makedirs(folder)
@@ -164,7 +164,7 @@ if isExist == False:
 
 #options
 plot_thresholds = True
-output_data = True
+output_data = False
 
 
 def Update(it):
