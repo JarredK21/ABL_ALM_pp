@@ -128,7 +128,7 @@ u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
 v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
 del p
 
-u[u<0]=0; v[v<0] #remove negative velocities
+u[u<0]=0; v[v<0]=0 #remove negative velocities
 
 with Pool() as pool:
     u_pri = []
@@ -164,7 +164,7 @@ if isExist == False:
 
 #options
 plot_thresholds = True
-output_data = False
+output_data = True
 
 
 def Update(it):
@@ -298,7 +298,6 @@ if output_data == True:
 
     #thresholds to output data
     thresholds = np.linspace(cmin,-0.7,8)
-    thresholds = np.append(thresholds,-0.7)
 
     
     for threshold in thresholds:
@@ -307,7 +306,7 @@ if output_data == True:
 
         group = ncfile.createGroup("{}".format(round(abs(threshold),1)))
 
-        A_ejection = group.createVariable("Time_ejection", np.float64, ('sampling'),zlib=True)
+        A_ejection = group.createVariable("Area_ejection", np.float64, ('sampling'),zlib=True)
         H_average = group.createVariable("Average_height", np.float64, ('sampling'),zlib=True)
 
         A_ej = []
