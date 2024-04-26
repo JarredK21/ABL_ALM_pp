@@ -34,14 +34,14 @@ a = Dataset(in_dir+"Dataset.nc")
 Time_OF = np.array(a.variables["time_OF"])
 
 Time_start = 200
-Time_end = 1200
+Time_end = 1201
 
 Time_start_idx = np.searchsorted(Time_OF,Time_start)
 Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
 Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
-time_steps = np.arange(0,len(Time_OF),100)
+time_steps = np.arange(0,len(Time_OF))
 
 Azimuth = np.array(a.variables["Azimuth"][Time_start_idx:Time_end_idx])
 Azimuth = np.radians(Azimuth)

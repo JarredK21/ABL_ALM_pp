@@ -6,6 +6,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
 import statistics
 from scipy.signal import butter,filtfilt
+from scipy import interpolate
 
 
 def low_pass_filter(signal, cutoff,dt):  
@@ -97,6 +98,13 @@ def theta_360(Theta):
             Theta_360.append(theta)
     return Theta_360
 
+
+def tranform_fixed_frame(Y_pri,Z_pri,Theta):
+
+    Y = Y_pri*np.cos(Theta) - Z_pri*np.sin(Theta)
+    Z = Y_pri*np.sin(Theta) + Z_pri*np.cos(Theta)
+
+    return Y,Z
 
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
@@ -202,18 +210,27 @@ I_low_frq, I_low_PSD = temporal_spectra(I_low,dt,Var="I_low")
 I_int_frq, I_int_PSD = temporal_spectra(I_int,dt,Var="Iz_int")
 
 Theta_high = np.degrees(np.arctan2(Iz_high,Iy_high))
+Delta_Theta_high = np.subtract(Theta_high[1:],Theta_high[:-1])
+mu,sd,sk,k = moments(Delta_Theta_high)
+print("stats Delta theta_high ",mu,sd,sk,k)
 Theta_high = theta_360(Theta_high)
 Theta_high = np.radians(np.array(Theta_high))
 mu,sd,sk,k = moments(Theta_high)
 print("stats theta_high ",mu,sd,sk,k)
 
 Theta_low = np.degrees(np.arctan2(Iz_low,Iy_low))
+Delta_Theta_low = np.subtract(Theta_low[1:],Theta_low[:-1])
+mu,sd,sk,k = moments(Delta_Theta_low)
+print("stats Delta theta_low ",mu,sd,sk,k)
 Theta_low = theta_360(Theta_low)
 Theta_low = np.radians(np.array(Theta_low))
 mu,sd,sk,k = moments(Theta_low)
 print("stats theta_low ",mu,sd,sk,k)
 
 Theta_int = np.degrees(np.arctan2(Iz_int,Iy_int))
+Delta_Theta_int = np.subtract(Theta_int[1:],Theta_int[:-1])
+mu,sd,sk,k = moments(Delta_Theta_int)
+print("stats Delta theta_int ",mu,sd,sk,k)
 Theta_int = theta_360(Theta_int)
 Theta_int = np.radians(np.array(Theta_int))
 mu,sd,sk,k = moments(Theta_int)
@@ -226,8 +243,14 @@ Theta_int_frq, Theta_int_PSD = temporal_spectra(Theta_int,dt,Var="Theta_int")
 
 
 Ux_high = np.array(a.variables["Ux_high"][Time_start_idx:])
+mu,sd,sk,k = moments(Ux_high)
+print("stats Ux_high ",mu,sd,sk,k)
 Ux_low = np.array(a.variables["Ux_low"][Time_start_idx:])
+mu,sd,sk,k = moments(Ux_low)
+print("stats Ux_low ",mu,sd,sk,k)
 Ux_int = np.array(a.variables["Ux_int"][Time_start_idx:])
+mu,sd,sk,k = moments(Ux_int)
+print("stats Ux_int ",mu,sd,sk,k)
 
 Ux_high_frq, Ux_high_PSD = temporal_spectra(Ux_high,dt,Var="Ux_high")
 Ux_low_frq, Ux_low_PSD = temporal_spectra(Ux_low,dt,Var="Ux_low")
@@ -242,9 +265,13 @@ print("stats I ",mu,sd,sk,k)
 I_frq, I_PSD = temporal_spectra(I,dt,Var="I")
 
 Theta = np.degrees(np.arctan2(Iz,Iy))
+Delta_Theta = np.subtract(Theta[1:],Theta[:-1])
+mu,sd,sk,k = moments(Delta_Theta)
+print("stats Delta theta ",mu,sd,sk,k)
 Theta = theta_360(Theta)
 Theta = np.radians(np.array(Theta))
 
+Theta_frq, Theta_PSD = temporal_spectra(Theta,dt,Var="Delta_Theta")
 
 A_rot = np.pi*63**2
 
@@ -263,6 +290,38 @@ P_low_Iz = np.true_divide(Iz_low,Iz)
 P_int_Iz = np.true_divide(Iz_int,Iz)
 P_Tot_Iz = np.add(np.add(P_high_Iz,P_low_Iz),P_int_Iz)
 
+P_Tot_I = np.true_divide(np.square(Iy_high),np.square(I)) + np.true_divide(np.square(Iy_low),np.square(I)) + np.true_divide(np.square(Iy_int),np.square(I)) \
+    + np.true_divide((2*Iy_high*Iy_low),np.square(I)) + np.true_divide((2*Iy_high*Iy_int),np.square(I)) + np.true_divide((2*Iy_low*Iy_int),np.square(I)) + \
+    np.true_divide(np.square(Iz_high),np.square(I)) + np.true_divide(np.square(Iz_low),np.square(I)) + np.true_divide(np.square(Iz_int),np.square(I)) \
+        + np.true_divide((2*Iz_high*Iz_low),np.square(I)) + np.true_divide((2*Iz_high*Iz_int),np.square(I)) + np.true_divide((2*Iz_low*Iz_int),np.square(I))
+
+
+PIy_high = np.true_divide(np.square(Iy_high),np.square(I))
+PIy_low = np.true_divide(np.square(Iy_low),np.square(I))
+PIy_int = np.true_divide(np.square(Iy_int),np.square(I))
+PIy_high_low = np.true_divide((2*Iy_high*Iy_low),np.square(I))
+PIy_high_int = np.true_divide((2*Iy_high*Iy_int),np.square(I))
+PIy_low_int = np.true_divide((2*Iy_low*Iy_int),np.square(I))
+PIz_high = np.true_divide(np.square(Iz_high),np.square(I))
+PIz_low = np.true_divide(np.square(Iz_low),np.square(I))
+PIz_int = np.true_divide(np.square(Iz_int),np.square(I))
+PIz_high_low = np.true_divide((2*Iz_high*Iz_low),np.square(I))
+PIz_high_int = np.true_divide((2*Iz_high*Iz_int),np.square(I))
+PIz_low_int = np.true_divide((2*Iz_low*Iz_int),np.square(I))
+
+PI_high = PIy_high + PIz_high
+PI_low = PIy_low + PIz_low
+PI_int = PIy_int + PIz_int
+PI_high_low = PIy_high_low + PIz_high_low
+PI_high_int = PIy_high_int + PIz_high_int
+PI_low_int = PIy_low_int + PIz_low_int
+
+I_high = np.square(Iy_high) + np.square(Iz_high)
+I_low = np.square(Iy_low) + np.square(Iz_low)
+I_int = np.square(Iy_int) + np.square(Iz_int)
+I_high_low = 2*Iy_high*Iy_low + 2*Iz_high*Iz_low
+I_high_int = 2*Iy_high*Iy_int + 2*Iz_high*Iz_int
+I_low_int = 2*Iy_low*Iy_int + 2*Iz_low*Iz_int
 
 
 df = Dataset(in_dir+"Dataset.nc")
@@ -286,13 +345,23 @@ print("I_high cc with I ",correlation_coef(I,I_high))
 print("I_low cc with I ",correlation_coef(I,I_low))
 print("I_int cc with I ",correlation_coef(I,I_int))
 
+print("I_high cc with I_low ",correlation_coef(I_high,I_low))
+print("I_high cc with I_int ",correlation_coef(I_high,I_int))
+print("I_low cc with I_int ",correlation_coef(I_low,I_int))
+
 print("A_high cc with A_low ",correlation_coef(A_high,A_low))
 print("A_high cc with A_int ",correlation_coef(A_high,A_int))
 print("A_low cc with A_int ",correlation_coef(A_low,A_int))
 
 Delta_I_high_low = np.subtract(I_high,I_low)
+mu,sd,sk,k = moments(Delta_I_high_low)
+print("stats Delta_I_high_low ",mu,sd,sk,k)
 Delta_I_high_int = np.subtract(I_high,I_int)
+mu,sd,sk,k = moments(Delta_I_high_int)
+print("stats Delta_I_high_int ",mu,sd,sk,k)
 Delta_I_low_int = np.subtract(I_low,I_int)
+mu,sd,sk,k = moments(Delta_I_low_int)
+print("stats Delta_I_low_int ",mu,sd,sk,k)
 
 print("mode Delta I High-low = ",statistics.mode(Delta_I_high_low))
 print("mode Delta I High-int = ",statistics.mode(Delta_I_high_int))
@@ -306,15 +375,23 @@ Delta_Theta_high_low[Delta_Theta_high_low<0]+=360
 Delta_Theta_high_int[Delta_Theta_high_int<0]+=360
 Delta_Theta_low_int[Delta_Theta_low_int<0]+=360
 
+mu,sd,sk,k = moments(Delta_Theta_high_low)
+print("stats Delta_Theta_high_low ",mu,sd,sk,k)
+mu,sd,sk,k = moments(Delta_Theta_high_int)
+print("stats Delta_Theta_high_int ",mu,sd,sk,k)
+mu,sd,sk,k = moments(Delta_Theta_low_int)
+print("stats Delta_Theta_low_int ",mu,sd,sk,k)
+
 print("mode Delta Theta High-low = ",statistics.mode(Delta_Theta_high_low))
 print("mode Delta Theta High-int = ",statistics.mode(Delta_Theta_high_int))
 print("mode Delta Theta low_int = ",statistics.mode(Delta_Theta_low_int))
 
-update_polar_plots = False
+
+update_polar_Asymmetry = False
 update_pdf_plots = True
 
 
-def Update(it):
+def Update_Asymmetry(it):
 
     if it < 10:
         Time_idx = "000{}".format(it)
@@ -344,54 +421,21 @@ def Update(it):
     return T
 
 
-if update_polar_plots == True:
+
+if update_polar_Asymmetry == True:
     out_dir = in_dir+"Asymmetry_analysis/polar_asymmetry/"
     with Pool() as pool:
-        for T in pool.imap(Update,Time_steps):
+        for T in pool.imap(Update_Asymmetry,Time_steps):
 
             print(T)
+
+
 
 if update_pdf_plots == True:
     out_dir = in_dir+"Asymmetry_analysis/"
     with PdfPages(out_dir+'Eddy_analysis.pdf') as pdf:
 
         plt.rcParams['font.size'] = 14
-
-        #correlating Iy from original with new data
-        cc = round(correlation_coef(Iy,Iy_df),2)
-        fig,ax = plt.subplots(figsize=(14,8))
-
-        ax.plot(Time,Iy,'-b')
-        ax.set_ylabel("Iy [$m^4/s$]",fontsize=14)
-        ax.yaxis.label.set_color('blue')
-        ax2 = ax.twinx()
-        ax2.plot(Time_sampling,Iy_df,"-r")
-        ax2.set_ylabel("Iy dataset [$m^4/s$]",fontsize=14)
-        ax2.yaxis.label.set_color('red')
-        plt.title("Correlation coefficient {}".format(cc),fontsize=16)
-        ax.set_xlabel("Time [s]",fontsize=16)
-        plt.tight_layout()
-        plt.grid()
-        pdf.savefig()
-        plt.close()
-
-        #correlating Iz from original with new data
-        cc = round(correlation_coef(Iz,Iz_df),2)
-        fig,ax = plt.subplots(figsize=(14,8))
-
-        ax.plot(Time,Iz,'-b')
-        ax.set_ylabel("Iz [$m^4/s$]",fontsize=14)
-        ax.yaxis.label.set_color('blue')
-        ax2 = ax.twinx()
-        ax2.plot(Time_sampling,Iz_df,"-r")
-        ax2.set_ylabel("Iz Dataset [$m^4/s$]",fontsize=14)
-        ax2.yaxis.label.set_color('red')
-        plt.title("Correlation coefficient {}".format(cc),fontsize=16)
-        ax.set_xlabel("Time [s]",fontsize=16)
-        plt.tight_layout()
-        plt.grid()
-        pdf.savefig()
-        plt.close()
 
         #plotting joint areas
         fig,ax = plt.subplots(figsize=(14,8))
@@ -469,20 +513,34 @@ if update_pdf_plots == True:
         pdf.savefig()
         plt.close()
 
-        #plotting area spectra separately
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
 
-        ax1.loglog(A_high_frq,A_high_PSD)
-        ax2.loglog(A_low_frq,A_low_PSD)
-        ax3.loglog(A_int_frq,A_int_PSD)
-        ax1.set_title("High speed areas [$m^2$]",fontsize=14)
-        ax2.set_title("Low speed areas [$m^2$]",fontsize=14)
-        ax3.set_title("Intermediate speed areas [$m^2$]",fontsize=14)
-        fig.supxlabel("Frequency [Hz]",fontsize=16)
+        #individual A high spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(A_high_frq,A_high_PSD)
+        plt.ylabel("PSD High speed areas [$m^2$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
         plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
+        pdf.savefig()
+        plt.close()
+
+        #individual A low spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(A_low_frq,A_low_PSD)
+        plt.ylabel("PSD Low speed areas [$m^2$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #individual A int spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(A_int_frq,A_int_PSD)
+        plt.ylabel("PSD Intermediate speed areas [$m^2$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
         pdf.savefig()
         plt.close()
 
@@ -536,26 +594,6 @@ if update_pdf_plots == True:
         plt.legend(["High speed area", "Low speed area", "intermediate area"])
         plt.tight_layout()
         plt.grid()
-        pdf.savefig()
-        plt.close()
-
-        #plotting PDF of area separately
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
-
-        P,X = probability_dist(A_high)
-        ax1.plot(X,P)
-        P,X = probability_dist(A_low)
-        ax2.plot(X,P)
-        P,X = probability_dist(A_int)
-        ax3.plot(X,P)
-        ax1.set_title("Area - high speed areas [$m^2$]",fontsize=14)
-        ax2.set_title("Area - low speed areas [$m^2$]",fontsize=14)
-        ax3.set_title("Area - intermediate speed areas [$m^2$]",fontsize=14)
-        fig.supylabel("Probability [-]",fontsize=16)
-        plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
         pdf.savefig()
         plt.close()
         
@@ -665,20 +703,33 @@ if update_pdf_plots == True:
         pdf.savefig()
         plt.close()
 
-        #Iy spectra plotted separately
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
-
-        ax1.loglog(Iy_high_frq,Iy_high_PSD)
-        ax2.loglog(Iy_low_frq,Iy_low_PSD)
-        ax3.loglog(Iy_int_frq,Iy_int_PSD)
-        ax1.set_title("Asymmetry around y axis - high speed area [$m^4/s$]",fontsize=14)
-        ax2.set_title("Asymmetry around y axis - low speed area [$m^4/s$]",fontsize=14)
-        ax3.set_title("Asymmetry around y axis - intermediate speed area [$m^4/s$]",fontsize=14)
-        fig.supxlabel("Frequency [Hz]",fontsize=16)
+        #individual Iy high spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Iy_high_frq,Iy_high_PSD)
+        plt.ylabel("PSD Asymmetry around y axis \nHigh speed areas [$m^4/s$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
         plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
+        pdf.savefig()
+        plt.close()
+
+        #individual Iy low spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Iy_low_frq,Iy_low_PSD)
+        plt.ylabel("PSD Asymmetry around y axis \nLow speed areas [$m^4/s$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #individual Iy low spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Iy_int_frq,Iy_int_PSD)
+        plt.ylabel("PSD Asymmetry around y axis \nIntermediate speed areas [$m^4/s$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
         pdf.savefig()
         plt.close()
 
@@ -697,26 +748,6 @@ if update_pdf_plots == True:
         plt.legend(["High speed area", "Low speed area", "intermediate area"])
         plt.tight_layout()
         plt.grid()
-        pdf.savefig()
-        plt.close()
-
-        #plotting PDF of Iy separately
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
-
-        P,X = probability_dist(Iy_high)
-        ax1.plot(X,P)
-        P,X = probability_dist(Iy_low)
-        ax2.plot(X,P)
-        P,X = probability_dist(Iy_int)
-        ax3.plot(X,P)
-        ax1.set_title("Asymmetry around y axis - high speed areas [$m^4/s$]",fontsize=14)
-        ax2.set_title("Asymmetry around y axis - low speed areas [$m^4/s$]",fontsize=14)
-        ax3.set_title("Asymmetry around y axis - intermediate speed areas [$m^4/s$]",fontsize=14)
-        fig.supylabel("Probability [-]",fontsize=16)
-        plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
         pdf.savefig()
         plt.close()
 
@@ -828,26 +859,6 @@ if update_pdf_plots == True:
         pdf.savefig()
         plt.close()
 
-        #plotting PDF of Iz separately
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
-
-        P,X = probability_dist(Iz_high)
-        ax1.plot(X,P)
-        P,X = probability_dist(Iz_low)
-        ax2.plot(X,P)
-        P,X = probability_dist(Iz_int)
-        ax3.plot(X,P)
-        ax1.set_title("Asymmetry around z axis - high speed areas [$m^4/s$]",fontsize=14)
-        ax2.set_title("Asymmetry around z axis - low speed areas [$m^4/s$]",fontsize=14)
-        ax3.set_title("Asymmetry around z axis - intermediate speed areas [$m^4/s$]",fontsize=14)
-        fig.supylabel("Probability [-]",fontsize=16)
-        plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
-        pdf.savefig()
-        plt.close()
-
         #Iz spectra plotted joint
         fig,ax = plt.subplots(figsize=(14,8))
 
@@ -862,20 +873,33 @@ if update_pdf_plots == True:
         pdf.savefig()
         plt.close()
 
-        #Iz spectra plotted separetly
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
-
-        ax1.loglog(Iz_high_frq,Iz_high_PSD)
-        ax2.loglog(Iz_low_frq,Iz_low_PSD)
-        ax3.loglog(Iz_int_frq,Iz_int_PSD)
-        ax1.set_title("Asymmetry around z axis - high speed area [$m^4/s$]",fontsize=14)
-        ax2.set_title("Asymmetry around z axis - low speed area [$m^4/s$]",fontsize=14)
-        ax3.set_title("Asymmetry around z axis - intermediate speed area [$m^4/s$]",fontsize=14)
-        fig.supxlabel("Frequency [Hz]",fontsize=16)
+        #individual Iz high spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Iz_high_frq,Iz_high_PSD)
+        plt.ylabel("PSD Asymmetry around z axis \nHigh speed areas [$m^4/s$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
         plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
+        pdf.savefig()
+        plt.close()
+
+        #individual Iz low spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Iz_low_frq,Iz_low_PSD)
+        plt.ylabel("PSD Asymmetry around z axis \nLow speed areas [$m^4/s$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #individual Iz int spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Iz_int_frq,Iz_int_PSD)
+        plt.ylabel("PSD Asymmetry around z axis \nIntermediate speed areas [$m^4/s$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
         pdf.savefig()
         plt.close()
 
@@ -889,27 +913,65 @@ if update_pdf_plots == True:
         pdf.savefig()
         plt.close()
 
+        #I components contributions plotted
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,PI_high,"-r")
+        plt.plot(Time,PI_low,"-b")
+        plt.plot(Time,PI_int,"-g")
+        plt.plot(Time,PI_high_low,"-m")
+        plt.plot(Time,PI_high_int,"-y")
+        plt.plot(Time,PI_low_int,"-c")
+        plt.plot(Time,P_Tot_I,"-k")
+        plt.ylim([-10,10])
+        plt.grid()
+        plt.xlabel("Time [s]")
+        plt.ylabel("Contribution to Magnitude Asymmetry vector [-]")
+        plt.legend(["high", "low", "int", "highlow", "highint", "lowint","Total"])
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+
+        #I components plotted
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,I_high,"-r")
+        plt.plot(Time,I_low,"-b")
+        plt.plot(Time,I_int,"-g")
+        plt.plot(Time,I_high_low,"-m")
+        plt.plot(Time,I_high_int,"-y")
+        plt.plot(Time,I_low_int,"-c")
+        plt.grid()
+        plt.xlabel("Time [s]")
+        plt.ylabel("Contribution to Magnitude Asymmetry vector squared [$m^8/s^2$]")
+        plt.legend(["high", "low", "int", "highlow", "highint", "lowint"])
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
 
         #I plotted separately
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
+        fig,(ax1,ax2,ax3,ax4,ax5,ax6) = plt.subplots(6,1,figsize=(14,8))
 
         ax1.plot(Time,I_high)
-        ax1.axhline(y=np.mean(I_high),linestyle="--",color="k")
-        ax1.axhline(y=np.mean(I_high)+np.std(I_high),color="r")
         ax2.plot(Time,I_low)
-        ax2.axhline(y=np.mean(I_low),linestyle="--",color="k")
-        ax2.axhline(y=np.mean(I_low)+np.std(I_low),color="r")
         ax3.plot(Time,I_int)
-        ax3.axhline(y=np.mean(I_int),linestyle="--",color="k")
-        ax3.axhline(y=np.mean(I_int)+np.std(I_int),color="r")
-        ax1.set_title("Magnitude Asymmetry vector - high speed area [$m^4/s$]",fontsize=14)
-        ax2.set_title("Magnitude Asymmetry vector - low speed area [$m^4/s$]",fontsize=14)
-        ax3.set_title("Magnitude Asymmetry vector - intermediate speed area [$m^4/s$]",fontsize=14)
+        ax4.plot(Time,I_high_low)
+        ax5.plot(Time,I_high_int)
+        ax6.plot(Time,I_low_int)
+        ax1.set_title("Magnitude Asymmetry vector squared - high speed area [$m^4/s$]",fontsize=14)
+        ax2.set_title("Magnitude Asymmetry vector squared - low speed area [$m^4/s$]",fontsize=14)
+        ax3.set_title("Magnitude Asymmetry vector squared - intermediate speed area [$m^4/s$]",fontsize=14)
+        ax4.set_title("Magnitude Asymmetry vector squared - highlow cross area [$m^4/s$]",fontsize=14)
+        ax5.set_title("Magnitude Asymmetry vector squared - highint cross area [$m^4/s$]",fontsize=14)
+        ax6.set_title("Magnitude Asymmetry vector squared - lowint cross area [$m^4/s$]",fontsize=14)
         fig.supxlabel("Time [s]",fontsize=16)
         plt.tight_layout()
         ax1.grid()
         ax2.grid()
         ax3.grid()
+        ax4.grid()
+        ax5.grid()
+        ax6.grid()
         pdf.savefig()
         plt.close()
 
@@ -946,31 +1008,13 @@ if update_pdf_plots == True:
         ax.plot(X,P,'-b')
         P,X = probability_dist(I_int)
         ax.plot(X,P,'-g')
+        P,X = probability_dist(I)
+        ax.plot(X,P, "-k")
         ax.set_ylabel("Probability [-]",fontsize=14)
         ax.set_xlabel("Magnitude Asymmetry vector [$m^4/s$]",fontsize=16)
-        plt.legend(["High speed area", "Low speed area", "intermediate area"])
+        plt.legend(["High speed area", "Low speed area", "intermediate area","Total"])
         plt.tight_layout()
         plt.grid()
-        pdf.savefig()
-        plt.close()
-
-        #plotting PDF of I separately
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
-
-        P,X = probability_dist(I_high)
-        ax1.plot(X,P)
-        P,X = probability_dist(I_low)
-        ax2.plot(X,P)
-        P,X = probability_dist(I_int)
-        ax3.plot(X,P)
-        ax1.set_title("Magnitude Asymmetry vector - high speed areas [$m^4/s$]",fontsize=14)
-        ax2.set_title("Magnitude Asymmetry vector - low speed areas [$m^4/s$]",fontsize=14)
-        ax3.set_title("Magnitude Asymmetry vector - intermediate speed areas [$m^4/s$]",fontsize=14)
-        fig.supylabel("Probability [-]",fontsize=16)
-        plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
         pdf.savefig()
         plt.close()
 
@@ -988,51 +1032,74 @@ if update_pdf_plots == True:
         pdf.savefig()
         plt.close()
 
-        #I spectra plotted separetly
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
-
-        ax1.loglog(I_high_frq,I_high_PSD)
-        ax2.loglog(I_low_frq,I_low_PSD)
-        ax3.loglog(I_int_frq,I_int_PSD)
-        ax1.set_title("Magnitude Asymmetry vector - high speed area [$m^4/s$]",fontsize=14)
-        ax2.set_title("Magnitude Asymmetry vector - low speed area [$m^4/s$]",fontsize=14)
-        ax3.set_title("Magnitude Asymmetry vector - intermediate speed area [$m^4/s$]",fontsize=14)
-        fig.supxlabel("Frequency [Hz]",fontsize=16)
+        #individual I high spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(I_high_frq,I_high_PSD)
+        plt.ylabel("PSD Magnitude Asymmetry vector \nHigh speed areas [$m^4/s$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
         plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
         pdf.savefig()
         plt.close()
 
-
-
-        #direction asymmetry vector
+        #individual I low spectra
         fig = plt.figure(figsize=(14,8))
-        plt.plot(Time,Theta)
-        plt.xlabel("Time [s]")
-        plt.ylabel("Direction Asymmetry vector [rad]")
+        plt.loglog(I_low_frq,I_low_PSD)
+        plt.ylabel("PSD Magnitude Asymmetry vector \nLow speed areas [$m^4/s$]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #individual I int spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(I_int_frq,I_int_PSD)
+        plt.ylabel("PSD Magnitude Asymmetry vector \nIntermediate speed areas [$m^4/s$]")
+        plt.xlabel("Frequency [Hz]")
         plt.grid()
         plt.tight_layout()
         pdf.savefig()
         plt.close()
 
 
-        #direction plotted separately
+
+        #Change in direction asymmetry vector
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time[1:],Delta_Theta)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Change in the Direction of the Asymmetry vector [deg]")
+        plt.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #Spectra change in direction asymmetry vector
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Theta_frq,Theta_PSD)
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("PSD Change in the Direction of the Asymmetry vector [deg]")
+        plt.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+
+        #change in direction plotted separately
         fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
 
-        ax1.plot(Time,Theta_high)
-        ax1.axhline(y=np.mean(Theta_high),linestyle="--",color="k")
-        ax1.axhline(y=np.mean(Theta_high)+np.std(Theta_high),color="r")
-        ax2.plot(Time,Theta_low)
-        ax2.axhline(y=np.mean(Theta_low),linestyle="--",color="k")
-        ax2.axhline(y=np.mean(Theta_low)+np.std(Theta_low),color="r")
-        ax3.plot(Time,Theta_int)
-        ax3.axhline(y=np.mean(Theta_int),linestyle="--",color="k")
-        ax3.axhline(y=np.mean(Theta_int)+np.std(Theta_int),color="r")
-        ax1.set_title("Direction Asymmetry vector - high speed area [rad]",fontsize=14)
-        ax2.set_title("Direction Asymmetry vector - low speed area [rad]",fontsize=14)
-        ax3.set_title("Direction Asymmetry vector - intermediate speed area [rad]",fontsize=14)
+        ax1.plot(Time[1:],Delta_Theta_high)
+        ax1.axhline(y=np.mean(Delta_Theta_high),linestyle="--",color="k")
+        ax1.axhline(y=np.mean(Delta_Theta_high)+np.std(Delta_Theta_high),color="r")
+        ax2.plot(Time[1:],Delta_Theta_low)
+        ax2.axhline(y=np.mean(Delta_Theta_low),linestyle="--",color="k")
+        ax2.axhline(y=np.mean(Delta_Theta_low)+np.std(Delta_Theta_low),color="r")
+        ax3.plot(Time[1:],Delta_Theta_int)
+        ax3.axhline(y=np.mean(Delta_Theta_int),linestyle="--",color="k")
+        ax3.axhline(y=np.mean(Delta_Theta_int)+np.std(Delta_Theta_int),color="r")
+        ax1.set_title("Change in the Direction of the Asymmetry vector\n high speed area [deg]",fontsize=14)
+        ax2.set_title("Change in the Direction of the Asymmetry vector\n low speed area [deg]",fontsize=14)
+        ax3.set_title("Change in the Direction of the Asymmetry vector\n intermediate speed area [deg]",fontsize=14)
         fig.supxlabel("Time [s]",fontsize=16)
         plt.tight_layout()
         ax1.grid()
@@ -1042,40 +1109,22 @@ if update_pdf_plots == True:
         plt.close()
 
 
-        #PDF direction joint
+        #PDF change in direction joint
         fig,ax = plt.subplots(figsize=(14,8))
 
-        P,X = probability_dist(Theta_high)
+        P,X = probability_dist(Delta_Theta_high)
         ax.plot(X,P,'-r')
-        P,X = probability_dist(Theta_low)
+        P,X = probability_dist(Delta_Theta_low)
         ax.plot(X,P,'-b')
-        P,X = probability_dist(Theta_int)
+        P,X = probability_dist(Delta_Theta_int)
         ax.plot(X,P,'-g')
+        P,X = probability_dist(Delta_Theta)
+        ax.plot(X,P,"-k")
         ax.set_ylabel("Probability [-]",fontsize=14)
-        ax.set_xlabel("Direction Asymmetry vector [rad]",fontsize=16)
-        plt.legend(["High speed area", "Low speed area", "intermediate area"])
+        ax.set_xlabel("Change in Direction of the Asymmetry vector [deg]",fontsize=16)
+        plt.legend(["High speed area", "Low speed area", "intermediate area","Total"])
         plt.tight_layout()
         plt.grid()
-        pdf.savefig()
-        plt.close()
-
-        #plotting PDF of direction separately
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
-
-        P,X = probability_dist(Theta_high)
-        ax1.plot(X,P)
-        P,X = probability_dist(Theta_low)
-        ax2.plot(X,P)
-        P,X = probability_dist(Theta_int)
-        ax3.plot(X,P)
-        ax1.set_title("Direction Asymmetry vector - high speed areas [rad]",fontsize=14)
-        ax2.set_title("Direction Asymmetry vector - low speed areas [rad]",fontsize=14)
-        ax3.set_title("Direction Asymmetry vector - intermediate speed areas [rad]",fontsize=14)
-        fig.supylabel("Probability [-]",fontsize=16)
-        plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
         pdf.savefig()
         plt.close()
 
@@ -1085,7 +1134,7 @@ if update_pdf_plots == True:
         ax.loglog(Theta_high_frq,Theta_high_PSD,'-r')
         ax.loglog(Theta_low_frq,Theta_low_PSD,"-b")
         ax.loglog(Theta_int_frq,Theta_int_PSD,"-g")
-        ax.set_ylabel("Direction Asymmetry vector [rad]",fontsize=14)
+        ax.set_ylabel("Change in the Direction of the Asymmetry vector [deg]",fontsize=14)
         ax.set_xlabel("Frequency [Hz]",fontsize=16)
         plt.legend(["High speed area", "Low speed area", "intermediate area"])
         plt.tight_layout()
@@ -1093,24 +1142,35 @@ if update_pdf_plots == True:
         pdf.savefig()
         plt.close()
 
-        #Direction spectra plotted separetly
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
-
-        ax1.loglog(Theta_high_frq,Theta_high_PSD)
-        ax2.loglog(Theta_low_frq,Theta_low_PSD)
-        ax3.loglog(Theta_int_frq,Theta_int_PSD)
-        ax1.set_title("Direction Asymmetry vector - high speed area [rad]",fontsize=14)
-        ax2.set_title("Direction Asymmetry vector - low speed area [rad]",fontsize=14)
-        ax3.set_title("Direction Asymmetry vector - intermediate speed area [rad]",fontsize=14)
-        fig.supxlabel("Frequency [Hz]",fontsize=16)
+        #individual Delta Theta high spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Theta_high_frq,Theta_high_PSD)
+        plt.ylabel("PSD Change in the Direction of the Asymmetry vector \nHigh speed areas [deg]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
         plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
         pdf.savefig()
         plt.close()
 
+        #individual Delta Theta low spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Theta_low_frq,Theta_low_PSD)
+        plt.ylabel("PSD Change in the Direction of the Asymmetry vector \nLow speed areas [deg]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
 
+        #individual Theta int spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Theta_int_frq,Theta_int_PSD)
+        plt.ylabel("PSD Change in the Direction of the Asymmetry vector \nIntermediate speed areas [deg]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
 
             
         #average velocity plotted joint
@@ -1161,132 +1221,149 @@ if update_pdf_plots == True:
         pdf.savefig()
         plt.close()
 
-        #average velocity spectra plotted separely
-        fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
-
-        ax1.loglog(Ux_high_frq,Ux_high_PSD)
-        ax2.loglog(Ux_low_frq,Ux_low_PSD)
-        ax3.loglog(Ux_int_frq,Ux_int_PSD)
-        ax1.set_title("average velocity - high speed area [m/s]",fontsize=14)
-        ax2.set_title("average velocity - low speed area [m/s]",fontsize=14)
-        ax3.set_title("average velocity - intermediate speed area [m/s]",fontsize=14)
-        fig.supxlabel("Frequency [Hz]",fontsize=16)
+        #individual Ux high spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Ux_high_frq,Ux_high_PSD)
+        plt.ylabel("PSD Average velocity \nHigh speed areas [m/s]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
         plt.tight_layout()
-        ax1.grid()
-        ax2.grid()
-        ax3.grid()
+        pdf.savefig()
+        plt.close()
+
+        #individual Ux low spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Ux_low_frq,Ux_low_PSD)
+        plt.ylabel("PSD Average velocity \nLow speed areas [m/s]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #individual Ux int spectra
+        fig = plt.figure(figsize=(14,8))
+        plt.loglog(Ux_int_frq,Ux_int_PSD)
+        plt.ylabel("PSD Average velocity \nIntermediate speed areas [m/s]")
+        plt.xlabel("Frequency [Hz]")
+        plt.grid()
+        plt.tight_layout()
         pdf.savefig()
         plt.close()
 
 
         #eddy contribution to Iy
-        fig = plt.figure(figsize=(14,8))
-        plt.plot(Time_sampling,Iy,"-k")
+        for alpha in [2,5,10]:
+            fig = plt.figure(figsize=(14,8))
+            plt.plot(Time_sampling,Iy,"-k")
 
 
-        high = 0
-        low = 0
-        int = 0
-        high_low = 0
-        high_int = 0
-        low_int = 0
-        high_low_int = 0
+            high = 0
+            low = 0
+            int = 0
+            high_low = 0
+            high_int = 0
+            low_int = 0
+            high_low_int = 0
 
-        alpha = 10
-        for it in Time_steps:
+            for it in Time_steps:
 
-            if abs(Iy_high[it]) > alpha*abs(Iy_low[it]) and abs(Iy_high[it]) > alpha*abs(Iy_int[it]):
-                plt.plot(Time[it],Iy[it],"or",markersize=4)
-                high+=dt
-            elif abs(Iy_low[it]) > alpha*abs(Iy_high[it]) and abs(Iy_low[it]) > alpha*abs(Iy_int[it]):
-                plt.plot(Time[it],Iy[it],"ob",markersize=4)
-                low+=dt
-            elif abs(Iy_int[it]) > alpha*abs(Iy_high[it]) and abs(Iy_int[it]) > alpha*abs(Iy_low[it]):
-                plt.plot(Time[it],Iy[it],"og",markersize=4)
-                int+=dt
-            elif abs(Iy_high[it]) <= alpha*abs(Iy_low[it]) and abs(Iy_high[it]) > alpha*abs(Iy_int[it]):
-                plt.plot(Time[it],Iy[it],"*m",markersize=4)
-                high_low+=dt
-            elif abs(Iy_high[it]) <= alpha*abs(Iy_int[it]) and abs(Iy_high[it]) > alpha*abs(Iy_low[it]):
-                plt.plot(Time[it],Iy[it],"vy",markersize=4)
-                high_int+=dt
-            elif abs(Iy_low[it]) <= alpha*abs(Iy_int[it]) and abs(Iy_low[it]) > alpha*abs(Iy_high[it]):
-                plt.plot(Time[it],Iy[it],">c",markersize=5)
-                low_int+=dt
-            else:
-                plt.plot(Time[it],Iy[it],"<k",markersize=5)
-                high_low_int+=dt
+                if abs(Iy_high[it]) > alpha*abs(Iy_low[it]) and abs(Iy_high[it]) > alpha*abs(Iy_int[it]):
+                    plt.plot(Time[it],Iy[it],"or",markersize=4)
+                    high+=dt
+                elif abs(Iy_low[it]) > alpha*abs(Iy_high[it]) and abs(Iy_low[it]) > alpha*abs(Iy_int[it]):
+                    plt.plot(Time[it],Iy[it],"ob",markersize=4)
+                    low+=dt
+                elif abs(Iy_int[it]) > alpha*abs(Iy_high[it]) and abs(Iy_int[it]) > alpha*abs(Iy_low[it]):
+                    plt.plot(Time[it],Iy[it],"og",markersize=4)
+                    int+=dt
+                elif abs(Iy_high[it]) <= alpha*abs(Iy_low[it]) and abs(Iy_high[it]) > alpha*abs(Iy_int[it]) or abs(Iy_low[it]) <= alpha*abs(Iy_high[it]) and abs(Iy_low[it]) > alpha*abs(Iy_int[it]):
+                    plt.plot(Time[it],Iy[it],"*m",markersize=4)
+                    high_low+=dt
+                elif abs(Iy_high[it]) <= alpha*abs(Iy_int[it]) and abs(Iy_high[it]) > alpha*abs(Iy_low[it]) or abs(Iy_int[it]) <= alpha*abs(Iy_high[it]) and abs(Iy_int[it]) > alpha*abs(Iy_low[it]):
+                    plt.plot(Time[it],Iy[it],"vy",markersize=4)
+                    high_int+=dt
+                elif abs(Iy_low[it]) <= alpha*abs(Iy_int[it]) and abs(Iy_low[it]) > alpha*abs(Iy_high[it]) or abs(Iy_int[it]) <= alpha*abs(Iy_low[it]) and abs(Iy_int[it]) > alpha*abs(Iy_high[it]):
+                    plt.plot(Time[it],Iy[it],">c",markersize=5)
+                    low_int+=dt
+                else:
+                    plt.plot(Time[it],Iy[it],"<k",markersize=5)
+                    high_low_int+=dt
 
-        plt.xlabel("Time [s]")
-        plt.ylabel("Asymmetry around y axis [$m^4/s$]")
-        plt.grid()
-        plt.tight_layout()
-        pdf.savefig()
-        plt.close()
+            plt.xlabel("Time [s]")
+            plt.ylabel("Asymmetry around y axis [$m^4/s$]")
+            plt.title("Alpha = {}".format(alpha))
+            plt.grid()
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close()
 
-        t_check = high+low+int+high_low+high_int+low_int+high_low_int
-        print("total time ",t_check)
-        print("1. ",high)
-        print("2. ",low)
-        print("3. ",int)
-        print("4. ",high_low)
-        print("5. ",high_int)
-        print("6. ",low_int)
-        print("7. ",high_low_int)
+            t_check = high+low+int+high_low+high_int+low_int+high_low_int
+            print(alpha)
+            print("total time ",t_check)
+            print("1. ",high)
+            print("2. ",low)
+            print("3. ",int)
+            print("4. ",high_low)
+            print("5. ",high_int)
+            print("6. ",low_int)
+            print("7. ",high_low_int)
 
 
         #eddy contribution to Iz
-        fig = plt.figure(figsize=(14,8))
-        plt.plot(Time_sampling,Iz,"-k")
-        high = 0
-        low = 0
-        int = 0
-        high_low = 0
-        high_int = 0
-        low_int = 0
-        high_low_int = 0
+        for alpha in [2,5,10]:
+            fig = plt.figure(figsize=(14,8))
+            plt.plot(Time_sampling,Iz,"-k")
+            high = 0
+            low = 0
+            int = 0
+            high_low = 0
+            high_int = 0
+            low_int = 0
+            high_low_int = 0
 
-        alpha = 10
-        for it in Time_steps:
+            for it in Time_steps:
 
-            if abs(Iz_high[it]) > alpha*abs(Iz_low[it]) and abs(Iz_high[it]) > alpha*abs(Iz_int[it]):
-                plt.plot(Time[it],Iz[it],"or",markersize=4)
-                high+=dt
-            elif abs(Iz_low[it]) > alpha*abs(Iz_high[it]) and abs(Iz_low[it]) > alpha*abs(Iz_int[it]):
-                plt.plot(Time[it],Iz[it],"ob",markersize=4)
-                low+=dt
-            elif abs(Iz_int[it]) > alpha*abs(Iz_high[it]) and abs(Iz_int[it]) > alpha*abs(Iz_low[it]):
-                plt.plot(Time[it],Iz[it],"og",markersize=4)
-                int+=dt
-            elif abs(Iz_high[it]) <= alpha*abs(Iz_low[it]) and abs(Iz_high[it]) > alpha*abs(Iz_int[it]):
-                plt.plot(Time[it],Iz[it],"*m",markersize=4)
-                high_low+=dt
-            elif abs(Iz_high[it]) <= alpha*abs(Iz_int[it]) and abs(Iz_high[it]) > alpha*abs(Iz_low[it]):
-                plt.plot(Time[it],Iz[it],"vy",markersize=5)
-                high_int+=dt
-            elif abs(Iz_low[it]) <= alpha*abs(Iz_int[it]) and abs(Iz_low[it]) > alpha*abs(Iz_high[it]):
-                plt.plot(Time[it],Iz[it],">c",markersize=5)
-                low_int+=dt
-            else:
-                plt.plot(Time[it],Iz[it],"<k",markersize=4)
-                high_low_int+=dt
+                if abs(Iz_high[it]) > alpha*abs(Iz_low[it]) and abs(Iz_high[it]) > alpha*abs(Iz_int[it]):
+                    plt.plot(Time[it],Iz[it],"or",markersize=4)
+                    high+=dt
+                elif abs(Iz_low[it]) > alpha*abs(Iz_high[it]) and abs(Iz_low[it]) > alpha*abs(Iz_int[it]):
+                    plt.plot(Time[it],Iz[it],"ob",markersize=4)
+                    low+=dt
+                elif abs(Iz_int[it]) > alpha*abs(Iz_high[it]) and abs(Iz_int[it]) > alpha*abs(Iz_low[it]):
+                    plt.plot(Time[it],Iz[it],"og",markersize=4)
+                    int+=dt
+                elif abs(Iz_high[it]) <= alpha*abs(Iz_low[it]) and abs(Iz_high[it]) > alpha*abs(Iz_int[it]) or abs(Iz_low[it]) <= alpha*abs(Iz_high[it]) and abs(Iz_low[it]) > alpha*abs(Iz_int[it]):
+                    plt.plot(Time[it],Iz[it],"*m",markersize=4)
+                    high_low+=dt
+                elif abs(Iz_high[it]) <= alpha*abs(Iz_int[it]) and abs(Iz_high[it]) > alpha*abs(Iz_low[it]) or abs(Iz_int[it]) <= alpha*abs(Iz_high[it]) and abs(Iz_int[it]) > alpha*abs(Iz_low[it]):
+                    plt.plot(Time[it],Iz[it],"vy",markersize=5)
+                    high_int+=dt
+                elif abs(Iz_low[it]) <= alpha*abs(Iz_int[it]) and abs(Iz_low[it]) > alpha*abs(Iz_high[it]) or abs(Iz_int[it]) <= alpha*abs(Iz_low[it]) and abs(Iz_int[it]) > alpha*abs(Iz_high[it]):
+                    plt.plot(Time[it],Iz[it],">c",markersize=5)
+                    low_int+=dt
+                else:
+                    plt.plot(Time[it],Iz[it],"<k",markersize=4)
+                    high_low_int+=dt
 
-        plt.xlabel("Time [s]")
-        plt.ylabel("Asymmetry around z axis [$m^4/s$]")
-        plt.grid()
-        plt.tight_layout()
-        pdf.savefig()
-        plt.close()
+            plt.xlabel("Time [s]")
+            plt.ylabel("Asymmetry around z axis [$m^4/s$]")
+            plt.title("$Alpha = {}".format(alpha))
+            plt.grid()
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close()
 
-        t_check = high+low+int+high_low+high_int+low_int+high_low_int
-        print("total time ",t_check)
-        print("1. ",high)
-        print("2. ",low)
-        print("3. ",int)
-        print("4. ",high_low)
-        print("5. ",high_int)
-        print("6. ",low_int)
-        print("7. ",high_low_int)
+            t_check = high+low+int+high_low+high_int+low_int+high_low_int
+            print(alpha)
+            print("total time ",t_check)
+            print("1. ",high)
+            print("2. ",low)
+            print("3. ",int)
+            print("4. ",high_low)
+            print("5. ",high_int)
+            print("6. ",low_int)
+            print("7. ",high_low_int)
 
 
         #delta I plotted separely
@@ -1334,3 +1411,22 @@ if update_pdf_plots == True:
         ax3.grid()
         pdf.savefig()
         plt.close()
+
+
+        #PDF Delta theta joint
+        fig,ax = plt.subplots(figsize=(14,8))
+
+        P,X = probability_dist(Delta_Theta_high_low)
+        ax.plot(X,P,'-r')
+        P,X = probability_dist(Delta_Theta_high_int)
+        ax.plot(X,P,'-b')
+        P,X = probability_dist(Delta_Theta_low_int)
+        ax.plot(X,P,'-g')
+        ax.set_ylabel("Probability [-]",fontsize=14)
+        ax.set_xlabel("$\Delta \Theta$ [rads]",fontsize=16)
+        plt.legend(["High-Low speed area", "High-Int speed area", "Low-Int area"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+

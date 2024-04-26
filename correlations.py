@@ -231,12 +231,17 @@ Iy = f(Time_OF)
 f = interpolate.interp1d(Time_sampling,Iz)
 Iz = f(Time_OF)
 
+I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
+
+cc = correlation_coef(FBR,I)
+print(cc)
+
 #plotting options
 time_vs_corr = False
 range_vs_corr = False
 spectra = False
 plot_moving_stats = False
-line_plots = True
+line_plots = False
 
 if time_vs_corr == True:
     Variables_arr = [["Ux", "RtAeroMR"], ["AeroFBy", "AeroFBz"], ["RtAeroMys", "RtAeroMzs"]]

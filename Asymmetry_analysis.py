@@ -59,6 +59,14 @@ def low_pass_filter(signal, cutoff):
     return low_pass_signal
 
 
+def tranform_fixed_frame(Y_pri,Z_pri,Theta):
+
+    Y = Y_pri*np.cos(Theta) - Z_pri*np.sin(Theta)
+    Z = Y_pri*np.sin(Theta) + Z_pri*np.cos(Theta)
+
+    return Y,Z
+
+
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 out_dir = in_dir + "Asymmetry_analysis/"
@@ -78,7 +86,8 @@ dt_sampling = Time_sampling[1] - Time_sampling[0]
 Time_start_idx = np.searchsorted(Time_OF,Time_start)
 Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
-time_shift_idx = np.searchsorted(Time_OF,4.78)
+time_shift = 4.78
+time_shift_idx = np.searchsorted(Time_OF,time_shift)
 
 Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
@@ -94,6 +103,35 @@ LSShftFys_LPF = low_pass_filter(LSShftFys,cutoff)
 LSShftFzs = np.array(a.variables["LSShftFzs"][Time_start_idx:Time_end_idx])
 LSShftFzs_LPF = low_pass_filter(LSShftFzs,cutoff)
 
+Azimuth = np.radians(np.array(a.variables["Azimuth"][Time_start_idx:Time_end_idx]))
+
+RtAeroFxh = np.array(a.variables["RtAeroFxh"][Time_start_idx:Time_end_idx])
+RtAeroFyh = np.array(a.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
+RtAeroFzh = np.array(a.variables["RtAeroFzh"][Time_start_idx:Time_end_idx])
+
+RtAeroFys = []; RtAeroFzs = []
+for i in np.arange(0,len(Time_OF)):
+    RtAeroFys_i, RtAeroFzs_i = tranform_fixed_frame(RtAeroFyh[i],RtAeroFzh[i],Azimuth[i])
+    RtAeroFys.append(RtAeroFys_i); RtAeroFzs.append(RtAeroFzs_i)
+RtAeroFys = np.array(RtAeroFys); RtAeroFzs = np.array(RtAeroFzs)
+
+
+RtAeroMyh = np.array(a.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
+RtAeroMzh = np.array(a.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
+
+RtAeroMys = []; RtAeroMzs = []
+for i in np.arange(0,len(Time_OF)):
+    RtAeroMys_i, RtAeroMzs_i = tranform_fixed_frame(RtAeroMyh[i],RtAeroMzh[i],Azimuth[i])
+    RtAeroMys.append(RtAeroMys_i); RtAeroMzs.append(RtAeroMzs_i)
+RtAeroMys = np.array(RtAeroMys); RtAeroMzs = np.array(RtAeroMzs)
+
+RtAeroMys_LPF = low_pass_filter(RtAeroMys,cutoff)
+RtAeroMzs_LPF = low_pass_filter(RtAeroMzs,cutoff)
+RtAeroFys_LPF = low_pass_filter(RtAeroFys,cutoff)
+RtAeroFzs_LPF = low_pass_filter(RtAeroFzs,cutoff)
+
+OOPBM = np.sqrt(np.add(np.square(LSSTipMys_LPF),np.square(LSSTipMzs_LPF)))
+
 L1 = 1.912; L2 = 2.09
 
 FBMy = LSSTipMzs/L2; FBFy = -LSShftFys*((L1+L2)/L2)
@@ -108,6 +146,18 @@ FBMz_LPF = -LSSTipMys_LPF/L2; FBFz_LPF = -LSShftFzs_LPF*((L1+L2)/L2)
 FBy_LPF = FBMy_LPF + FBFy_LPF; FBz_LPF = FBMz_LPF + FBFz_LPF
 FBR_LPF = np.sqrt(np.add(np.square(FBy_LPF),np.square(FBz_LPF)))
 
+
+Aero_FBMy = RtAeroMzs/L2; Aero_FBFy = -RtAeroFys*((L1+L2)/L2)
+Aero_FBMz = -RtAeroMys/L2; Aero_FBFz = -RtAeroFzs*((L1+L2)/L2)
+
+Aero_FBy = Aero_FBMy + Aero_FBFy; Aero_FBz = Aero_FBMz + Aero_FBFz
+Aero_FBR = np.sqrt(np.add(np.square(Aero_FBy),np.square(Aero_FBz)))
+
+Aero_FBMy_LPF = RtAeroMzs_LPF/L2; Aero_FBFy_LPF = -RtAeroFys_LPF*((L1+L2)/L2)
+Aero_FBMz_LPF = -RtAeroMys_LPF/L2; Aero_FBFz_LPF = -RtAeroFzs_LPF*((L1+L2)/L2)
+
+Aero_FBy_LPF = Aero_FBMy_LPF + Aero_FBFy_LPF; Aero_FBz_LPF = Aero_FBMz_LPF + Aero_FBFz_LPF
+Aero_FBR_LPF = np.sqrt(np.add(np.square(Aero_FBy_LPF),np.square(Aero_FBz_LPF)))
 
 offset = "63.0"
 group = a.groups["{}".format(offset)]
@@ -170,6 +220,62 @@ I_Asy = np.sqrt(np.add(np.square(Iy_Asy),np.square(Iz_Asy)))
 
 with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     #plot Time varying quanities
+
+    #IA vs OOPBM
+    cc = round(correlation_coef(I_LPF[:-time_shift_idx],OOPBM[time_shift_idx:]),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_OF[:-time_shift_idx],I_LPF[:-time_shift_idx],'-b')
+    ax.set_ylabel("Magnitude Asymmetry Vector (I) [$m^4/s$]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF[:-time_shift_idx],OOPBM[time_shift_idx:],"-r")
+    ax2.set_ylabel("Rotor OOPBM [kN]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+    #IA vs FBR aero
+    cc = round(correlation_coef(I_LPF[:-time_shift_idx],Aero_FBR_LPF[time_shift_idx:]),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_OF[:-time_shift_idx],I_LPF[:-time_shift_idx],'-b')
+    ax.set_ylabel("Magnitude Asymmetry Vector (I) [$m^4/s$]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF[:-time_shift_idx],Aero_FBR_LPF[time_shift_idx:],"-r")
+    ax2.set_ylabel("Magnitude Aerodynamic main bearing force vector [kN]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("I: (-63m plane), time shifted {}s, Low pass filtered 0.3Hz \nCorrelation coefficient {}".format(time_shift,cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+
+    #IA vs FBR
+    cc = round(correlation_coef(I_LPF[:-time_shift_idx],FBR_LPF[time_shift_idx:]),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_OF[:-time_shift_idx],I_LPF[:-time_shift_idx],'-b')
+    ax.set_ylabel("Magnitude Asymmetry Vector (I) [$m^4/s$]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF[:-time_shift_idx],FBR_LPF[time_shift_idx:],"-r")
+    ax2.set_ylabel("Magnitude main bearing force vector [kN]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("I: (-63m plane), time shifted {}s, Low pass filtered 0.3Hz \nCorrelation coefficient {}".format(time_shift,cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
     #IA vs I(t)
     cc = round(correlation_coef(IA_LPF,I_LPF),2)
     fig,ax = plt.subplots(figsize=(14,8))
@@ -191,7 +297,6 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     cc = round(correlation_coef(Iy_LPF[:-time_shift_idx],LSSTipMys_LPF[time_shift_idx:]),2)
     fig,ax = plt.subplots(figsize=(14,8))
 
-    ax.set_title("Iy: (-63m plane), time shifted 4.78s, Low pass filtered 0.3Hz")
     ax.plot(Time_OF[:-time_shift_idx],LSSTipMys_LPF[time_shift_idx:],'-b')
     ax.set_ylabel("Rotor moment around y axis (My) [$kN-m$]",fontsize=14)
     ax.yaxis.label.set_color('blue')
@@ -199,7 +304,7 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     ax2.plot(Time_OF[:-time_shift_idx],Iy_LPF[:-time_shift_idx],"-r")
     ax2.set_ylabel("Asymmetry vector component y [$m^4/s$]",fontsize=14)
     ax2.yaxis.label.set_color('red')
-    plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    plt.title("Iy: (-63m plane), time shifted {}s, Low pass filtered 0.3Hz \nCorrelation coefficient {}".format(time_shift,cc),fontsize=16)
     ax.set_xlabel("Time [s]",fontsize=16)
     plt.tight_layout()
     plt.grid()
@@ -208,7 +313,6 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
 
     cc = round(correlation_coef(Iy_LPF[:-time_shift_idx],FBz_LPF[time_shift_idx:]),2)
     fig,ax = plt.subplots(figsize=(14,8))
-    ax.set_title("Iy: (-63m plane), time shifted 4.78s, Low pass filtered 0.3Hz")
     ax.plot(Time_OF[:-time_shift_idx],FBz_LPF[time_shift_idx:],'-b')
     ax.set_ylabel("Bearing force component z [$kN$]",fontsize=14)
     ax.yaxis.label.set_color('blue')
@@ -216,7 +320,7 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     ax2.plot(Time_OF[:-time_shift_idx],Iy_LPF[:-time_shift_idx],"-r")
     ax2.set_ylabel("Asymmetry vector component y [$m^4/s$]",fontsize=14)
     ax2.yaxis.label.set_color('red')
-    plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    plt.title("Iy: (-63m plane), time shifted {}s, Low pass filtered 0.3Hz \nCorrelation coefficient {}".format(time_shift,cc),fontsize=16)
     ax.set_xlabel("Time [s]",fontsize=16)
     plt.tight_layout()
     plt.grid()
@@ -225,7 +329,6 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
 
     cc = round(correlation_coef(Iz_LPF[:-time_shift_idx],LSSTipMzs_LPF[time_shift_idx:]),2)
     fig,ax = plt.subplots(figsize=(14,8))
-    ax.set_title("Iz: (-63m plane), time shifted 4.78s, Low pass filtered 0.3Hz")
     ax.plot(Time_OF[:-time_shift_idx],LSSTipMzs_LPF[time_shift_idx:],'-b')
     ax.set_ylabel("Rotor moment around z axis (My) [$kN-m$]",fontsize=14)
     ax.yaxis.label.set_color('blue')
@@ -233,7 +336,7 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     ax2.plot(Time_OF[:-time_shift_idx],Iz_LPF[:-time_shift_idx],"-r")
     ax2.set_ylabel("Asymmetry vector component z [$m^4/s$]",fontsize=14)
     ax2.yaxis.label.set_color('red')
-    plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    plt.title("Iz: (-63m plane), time shifted {}s, Low pass filtered 0.3Hz \nCorrelation coefficient {}".format(time_shift,cc),fontsize=16)
     ax.set_xlabel("Time [s]",fontsize=16)
     plt.tight_layout()
     plt.grid()
@@ -243,7 +346,6 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     cc = round(correlation_coef(Iz_LPF[:-time_shift_idx],FBy_LPF[time_shift_idx:]),2)
     fig,ax = plt.subplots(figsize=(14,8))
 
-    ax.set_title("Iz: (-63m plane), time shifted 4.78s, Low pass filtered 0.3Hz")
     ax.plot(Time_OF[:-time_shift_idx],FBy_LPF[time_shift_idx:],'-b')
     ax.set_ylabel("Bearing force component y [$kN$]",fontsize=14)
     ax.yaxis.label.set_color('blue')
@@ -251,7 +353,7 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     ax2.plot(Time_OF[:-time_shift_idx],Iz_LPF[:-time_shift_idx],"-r")
     ax2.set_ylabel("Asymmetry vector component z [$m^4/s$]",fontsize=14)
     ax2.yaxis.label.set_color('red')
-    plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    plt.title("Iz: (-63m plane), time shifted {}s, Low pass filtered 0.3Hz \nCorrelation coefficient {}".format(time_shift,cc),fontsize=16)
     ax.set_xlabel("Time [s]",fontsize=16)
     plt.tight_layout()
     plt.grid()
@@ -350,7 +452,7 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     pdf.savefig()
     plt.close()
 
-
+ 
     #new asymmetry parameters
     cc = round(correlation_coef(Iy,Iy_Asy),2)
     fig,ax = plt.subplots(figsize=(14,8))

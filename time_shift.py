@@ -63,7 +63,7 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
     return Y,Z
 
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
 
 out_dir = in_dir+"correlations/"
 
@@ -78,7 +78,7 @@ group = a.groups["{}".format(offset)]
 IA_63 = np.array(group.variables["IA"])
 Ux_63 = np.array(group.variables["Ux"])
 
-offset = "5.5"
+offset = "0.0"
 group = a.groups["{}".format(offset)]
 IA_5_5 = np.array(group.variables["IA"])
 Ux_5_5 = np.array(group.variables["Ux"])
