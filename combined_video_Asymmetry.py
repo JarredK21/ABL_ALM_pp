@@ -198,9 +198,10 @@ print("line 207")
 a = Dataset("sampling_r_{}.nc".format(plane))
 
 Time = np.array(a.variables["time"])
+print(Time)
 Time = Time - Time[0]
 Time_steps = np.arange(0,len(Time))
-
+print(Time)
 
 p = a.groups["p_r"]
 
@@ -315,7 +316,7 @@ Theta = np.radians(np.array(Theta))
 
 
 time_shift = 4.78
-time_shift_idx = np.searchsorted(Time_OF,time_shift)
+time_shift_idx = np.searchsorted(Time,time_shift)
 
 Time = Time[:-time_shift_idx]
 I = I[:-time_shift_idx]
