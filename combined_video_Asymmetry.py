@@ -294,8 +294,11 @@ Theta_FB_LPF = theta_360(Theta_FB_LPF)
 Theta_FB_LPF = np.radians(np.array(Theta_FB_LPF))
 
 
-Iy = np.array(a.variables["Iy"])
-Iz = -np.array(a.variables["Iz"])
+offset = "63.0"
+group = a.groups["{}".format(offset)]
+IA = np.array(group.variables["IA"])
+Iy = np.array(group.variables["Iy"])
+Iz = -np.array(group.variables["Iz"])
 Iy = low_pass_filter(Iy,cutoff,dt_sampling)
 Iz = low_pass_filter(Iz,cutoff,dt_sampling)
 
