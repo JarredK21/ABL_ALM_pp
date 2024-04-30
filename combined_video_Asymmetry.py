@@ -223,6 +223,13 @@ zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
 
 del a
 
+#velocity field
+u = np.array(p.variables["velocityx"])
+v = np.array(p.variables["velocityy"])
+del p
+
+u[u<0]=0; v[v<0]=0 #remove negative velocities
+
 #fluctuating streamwise velocity
 with Pool() as pool:
     u_pri = []
