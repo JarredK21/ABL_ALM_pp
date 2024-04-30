@@ -37,6 +37,8 @@ def Update(it):
     f3_ax1.set_xlim([np.min(Time),np.max(Time)])
     f3_ax1.set_xlabel("Time [s]")
     f3_ax1.set_ylabel("Asymmetry around y axis [$m^4/s$]")
+    f3_ax1.grid()
+    f3_ax1.axhline(y=0,color="k")
 
     divider = make_axes_locatable(f3_ax1)
     cax = divider.append_axes('right', size='5%', pad=0.05)
@@ -44,10 +46,12 @@ def Update(it):
 
     #bottom right plot
     f3_ax2.plot(Time[:it],Iz[:it],"-r")
-    f3_ax1.set_ylim([np.min(Iz),np.max(Iz)])
-    f3_ax1.set_xlim([np.min(Time),np.max(Time)])
+    f3_ax2.set_ylim([np.min(Iz),np.max(Iz)])
+    f3_ax2.set_xlim([np.min(Time),np.max(Time)])
     f3_ax2.set_xlabel("Time [s]")
     f3_ax2.set_ylabel("Asymmetry around z axis [$m^4/s$]")
+    f3_ax2.grid()
+    f3_ax2.axhline(y=0,color="k")
 
 
     #top left
@@ -239,7 +243,7 @@ with Pool() as pool:
         
         u_pri.append(u_fluc_hvel_it)
         print(len(u_pri),time.time()-start_time)
-u = np.array(u); del u_pri; del v
+u = np.array(u_pri); del u_pri; del v
 
 
 cmin = math.floor(np.min(u))
