@@ -32,8 +32,9 @@ def Update(it):
 
 
     #bottom left plot
-    f3_ax1.plot(Time,Iy[:it],"-b")
-
+    f3_ax1.plot(Time[:it],Iy[:it],"-b")
+    f3_ax1.set_ylim([np.min(Iy),np.max(Iy)])
+    f3_ax1.set_xlim([np.min(Time),np.max(Time)])
     f3_ax1.set_xlabel("Time [s]")
     f3_ax1.set_ylabel("Asymmetry around y axis [$m^4/s$]")
 
@@ -42,8 +43,9 @@ def Update(it):
 
 
     #bottom right plot
-    f3_ax2.plot(Time,Iz[:it],"-r")
-        
+    f3_ax2.plot(Time[:it],Iz[:it],"-r")
+    f3_ax1.set_ylim([np.min(Iz),np.max(Iz)])
+    f3_ax1.set_xlim([np.min(Time),np.max(Time)])
     f3_ax2.set_xlabel("Time [s]")
     f3_ax2.set_ylabel("Asymmetry around z axis [$m^4/s$]")
 
@@ -296,7 +298,6 @@ Theta_FB_LPF = np.radians(np.array(Theta_FB_LPF))
 
 offset = "63.0"
 group = a.groups["{}".format(offset)]
-IA = np.array(group.variables["IA"])
 Iy = np.array(group.variables["Iy"])
 Iz = -np.array(group.variables["Iz"])
 Iy = low_pass_filter(Iy,cutoff,dt_sampling)
@@ -320,7 +321,7 @@ FBR_LPF = FBR_LPF[time_shift_idx:]
 Theta_FB_LPF = Theta_FB_LPF[time_shift_idx:]
 u = u[:-time_shift_idx]
 
-Time_steps = np.arange(0,len(Time))
+Time_steps = np.arange(1,len(Time))
 
 with Pool() as pool:
     for T in pool.imap(Update,Time_steps):
