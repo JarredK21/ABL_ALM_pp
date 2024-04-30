@@ -67,6 +67,17 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
     return Y,Z
 
 
+def theta_360(Theta):
+    Theta_360 = []
+    for theta in Theta:
+        if theta < 0:
+            Theta_360.append(theta+360)
+        else:
+            Theta_360.append(theta)
+    return Theta_360
+
+
+
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 out_dir = in_dir + "Asymmetry_analysis/"
@@ -131,6 +142,9 @@ RtAeroFys_LPF = low_pass_filter(RtAeroFys,cutoff)
 RtAeroFzs_LPF = low_pass_filter(RtAeroFzs,cutoff)
 
 OOPBM = np.sqrt(np.add(np.square(LSSTipMys_LPF),np.square(LSSTipMzs_LPF)))
+Theta_MR = np.degrees(np.arctan2(-RtAeroMys,RtAeroMzs))
+Theta_MR = theta_360(Theta_MR)
+Theta_MR = np.radians(np.array(Theta_MR))
 
 L1 = 1.912; L2 = 2.09
 
@@ -146,6 +160,10 @@ FBMz_LPF = -LSSTipMys_LPF/L2; FBFz_LPF = -LSShftFzs_LPF*((L1+L2)/L2)
 FBy_LPF = FBMy_LPF + FBFy_LPF; FBz_LPF = FBMz_LPF + FBFz_LPF
 FBR_LPF = np.sqrt(np.add(np.square(FBy_LPF),np.square(FBz_LPF)))
 
+Theta_FB = np.degrees(np.arctan2(FBz_LPF,FBy_LPF))
+Theta_FB = theta_360(Theta_FB)
+Theta_FB = np.radians(np.array(Theta_FB))
+
 
 Aero_FBMy = RtAeroMzs/L2; Aero_FBFy = -RtAeroFys*((L1+L2)/L2)
 Aero_FBMz = -RtAeroMys/L2; Aero_FBFz = -RtAeroFzs*((L1+L2)/L2)
@@ -158,6 +176,14 @@ Aero_FBMz_LPF = -RtAeroMys_LPF/L2; Aero_FBFz_LPF = -RtAeroFzs_LPF*((L1+L2)/L2)
 
 Aero_FBy_LPF = Aero_FBMy_LPF + Aero_FBFy_LPF; Aero_FBz_LPF = Aero_FBMz_LPF + Aero_FBFz_LPF
 Aero_FBR_LPF = np.sqrt(np.add(np.square(Aero_FBy_LPF),np.square(Aero_FBz_LPF)))
+
+
+Aero_theta = np.degrees(np.arctan2(Aero_FBz_LPF,Aero_FBy_LPF))
+Aero_Delta_theta = np.subtract(Aero_theta[1:],Aero_theta[:-1])
+Aero_theta = theta_360(Aero_theta)
+Aero_theta = np.radians(np.array(Aero_theta))
+
+
 
 offset = "63.0"
 group = a.groups["{}".format(offset)]
@@ -179,6 +205,15 @@ Iz_LPF = low_pass_filter(Iz_interp,cutoff)
 Iz_LPF = -Iz_LPF
 
 I_LPF = np.sqrt(np.add(np.square(Iy_LPF),np.square(Iz_LPF)))
+
+Theta = np.degrees(np.arctan2(Iz_LPF,Iy_LPF))
+Delta_Theta = np.subtract(Theta[1:],Theta[:-1])
+Theta = theta_360(Theta)
+Theta = np.radians(np.array(Theta))
+
+Theta_WR = np.degrees(np.arctan2(Iz_LPF,Iy_LPF))
+Theta_WR = theta_360(Theta_WR)
+Theta_WR = np.radians(np.array(Theta_WR))
 
 Time_start_idx = np.searchsorted(Time_sampling,Time_start)
 Time_end_idx = np.searchsorted(Time_sampling,Time_end)
@@ -220,6 +255,41 @@ I_Asy = np.sqrt(np.add(np.square(Iy_Asy),np.square(Iz_Asy)))
 
 with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     #plot Time varying quanities
+
+    cc = round(correlation_coef(I_LPF[:-time_shift_idx],FBR_LPF[time_shift_idx:]),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_OF[:-time_shift_idx],I_LPF[:-time_shift_idx],'-b')
+    ax.set_ylabel("I [$m^4/s$]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF[:-time_shift_idx],FBR_LPF[time_shift_idx:],"-r")
+    ax2.set_ylabel("Magnitude Bearing force vector [$m^4/s$]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+
+    cc = round(correlation_coef(Iy_LPF[:-time_shift_idx],FBR_LPF[time_shift_idx:]),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_OF[:-time_shift_idx],Iy_LPF[:-time_shift_idx],'-b')
+    ax.set_ylabel("Iy [$m^4/s$]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF[:-time_shift_idx],FBR_LPF[time_shift_idx:],"-r")
+    ax2.set_ylabel("Magnitude Bearing force vector [$m^4/s$]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("Correlation coefficient {}".format(cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
 
     #IA vs OOPBM
     cc = round(correlation_coef(I_LPF[:-time_shift_idx],OOPBM[time_shift_idx:]),2)
@@ -361,6 +431,93 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     plt.close()
 
 
+    cc = round(correlation_coef(Theta[:-time_shift_idx],Aero_theta[time_shift_idx:]),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_OF[:-time_shift_idx],Aero_theta[time_shift_idx:],'-b')
+    ax.set_ylabel("Direction Aerodynamic main bearing vector [rads]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF[:-time_shift_idx],Theta[:-time_shift_idx],"-r")
+    ax2.set_ylabel("Direction Asymmetry vector [rads]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("I(theta): (-63m plane), time shifted {}s, Low pass filtered 0.3Hz \nCorrelation coefficient {}".format(time_shift,cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+    cc = round(correlation_coef(Theta_MR,Aero_theta),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_OF,Aero_theta,'-b')
+    ax.set_ylabel("Direction Aerodynamic main bearing vector [rads]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF,Theta_MR,"-r")
+    ax2.set_ylabel("Direction OOPBM vector [rads]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("Correlation coefficient {}".format(time_shift,cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+
+    cc = round(correlation_coef(Theta[:-time_shift_idx],Theta_FB[time_shift_idx:]),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_OF[:-time_shift_idx],Theta_FB[time_shift_idx:],'-b')
+    ax.set_ylabel("Direction main bearing vector [rads]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF[:-time_shift_idx],Theta[:-time_shift_idx],"-r")
+    ax2.set_ylabel("Direction Asymmetry vector [rads]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("I(theta): (-63m plane), time shifted {}s, Low pass filtered 0.3Hz \nCorrelation coefficient {}".format(time_shift,cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+    cc = round(correlation_coef(Iz_LPF[:-time_shift_idx],Theta_FB[time_shift_idx:]),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_OF[:-time_shift_idx],Theta_FB[time_shift_idx:],'-b')
+    ax.set_ylabel("Direction main bearing vector [rads]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF[:-time_shift_idx],Iz_LPF[:-time_shift_idx],"-r")
+    ax2.set_ylabel("Asymmetry around z axis [$m^4/s$]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("I(theta): (-63m plane), time shifted {}s, Low pass filtered 0.3Hz \nCorrelation coefficient {}".format(time_shift,cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+    cc = round(correlation_coef(Iy_LPF[:-time_shift_idx],Theta_FB[time_shift_idx:]),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_OF[:-time_shift_idx],Theta_FB[time_shift_idx:],'-b')
+    ax.set_ylabel("Direction main bearing vector [rads]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_OF[:-time_shift_idx],Iy_LPF[:-time_shift_idx],"-r")
+    ax2.set_ylabel("Asymmetry around y axis [$m^4/s$]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    plt.title("I(theta): (-63m plane), time shifted {}s, Low pass filtered 0.3Hz \nCorrelation coefficient {}".format(time_shift,cc),fontsize=16)
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+
 
     #plot time spectra
     #IA vs I(t)
@@ -487,6 +644,24 @@ with PdfPages(out_dir+'Asymmetry_analysis.pdf') as pdf:
     plt.grid()
     pdf.savefig()
     plt.close()
+
+
+    fig,ax = plt.subplots(figsize=(14,8))
+
+    ax.plot(Time_sampling,Iy,'-b')
+    ax.set_ylabel("Iy [$m^4/s$]",fontsize=14)
+    ax.yaxis.label.set_color('blue')
+    ax2 = ax.twinx()
+    ax2.plot(Time_sampling,Iz,"-r")
+    ax2.set_ylabel("Iz [$m^4/s$]",fontsize=14)
+    ax2.yaxis.label.set_color('red')
+    ax.set_xlabel("Time [s]",fontsize=16)
+    plt.tight_layout()
+    plt.grid()
+    pdf.savefig()
+    plt.close()
+
+
 
 
 

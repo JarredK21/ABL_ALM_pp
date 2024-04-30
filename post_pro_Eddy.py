@@ -257,7 +257,7 @@ Ux_low_frq, Ux_low_PSD = temporal_spectra(Ux_low,dt,Var="Ux_low")
 Ux_int_frq, Ux_int_PSD = temporal_spectra(Ux_int,dt,Var="Ux_int")
 
 Iy = np.array(a.variables["Iy"][Time_start_idx:])
-Iz = np.array(a.variables["Iz"][Time_start_idx:])
+Iz = -np.array(a.variables["Iz"][Time_start_idx:])
 
 I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
 mu,sd,sk,k = moments(I)
@@ -388,7 +388,9 @@ print("mode Delta Theta low_int = ",statistics.mode(Delta_Theta_low_int))
 
 
 update_polar_Asymmetry = False
-update_pdf_plots = True
+update_polar_vectors = False
+update_polar_Aero_vectors = False
+update_pdf_plots = False
 
 
 def Update_Asymmetry(it):
@@ -421,7 +423,6 @@ def Update_Asymmetry(it):
     return T
 
 
-
 if update_polar_Asymmetry == True:
     out_dir = in_dir+"Asymmetry_analysis/polar_asymmetry/"
     with Pool() as pool:
@@ -429,6 +430,192 @@ if update_polar_Asymmetry == True:
 
             print(T)
 
+
+df_OF = Dataset(in_dir+"Dataset.nc")
+
+Time_OF = np.array(df_OF.variables["time_OF"])
+
+Time_start = 200
+
+Time_start_idx = np.searchsorted(Time_OF,Time_start)
+
+Time_OF = Time_OF[Time_start_idx:]
+dt_OF = Time_OF[1] - Time_OF[0]
+
+
+Azimuth = np.radians(np.array(df_OF.variables["Azimuth"][Time_start_idx:]))
+
+RtAeroFyh = np.array(df_OF.variables["RtAeroFyh"][Time_start_idx:])
+RtAeroFzh = np.array(df_OF.variables["RtAeroFzh"][Time_start_idx:])
+
+RtAeroFys = []; RtAeroFzs = []
+for i in np.arange(0,len(Time_OF)):
+    RtAeroFys_i, RtAeroFzs_i = tranform_fixed_frame(RtAeroFyh[i],RtAeroFzh[i],Azimuth[i])
+    RtAeroFys.append(RtAeroFys_i); RtAeroFzs.append(RtAeroFzs_i)
+RtAeroFys = np.array(RtAeroFys)/1000; RtAeroFzs = np.array(RtAeroFzs)/1000
+
+
+RtAeroMyh = np.array(df_OF.variables["RtAeroMyh"][Time_start_idx:])
+RtAeroMzh = np.array(df_OF.variables["RtAeroMzh"][Time_start_idx:])
+
+RtAeroMys = []; RtAeroMzs = []
+for i in np.arange(0,len(Time_OF)):
+    RtAeroMys_i, RtAeroMzs_i = tranform_fixed_frame(RtAeroMyh[i],RtAeroMzh[i],Azimuth[i])
+    RtAeroMys.append(RtAeroMys_i); RtAeroMzs.append(RtAeroMzs_i)
+RtAeroMys = np.array(RtAeroMys)/1000; RtAeroMzs = np.array(RtAeroMzs)/1000
+
+f = interpolate.interp1d(Time_OF,RtAeroFys)
+RtAeroFys = f(Time)
+RtAeroFys_LPF = low_pass_filter(RtAeroFys,0.3,dt=dt)
+f = interpolate.interp1d(Time_OF,RtAeroFzs)
+RtAeroFzs = f(Time)
+RtAeroFzs_LPF = low_pass_filter(RtAeroFzs,0.3,dt=dt)
+f = interpolate.interp1d(Time_OF,RtAeroMys)
+RtAeroMys = f(Time)
+RtAeroMys_LPF = low_pass_filter(RtAeroMys,0.3,dt=dt)
+f = interpolate.interp1d(Time_OF,RtAeroMzs)
+RtAeroMzs = f(Time)
+RtAeroMzs_LPF = low_pass_filter(RtAeroMzs,0.3,dt=dt)
+
+
+LSShftFys = np.array(df_OF.variables["LSShftFys"][Time_start_idx:])
+LSShftFzs = np.array(df_OF.variables["LSShftFzs"][Time_start_idx:])
+LSSTipMys = np.array(df_OF.variables["LSSTipMys"][Time_start_idx:])
+LSSTipMzs = np.array(df_OF.variables["LSSTipMzs"][Time_start_idx:])
+
+f = interpolate.interp1d(Time_OF,LSShftFys)
+LSShftFys = f(Time)
+LSShftFys_LPF = low_pass_filter(LSShftFys,0.3,dt=dt)
+f = interpolate.interp1d(Time_OF,LSShftFzs)
+LSShftFzs = f(Time)
+LSShftFzs_LPF = low_pass_filter(LSShftFzs,0.3,dt=dt)
+f = interpolate.interp1d(Time_OF,LSSTipMys)
+LSSTipMys = f(Time)
+LSSTipMys_LPF = low_pass_filter(LSSTipMys,0.3,dt=dt)
+f = interpolate.interp1d(Time_OF,LSSTipMzs)
+LSSTipMzs = f(Time)
+LSSTipMzs_LPF = low_pass_filter(LSSTipMzs,0.3,dt=dt)
+
+
+L1 = 1.912; L2 = 2.09; L = L1 + L2
+
+Aero_FBMy_LPF = RtAeroMzs_LPF/L2; Aero_FBFy_LPF = -RtAeroFys_LPF*((L1+L2)/L2)
+Aero_FBMz_LPF = -RtAeroMys_LPF/L2; Aero_FBFz_LPF = -RtAeroFzs_LPF*((L1+L2)/L2)
+
+Aero_FBy_LPF = Aero_FBMy_LPF + Aero_FBFy_LPF; Aero_FBz_LPF = Aero_FBMz_LPF + Aero_FBFz_LPF
+Aero_FBR_LPF = np.sqrt(np.add(np.square(Aero_FBy_LPF),np.square(Aero_FBz_LPF)))
+Aero_theta_LPF = np.degrees(np.arctan2(Aero_FBz_LPF,Aero_FBy_LPF))
+Aero_theta_LPF = theta_360(Aero_theta_LPF)
+Aero_theta_LPF = np.radians(np.array(Aero_theta_LPF))
+
+MR_LPF = np.add(np.square(RtAeroMys_LPF/L2), np.square(RtAeroMzs_LPF/L2))
+Theta_MR_LPF = np.degrees(np.arctan2(-RtAeroMys_LPF,RtAeroMzs_LPF))
+Theta_MR_LPF = theta_360(Theta_MR_LPF)
+Theta_MR_LPF = np.radians(np.array(Theta_MR_LPF))
+
+Aero_FR_LPF = np.add(np.square(RtAeroFys_LPF * (L/L2)), np.square(RtAeroFzs_LPF * (L/L2)))
+Theta_Aero_FR_LPF = np.degrees(np.arctan2(RtAeroFzs_LPF,RtAeroFys_LPF))
+Theta_Aero_FR_LPF = theta_360(Theta_Aero_FR_LPF)
+Theta_Aero_FR_LPF = np.radians(np.array(Theta_Aero_FR_LPF))
+
+
+FBMy_LPF = LSSTipMzs_LPF/L2; FBFy_LPF = -LSShftFys_LPF*((L1+L2)/L2)
+FBMz_LPF = -LSSTipMys_LPF/L2; FBFz_LPF = -LSShftFzs_LPF*((L1+L2)/L2)
+
+FBy_LPF = FBMy_LPF + FBFy_LPF; FBz_LPF = FBMz_LPF + FBFz_LPF
+FBR_LPF = np.sqrt(np.add(np.square(FBy_LPF),np.square(FBz_LPF)))
+Theta_FB_LPF = np.degrees(np.arctan2(FBz_LPF,FBy_LPF))
+Theta_FB_LPF = theta_360(Theta_FB_LPF)
+Theta_FB_LPF = np.radians(np.array(Theta_FB_LPF))
+
+
+time_shift = Time[0]+4.78; time_shift_idx = np.searchsorted(Time,time_shift)
+Time = Time[:-time_shift_idx]
+Time_steps = np.arange(0,len(Time))
+
+I = I[:-time_shift_idx]
+Theta = Theta[:-time_shift_idx]
+
+Aero_FBR = Aero_FBR_LPF[time_shift_idx:]
+Aero_theta = Aero_theta_LPF[time_shift_idx:]
+
+FBR = FBR_LPF[time_shift_idx:]
+Theta_FB = Theta_FB_LPF[time_shift_idx:]
+
+MR = MR_LPF[time_shift_idx:]
+Theta_MR = Theta_MR_LPF[time_shift_idx:]
+
+
+def Update_Aero_vector(it):
+    if it < 10:
+        Time_idx = "000{}".format(it)
+    elif it >= 10 and it < 100:
+        Time_idx = "00{}".format(it)
+    elif it >= 100 and it < 1000:
+        Time_idx = "0{}".format(it)
+    elif it >= 1000 and it < 10000:
+        Time_idx = "{}".format(it)
+
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(projection='polar')
+    c = ax.scatter(Aero_theta[it], Aero_FBR[it]/np.max(Aero_FBR), c="k", s=20)
+    d = ax.scatter(Theta[it],I[it]/np.max(I), c="b", s=20)
+    f = ax.scatter(Theta_MR[it], MR[it]/np.max(MR), c="r", s=20)
+    ax.arrow(0, 0, Aero_theta[it], Aero_FBR[it]/np.max(Aero_FBR), length_includes_head=True, color="k")
+    ax.arrow(0, 0, Theta[it], I[it]/np.max(I), length_includes_head=True, color="b")
+    ax.arrow(0, 0, Theta_MR[it], MR[it]/np.max(MR), length_includes_head=True, color="r")
+    ax.set_ylim([0,1])
+    ax.set_title("Time = {}s".format(Time[it]), va='bottom')
+    plt.legend(["Aerodynamic Main Bearing Force", "Asymmetry", "Rotor Moment"],loc="lower right")
+    T = Time[it]
+    plt.savefig(out_dir+"polar_plot_{}.png".format(Time_idx))
+    plt.close(fig)
+
+    return T
+
+
+def Update_vector(it):
+    if it < 10:
+        Time_idx = "000{}".format(it)
+    elif it >= 10 and it < 100:
+        Time_idx = "00{}".format(it)
+    elif it >= 100 and it < 1000:
+        Time_idx = "0{}".format(it)
+    elif it >= 1000 and it < 10000:
+        Time_idx = "{}".format(it)
+
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(projection='polar')
+    c = ax.scatter(Theta_FB[it], FBR[it]/np.max(FBR), c="k", s=20)
+    d = ax.scatter(Theta[it],I[it]/np.max(I), c="b", s=20)
+    f = ax.scatter(Theta_MR[it], MR[it]/np.max(MR), c="r", s=20)
+    ax.arrow(0, 0, Theta_FB[it], FBR[it]/np.max(FBR), length_includes_head=True, color="k")
+    ax.arrow(0, 0, Theta[it], I[it]/np.max(I), length_includes_head=True, color="b")
+    ax.arrow(0, 0, Theta_MR[it], MR[it]/np.max(MR), length_includes_head=True, color="r")
+    ax.set_ylim([0,1])
+    ax.set_title("Time = {}s".format(Time[it]), va='bottom')
+    plt.legend(["Main Bearing Force", "Asymmetry", "Rotor Moment"],loc="lower right")
+    T = Time[it]
+    plt.savefig(out_dir+"polar_plot_{}.png".format(Time_idx))
+    plt.close(fig)
+
+    return T
+
+
+if update_polar_Aero_vectors == True:
+    out_dir = in_dir+"Asymmetry_analysis/polar_Aero_vectors/"
+    with Pool() as pool:
+        for T in pool.imap(Update_Aero_vector,Time_steps):
+
+            print(T)
+
+
+if update_polar_vectors == True:
+    out_dir = in_dir+"Asymmetry_analysis/polar_vectors/"
+    with Pool() as pool:
+        for T in pool.imap(Update_vector,Time_steps):
+
+            print(T)
 
 
 if update_pdf_plots == True:
