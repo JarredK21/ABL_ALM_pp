@@ -21,7 +21,7 @@ X,Y = np.meshgrid(xs,ys)
 
 fu = interpolate.interp2d(X[xminidx:xmaxidx,yminidx:ymaxidx],Y[xminidx:xmaxidx,yminidx:ymaxidx],Z[xminidx:xmaxidx,yminidx:ymaxidx])
 xrotor = [246,247,248,249];yrotor = [246,247,248,249]
-Zrotor = np.array(fu(xrotor,yrotor))
+Zrotor = np.array(fu(xrotor,yrotor)[0])
 
 print(Zrotor)
 

@@ -54,7 +54,7 @@ def Update(it):
     fu = interpolate.interp2d(X[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Y[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Z[xsminidx:xsmaxidx,ysminidx:ysmaxidx])
     Zrotor = []
     for ix,iy in zip(xrotor,yrotor):
-        Zrotor.append(fu(ix,iy))
+        Zrotor.append(fu(ix,iy)[0])
     print(np.shape(xrotor),np.shape(yrotor))
     print(np.shape(Zrotor))
     print(Zrotor)
