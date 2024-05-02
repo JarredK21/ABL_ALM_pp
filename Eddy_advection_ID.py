@@ -23,7 +23,7 @@ def Horizontal_velocity(it):
     f = interpolate.interp1d(h,twist)
     f_ux = interpolate.interp1d(h,ux_mean_profile)
 
-    height = offset
+    height = offset+7.5
     twist_h = f(height)
     ux_mean = f_ux(height)
     
@@ -52,7 +52,8 @@ def Update(it):
     X,Y = np.meshgrid(xs,ys)
 
     fu = interpolate.interp2d(X[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Y[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Z[xsminidx:xsmaxidx,ysminidx:ysmaxidx])
-    Zrotor = fu(xrotor,yrotor)
+    Zrotor = np.array(fu(xrotor,yrotor))
+    print(Zrotor)
 
     CS = plt.contour(X, Y, Z, levels=levels_pos)
     CZ = plt.contour(X,Y,Z, levels=levels_neg)
@@ -86,8 +87,8 @@ def Update(it):
         Xlinemax = np.max(Xline); Xlinemin = np.min(Xline)
         Ylinemax = np.max(Yline); Ylinemin = np.min(Yline)
         
-        for ix in HSR:
-            if Xlinemin <= HSR[ix][0] <= Xlinemax and Ylinemin <= HSR[ix][1] <= Ylinemax:
+        for ix in LSS:
+            if Xlinemin <= LSS[ix][0] <= Xlinemax and Ylinemin <= LSS[ix][1] <= Ylinemax:
                 plt.plot(Xline,Yline,"--b",linewidth=3)
                 break            
 
@@ -218,10 +219,12 @@ for offset in offsets:
     levels_neg = np.linspace(cmin,-0.7,4)
     print("line 159", levels_neg)
 
-    xrotor = np.linspace(2486.27,2523.53,101)
-    dx = round(xrotor[1]-xrotor[0],3)
-    yrotor = np.linspace(2563.06,2495.86,101)
-
+    if offset == 85:
+        xrotor = np.linspace(2474.36,2535.44,201)
+        yrotor = np.linspace(2584.56,2474.36,201)
+    else:
+        xrotor = np.linspace(2486.27,2523.53,101)
+        yrotor = np.linspace(2563.06,2495.86,101)
 
     folder = out_dir+"Horizontal_Plane_Fluctutating_horz_{}_advection/".format(offset)
     isExist = os.path.exists(folder)
