@@ -20,8 +20,10 @@ Z = U.reshape(x,y)
 X,Y = np.meshgrid(xs,ys)
 
 fu = interpolate.interp2d(X[xminidx:xmaxidx,yminidx:ymaxidx],Y[xminidx:xmaxidx,yminidx:ymaxidx],Z[xminidx:xmaxidx,yminidx:ymaxidx])
+xrotor = [246,247,248,249];yrotor = [246,247,248,249]
+Zrotor = np.array(fu(xrotor,yrotor))
 
-print(time.time()-start_time)
+print(Zrotor)
 
 def coriolis_twist(u,v):
     twist = np.arctan(np.true_divide(v,u))

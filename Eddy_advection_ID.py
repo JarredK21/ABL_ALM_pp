@@ -53,6 +53,8 @@ def Update(it):
 
     fu = interpolate.interp2d(X[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Y[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Z[xsminidx:xsmaxidx,ysminidx:ysmaxidx])
     Zrotor = np.array(fu(xrotor,yrotor))
+    print(np.shape(xrotor),np.shape(yrotor))
+    print(np.shape(Zrotor))
     print(Zrotor)
 
     CS = plt.contour(X, Y, Z, levels=levels_pos)
@@ -231,11 +233,13 @@ for offset in offsets:
     if isExist == False:
         os.makedirs(folder)
 
-
-    with Pool() as pool:
-        for T in pool.imap(Update,Time_steps):
-            print(offset)
-            print(T,time.time()-start_time)
+    for it in np.arange(0,1):
+        T = Update(it)
+        print(T)
+    # with Pool() as pool:
+    #     for T in pool.imap(Update,Time_steps):
+    #         print(offset)
+    #         print(T,time.time()-start_time)
 
 
 
