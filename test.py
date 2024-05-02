@@ -8,6 +8,19 @@ import matplotlib.pyplot as plt
 import os
 from matplotlib.patches import Circle
 
+Zrotor = [-3.5383954618430873, -3.520632472224687, -3.5028694826063083, -3.4851064929879083, -3.467343503369509, -3.44958051375113]
+xrotor = np.linspace(2486.27,2523.53,6)
+yrotor = np.linspace(2563.06,2495.86,6)
+HSR = []
+LSS = []
+for i in np.arange(0,len(Zrotor)):
+    if Zrotor[i] >= 0.7:
+        HSR.append([xrotor[i],yrotor[i]])
+    elif Zrotor[i] <= -0.7:
+        LSS.append([xrotor[i],yrotor[i]]) 
+
+for LSS_i in LSS:
+    print(LSS_i[1])
 start_time = time.time()
 
 x = 512; y = 512

@@ -55,9 +55,6 @@ def Update(it):
     Zrotor = []
     for ix,iy in zip(xrotor,yrotor):
         Zrotor.append(fu(ix,iy)[0])
-    print(np.shape(xrotor),np.shape(yrotor))
-    print(np.shape(Zrotor))
-    print(Zrotor)
 
     CS = plt.contour(X, Y, Z, levels=levels_pos)
     CZ = plt.contour(X,Y,Z, levels=levels_neg)
@@ -78,8 +75,8 @@ def Update(it):
         Xlinemax = np.max(Xline); Xlinemin = np.min(Xline)
         Ylinemax = np.max(Yline); Ylinemin = np.min(Yline)
         
-        for ix in HSR:
-            if Xlinemin <= HSR[ix][0] <= Xlinemax and Ylinemin <= HSR[ix][1] <= Ylinemax:
+        for HSR_i in HSR:
+            if Xlinemin <= HSR_i[0] <= Xlinemax and Ylinemin <= HSR_i[1] <= Ylinemax:
                 plt.plot(Xline,Yline,"-r",linewidth=3)
                 break
 
@@ -91,8 +88,8 @@ def Update(it):
         Xlinemax = np.max(Xline); Xlinemin = np.min(Xline)
         Ylinemax = np.max(Yline); Ylinemin = np.min(Yline)
         
-        for ix in LSS:
-            if Xlinemin <= LSS[ix][0] <= Xlinemax and Ylinemin <= LSS[ix][1] <= Ylinemax:
+        for LSS_i in LSS:
+            if Xlinemin <= LSS_i[0] <= Xlinemax and Ylinemin <= LSS_i[1] <= Ylinemax:
                 plt.plot(Xline,Yline,"--b",linewidth=3)
                 break            
 
