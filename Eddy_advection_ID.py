@@ -232,13 +232,10 @@ for offset in offsets:
     if isExist == False:
         os.makedirs(folder)
 
-    for it in np.arange(0,1):
-        T = Update(it)
-        print(T)
-    # with Pool() as pool:
-    #     for T in pool.imap(Update,Time_steps):
-    #         print(offset)
-    #         print(T,time.time()-start_time)
+    with Pool() as pool:
+        for T in pool.imap(Update,Time_steps):
+            print(offset)
+            print(T,time.time()-start_time)
 
 
 
