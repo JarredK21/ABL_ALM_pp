@@ -51,11 +51,17 @@ def Update(it):
     Z = U.reshape(x,y)
     X,Y = np.meshgrid(xs,ys)
 
+    fig = plt.figure(figsize=(50,30))
+    plt.rcParams['font.size'] = 40
+
+    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+
+
     fu = interpolate.interp2d(X[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Y[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Z[xsminidx:xsmaxidx,ysminidx:ysmaxidx])
     Zrotor = []
     for ix,iy in zip(xrotor,yrotor):
         Zrotor.append(fu(ix,iy)[0])
-    print(Zrotor)
+
     CS = plt.contour(X, Y, Z, levels=levels_pos)
     CZ = plt.contour(X,Y,Z, levels=levels_neg)
 
@@ -67,19 +73,17 @@ def Update(it):
             HSR.append([xrotor[i],yrotor[i]])
         elif Zrotor[i] <= -0.7:
             LSS.append([xrotor[i],yrotor[i]]) 
-    print(HSR)
-    print(LSS)
+
     lines = CS.allsegs[0] #plot only threshold velocity
     for line in lines:
         Xline, Yline = line[:,0], line[:,1]
 
         Xlinemax = np.max(Xline); Xlinemin = np.min(Xline)
         Ylinemax = np.max(Yline); Ylinemin = np.min(Yline)
-        print(Xlinemin,Xlinemax)
-        print(Ylinemin,Ylinemax)
+
         for HSR_i in HSR:
             if Xlinemin <= HSR_i[0] <= Xlinemax and Ylinemin <= HSR_i[1] <= Ylinemax:
-                plt.plot(Xline,Yline,"-r",linewidth=3)
+                plt.plot(Xline,Yline,"-k",linewidth=3)
                 break
 
     
@@ -89,20 +93,14 @@ def Update(it):
 
         Xlinemax = np.max(Xline); Xlinemin = np.min(Xline)
         Ylinemax = np.max(Yline); Ylinemin = np.min(Yline)
-        print(Xlinemin,Xlinemax)
-        print(Ylinemin,Ylinemax)
+
         for LSS_i in LSS:
             if Xlinemin <= LSS_i[0] <= Xlinemax and Ylinemin <= LSS_i[1] <= Ylinemax:
-                plt.plot(Xline,Yline,"--b",linewidth=3)
+                plt.plot(Xline,Yline,"--k",linewidth=3)
                 break            
 
 
     T = Time[it]
-
-    fig = plt.figure(figsize=(50,30))
-    plt.rcParams['font.size'] = 40
-
-    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
 
     plt.xlim([2000,3000]); plt.ylim([2000,3000])
     plt.plot(xrotor,yrotor,linewidth=1.0,color="k")
@@ -235,13 +233,11 @@ for offset in offsets:
     if isExist == False:
         os.makedirs(folder)
 
-    for it in np.arange(0,1):
-        T = Update(it)
-        print(T)
-    # with Pool() as pool:
-    #     for T in pool.imap(Update,Time_steps):
-    #         print(offset)
-    #         print(T,time.time()-start_time)
+
+    with Pool() as pool:
+        for T in pool.imap(Update,Time_steps):
+            print(offset)
+            print(T,time.time()-start_time)
 
 
 
