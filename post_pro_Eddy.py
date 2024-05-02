@@ -388,8 +388,8 @@ print("mode Delta Theta low_int = ",statistics.mode(Delta_Theta_low_int))
 
 
 update_polar_Asymmetry = False
-update_polar_vectors = False
-update_polar_Aero_vectors = False
+update_polar_vectors = True
+update_polar_Aero_vectors = True
 update_pdf_plots = False
 
 
@@ -502,7 +502,7 @@ L1 = 1.912; L2 = 2.09; L = L1 + L2
 Aero_FBMy_LPF = RtAeroMzs_LPF/L2; Aero_FBFy_LPF = -RtAeroFys_LPF*((L1+L2)/L2)
 Aero_FBMz_LPF = -RtAeroMys_LPF/L2; Aero_FBFz_LPF = -RtAeroFzs_LPF*((L1+L2)/L2)
 
-Aero_FBy_LPF = Aero_FBMy_LPF + Aero_FBFy_LPF; Aero_FBz_LPF = Aero_FBMz_LPF + Aero_FBFz_LPF
+Aero_FBy_LPF = -(Aero_FBMy_LPF + Aero_FBFy_LPF); Aero_FBz_LPF = -(Aero_FBMz_LPF + Aero_FBFz_LPF)
 Aero_FBR_LPF = np.sqrt(np.add(np.square(Aero_FBy_LPF),np.square(Aero_FBz_LPF)))
 Aero_theta_LPF = np.degrees(np.arctan2(Aero_FBz_LPF,Aero_FBy_LPF))
 Aero_theta_LPF = theta_360(Aero_theta_LPF)
@@ -522,7 +522,7 @@ Theta_Aero_FR_LPF = np.radians(np.array(Theta_Aero_FR_LPF))
 FBMy_LPF = LSSTipMzs_LPF/L2; FBFy_LPF = -LSShftFys_LPF*((L1+L2)/L2)
 FBMz_LPF = -LSSTipMys_LPF/L2; FBFz_LPF = -LSShftFzs_LPF*((L1+L2)/L2)
 
-FBy_LPF = FBMy_LPF + FBFy_LPF; FBz_LPF = FBMz_LPF + FBFz_LPF
+FBy_LPF = -(FBMy_LPF + FBFy_LPF); FBz_LPF = -(FBMz_LPF + FBFz_LPF)
 FBR_LPF = np.sqrt(np.add(np.square(FBy_LPF),np.square(FBz_LPF)))
 Theta_FB_LPF = np.degrees(np.arctan2(FBz_LPF,FBy_LPF))
 Theta_FB_LPF = theta_360(Theta_FB_LPF)
@@ -531,6 +531,7 @@ Theta_FB_LPF = np.radians(np.array(Theta_FB_LPF))
 
 time_shift = Time[0]+4.78; time_shift_idx = np.searchsorted(Time,time_shift)
 Time = Time[:-time_shift_idx]
+dt = Time[1]-Time[0]
 Time_steps = np.arange(0,len(Time))
 
 I = I[:-time_shift_idx]
@@ -561,12 +562,12 @@ def Update_Aero_vector(it):
     c = ax.scatter(Aero_theta[it], Aero_FBR[it]/np.max(Aero_FBR), c="k", s=20)
     d = ax.scatter(Theta[it],I[it]/np.max(I), c="b", s=20)
     f = ax.scatter(Theta_MR[it], MR[it]/np.max(MR), c="r", s=20)
+    plt.legend(["Aerodynamic Main Bearing Force", "Asymmetry", "Modified Rotor Moment"],loc="lower right")
     ax.arrow(0, 0, Aero_theta[it], Aero_FBR[it]/np.max(Aero_FBR), length_includes_head=True, color="k")
     ax.arrow(0, 0, Theta[it], I[it]/np.max(I), length_includes_head=True, color="b")
     ax.arrow(0, 0, Theta_MR[it], MR[it]/np.max(MR), length_includes_head=True, color="r")
     ax.set_ylim([0,1])
-    ax.set_title("Time = {}s".format(Time[it]), va='bottom')
-    plt.legend(["Aerodynamic Main Bearing Force", "Asymmetry", "Rotor Moment"],loc="lower right")
+    ax.set_title("Normalized vectors \nTime = {}s".format(Time[it]), va='bottom')
     T = Time[it]
     plt.savefig(out_dir+"polar_plot_{}.png".format(Time_idx))
     plt.close(fig)
@@ -589,12 +590,12 @@ def Update_vector(it):
     c = ax.scatter(Theta_FB[it], FBR[it]/np.max(FBR), c="k", s=20)
     d = ax.scatter(Theta[it],I[it]/np.max(I), c="b", s=20)
     f = ax.scatter(Theta_MR[it], MR[it]/np.max(MR), c="r", s=20)
+    plt.legend(["Main Bearing Force", "Asymmetry", "Modified Rotor Moment"],loc="lower right")
     ax.arrow(0, 0, Theta_FB[it], FBR[it]/np.max(FBR), length_includes_head=True, color="k")
     ax.arrow(0, 0, Theta[it], I[it]/np.max(I), length_includes_head=True, color="b")
     ax.arrow(0, 0, Theta_MR[it], MR[it]/np.max(MR), length_includes_head=True, color="r")
     ax.set_ylim([0,1])
-    ax.set_title("Time = {}s".format(Time[it]), va='bottom')
-    plt.legend(["Main Bearing Force", "Asymmetry", "Rotor Moment"],loc="lower right")
+    ax.set_title("Normalized vectors \nTime = {}s".format(Time[it]), va='bottom')
     T = Time[it]
     plt.savefig(out_dir+"polar_plot_{}.png".format(Time_idx))
     plt.close(fig)

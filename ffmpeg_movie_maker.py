@@ -13,7 +13,7 @@ isExist = os.path.exists(video_folder)
 if isExist == False:
     os.makedirs(video_folder)
 
-filenames = ["polar_vectors","polar_Aero_vectors"]
+filenames = ["polar_Aero_vectors","polar_vectors"]
 for filename in filenames:
     plots_dir = in_dir+filename
 

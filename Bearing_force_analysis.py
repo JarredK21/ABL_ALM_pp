@@ -5,6 +5,7 @@ from netCDF4 import Dataset
 from matplotlib.backends.backend_pdf import PdfPages
 from multiprocessing import Pool
 import statistics
+from matplotlib.patches import Circle
 from scipy.signal import butter,filtfilt
 from scipy import interpolate
 
@@ -123,6 +124,7 @@ Time_steps = np.arange(0,len(Time))
 df_OF = Dataset(in_dir+"Dataset.nc")
 
 Time_OF = np.array(df_OF.variables["time_OF"])
+dt = Time_OF[1] - Time_OF[0]
 
 Time_start = 200
 
@@ -153,13 +155,82 @@ for i in np.arange(0,len(Time_OF)):
     RtAeroMys.append(RtAeroMys_i); RtAeroMzs.append(RtAeroMzs_i)
 RtAeroMys = np.array(RtAeroMys)/1000; RtAeroMzs = np.array(RtAeroMzs)/1000
 
-
+WR = 1079.1 #kN
 L1 = 1.912; L2 = 2.09; L = L1 + L2
+
+percentage = np.arange(0,1.1,0.1)
+mean_FB = []
+mean_Theta = []
+mean_FBz = []
+var_FB = []
+var_Theta = []
+for alpha in percentage:
+    Aero_FBMy = RtAeroMzs/L2; Aero_FBFy = -RtAeroFys*((L1+L2)/L2)
+    Aero_FBMz = -RtAeroMys/L2; Aero_FBFz = -RtAeroFzs*((L1+L2)/L2) + alpha*(WR*((L1+L2)/L2))
+
+    Aero_FBy = -(Aero_FBMy + Aero_FBFy); Aero_FBz = -(Aero_FBMz + Aero_FBFz)
+    mean_FBz.append(np.mean(Aero_FBz))
+    Aero_FBR = np.sqrt(np.add(np.square(Aero_FBy),np.square(Aero_FBz)))
+    Aero_theta = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
+    Aero_theta = theta_360(Aero_theta)
+    Aero_theta = np.radians(np.array(Aero_theta))
+
+    Aero_FBy_mean = np.mean(Aero_FBy); Aero_FBz_mean = np.mean(Aero_FBz)
+    Aero_FB_mean = np.sqrt(np.add(np.square(Aero_FBy_mean),np.square(Aero_FBz_mean)))
+    mean_FB.append(Aero_FB_mean)
+    Aero_Theta_FB_mean = np.degrees(np.arctan2(Aero_FBz_mean,Aero_FBy_mean))
+    if Aero_Theta_FB_mean<0:
+        Aero_Theta_FB_mean+=360
+
+    Aero_Theta_FB_mean = np.radians(Aero_Theta_FB_mean)
+    mean_Theta.append(Aero_Theta_FB_mean)
+
+    var_Aero_FB = np.mean(np.square(np.subtract(Aero_FBy,Aero_FBy_mean))) + np.mean(np.square(np.subtract(Aero_FBz,Aero_FBz_mean)))
+    var_FB.append(var_Aero_FB)
+out_dir = in_dir+"Bearing_force_analysis/"
+plt.rcParams['font.size'] = 14
+fig = plt.figure(figsize=(14,8))
+plt.plot(percentage,mean_FB,"-o")
+plt.xlabel("Percentage of weight")
+plt.ylabel("Magntide of Mean of Bearing force vector [kN]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"Magnitude_mean_FBR")
+plt.close(fig)
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(percentage,mean_FBz,"-o")
+plt.xlabel("Percentage of weight")
+plt.ylabel("Mean of z component Bearing force vector [kN]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"Mean_FBz")
+plt.close(fig)
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(percentage,mean_Theta,"-o")
+plt.xlabel("Percentage of weight")
+plt.ylabel("Direction of Mean of Bearing force vector [kN]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"Direction_mean_FBR")
+plt.close(fig)
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(percentage,var_FB,"-o")
+plt.xlabel("Percentage of weight")
+plt.ylabel("Variance of Bearing force vector [kN]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"Variance_FBR")
+plt.close(fig)
+
 
 Aero_FBMy = RtAeroMzs/L2; Aero_FBFy = -RtAeroFys*((L1+L2)/L2)
 Aero_FBMz = -RtAeroMys/L2; Aero_FBFz = -RtAeroFzs*((L1+L2)/L2)
 
-Aero_FBy = Aero_FBMy + Aero_FBFy; Aero_FBz = Aero_FBMz + Aero_FBFz
+Aero_FBy = -(Aero_FBMy + Aero_FBFy); Aero_FBz = -(Aero_FBMz + Aero_FBFz)
+mean_FBz.append(np.mean(Aero_FBz))
 Aero_FBR = np.sqrt(np.add(np.square(Aero_FBy),np.square(Aero_FBz)))
 Aero_theta = np.degrees(np.arctan2(Aero_FBz,Aero_FBy))
 Aero_theta = theta_360(Aero_theta)
@@ -177,15 +248,175 @@ L1 = 1.912; L2 = 2.09
 FBMy = LSSTipMzs/L2; FBFy = -LSShftFys*((L1+L2)/L2)
 FBMz = -LSSTipMys/L2; FBFz = -LSShftFzs*((L1+L2)/L2)
 
-FBy = FBMy + FBFy; FBz = FBMz + FBFz
+FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
+
 
 FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
 Theta_FB = np.degrees(np.arctan2(FBz,FBy))
 Theta_FB = theta_360(Theta_FB)
 Theta_FB = np.radians(np.array(Theta_FB))
 
+Theta_MR = np.degrees(np.arctan2(-RtAeroMys,RtAeroMzs))
+Theta_MR = theta_360(Theta_MR)
+Theta_MR = np.radians(np.array(Theta_MR))
 
-WR = 1079.1 #kN
+MR = np.add(np.square(RtAeroMys), np.square(RtAeroMzs))
+FR = np.add(np.square(RtAeroFys * L), np.square(RtAeroFzs * L))
+Fy_Mz = -RtAeroFys*RtAeroMzs
+Fz_My = -RtAeroFzs*RtAeroMys
+WR_My = -WR*RtAeroMys
+WR_Fz = -WR*RtAeroFzs
+
+
+Aero_Dtheta_dt = np.subtract(Aero_theta[1:],Aero_theta[:-1])/dt
+Dtheta_FB_dt = np.subtract(Theta_FB[1:],Theta_FB[:-1])/dt
+
+DTheta_MR_dt = np.subtract(Theta_MR[1:],Theta_MR[:-1])/dt
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF[1:],Aero_Dtheta_dt)
+plt.ylabel("Aero FB")
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF[1:],Dtheta_FB_dt)
+plt.ylabel("FB")
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF[1:],DTheta_MR_dt)
+plt.ylabel("MR")
+
+plt.show()
+
+cc = round(correlation_coef(Aero_FBR,MR),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,MR,"-r")
+ax2=ax.twinx()
+ax2.plot(Time_OF,Aero_FBR,"-b")
+fig.supxlabel("Time [s]")
+ax.set_ylabel("Magnitude Aerodynamic out-of-plane bending moment vector (rotor) [kN-m]")
+ax.yaxis.label.set_color('red')
+ax2.set_ylabel("Magnitude Aerodynamic Main bearing force vector [kN]")
+ax2.yaxis.label.set_color('blue')
+plt.title("correlation coefficient = {}".format(cc))
+ax.grid()
+ax2.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"Aero_FBR_MR.png")
+plt.close()
+
+cc = round(correlation_coef(FBR,MR),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,MR,"-r")
+ax2=ax.twinx()
+ax2.plot(Time_OF,FBR,"-b")
+fig.supxlabel("Time [s]")
+ax.set_ylabel("Magnitude Aerodynamic out-of-plane bending moment vector (rotor) [kN-m]")
+ax.yaxis.label.set_color('red')
+ax2.set_ylabel("Magnitude Main bearing force vector [kN]")
+ax2.yaxis.label.set_color('blue')
+plt.title("correlation coefficient = {}".format(cc))
+ax.grid()
+ax2.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_MR.png")
+plt.close()
+
+cc = round(correlation_coef(FBR,FR),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,FR,"-r")
+ax2=ax.twinx()
+ax2.plot(Time_OF,FBR,"-b")
+fig.supxlabel("Time [s]")
+ax.set_ylabel("Magnitude Aerodynamic out-of-plane bending force vector (rotor) [kN-m]")
+ax.yaxis.label.set_color('red')
+ax2.set_ylabel("Magnitude Main bearing force vector [kN]")
+ax2.yaxis.label.set_color('blue')
+plt.title("correlation coefficient = {}".format(cc))
+ax.grid()
+ax2.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_FR.png")
+plt.close()
+
+cc = round(correlation_coef(FBR,Fy_Mz),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,Fy_Mz,"-r")
+ax2=ax.twinx()
+ax2.plot(Time_OF,FBR,"-b")
+fig.supxlabel("Time [s]")
+ax.set_ylabel("Aerodynamic $-F_y M_z$ (rotor) [$kN^2-m$]")
+ax.yaxis.label.set_color('red')
+ax2.set_ylabel("Magnitude Main bearing force vector [kN]")
+ax2.yaxis.label.set_color('blue')
+plt.title("correlation coefficient = {}".format(cc))
+ax.grid()
+ax2.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_FyMz.png")
+plt.close()
+
+cc = round(correlation_coef(FBR,Fz_My),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,Fy_Mz,"-r")
+ax2=ax.twinx()
+ax2.plot(Time_OF,FBR,"-b")
+fig.supxlabel("Time [s]")
+ax.set_ylabel("Aerodynamic $-F_z M_y$ (rotor) [$kN^2-m$]")
+ax.yaxis.label.set_color('red')
+ax2.set_ylabel("Magnitude Main bearing force vector [kN]")
+ax2.yaxis.label.set_color('blue')
+plt.title("correlation coefficient = {}".format(cc))
+ax.grid()
+ax2.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_FzMy.png")
+plt.close()
+
+cc = round(correlation_coef(FBR,WR_Fz),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,WR_Fz,"-r")
+ax2=ax.twinx()
+ax2.plot(Time_OF,FBR,"-b")
+fig.supxlabel("Time [s]")
+ax.set_ylabel("$-F_z W_R$ (rotor) [$kN^2$]")
+ax.yaxis.label.set_color('red')
+ax2.set_ylabel("Magnitude Main bearing force vector [kN]")
+ax2.yaxis.label.set_color('blue')
+plt.title("correlation coefficient = {}".format(cc))
+ax.grid()
+ax2.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_FzWR.png")
+plt.close()
+
+cc = round(correlation_coef(FBR,WR_My),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,WR_My,"-r")
+ax2=ax.twinx()
+ax2.plot(Time_OF,FBR,"-b")
+fig.supxlabel("Time [s]")
+ax.set_ylabel("$-M_y W_R$ (rotor) [$kN^2-m$]")
+ax.yaxis.label.set_color('red')
+ax2.set_ylabel("Magnitude Main bearing force vector [kN]")
+ax2.yaxis.label.set_color('blue')
+plt.title("correlation coefficient = {}".format(cc))
+ax.grid()
+ax2.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_MyWR.png")
+plt.close()
+
+FBy_mean = np.mean(FBy); FBz_mean = np.mean(FBz)
+FB_mean = np.sqrt(np.add(np.square(FBy_mean),np.square(FBz_mean)))
+Theta_FB_mean = np.degrees(np.arctan2(FBz_mean,FBy_mean))
+if Theta_FB_mean<0:
+    Theta_FB_mean+=360
+
+Theta_FB_mean = np.radians(Theta_FB_mean)
+
+var_FB = np.mean(np.square(np.subtract(FBy,FBy_mean))) + np.mean(np.square(np.subtract(FBz,FBz_mean)))
+
+
 
 RB = L2**2 * np.square(FBR)
 RB_tilde = L2**2 * np.square(Aero_FBR)
@@ -200,6 +431,7 @@ WRsq = (WR*L)**2
 plot_pdf = True
 polar_analysis = False
 polar_Aero_analysis = False
+Trajectory_analysis = False
 
 plt.rcParams['font.size'] = 14
 
@@ -358,11 +590,13 @@ if plot_pdf == True:
         it = 0
         ic = 0
         MR_it = []
+        FR_it = []
         print(len(MR))
         for i in np.arange(0,len(Time_OF)):
 
             if FR[i] >= MR[i]/10:
                 MR_it.append(MR[i])
+                FR_it.append(FR[i])
                 ax1.plot(Time_OF[i],MR[i],"ob",markersize=2)
                 ax2.plot(Time_OF[i],FR[i],"or",markersize=2)
                 it+=dt_OF
@@ -371,8 +605,8 @@ if plot_pdf == True:
         print(ic) 
         ax1.grid()
         ax2.grid()
-        ax1.set_title("Average $M_R$ when $F_R$ is within 1 order of magnitude {} $kN^2m^2$".format(round(np.average(MR_it))))
-        ax2.set_title("Time $F_R \geq M_R/10$ = {}s".format(round(it,2)))
+        ax1.set_title("Average $M_R$ when $F_R$ is within 1 order of magnitude {} $kN^2m^2$\nAverage $F_R$ when within 1 order of magnitude of $M_R$ = {}$kN^2m^2$".format(round(np.average(MR_it)),round(np.average(FR_it))))
+        ax2.set_title("Time $10F_R \geq M_R$ = {}s".format(round(it,2)))
         plt.tight_layout()
         pdf.savefig()
         plt.close()
@@ -481,6 +715,40 @@ def Update_Aero_polar(it):
     return T
 
 
+def polar_trajectory(it):
+    if it < 10:
+        Time_idx = "000{}".format(it)
+    elif it >= 10 and it < 100:
+        Time_idx = "00{}".format(it)
+    elif it >= 100 and it < 1000:
+        Time_idx = "0{}".format(it)
+    elif it >= 1000 and it < 10000:
+        Time_idx = "{}".format(it)
+
+    fig = plt.figure(figsize=(8,8))
+    plt.axes(projection="polar")
+    plt.polar(Theta_FB[:it+1],FBR[:it+1],"-g")
+    plt.polar(Theta_FB[it],FBR[it],"ok",markersize=5)
+    plt.arrow(0, 0, Theta_FB[it], FBR[it], length_includes_head=True, color="k")
+    plt.polar(Theta_FB_mean,FB_mean,"or")
+
+
+    plt.polar(Aero_theta[:it+1],Aero_FBR[:it+1],"-b")
+    plt.polar(Aero_theta[it],Aero_FBR[it],"ok",markersize=5)
+    plt.arrow(0, 0, Aero_theta[it], Aero_FBR[it], length_includes_head=True, color="k")
+    plt.polar(Aero_Theta_FB_mean,Aero_FB_mean,"or")
+
+
+    plt.ylim([0,np.max([np.max(FBR),np.max(Aero_FBR)])])
+    plt.title("Main Bearing Force vectors [kN]\nTime = {}s".format(Time[it]), va='top')
+    T = Time[it]
+    plt.savefig(out_dir+"polar_plot_{}.png".format(Time_idx))
+    plt.close(fig)
+
+    return T
+
+
+
 if polar_analysis == True:
     out_dir = in_dir+"Bearing_force_analysis/polar_OOPBM/"
     with Pool() as pool:
@@ -493,5 +761,12 @@ if polar_Aero_analysis == True:
     out_dir = in_dir+"Bearing_force_analysis/polar_Aero_OOPBM/"
     with Pool() as pool:
         for T in pool.imap(Update_Aero_polar,Time_steps):
+
+            print(T)
+
+if Trajectory_analysis == True:
+    out_dir = in_dir+"Bearing_force_analysis/polar_trajectory/"
+    with Pool() as pool:
+        for T in pool.imap(polar_trajectory,Time_steps):
 
             print(T)

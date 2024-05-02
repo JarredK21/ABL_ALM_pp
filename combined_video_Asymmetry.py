@@ -53,6 +53,9 @@ def Update(it):
     f3_ax2.grid()
     f3_ax2.axhline(y=0,color="k")
 
+    divider = make_axes_locatable(f3_ax2)
+    cax = divider.append_axes('right', size='5%', pad=0.05)
+
 
     #top left
     c = f3_ax3.scatter(Theta_FB_LPF[it], FBR_LPF[it]/np.max(FBR_LPF), c="k", s=20)
@@ -89,6 +92,9 @@ def Update(it):
     Title = "Rotor plane -66m from Rotor. \nFluctuating Streamwise velocity [m/s]: Time = {}[s]".format(round(Time[it],4))
 
     f3_ax4.set_title(Title)
+
+    cax = divider.append_axes('right', size='5%', pad=0.05)
+    cd = plt.colorbar(cz, cax=cax)
 
     plt.tight_layout()
     plt.savefig(out_dir+"combined_plot_{}.png".format(Time_idx))
