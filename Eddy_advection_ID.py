@@ -51,7 +51,7 @@ def Update(it):
     Z = U.reshape(x,y)
     X,Y = np.meshgrid(xs,ys)
 
-    fu = interpolate.interp2d(X,Y,Z)
+    fu = interpolate.interp2d(X[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Y[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Z[xsminidx:xsmaxidx,ysminidx:ysmaxidx])
     Zrotor = fu(xrotor,yrotor)
 
     CS = plt.contour(X, Y, Z, levels=levels_pos)
@@ -176,7 +176,9 @@ for offset in offsets:
 
     xs = np.linspace(p.origin[0],p.origin[0]+p.axis1[0],x)
     ys = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y)
-    zs = 0
+    
+    xsminidx = np.searchsorted(xs,2455); xsmaxidx = np.searchsorted(xs,2555)
+    ysminidx = np.searchsorted(ys,2455); ysmaxidx = np.searchsorted(ys,2605)
 
 
     #velocity field

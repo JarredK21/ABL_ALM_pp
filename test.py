@@ -8,11 +8,20 @@ import matplotlib.pyplot as plt
 import os
 from matplotlib.patches import Circle
 
-line_segments = [[[0,0],[1,1],[2,2],[3,3]],[[7,7],[8,8],[9,9],[10,10],[11,11]]]
-for segment in line_segments:
-    print(segment[1][:])
-    ymin = np.min(segment[:,1]); ymax = np.max(segment[:,1])
-    xmin = np.min(segment[:,0]); xmax = np.max(segment[:,0])
+start_time = time.time()
+
+x = 512; y = 512
+U = np.ones((512*512))
+xs = np.linspace(0,512,x)
+ys = np.linspace(0,512,y)
+xminidx = np.searchsorted(xs,245); xmaxidx = np.searchsorted(xs,252)
+yminidx = np.searchsorted(ys,246); ymaxidx = np.searchsorted(ys,260)
+Z = U.reshape(x,y)
+X,Y = np.meshgrid(xs,ys)
+
+fu = interpolate.interp2d(X[xminidx:xmaxidx,yminidx:ymaxidx],Y[xminidx:xmaxidx,yminidx:ymaxidx],Z[xminidx:xmaxidx,yminidx:ymaxidx])
+
+print(time.time()-start_time)
 
 def coriolis_twist(u,v):
     twist = np.arctan(np.true_divide(v,u))
