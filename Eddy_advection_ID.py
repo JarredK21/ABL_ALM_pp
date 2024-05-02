@@ -52,7 +52,9 @@ def Update(it):
     X,Y = np.meshgrid(xs,ys)
 
     fu = interpolate.interp2d(X[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Y[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Z[xsminidx:xsmaxidx,ysminidx:ysmaxidx])
-    Zrotor = np.array(fu(xrotor,yrotor))
+    Zrotor = []
+    for ix,iy in zip(xrotor,yrotor):
+        Zrotor.append(fu(ix,iy))
     print(np.shape(xrotor),np.shape(yrotor))
     print(np.shape(Zrotor))
     print(Zrotor)
