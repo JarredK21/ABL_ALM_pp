@@ -47,39 +47,39 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 
 def polar_trajectory(it):
     if it < 10:
-        Time_idx = "0000{}".format(it)
+        Time_idx = "00000{}".format(it)
     elif it >= 10 and it < 100:
-        Time_idx = "000{}".format(it)
+        Time_idx = "0000{}".format(it)
     elif it >= 100 and it < 1000:
-        Time_idx = "00{}".format(it)
+        Time_idx = "000{}".format(it)
     elif it >= 1000 and it < 10000:
-        Time_idx = "0{}".format(it)
+        Time_idx = "00{}".format(it)
     elif it >= 10000 and it < 100000:
-        Time_idx = "{}".format(it)
+        Time_idx = "0{}".format(it)
     elif it >= 100000 and it < 1000000:
         Time_idx = "{}".format(it)
 
 
     fig = plt.figure(figsize=(8,8))
 
-    plt.axes(projection="polar")
-    plt.polar(Theta_I_var[it],I_var[it]/np.max(I_var),"ob",markersize=5)
-    plt.arrow(0, 0, Theta_I_var[it], I_var[it]/np.max(I_var), length_includes_head=True, color="b")
+    ax = fig.add_subplot(projection="polar")
+    ax.scatter(Theta_I_var[it],I_var[it]/np.max(I_var),"ob",markersize=5)
+    ax.arrow(0, 0, Theta_I_var[it], I_var[it]/np.max(I_var), length_includes_head=True, color="b")
+
+    ax.scatter(Theta_FB_var[it],FBR_var[it]/np.max(FBR_var),"ok",markersize=5)
+    ax.arrow(0, 0, Theta_FB_var[it], FBR_var[it]/np.max(FBR_var), length_includes_head=True, color="k")
 
 
-    plt.polar(Theta_FB_var[it],FBR_var[it]/np.max(FBR_var),"ok",markersize=5)
-    plt.arrow(0, 0, Theta_FB_var[it], FBR_var[it]/np.max(FBR_var), length_includes_head=True, color="k")
+    ax.scatter(Aero_Theta_FB_var[it],Aero_FBR_var[it]/np.max(Aero_FBR_var),"or",markersize=5)
+    ax.arrow(0, 0, Aero_Theta_FB_var[it], Aero_FBR_var[it]/np.max(Aero_FBR_var), length_includes_head=True, color="r")
+
+    ax.scatter(Theta_MR_var[it],MR_var[it]/np.max(MR_var),"om",markersize=5)
+    ax.arrow(0, 0, Theta_MR_var[it], MR_var[it]/np.max(MR_var), length_includes_head=True, color="m")
 
 
-    plt.polar(Aero_Theta_FB_var[it],Aero_FBR_var[it]/np.max(Aero_FBR_var),"or",markersize=5)
-    plt.arrow(0, 0, Aero_Theta_FB_var[it], Aero_FBR_var[it]/np.max(Aero_FBR_var), length_includes_head=True, color="r")
-
-    plt.polar(Theta_MR_var[it],MR_var[it]/np.max(MR_var),"om",markersize=5)
-    plt.arrow(0, 0, Theta_MR_var[it], MR_var[it]/np.max(MR_var), length_includes_head=True, color="m")
-
-
-    plt.ylim([0,1])
-    plt.title("Normalized vectors [-]\nTime = {}s".format(round(Time_OF[it],4)), va='top')
+    ax.set_ylim([0,1])
+    ax.set_title("Normalized vectors [-]\nTime = {}s".format(round(Time_OF[it],4)), va='top')
+    ax.legend(["Asymmetry vector", "Main Bearing force vector", "Aerodynamic Main bearing force vector", "Modified OOPBM vector"],loc="lower right")
     T = Time_OF[it]
     plt.savefig(out_dir+"polar_plot_{}.png".format(Time_idx))
     plt.close(fig)
@@ -250,7 +250,7 @@ folder = ["Total", "LPF_1", "LPF_2", "HPF_1"]
 
 for i in np.arange(0,len(I_vars)):
 
-    print(folder)
+    print(folder[i])
 
     out_dir = in_dir+"polar_plots/{}/".format(folder[i])
 
