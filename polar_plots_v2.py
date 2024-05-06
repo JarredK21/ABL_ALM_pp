@@ -47,13 +47,18 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 
 def polar_trajectory(it):
     if it < 10:
-        Time_idx = "000{}".format(it)
+        Time_idx = "0000{}".format(it)
     elif it >= 10 and it < 100:
-        Time_idx = "00{}".format(it)
+        Time_idx = "000{}".format(it)
     elif it >= 100 and it < 1000:
-        Time_idx = "0{}".format(it)
+        Time_idx = "00{}".format(it)
     elif it >= 1000 and it < 10000:
+        Time_idx = "0{}".format(it)
+    elif it >= 10000 and it < 100000:
         Time_idx = "{}".format(it)
+    elif it >= 100000 and it < 1000000:
+        Time_idx = "{}".format(it)
+
 
     fig = plt.figure(figsize=(8,8))
 
@@ -80,7 +85,6 @@ def polar_trajectory(it):
     plt.close(fig)
 
     return T
-
 
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
