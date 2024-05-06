@@ -51,19 +51,18 @@ def Update(it):
     Z = U.reshape(x,y)
     X,Y = np.meshgrid(xs,ys)
 
+    CS = plt.contour(X, Y, Z, levels=levels_pos)
+    CZ = plt.contour(X,Y,Z, levels=levels_neg)
+
     fig = plt.figure(figsize=(50,30))
     plt.rcParams['font.size'] = 40
 
     cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
 
-
     fu = interpolate.interp2d(X[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Y[xsminidx:xsmaxidx,ysminidx:ysmaxidx],Z[xsminidx:xsmaxidx,ysminidx:ysmaxidx])
     Zrotor = []
     for ix,iy in zip(xrotor,yrotor):
         Zrotor.append(fu(ix,iy)[0])
-
-    CS = plt.contour(X, Y, Z, levels=levels_pos)
-    CZ = plt.contour(X,Y,Z, levels=levels_neg)
 
 
     HSR = []
