@@ -63,17 +63,17 @@ def polar_trajectory(it):
     fig = plt.figure(figsize=(8,8))
 
     ax = fig.add_subplot(projection="polar")
-    ax.scatter(Theta_I_var[it],I_var[it]/np.max(I_var),"ob",markersize=5)
+    ax.scatter(Theta_I_var[it],I_var[it]/np.max(I_var),c="b", s=20)
     ax.arrow(0, 0, Theta_I_var[it], I_var[it]/np.max(I_var), length_includes_head=True, color="b")
 
-    ax.scatter(Theta_FB_var[it],FBR_var[it]/np.max(FBR_var),"ok",markersize=5)
+    ax.scatter(Theta_FB_var[it],FBR_var[it]/np.max(FBR_var),c="k", s=20)
     ax.arrow(0, 0, Theta_FB_var[it], FBR_var[it]/np.max(FBR_var), length_includes_head=True, color="k")
 
 
-    ax.scatter(Aero_Theta_FB_var[it],Aero_FBR_var[it]/np.max(Aero_FBR_var),"or",markersize=5)
+    ax.scatter(Aero_Theta_FB_var[it],Aero_FBR_var[it]/np.max(Aero_FBR_var),c="r", s=20)
     ax.arrow(0, 0, Aero_Theta_FB_var[it], Aero_FBR_var[it]/np.max(Aero_FBR_var), length_includes_head=True, color="r")
 
-    ax.scatter(Theta_MR_var[it],MR_var[it]/np.max(MR_var),"om",markersize=5)
+    ax.scatter(Theta_MR_var[it],MR_var[it]/np.max(MR_var),c="m", s=20)
     ax.arrow(0, 0, Theta_MR_var[it], MR_var[it]/np.max(MR_var), length_includes_head=True, color="m")
 
 
