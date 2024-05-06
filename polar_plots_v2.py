@@ -250,9 +250,9 @@ for i in np.arange(0,len(I_vars)):
 
     out_dir = in_dir+"polar_plots/{}/".format(folder[i])
 
-    isExist = os.path.exists(folder)
+    isExist = os.path.exists(out_dir)
     if isExist == False:
-        os.makedirs(folder)
+        os.makedirs(out_dir)
 
     I_var = I_vars[i]; Theta_I_var = Theta_I_vars[i]
     MR_var = MR_vars[i]; Theta_MR_vars[i]
