@@ -255,7 +255,7 @@ for i in np.arange(0,len(I_vars)):
         os.makedirs(out_dir)
 
     I_var = I_vars[i]; Theta_I_var = Theta_I_vars[i]
-    MR_var = MR_vars[i]; Theta_MR_vars[i]
+    MR_var = MR_vars[i]; Theta_MR_var = Theta_MR_vars[i]
     FBR_var = FBR_vars[i]; Theta_FB_var = Theta_FB_vars[i]
     Aero_FBR_var = Aero_FBR_vars[i]; Aero_Theta_FB_var = Aero_Theta_FB_vars[i]
 
