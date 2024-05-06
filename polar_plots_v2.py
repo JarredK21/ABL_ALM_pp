@@ -87,7 +87,7 @@ def polar_trajectory(it):
     return T
 
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
+in_dir = "./"
 
 df_OF = Dataset(in_dir+"Dataset.nc")
 
