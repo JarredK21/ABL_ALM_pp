@@ -83,23 +83,23 @@ def polar_trajectory(it):
 
 
 
-in_dir = "./"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 df_OF = Dataset(in_dir+"Dataset.nc")
 
 Time_OF = np.array(df_OF.variables["time_OF"])
+Time_sampling = np.array(df_OF.variables["time_sampling"])
 dt = Time_OF[1] - Time_OF[0]
 
-Time_start = 200
+Time_start = 200; Time_end = Time_sampling[-1]
+Time_start_idx = np.searchsorted(Time_OF,Time_start); Time_end_idx = np.searchsorted(Time_OF,Time_end)
 
-Time_start_idx = np.searchsorted(Time_OF,Time_start)
+Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
-Time_OF = Time_OF[Time_start_idx:]
+Azimuth = np.radians(np.array(df_OF.variables["Azimuth"][Time_start_idx:Time_end_idx]))
 
-Azimuth = np.radians(np.array(df_OF.variables["Azimuth"][Time_start_idx:]))
-
-RtAeroFyh = np.array(df_OF.variables["RtAeroFyh"][Time_start_idx:])
-RtAeroFzh = np.array(df_OF.variables["RtAeroFzh"][Time_start_idx:])
+RtAeroFyh = np.array(df_OF.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
+RtAeroFzh = np.array(df_OF.variables["RtAeroFzh"][Time_start_idx:Time_end_idx])
 
 RtAeroFys = []; RtAeroFzs = []
 for i in np.arange(0,len(Time_OF)):
@@ -108,8 +108,8 @@ for i in np.arange(0,len(Time_OF)):
 RtAeroFys = np.array(RtAeroFys)/1000; RtAeroFzs = np.array(RtAeroFzs)/1000
 
 
-RtAeroMyh = np.array(df_OF.variables["RtAeroMyh"][Time_start_idx:])
-RtAeroMzh = np.array(df_OF.variables["RtAeroMzh"][Time_start_idx:])
+RtAeroMyh = np.array(df_OF.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
+RtAeroMzh = np.array(df_OF.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
 
 RtAeroMys = []; RtAeroMzs = []
 for i in np.arange(0,len(Time_OF)):
@@ -139,11 +139,11 @@ Aero_FBR_HPF_1 = np.subtract(Aero_FBR,Aero_FBR_LPF_2)
 Aero_Theta_FB_HPF_1 = np.subtract(Aero_Theta_FB,Aero_Theta_FB_LPF_2)
 
 
-LSSTipMys = np.array(df_OF.variables["LSSTipMys"][Time_start_idx:])
-LSSTipMzs = np.array(df_OF.variables["LSSTipMzs"][Time_start_idx:])
+LSSTipMys = np.array(df_OF.variables["LSSTipMys"][Time_start_idx:Time_end_idx])
+LSSTipMzs = np.array(df_OF.variables["LSSTipMzs"][Time_start_idx:Time_end_idx])
 
-LSShftFys = np.array(df_OF.variables["LSShftFys"][Time_start_idx:])
-LSShftFzs = np.array(df_OF.variables["LSShftFzs"][Time_start_idx:])
+LSShftFys = np.array(df_OF.variables["LSShftFys"][Time_start_idx:Time_end_idx])
+LSShftFzs = np.array(df_OF.variables["LSShftFzs"][Time_start_idx:Time_end_idx])
 
 
 L1 = 1.912; L2 = 2.09
@@ -181,7 +181,7 @@ Theta_MR_LPF_2 = low_pass_filter(Theta_MR,1.0,dt)
 MR_HPF_1 = np.subtract(MR,MR_LPF_2)
 Theta_MR_HPF_1 = np.subtract(Theta_MR,Theta_MR_LPF_2)
 
-Time_sampling= np.array(df_OF.variables["time_sampling"])
+
 group = df_OF.groups["63.0"]
 Iy = np.array(group.variables["Iy"])
 Iz = -np.array(group.variables["Iz"])
@@ -245,6 +245,8 @@ Aero_Theta_FB_vars = [Aero_Theta_FB,Aero_Theta_FB_LPF_1,Aero_Theta_FB_LPF_2,Aero
 folder = ["Total", "LPF_1", "LPF_2", "HPF_1"]
 
 for i in np.arange(0,len(I_vars)):
+
+    print(folder)
 
     out_dir = in_dir+"polar_plots/{}/".format(folder[i])
 
