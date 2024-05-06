@@ -64,22 +64,22 @@ def polar_trajectory(it):
 
     ax = fig.add_subplot(projection="polar")
     ax.scatter(Theta_I_var[it],I_var[it]/np.max(I_var),c="b", s=20)
-    ax.arrow(0, 0, Theta_I_var[it], I_var[it]/np.max(I_var), length_includes_head=True, color="b")
+    
 
     ax.scatter(Theta_FB_var[it],FBR_var[it]/np.max(FBR_var),c="k", s=20)
-    ax.arrow(0, 0, Theta_FB_var[it], FBR_var[it]/np.max(FBR_var), length_includes_head=True, color="k")
-
-
     ax.scatter(Aero_Theta_FB_var[it],Aero_FBR_var[it]/np.max(Aero_FBR_var),c="r", s=20)
-    ax.arrow(0, 0, Aero_Theta_FB_var[it], Aero_FBR_var[it]/np.max(Aero_FBR_var), length_includes_head=True, color="r")
-
     ax.scatter(Theta_MR_var[it],MR_var[it]/np.max(MR_var),c="m", s=20)
-    ax.arrow(0, 0, Theta_MR_var[it], MR_var[it]/np.max(MR_var), length_includes_head=True, color="m")
 
+    ax.legend(["Asymmetry vector", "Main Bearing force vector", "Aerodynamic Main bearing force vector", "Modified OOPBM vector"],loc="lower right")
+
+    ax.arrow(0, 0, Theta_I_var[it], I_var[it]/np.max(I_var), length_includes_head=True, color="b")
+    ax.arrow(0, 0, Theta_FB_var[it], FBR_var[it]/np.max(FBR_var), length_includes_head=True, color="k")
+    ax.arrow(0, 0, Aero_Theta_FB_var[it], Aero_FBR_var[it]/np.max(Aero_FBR_var), length_includes_head=True, color="r")
+    ax.arrow(0, 0, Theta_MR_var[it], MR_var[it]/np.max(MR_var), length_includes_head=True, color="m")
 
     ax.set_ylim([0,1])
     ax.set_title("Normalized vectors [-]\nTime = {}s".format(round(Time_OF[it],4)), va='top')
-    ax.legend(["Asymmetry vector", "Main Bearing force vector", "Aerodynamic Main bearing force vector", "Modified OOPBM vector"],loc="lower right")
+    
     T = Time_OF[it]
     plt.savefig(out_dir+"polar_plot_{}.png".format(Time_idx))
     plt.close(fig)
@@ -87,7 +87,7 @@ def polar_trajectory(it):
     return T
 
 
-in_dir = "./"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 df_OF = Dataset(in_dir+"Dataset.nc")
 
