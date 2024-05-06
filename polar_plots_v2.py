@@ -263,7 +263,7 @@ for i in np.arange(0,len(I_vars)):
     Theta_I_var = Theta_I_var[:-time_shift_idx]
 
     Aero_FBR_var = Aero_FBR_var[time_shift_idx:]
-    Aero_Theta_var = Aero_Theta_var[time_shift_idx:]
+    Aero_Theta_FB_var = Aero_Theta_FB_var[time_shift_idx:]
 
     FBR_var = FBR_var[time_shift_idx:]
     Theta_FB_var = Theta_FB_var[time_shift_idx:]
