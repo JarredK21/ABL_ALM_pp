@@ -7,7 +7,7 @@ from multiprocessing import Pool
 import statistics
 from scipy.signal import butter,filtfilt
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM/post_processing/"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 out_dir = in_dir + "Asymmetry_analysis/"
 
 df = Dataset(in_dir+"Thresholding_Dataset.nc")
@@ -20,8 +20,8 @@ Time_steps = np.arange(0,len(Time))
 Time_start = 200; Time_start_idx = np.searchsorted(Time,Time_start)
 Time = Time[Time_start_idx:]
 
-#thresholds = [10.0,8.7,7.3,6.0,4.7,3.4,2.0,0.7]
-thresholds = [11.0,9.5,8.1,6.6,5.1,3.6,2.2,0.7]
+thresholds = [10.0,8.7,7.3,6.0,4.7,3.4,2.0,0.7]
+#thresholds = [11.0,9.5,8.1,6.6,5.1,3.6,2.2,0.7]
 
 update_pdf_plots = True
 

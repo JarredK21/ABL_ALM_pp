@@ -6,14 +6,15 @@ import sys
 
 
 #directories
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/Asymmetry_analysis/"
+in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/polar_plots/"
 
 video_folder = in_dir+"videos/"
 isExist = os.path.exists(video_folder)
 if isExist == False:
     os.makedirs(video_folder)
 
-filenames = ["polar_Aero_vectors","polar_vectors"]
+filenames = ["LPF_1_traj_200_260","LPF_1_traj_720_760","LPF_1_traj_760_820",
+             "LPF_2_200_260","LPF_2_720_760","LPF_2_760_820","HPF_1_200_260","HPF_1_720_760","HPF_1_760_820"]
 for filename in filenames:
     plots_dir = in_dir+filename
 

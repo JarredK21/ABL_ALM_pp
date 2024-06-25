@@ -187,43 +187,45 @@ for alpha in percentage:
 
     var_Aero_FB = np.mean(np.square(np.subtract(Aero_FBy,Aero_FBy_mean))) + np.mean(np.square(np.subtract(Aero_FBz,Aero_FBz_mean)))
     var_FB.append(var_Aero_FB)
-out_dir = in_dir+"Bearing_force_analysis/"
-plt.rcParams['font.size'] = 14
-fig = plt.figure(figsize=(14,8))
-plt.plot(percentage,mean_FB,"-o")
-plt.xlabel("Percentage of weight")
-plt.ylabel("Magntide of Mean of Bearing force vector [kN]")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"Magnitude_mean_FBR")
-plt.close(fig)
 
-fig = plt.figure(figsize=(14,8))
-plt.plot(percentage,mean_FBz,"-o")
-plt.xlabel("Percentage of weight")
-plt.ylabel("Mean of z component Bearing force vector [kN]")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"Mean_FBz")
-plt.close(fig)
 
-fig = plt.figure(figsize=(14,8))
-plt.plot(percentage,mean_Theta,"-o")
-plt.xlabel("Percentage of weight")
-plt.ylabel("Direction of Mean of Bearing force vector [kN]")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"Direction_mean_FBR")
-plt.close(fig)
+# out_dir = in_dir+"Bearing_force_analysis/"
+# plt.rcParams['font.size'] = 14
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(percentage,mean_FB,"-o")
+# plt.xlabel("Percentage of weight")
+# plt.ylabel("Magntide of Mean of Bearing force vector [kN]")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"Magnitude_mean_FBR")
+# plt.close(fig)
 
-fig = plt.figure(figsize=(14,8))
-plt.plot(percentage,var_FB,"-o")
-plt.xlabel("Percentage of weight")
-plt.ylabel("Variance of Bearing force vector [kN]")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"Variance_FBR")
-plt.close(fig)
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(percentage,mean_FBz,"-o")
+# plt.xlabel("Percentage of weight")
+# plt.ylabel("Mean of z component Bearing force vector [kN]")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"Mean_FBz")
+# plt.close(fig)
+
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(percentage,mean_Theta,"-o")
+# plt.xlabel("Percentage of weight")
+# plt.ylabel("Direction of Mean of Bearing force vector [kN]")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"Direction_mean_FBR")
+# plt.close(fig)
+
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(percentage,var_FB,"-o")
+# plt.xlabel("Percentage of weight")
+# plt.ylabel("Variance of Bearing force vector [kN]")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"Variance_FBR")
+# plt.close(fig)
 
 
 Aero_FBMy = RtAeroMzs/L2; Aero_FBFy = -RtAeroFys*((L1+L2)/L2)
@@ -250,11 +252,29 @@ FBMz = -LSSTipMys/L2; FBFz = -LSShftFzs*((L1+L2)/L2)
 
 FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
 
+MR_2 = np.sqrt(np.add(np.square(FBMy),np.square(FBMz)))
+FR_2 = np.sqrt(np.add(np.square(FBFy),np.square(FBFz)))
+
+out_dir = in_dir+"Bearing_force_analysis/"
+plt.rcParams['font.size'] = 12
+fig = plt.figure(figsize=(14,8))
+frq,PSD = temporal_spectra(MR_2,dt_OF,"MR_2")
+plt.loglog(frq,PSD,"-r")
+frq,PSD = temporal_spectra(FR_2,dt_OF,"FR_2")
+plt.loglog(frq,PSD,"-b")
+plt.xlabel("Frequency [Hz]")
+plt.ylabel("Contributions to Magnitude of Main bearing force [kN]")
+plt.grid()
+plt.legend(["$|1/L_2 (-M_z e_y, M_y e_z|$", "$|L/L_2 (F_y e_y, F_z e_z)|$"])
+plt.tight_layout()
+plt.savefig(out_dir+"MR_FR_Spectra.png")
+plt.close()
 
 FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
 Theta_FB = np.degrees(np.arctan2(FBz,FBy))
 Theta_FB = theta_360(Theta_FB)
 Theta_FB = np.radians(np.array(Theta_FB))
+
 
 Theta_MR = np.degrees(np.arctan2(-RtAeroMys,RtAeroMzs))
 Theta_MR = theta_360(Theta_MR)
@@ -266,6 +286,14 @@ Fy_Mz = -RtAeroFys*RtAeroMzs
 Fz_My = -RtAeroFzs*RtAeroMys
 WR_My = -WR*RtAeroMys
 WR_Fz = -WR*RtAeroFzs
+
+
+plt.rcParams['font.size'] = 8
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF,MR)
+plt.xticks(np.arange(Time_OF[0],Time_OF[-1],0.2))
+plt.grid()
+plt.show()
 
 
 Aero_Dtheta_dt = np.subtract(Aero_theta[1:],Aero_theta[:-1])/dt

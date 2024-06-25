@@ -162,11 +162,11 @@ for it in np.arange(0,len(Time)):
 T_high_low = []; T_high_int = []; T_low_int = []
 for it in np.arange(0,len(Time)):
 
-    if Frac_int_area[it] < 0.1 and Frac_high_area[it] > 0.1 and Frac_low_area[it] > 0.1:
+    if Frac_int_area[it] < 0.1 and Frac_high_area[it] > 0.2 and Frac_low_area[it] > 0.2:
         T_high_low.append(it)
-    elif Frac_low_area[it] < 0.1 and Frac_high_area[it] > 0.1 and Frac_int_area[it] > 0.1:
+    elif Frac_low_area[it] < 0.1 and Frac_high_area[it] > 0.2 and Frac_int_area[it] > 0.2:
         T_high_int.append(it)
-    elif Frac_high_area[it] < 0.1 and Frac_low_area[it] > 0.1 and Frac_int_area[it] > 0.1:
+    elif Frac_high_area[it] < 0.1 and Frac_low_area[it] > 0.2 and Frac_int_area[it] > 0.2:
         T_low_int.append(it)
 
 I_high = I[T_high]
@@ -358,11 +358,11 @@ for it in np.arange(0,len(Time)):
 T_high_low = []; T_high_int = []; T_low_int = []
 for it in np.arange(0,len(Time)):
 
-    if Frac_int_area[it] < 0.1 and Frac_high_area[it] > 0.1 and Frac_low_area[it] > 0.1:
+    if Frac_int_area[it] < 0.1 and Frac_high_area[it] > 0.2 and Frac_low_area[it] > 0.2:
         T_high_low.append(it)
-    elif Frac_low_area[it] < 0.1 and Frac_high_area[it] > 0.1 and Frac_int_area[it] > 0.1:
+    elif Frac_low_area[it] < 0.1 and Frac_high_area[it] > 0.2 and Frac_int_area[it] > 0.2:
         T_high_int.append(it)
-    elif Frac_high_area[it] < 0.1 and Frac_low_area[it] > 0.1 and Frac_int_area[it] > 0.1:
+    elif Frac_high_area[it] < 0.1 and Frac_low_area[it] > 0.2 and Frac_int_area[it] > 0.2:
         T_low_int.append(it)
 
 I_high_low_tot = np.concatenate((I_high_low,I[T_high_low]))
@@ -708,171 +708,3 @@ plt.tight_layout()
 plt.savefig(out_dir+"Ex2_spectra_Iz.png")
 plt.close()
 
-prob_I_high = []; prob_I_low = []; prob_I_int = []
-prob_Iy_high = []; prob_Iy_low = []; prob_Iy_int = []
-prob_Iz_high = []; prob_Iz_low = []; prob_Iz_int = []
-
-thresholds = [200000, 250000,300000,350000,400000,450000,500000,550000,600000,650000,700000,750000]
-for threshold in thresholds:
-    I_sign_high = []; I_sign_low = []; I_sign_int = []
-    Iy_sign_high = []; Iy_sign_low = []; Iy_sign_int = []
-    Iz_sign_high = []; Iz_sign_low = []; Iz_sign_int = []
-    for it in np.arange(0,len(Frac_high_area_tot)):
-
-        if I_tot[it] > threshold:
-            I_sign_high.append(Frac_high_area_tot[it])
-            I_sign_low.append(Frac_low_area_tot[it])
-            I_sign_int.append(Frac_int_area_tot[it])
-
-
-        if Iy_tot[it] > threshold or Iy_tot[it] < -threshold:
-            Iy_sign_high.append(Frac_high_area_tot[it])
-            Iy_sign_low.append(Frac_low_area_tot[it])
-            Iy_sign_int.append(Frac_int_area_tot[it])
-
-        if Iz_tot[it] > threshold or Iz_tot[it] < -threshold:
-            Iz_sign_high.append(Frac_high_area_tot[it])
-            Iz_sign_low.append(Frac_low_area_tot[it])
-            Iz_sign_int.append(Frac_int_area_tot[it])
-
-    if len(I_sign_high) == 0:
-        P = np.zeros(1000)
-    else:
-        P,X = probability_dist_Area(I_sign_high)
-    prob_I_high.append(P)
-    if len(I_sign_low) == 0:
-        P = np.zeros(1000)
-    else:
-        P,X = probability_dist_Area(I_sign_low)
-    prob_I_low.append(P)
-    if len(I_sign_int) == 0:
-        P = np.zeros(1000)
-        P,X = probability_dist_Area(I_sign_int)
-    prob_I_int.append(P)
-
-    if len(Iy_sign_high) == 0:
-        P = np.zeros(1000)
-    else:
-        P,X = probability_dist_Area(Iy_sign_high)
-    prob_Iy_high.append(P)
-    if len(Iy_sign_low) == 0:
-        P = np.zeros(1000)
-    else:
-        P,X = probability_dist_Area(Iy_sign_low)
-    prob_Iy_low.append(P)
-    if len(Iy_sign_int) == 0:
-        P = np.zeros(1000)
-    else:
-        P,X = probability_dist_Area(Iy_sign_int)
-    prob_Iy_int.append(P)
-
-    if len(Iz_sign_high) == 0:
-        P = np.zeros(1000)
-    else:
-        P,X = probability_dist_Area(Iz_sign_high)
-    prob_Iz_high.append(P)
-    if len(Iz_sign_low) == 0:
-        P = np.zeros(1000)
-    else:
-        P,X = probability_dist_Area(Iz_sign_low)
-    prob_Iz_low.append(P)
-    if len(Iy_sign_int) == 0:
-        P = np.zeros(1000)
-    else:
-        P,X = probability_dist_Area(Iz_sign_int)
-    prob_Iz_int.append(P)
-
-
-X = np.linspace(0,1.0,1000)
-fig,ax = plt.subplots(figsize=(50,30))
-plt.rcParams['font.size'] = 40
-
-cmin = np.min(prob_I_high); cmax = np.max(prob_I_high)
-levels = np.linspace(cmin,cmax,10)
-
-Xs,Ys = np.meshgrid(X,thresholds)
-cs = ax.contourf(Xs,Ys,prob_I_high,levels=levels, vmin=cmin,vmax=cmax)
-ax.set_xlabel("Area Fraction [-]")
-ax.set_ylabel("Magnitude Asymmetry vector")
-
-cb = plt.colorbar(cs)
-plt.savefig(out_dir+"I_A_high_PDF.png")
-plt.close()
-
-fig,ax = plt.subplots(figsize=(50,30))
-plt.rcParams['font.size'] = 40
-
-cmin = np.min(prob_I_low); cmax = np.max(prob_I_low)
-levels = np.linspace(cmin,cmax,10)
-
-Xs,Ys = np.meshgrid(X,thresholds)
-cs = ax.contourf(Xs,Ys,prob_I_low,levels=levels, vmin=cmin,vmax=cmax)
-ax.set_xlabel("Area Fraction [-]")
-ax.set_ylabel("Magnitude Asymmetry vector")
-
-cb = plt.colorbar(cs)
-plt.savefig(out_dir+"I_A_low_PDF.png")
-plt.close()
-
-fig,ax = plt.subplots(figsize=(50,30))
-plt.rcParams['font.size'] = 40
-
-cmin = np.min(prob_I_int); cmax = np.max(prob_I_int)
-levels = np.linspace(cmin,cmax,10)
-
-Xs,Ys = np.meshgrid(X,thresholds)
-cs = ax.contourf(Xs,Ys,prob_I_int,levels=levels, vmin=cmin,vmax=cmax)
-ax.set_xlabel("Area Fraction [-]")
-ax.set_ylabel("Magnitude Asymmetry vector")
-
-cb = plt.colorbar(cs)
-plt.savefig(out_dir+"I_A_int_PDF.png")
-plt.close()
-
-# fig,ax = plt.subplots(figsize=(14,8))
-# P,X = probability_dist(I_sign_high)
-# ax.plot(X,P,"r")
-# P,X = probability_dist(I_sign_low)
-# ax.plot(X,P,"b")
-# P,X = probability_dist(I_sign_int)
-# ax.plot(X,P,"g")
-# ax.set_title("")
-# ax.set_xlabel("Area fraction [-] - I > 500,000$m^4/s$")
-# ax.set_ylabel("probability [-]")
-# plt.legend(["Area_high", "Area_low", "Area_int"])
-# ax.grid()
-# plt.tight_layout()
-# plt.savefig(out_dir+"PDF_I_sign_v4.png")
-# plt.close()
-
-# fig,ax = plt.subplots(figsize=(14,8))
-# P,X = probability_dist(Iy_sign_high)
-# ax.plot(X,P,"r")
-# P,X = probability_dist(Iy_sign_low)
-# ax.plot(X,P,"b")
-# P,X = probability_dist(Iy_sign_int)
-# ax.plot(X,P,"g")
-# ax.set_title("")
-# ax.set_xlabel("Area fraction [-] - Iy > +/-500,000$m^4/s$")
-# ax.set_ylabel("probability [-]")
-# plt.legend(["Area_high", "Area_low", "Area_int"])
-# ax.grid()
-# plt.tight_layout()
-# plt.savefig(out_dir+"PDF_Iy_sign_v4.png")
-# plt.close()
-
-# fig,ax = plt.subplots(figsize=(14,8))
-# P,X = probability_dist(Iz_sign_high)
-# ax.plot(X,P,"r")
-# P,X = probability_dist(Iz_sign_low)
-# ax.plot(X,P,"b")
-# P,X = probability_dist(Iz_sign_int)
-# ax.plot(X,P,"g")
-# ax.set_title("")
-# ax.set_xlabel("Area fraction [-] - Iz > +/-500,000$m^4/s$")
-# ax.set_ylabel("probability [-]")
-# plt.legend(["Area_high", "Area_low", "Area_int"])
-# ax.grid()
-# plt.tight_layout()
-# plt.savefig(out_dir+"PDF_Iz_sign_v4.png")
-# plt.close()

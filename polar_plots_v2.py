@@ -11,6 +11,12 @@ from scipy import interpolate
 import os
 
 
+def correlation_coef(x,y):
+    
+    r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
+
+    return r
+
 
 def low_pass_filter(signal, cutoff,dt):  
 
@@ -144,10 +150,23 @@ Aero_Theta_FB_HPF_1 = np.subtract(Aero_Theta_FB,Aero_Theta_FB_LPF_2)
 
 
 LSSTipMys = np.array(df_OF.variables["LSSTipMys"][Time_start_idx:Time_end_idx])
+LSSTipMys_LPF_1 = low_pass_filter(LSSTipMys,0.3,dt)
 LSSTipMzs = np.array(df_OF.variables["LSSTipMzs"][Time_start_idx:Time_end_idx])
+LSSTipMzs_LPF_1 = low_pass_filter(LSSTipMzs,0.3,dt)
 
 LSShftFys = np.array(df_OF.variables["LSShftFys"][Time_start_idx:Time_end_idx])
+LSShftFys_LPF_1 = low_pass_filter(LSShftFys,0.3,dt)
 LSShftFzs = np.array(df_OF.variables["LSShftFzs"][Time_start_idx:Time_end_idx])
+LSShftFzs_LPF_1 = low_pass_filter(LSShftFzs,0.3,dt)
+
+L1 = 1.912; L2 = 2.09
+FBMy = LSSTipMzs_LPF_1/L2; FBFy = -LSShftFys_LPF_1*((L1+L2)/L2)
+FBMz = -LSSTipMys_LPF_1/L2; FBFz = -LSShftFzs_LPF_1*((L1+L2)/L2)
+
+FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
+
+
+FBR_LPF_1 = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
 
 
 L1 = 1.912; L2 = 2.09
@@ -162,8 +181,8 @@ Theta_FB = np.degrees(np.arctan2(FBz,FBy))
 Theta_FB = theta_360(Theta_FB)
 Theta_FB = np.radians(np.array(Theta_FB))
 
-FBR_LPF_1 = low_pass_filter(FBR,0.3,dt)
-Theta_FB_LPF_1 = low_pass_filter(Theta_FB,0.3,dt)
+# FBR_LPF_1 = low_pass_filter(FBR,0.3,dt)
+# Theta_FB_LPF_1 = low_pass_filter(Theta_FB,0.3,dt)
 
 FBR_LPF_2 = low_pass_filter(FBR,1.0,dt)
 Theta_FB_LPF_2 = low_pass_filter(Theta_FB,1.0,dt)
@@ -189,6 +208,17 @@ Theta_MR_HPF_1 = np.subtract(Theta_MR,Theta_MR_LPF_2)
 group = df_OF.groups["63.0"]
 Iy = np.array(group.variables["Iy"])
 Iz = -np.array(group.variables["Iz"])
+
+I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
+
+plt.figure(figsize=(14,8))
+plt.plot(Time_sampling,I)
+plt.xlabel("Time [s]")
+plt.ylabel("Magnitude Asymmetry vector [$m^4/s$]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(in_dir+"Internal_variations_analysis/FBR_analysis/I.png")
+plt.close()
 
 f = interpolate.interp1d(Time_sampling,Iy)
 Iy = f(Time_OF)
@@ -232,9 +262,50 @@ Theta_I_HPF_1 = np.radians(np.array(Theta_I_HPF_1))
 time_shift = Time_OF[0]+4.78; time_shift_idx = np.searchsorted(Time_OF,time_shift)
 Time_OF = Time_OF[:-time_shift_idx]
 
+print(correlation_coef(I_LPF_1[:-time_shift_idx],Aero_FBR_LPF_1[time_shift_idx:]))
+
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,I_LPF_1[:-time_shift_idx],"-b")
+ax2=ax.twinx()
+ax2.plot(Time_OF,Aero_FBR_LPF_1[time_shift_idx:],"-r")
+plt.title("Signals low pass filtered 0.3Hz\ncorrelation coefficient = {}".format(round(correlation_coef(Aero_FBR_LPF_1[time_shift_idx:],I_LPF_1[:-time_shift_idx]),2)))
+fig.supxlabel("Time [s]")
+ax.set_ylabel("Magnitude Asymmetry vector [$m^4/s$]")
+ax2.set_ylabel("Magnitude Aerodynamic main bearing force vector [kN]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(in_dir+"Internal_variations_analysis/FBR_analysis/Aero_FBR_I.png")
+plt.close()
+
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,Iy_LPF_1[:-time_shift_idx],"-b")
+ax2=ax.twinx()
+ax2.plot(Time_OF,FBR_LPF_1[time_shift_idx:],"-r")
+plt.title("Signals low pass filtered 0.3Hz\ncorrelation coefficient = {}".format(round(correlation_coef(FBR_LPF_1[time_shift_idx:],Iy_LPF_1[:-time_shift_idx]),2)))
+fig.supxlabel("Time [s]")
+ax.set_ylabel("y component asymmetry vector [$m^4/s$]")
+ax2.set_ylabel("Magnitude bearing force vector [kN]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(in_dir+"Internal_variations_analysis/FBR_analysis/FBR_Iy.png")
+plt.close()
+
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,Iy_LPF_1[:-time_shift_idx],"-b")
+ax2=ax.twinx()
+ax2.plot(Time_OF,LSSTipMys_LPF_1[time_shift_idx:],"-r")
+plt.title("Signals low pass filtered 0.3Hz\ncorrelation coefficient = {}".format(round(correlation_coef(LSSTipMys_LPF_1[time_shift_idx:],Iy_LPF_1[:-time_shift_idx]),2)))
+fig.supxlabel("Time [s]")
+ax.set_ylabel("y component asymmetry vector [$m^4/s$]")
+ax2.set_ylabel("y component bearing force vector [kN]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(in_dir+"Internal_variations_analysis/FBR_analysis/My_Iy.png")
+plt.close()
+
 Time_steps = np.arange(0,len(Time_OF))
 
-I_vars = [I,I_LPF_1,I_LPF_1,I_HPF_1]
+I_vars = [I,I_LPF_1,I_LPF_2,I_HPF_1]
 Theta_I_vars = [Theta_I,Theta_I_LPF_1,Theta_I_LPF_2,Theta_I_HPF_1]
 
 MR_vars = [MR,MR_LPF_1,MR_LPF_2,MR_HPF_1]

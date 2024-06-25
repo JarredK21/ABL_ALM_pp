@@ -107,6 +107,16 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
     return Y,Z
 
 
+def theta_cont(Iy,Iz,Theta,Time_steps):
+    for it in Time_steps[:-1]:
+        if Iz[it] > 0 and Iy[it] > 0 and Iy[it+1] > 0 and Iz[it+1] < 0:
+            Theta[it+1:]=Theta[it+1:]-360
+        elif Iz[it] < 0 and Iy[it] > 0 and Iy[it+1] > 0 and Iz[it+1] > 0:
+            Theta[it+1:]=Theta[it+1:]+360  
+
+    return Theta
+
+
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 a = Dataset(in_dir+"Asymmetry_Dataset.nc")
@@ -153,6 +163,46 @@ Iy_int = np.array(a.variables["Iy_int"][Time_start_idx:])
 mu,sd,sk,k = moments(Iy_int)
 print("stats Iy_int ",mu,sd,sk,k)
 
+Iz_high = np.array(a.variables["Iz_high"][Time_start_idx:])
+mu,sd,sk,k = moments(Iz_high)
+print("stats Iz_high ",mu,sd,sk,k)
+Iz_low = np.array(a.variables["Iz_low"][Time_start_idx:])
+mu,sd,sk,k = moments(Iz_low)
+print("stats Iz_low ",mu,sd,sk,k)
+Iz_int = np.array(a.variables["Iz_int"][Time_start_idx:])
+mu,sd,sk,k = moments(Iz_int)
+print("stats Iz_int ",mu,sd,sk,k)
+
+I_high_mag_mean = np.sqrt(np.add(np.square(np.mean(Iy_high)),np.square(np.mean(Iz_high))))
+I_high_theta_mean = np.degrees(np.arctan2(np.mean(Iz_high),np.mean(Iy_high)))
+if I_high_theta_mean < 0:
+    I_high_theta_mean+=360
+Iy_high_flucs = np.subtract(Iy_high,np.mean(Iy_high))
+Iz_high_flucs = np.subtract(Iz_high,np.mean(Iz_high))
+sigma_I_high = np.mean(np.square(Iy_high_flucs)) + np.mean(np.square(Iz_high_flucs))
+
+print("I high: ",I_high_mag_mean,I_high_theta_mean,np.sqrt(sigma_I_high))
+
+I_low_mag_mean = np.sqrt(np.add(np.square(np.mean(Iy_low)),np.square(np.mean(Iz_low))))
+I_low_theta_mean = np.degrees(np.arctan2(np.mean(Iz_low),np.mean(Iy_low)))
+if I_low_theta_mean < 0:
+    I_low_theta_mean+=360
+Iy_low_flucs = np.subtract(Iy_low,np.mean(Iy_low))
+Iz_low_flucs = np.subtract(Iz_low,np.mean(Iz_low))
+sigma_I_low = np.mean(np.square(Iy_low_flucs)) + np.mean(np.square(Iz_low_flucs))
+
+print("I low: ",I_low_mag_mean,I_low_theta_mean,np.sqrt(sigma_I_low))
+
+I_int_mag_mean = np.sqrt(np.add(np.square(np.mean(Iy_int)),np.square(np.mean(Iz_int))))
+I_int_theta_mean = np.degrees(np.arctan2(np.mean(Iz_int),np.mean(Iy_int)))
+if I_int_theta_mean < 0:
+    I_int_theta_mean+=360
+Iy_int_flucs = np.subtract(Iy_int,np.mean(Iy_int))
+Iz_int_flucs = np.subtract(Iz_int,np.mean(Iz_int))
+sigma_I_int = np.mean(np.square(Iy_int_flucs)) + np.mean(np.square(Iz_int_flucs))
+
+print("I int: ",I_int_mag_mean,I_int_theta_mean,np.sqrt(sigma_I_int))
+
 Iy_high_trend = low_pass_filter(Iy_high,cutoff,dt)
 Iy_high_flucs = np.subtract(Iy_high,Iy_high_trend)
 Iy_low_trend = low_pass_filter(Iy_low,cutoff,dt)
@@ -163,16 +213,6 @@ Iy_int_flucs = np.subtract(Iy_int,Iy_int_trend)
 Iy_high_frq, Iy_high_PSD = temporal_spectra(Iy_high,dt,Var="Iy_high")
 Iy_low_frq, Iy_low_PSD = temporal_spectra(Iy_low,dt,Var="Iy_low")
 Iy_int_frq, Iy_int_PSD = temporal_spectra(Iy_int,dt,Var="Iy_int")
-
-Iz_high = np.array(a.variables["Iz_high"][Time_start_idx:])
-mu,sd,sk,k = moments(Iz_high)
-print("stats Iz_high ",mu,sd,sk,k)
-Iz_low = np.array(a.variables["Iz_low"][Time_start_idx:])
-mu,sd,sk,k = moments(Iz_low)
-print("stats Iz_low ",mu,sd,sk,k)
-Iz_int = np.array(a.variables["Iz_int"][Time_start_idx:])
-mu,sd,sk,k = moments(Iz_int)
-print("stats Iz_int ",mu,sd,sk,k)
 
 Iz_high_trend = low_pass_filter(Iz_high,cutoff,dt)
 Iz_high_flucs = np.subtract(Iz_high,Iz_high_trend)
@@ -189,11 +229,9 @@ Iz_int_frq, Iz_int_PSD = temporal_spectra(Iz_int,dt,Var="Iz_int")
 I_high = np.sqrt(np.add(np.square(Iy_high),np.square(Iz_high)))
 mu,sd,sk,k = moments(I_high)
 print("stats I_high ",mu,sd,sk,k)
-
 I_low = np.sqrt(np.add(np.square(Iy_low),np.square(Iz_low)))
 mu,sd,sk,k = moments(I_low)
 print("stats I_low ",mu,sd,sk,k)
-
 I_int = np.sqrt(np.add(np.square(Iy_int),np.square(Iz_int)))
 mu,sd,sk,k = moments(I_int)
 print("stats I_int ",mu,sd,sk,k)
@@ -210,20 +248,18 @@ I_low_frq, I_low_PSD = temporal_spectra(I_low,dt,Var="I_low")
 I_int_frq, I_int_PSD = temporal_spectra(I_int,dt,Var="Iz_int")
 
 Theta_high = np.degrees(np.arctan2(Iz_high,Iy_high))
-Delta_Theta_high = np.subtract(Theta_high[1:],Theta_high[:-1])
-mu,sd,sk,k = moments(Delta_Theta_high)
 print("stats Delta theta_high ",mu,sd,sk,k)
-Theta_high = theta_360(Theta_high)
-Theta_high = np.radians(np.array(Theta_high))
+Theta_high = np.array(theta_360(Theta_high))
 mu,sd,sk,k = moments(Theta_high)
 print("stats theta_high ",mu,sd,sk,k)
+Delta_Theta_high = np.subtract(Theta_high[1:],Theta_high[:-1])
+mu,sd,sk,k = moments(Delta_Theta_high)
 
 Theta_low = np.degrees(np.arctan2(Iz_low,Iy_low))
 Delta_Theta_low = np.subtract(Theta_low[1:],Theta_low[:-1])
 mu,sd,sk,k = moments(Delta_Theta_low)
 print("stats Delta theta_low ",mu,sd,sk,k)
-Theta_low = theta_360(Theta_low)
-Theta_low = np.radians(np.array(Theta_low))
+Theta_low = np.array(theta_360(Theta_low))
 mu,sd,sk,k = moments(Theta_low)
 print("stats theta_low ",mu,sd,sk,k)
 
@@ -231,8 +267,7 @@ Theta_int = np.degrees(np.arctan2(Iz_int,Iy_int))
 Delta_Theta_int = np.subtract(Theta_int[1:],Theta_int[:-1])
 mu,sd,sk,k = moments(Delta_Theta_int)
 print("stats Delta theta_int ",mu,sd,sk,k)
-Theta_int = theta_360(Theta_int)
-Theta_int = np.radians(np.array(Theta_int))
+Theta_int = np.array(theta_360(Theta_int))
 mu,sd,sk,k = moments(Theta_int)
 print("stats theta_int ",mu,sd,sk,k)
 
@@ -263,6 +298,7 @@ I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
 mu,sd,sk,k = moments(I)
 print("stats I ",mu,sd,sk,k)
 I_frq, I_PSD = temporal_spectra(I,dt,Var="I")
+
 
 Theta = np.degrees(np.arctan2(Iz,Iy))
 Delta_Theta = np.subtract(Theta[1:],Theta[:-1])
@@ -316,9 +352,9 @@ PI_high_low = PIy_high_low + PIz_high_low
 PI_high_int = PIy_high_int + PIz_high_int
 PI_low_int = PIy_low_int + PIz_low_int
 
-I_high = np.square(Iy_high) + np.square(Iz_high)
-I_low = np.square(Iy_low) + np.square(Iz_low)
-I_int = np.square(Iy_int) + np.square(Iz_int)
+I_high = np.sqrt(np.square(Iy_high) + np.square(Iz_high))
+I_low = np.sqrt(np.square(Iy_low) + np.square(Iz_low))
+I_int = np.sqrt(np.square(Iy_int) + np.square(Iz_int))
 I_high_low = 2*Iy_high*Iy_low + 2*Iz_high*Iz_low
 I_high_int = 2*Iy_high*Iy_int + 2*Iz_high*Iz_int
 I_low_int = 2*Iy_low*Iy_int + 2*Iz_low*Iz_int
@@ -331,7 +367,31 @@ Time_sampling = Time_sampling[Time_start_idx:]
 group = df.groups["63.0"]
 Iy_df = np.array(group.variables["Iy"][Time_start_idx:])
 Iz_df = np.array(group.variables["Iz"][Time_start_idx:])
-    
+
+
+fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+
+ax1.plot(Time,Ux_high,'-r')
+ax1.plot(Time,Ux_low,"-b")
+ax1.plot(Time,Ux_int,"-g")
+ax1.set_ylabel("Average streamwise velocity [m/s]",fontsize=14)
+ax1.set_xlabel("Time [s]",fontsize=16)
+ax1.legend(["High speed area", "Low speed area", "intermediate area","Total"])
+ax1.grid()
+
+
+ax2.plot(Time,A_high,'-r')
+ax2.plot(Time,A_low,"-b")
+ax2.plot(Time,A_int,"-g")
+ax2.set_ylabel("Area [$m^2$]",fontsize=14)
+ax2.set_xlabel("Time [s]",fontsize=16)
+ax2.legend(["High speed area", "Low speed area", "intermediate area"])
+ax2.grid()
+
+plt.tight_layout()
+plt.show()
+
+
 
 print("Iy_high cc with Iy ",correlation_coef(Iy,Iy_high))
 print("Iy_low cc with Iy ",correlation_coef(Iy,Iy_low))
@@ -349,9 +409,21 @@ print("I_high cc with I_low ",correlation_coef(I_high,I_low))
 print("I_high cc with I_int ",correlation_coef(I_high,I_int))
 print("I_low cc with I_int ",correlation_coef(I_low,I_int))
 
+print("Theta_high cc with Theta_low ",correlation_coef(Theta_high,Theta_low))
+print("Theta_high cc with Theta_int ",correlation_coef(Theta_high,Theta_int))
+print("Theta_low cc with Theta_int ",correlation_coef(Theta_low,Theta_int))
+
 print("A_high cc with A_low ",correlation_coef(A_high,A_low))
 print("A_high cc with A_int ",correlation_coef(A_high,A_int))
 print("A_low cc with A_int ",correlation_coef(A_low,A_int))
+
+print("Iy_high cc with Iy_low ",correlation_coef(Iy_high,Iy_low))
+print("Iy_high cc with Iy_int ",correlation_coef(Iy_high,Iy_int))
+print("Iy_low cc with Iy_int ",correlation_coef(Iy_low,Iy_int))
+
+print("Iz_high cc with Iz_low ",correlation_coef(Iz_high,Iz_low))
+print("Iz_high cc with Iz_int ",correlation_coef(Iz_high,Iz_int))
+print("Iz_low cc with Iz_int ",correlation_coef(Iz_low,Iz_int))
 
 Delta_I_high_low = np.subtract(I_high,I_low)
 mu,sd,sk,k = moments(Delta_I_high_low)
@@ -363,17 +435,16 @@ Delta_I_low_int = np.subtract(I_low,I_int)
 mu,sd,sk,k = moments(Delta_I_low_int)
 print("stats Delta_I_low_int ",mu,sd,sk,k)
 
+
 print("mode Delta I High-low = ",statistics.mode(Delta_I_high_low))
 print("mode Delta I High-int = ",statistics.mode(Delta_I_high_int))
 print("mode Delta I low_int = ",statistics.mode(Delta_I_low_int))
 
-Delta_Theta_high_low = np.degrees(np.subtract(Theta_high,Theta_low))
-Delta_Theta_high_int = np.degrees(np.subtract(Theta_high,Theta_int))
-Delta_Theta_low_int = np.degrees(np.subtract(Theta_low,Theta_int))
+Delta_Theta_high_low = abs(np.subtract(Theta_high,Theta_low))
+Delta_Theta_high_int = abs(np.subtract(Theta_high,Theta_int))
+Delta_Theta_low_int = abs(np.subtract(Theta_low,Theta_int))
 
-Delta_Theta_high_low[Delta_Theta_high_low<0]+=360
-Delta_Theta_high_int[Delta_Theta_high_int<0]+=360
-Delta_Theta_low_int[Delta_Theta_low_int<0]+=360
+
 
 mu,sd,sk,k = moments(Delta_Theta_high_low)
 print("stats Delta_Theta_high_low ",mu,sd,sk,k)
@@ -388,9 +459,9 @@ print("mode Delta Theta low_int = ",statistics.mode(Delta_Theta_low_int))
 
 
 update_polar_Asymmetry = False
-update_polar_vectors = True
-update_polar_Aero_vectors = True
-update_pdf_plots = False
+update_polar_vectors = False
+update_polar_Aero_vectors = False
+update_pdf_plots = True
 
 
 def Update_Asymmetry(it):
@@ -483,6 +554,28 @@ LSShftFzs = np.array(df_OF.variables["LSShftFzs"][Time_start_idx:])
 LSSTipMys = np.array(df_OF.variables["LSSTipMys"][Time_start_idx:])
 LSSTipMzs = np.array(df_OF.variables["LSSTipMzs"][Time_start_idx:])
 
+L1 = 1.912; L2 = 2.09
+FBMy = LSSTipMzs/L2; FBFy = -LSShftFys*((L1+L2)/L2)
+FBMz = -LSSTipMys/L2; FBFz = -LSShftFzs*((L1+L2)/L2)
+
+FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
+
+
+FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
+
+plt.rcParams['font.size'] = 12
+frq,PSD = temporal_spectra(FBR,dt_OF,"FBR")
+plt.figure(figsize=(14,8))
+plt.loglog(I_frq,I_PSD,"-b")
+plt.loglog(frq,PSD,"-r")
+plt.xlabel("Frequency [Hz]")
+plt.ylabel("PSD")
+plt.legend(["Magnitude Asymmetry vector [$m^4/s$]", "Magnitude Main bearing force vector [kN]"])
+plt.grid()
+plt.tight_layout()
+plt.savefig(in_dir+"Bearing_force_analysis/FBR_I_spectra.png")
+plt.close()
+
 f = interpolate.interp1d(Time_OF,LSShftFys)
 LSShftFys = f(Time)
 LSShftFys_LPF = low_pass_filter(LSShftFys,0.3,dt=dt)
@@ -529,22 +622,22 @@ Theta_FB_LPF = theta_360(Theta_FB_LPF)
 Theta_FB_LPF = np.radians(np.array(Theta_FB_LPF))
 
 
-time_shift = Time[0]+4.78; time_shift_idx = np.searchsorted(Time,time_shift)
-Time = Time[:-time_shift_idx]
-dt = Time[1]-Time[0]
-Time_steps = np.arange(0,len(Time))
+# time_shift = Time[0]+4.78; time_shift_idx = np.searchsorted(Time,time_shift)
+# Time = Time[:-time_shift_idx]
+# dt = Time[1]-Time[0]
+# Time_steps = np.arange(0,len(Time))
 
-I = I[:-time_shift_idx]
-Theta = Theta[:-time_shift_idx]
+# I = I[:-time_shift_idx]
+# Theta = Theta[:-time_shift_idx]
 
-Aero_FBR = Aero_FBR_LPF[time_shift_idx:]
-Aero_theta = Aero_theta_LPF[time_shift_idx:]
+# Aero_FBR = Aero_FBR_LPF[time_shift_idx:]
+# Aero_theta = Aero_theta_LPF[time_shift_idx:]
 
-FBR = FBR_LPF[time_shift_idx:]
-Theta_FB = Theta_FB_LPF[time_shift_idx:]
+# FBR = FBR_LPF[time_shift_idx:]
+# Theta_FB = Theta_FB_LPF[time_shift_idx:]
 
-MR = MR_LPF[time_shift_idx:]
-Theta_MR = Theta_MR_LPF[time_shift_idx:]
+# MR = MR_LPF[time_shift_idx:]
+# Theta_MR = Theta_MR_LPF[time_shift_idx:]
 
 
 def Update_Aero_vector(it):
@@ -1559,13 +1652,10 @@ if update_pdf_plots == True:
 
         ax1.plot(Time,Delta_I_high_low)
         ax1.axhline(y=np.mean(Delta_I_high_low),linestyle="--",color="k")
-        ax1.axhline(y=statistics.mode(Delta_I_high_low),linestyle="-",color="m")
         ax2.plot(Time,Delta_I_high_int)
         ax2.axhline(y=np.mean(Delta_I_high_int),linestyle="--",color="k")
-        ax2.axhline(y=statistics.mode(Delta_I_high_int),linestyle="-",color="y")
         ax3.plot(Time,Delta_I_low_int)
         ax3.axhline(y=np.mean(Delta_I_low_int),linestyle="--",color="k")
-        ax3.axhline(y=statistics.mode(Delta_I_low_int),linestyle="-",color="c")
         ax1.set_title("$\Delta I$ - high-low speed area [$m^4/s$]",fontsize=14)
         ax2.set_title("$\Delta I$ - high-intermediate speed area [$m^4/s$]",fontsize=14)
         ax3.set_title("$\Delta I$ - low-intermediate speed area [$m^4/s$]",fontsize=14)
@@ -1577,21 +1667,78 @@ if update_pdf_plots == True:
         pdf.savefig()
         plt.close()
 
+        fig = plt.figure(figsize=(14,8))
+        P,X = probability_dist(Delta_I_high_low)
+        plt.plot(X,P,"-r",label="$\Delta I = I_{high}-I_{low}$ [$m^4/s$]")
+        P,X = probability_dist(Delta_I_high_int)
+        plt.plot(X,P,"-g",label="$\Delta I = I_{high}-I_{int}$ [$m^4/s$]")
+        P,X = probability_dist(Delta_I_low_int)
+        plt.plot(X,P,"-b",label="$\Delta I = I_{low}-I_{int}$ [$m^4/s$]")
+        plt.ylabel("Probability [-]",fontsize=14)
+        plt.xlabel("Difference in Magnitude Asymmetry vector [$m^4/s$]",fontsize=14)
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #Magnitude asymmetry and difference in magntidue of asymmetry
+        fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+        ax1.plot(Time,I_high,"-r",label="$|I_{high}|$")
+        ax1.plot(Time,I_low,"-b",label="$|I_{low}|$")
+        ax1.set_ylabel("Magnitude Asymmetry vector [$m^4/s$]",fontsize=14)
+        ax2.plot(Time,Delta_I_high_low,"-k")
+        ax2.set_ylabel("$\Delta I = I_{high}-I_{low}$ [$m^4/s$]",fontsize=14)
+        fig.supxlabel("Time [s]",fontsize=14)
+        ax1.legend()
+        ax1.grid()
+        ax2.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #Magnitude asymmetry and difference in magntidue of asymmetry
+        fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+        ax1.plot(Time,I_high,"-r",label="$|I_{high}|$")
+        ax1.plot(Time,I_int,"-g",label="$|I_{int}|$")
+        ax1.set_ylabel("Magnitude Asymmetry vector [$m^4/s$]",fontsize=14)
+        ax2.plot(Time,Delta_I_high_int,"-k")
+        ax2.set_ylabel("$\Delta I = I_{high}-I_{int}$ [$m^4/s$]",fontsize=14)
+        fig.supxlabel("Time [s]",fontsize=14)
+        ax1.legend()
+        ax1.grid()
+        ax2.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #Magnitude asymmetry and difference in magntidue of asymmetry
+        fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+        ax1.plot(Time,I_low,"-b",label="$|I_{low}|$")
+        ax1.plot(Time,I_int,"-g",label="$|I_{int}|$")
+        ax1.set_ylabel("Magnitude Asymmetry vector [$m^4/s$]",fontsize=14)
+        ax2.plot(Time,Delta_I_low_int,"-k")
+        ax2.set_ylabel("$\Delta I = I_{low}-I_{int}$ [$m^4/s$]",fontsize=14)
+        fig.supxlabel("Time [s]",fontsize=14)
+        ax1.legend()
+        ax1.grid()
+        ax2.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
         #delta Theta plotted separely
         fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8))
 
         ax1.plot(Time,Delta_Theta_high_low)
         ax1.axhline(y=np.mean(Delta_Theta_high_low),linestyle="--",color="k")
-        ax1.axhline(y=statistics.mode(Delta_Theta_high_low),linestyle="-",color="m")
         ax2.plot(Time,Delta_Theta_high_int)
         ax2.axhline(y=np.mean(Delta_Theta_high_int),linestyle="--",color="k")
-        ax2.axhline(y=statistics.mode(Delta_Theta_high_int),linestyle="-",color="y")
         ax3.plot(Time,Delta_Theta_low_int)
         ax3.axhline(y=np.mean(Delta_Theta_low_int),linestyle="--",color="k")
-        ax3.axhline(y=statistics.mode(Delta_Theta_low_int),linestyle="-",color="c")
-        ax1.set_title("$\Delta \Theta$ - high-low speed area [rads]",fontsize=14)
-        ax2.set_title("$\Delta \Theta$ - high-intermediate speed area [rads]",fontsize=14)
-        ax3.set_title("$\Delta \Theta$ - low-intermediate speed area [rads]",fontsize=14)
+        ax1.set_title("$\Delta \Theta$ - high-low speed area [deg]",fontsize=14)
+        ax2.set_title("$\Delta \Theta$ - high-intermediate speed area [deg]",fontsize=14)
+        ax3.set_title("$\Delta \Theta$ - low-intermediate speed area [deg]",fontsize=14)
         fig.supxlabel("Time [s]",fontsize=16)
         plt.tight_layout()
         ax1.grid()
@@ -1611,10 +1758,310 @@ if update_pdf_plots == True:
         P,X = probability_dist(Delta_Theta_low_int)
         ax.plot(X,P,'-g')
         ax.set_ylabel("Probability [-]",fontsize=14)
-        ax.set_xlabel("$\Delta \Theta$ [rads]",fontsize=16)
+        ax.set_xlabel("$\Delta \Theta$ [deg]",fontsize=16)
         plt.legend(["High-Low speed area", "High-Int speed area", "Low-Int area"])
         plt.tight_layout()
         plt.grid()
         pdf.savefig()
         plt.close()
+
+        #Direction asymmetry and difference in magntidue of asymmetry
+        fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+        ax1.plot(Time,Theta_high,"-r",label="$\\theta_{high}$")
+        ax1.plot(Time,Theta_low,"-b",label="$\\theta_{low}$")
+        ax1.set_ylabel("Direction Asymmetry vector [$m^4/s$]",fontsize=14)
+        ax2.plot(Time,Delta_Theta_high_low,"-k")
+        ax2.set_ylabel("$\Delta \\theta = \\theta_{high}-\\theta_{low}$ [deg]",fontsize=14)
+        fig.supxlabel("Time [s]",fontsize=14)
+        ax1.legend()
+        ax1.grid()
+        ax2.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #Magnitude asymmetry and difference in magntidue of asymmetry
+        fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+        ax1.plot(Time,Theta_high,"-r",label="$\\theta_{high}$")
+        ax1.plot(Time,Theta_int,"-g",label="$\\theta_{int}$")
+        ax1.set_ylabel("Direction Asymmetry vector [deg]",fontsize=14)
+        ax2.plot(Time,Delta_Theta_high_int,"-k")
+        ax2.set_ylabel("$\Delta \\theta = \\theta_{high}-\\theta_{int}$ [deg]",fontsize=14)
+        fig.supxlabel("Time [s]",fontsize=14)
+        ax1.legend()
+        ax1.grid()
+        ax2.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+        #Magnitude asymmetry and difference in magntidue of asymmetry
+        fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+        ax1.plot(Time,Theta_low,"-b",label="$\\theta_{low}$")
+        ax1.plot(Time,Theta_int,"-g",label="$\\theta_{int}$")
+        ax1.set_ylabel("Direction Asymmetry vector [deg]",fontsize=14)
+        ax2.plot(Time,Delta_Theta_low_int,"-k")
+        ax2.set_ylabel("$\Delta \\theta = \\theta_{low}-\\theta_{int}$ [deg]",fontsize=14)
+        fig.supxlabel("Time [s]",fontsize=14)
+        ax1.legend()
+        ax1.grid()
+        ax2.grid()
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close()
+
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,I_high,"-r")
+        plt.plot(Time,I,"-k")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Magnitude Asymmetry [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(I_high,I),4)))
+        plt.legend(["High speed regions", "Total"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,I_low,"-b")
+        plt.plot(Time,I,"-k")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Magnitude Asymmetry [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(I_low,I),4)))
+        plt.legend(["Low speed regions", "Total"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,I_int,"-g")
+        plt.plot(Time,I,"-k")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Magnitude Asymmetry [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(I_int,I),4)))
+        plt.legend(["Intermediate speed regions", "Total"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iy_high,"-r")
+        plt.plot(Time,Iy,"-k")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around y axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iy_high,Iy),4)))
+        plt.legend(["High speed regions", "Total"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iy_low,"-b")
+        plt.plot(Time,Iy,"-k")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around y axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iy_low,Iy),4)))
+        plt.legend(["Low speed regions", "Total"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iy_int,"-g")
+        plt.plot(Time,Iy,"-k")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around y axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iy_int,Iy),4)))
+        plt.legend(["Intermediate speed regions", "Total"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iz_high,"-r")
+        plt.plot(Time,Iz,"-k")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around z axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iz_high,Iz),4)))
+        plt.legend(["High speed regions", "Total"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iz_low,"-b")
+        plt.plot(Time,Iz,"-k")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around z axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iz_low,Iz),4)))
+        plt.legend(["Low speed regions", "Total"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iz_int,"-g")
+        plt.plot(Time,Iz,"-k")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around z axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iz_int,Iz),4)))
+        plt.legend(["Intermediate speed regions", "Total"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,A_high,"-r")
+        plt.plot(Time,A_low,"-b")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Area [$m^2$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(A_high,A_low),4)))
+        plt.legend(["High speed regions", "low speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,A_high,"-r")
+        plt.plot(Time,A_int,"-g")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Area [$m^2$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(A_high,A_int),4)))
+        plt.legend(["High speed regions", "Intermediate speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,A_int,"-g")
+        plt.plot(Time,A_low,"-b")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Area [$m^2$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(A_int,A_low),4)))
+        plt.legend(["Intermediate speed regions", "low speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iy_high,"-r")
+        plt.plot(Time,Iy_low,"-b")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around y axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iy_high,Iy_low),4)))
+        plt.legend(["High speed regions", "low speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iy_high,"-r")
+        plt.plot(Time,Iy_int,"-g")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around y axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iy_high,Iy_int),4)))
+        plt.legend(["High speed regions", "Intermediate speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iy_int,"-g")
+        plt.plot(Time,Iy_low,"-b")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around y axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iy_int,Iy_low),4)))
+        plt.legend(["Intermediate speed regions", "low speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iz_high,"-r")
+        plt.plot(Time,Iz_low,"-b")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around z axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iz_high,Iz_low),4)))
+        plt.legend(["High speed regions", "low speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iz_high,"-r")
+        plt.plot(Time,Iz_int,"-g")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around z axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iz_high,Iz_int),4)))
+        plt.legend(["High speed regions", "Intermediate speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Iz_int,"-g")
+        plt.plot(Time,Iz_low,"-b")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around z axis [$m^4/s$]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Iz_int,Iz_low),4)))
+        plt.legend(["Intermediate speed regions", "low speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Theta_high,"-r")
+        plt.plot(Time,Theta_low,"-b")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Direction of asymmetry vector [rads]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Theta_high,Theta_low),4)))
+        plt.legend(["High speed regions", "low speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Theta_high,"-r")
+        plt.plot(Time,Theta_int,"-g")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Direction of asymmetry vector [rads]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Theta_high,Theta_int),4)))
+        plt.legend(["High speed regions", "Intermediate speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,Theta_int,"-g")
+        plt.plot(Time,Theta_low,"-b")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Direction of asymmetry vector [rads]")
+        plt.title("correlation coefficient = {}".format(round(correlation_coef(Theta_int,Theta_low),4)))
+        plt.legend(["Intermediate speed regions", "low speed regions"])
+        plt.tight_layout()
+        plt.grid()
+        pdf.savefig()
+        plt.close()
+
 
