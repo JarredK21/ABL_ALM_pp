@@ -240,7 +240,7 @@ FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
 
 # plt.rcParams['font.size'] = 16
 # fig = plt.figure(figsize=(14,8))
-# plt.plot(Time_OF,FBR,"-k",label="Total $F_B$")
+# plt.plot(Time_OF,FBR/1079,"-k",label="Total $F_B$")
 
 
 frq,PSD = temporal_spectra(FBR,dt,Var="FBR")
@@ -310,20 +310,20 @@ dTheta_FB_weight_dt = np.array(dt_calc_theta(Theta_FB_weight,dt))
 
 
 FB_weight = np.sqrt(np.square(LSShftFxa)+np.square(FBy)+np.square(FBz))
-out_dir = in_dir+"peak_peak_analysis_weight/"
-plt.rcParams.update({'font.size': 18})
-fig = plt.figure(figsize=(14,8))
-plt.plot(Time_OF,FB_weight,"-k",label="$F_B$")
-plt.plot(Time_OF,FBR_weight,"-b",label="$F_{B_R}$")
-plt.plot(Time_OF,LSShftFxa,"-r",label="$F_{B_x}$")
-plt.legend()
-plt.title("correlation coefficient $F_B, \, FBR$ = {}\ncorrelation coefficient $F_B, \, FBx = {}$".format(round(correlation_coef(FB_weight,FBR_weight),2),round(correlation_coef(FB_weight,LSShftFxa),2)))
-plt.xlabel("Time [s]")
-plt.ylabel("Magnitude Main Bearing force vector components [kN]")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"FB_FBR_FBx.png")
-plt.close()
+# out_dir = in_dir+"peak_peak_analysis_weight/"
+# plt.rcParams.update({'font.size': 18})
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time_OF,FB_weight,"-k",label="$F_B$")
+# plt.plot(Time_OF,FBR_weight,"-b",label="$F_{B_R}$")
+# plt.plot(Time_OF,LSShftFxa,"-r",label="$F_{B_x}$")
+# plt.legend()
+# plt.title("correlation coefficient $F_B, \, FBR$ = {}\ncorrelation coefficient $F_B, \, FBx = {}$".format(round(correlation_coef(FB_weight,FBR_weight),2),round(correlation_coef(FB_weight,LSShftFxa),2)))
+# plt.xlabel("Time [s]")
+# plt.ylabel("Magnitude Main Bearing force vector components [kN]")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"FB_FBR_FBx.png")
+# plt.close()
 
 
 #Filtering FBR aero
@@ -345,10 +345,10 @@ LPF_3_Theta_FBR = low_pass_filter(Theta_FB,1.5,dt)
 HPF_Theta_FB = np.subtract(Theta_FB,LPF_3_Theta_FBR)
 BPF_Theta_FB = np.subtract(LPF_2_Theta_FBR,LPF_1_Theta_FBR)
 
-# plt.plot(Time_OF,LPF_1_FBR,"-g",label="LPF $F_B$")
-# plt.plot(Time_OF,BPF_FBR,"-r",label="BPF $F_B$")
-# plt.plot(Time_OF,HPF_FBR,"-b",label="HPF $F_B$")
-# plt.ylabel("Magnitude Main Bearing force vector [kN]")
+# plt.plot(Time_OF,LPF_1_FBR/1079,"-g",label="LPF $F_B$")
+# plt.plot(Time_OF,BPF_FBR/1079,"-r",label="BPF $F_B$")
+# plt.plot(Time_OF,HPF_FBR/1079,"-b",label="HPF $F_B$")
+# plt.ylabel("Magnitude Main Bearing force vector\nNormalized on rotor weight (1079kN) [-]")
 # plt.xlabel("Time [s]")
 # plt.legend()
 # plt.grid()
@@ -725,21 +725,21 @@ if dF_F_analysis == True:
     Ux_low = np.array(a.variables["Ux_low"][Time_start_idx:])
     Ux_int = np.array(a.variables["Ux_int"][Time_start_idx:])
 
-    #remove all zeros from ux_low and time
+    # #remove all zeros from ux_low and time
     
-    fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+    # fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
 
-    ax1.plot(Time,Ux_int,"-b")
-    ax1.axhline(y=np.mean(Ux_low),linestyle="--",color="r")
-    ax1.set_ylabel("Average streamwise velocity [m/s]",fontsize=14)
-    ax1.set_xlabel("Time [s]",fontsize=16)
-    ax1.grid()
+    # ax1.plot(Time,Ux_int,"-b")
+    # ax1.axhline(y=np.mean(Ux_low),linestyle="--",color="r")
+    # ax1.set_ylabel("Average streamwise velocity [m/s]",fontsize=14)
+    # ax1.set_xlabel("Time [s]",fontsize=16)
+    # ax1.grid()
 
-    ax2.plot(Time_mag_BPF,dF_mag_BPF,"-k")
-    ax2.grid()
+    # ax2.plot(Time_mag_BPF,dF_mag_BPF,"-k")
+    # ax2.grid()
 
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
 
     plt.rcParams.update({'font.size': 18})
 
@@ -776,32 +776,32 @@ if dF_F_analysis == True:
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
-    plt.scatter(dt_mag_BPF,dF_mag_BPF,c=FB_mag_BPF,cmap="viridis")
+    plt.scatter(dt_mag_BPF,np.true_divide(dF_mag_BPF,1079),c=FB_mag_BPF,cmap="viridis")
     plt.xlabel("$dt$ [s]")
-    plt.ylabel("$dF [kN]$")
+    plt.ylabel("Normalized $dF [-]$")
     plt.colorbar()
-    plt.title("BPF $F_B$ inc weight")
+    plt.title("BPF $F_B$ inc weight\nNormalized on rotor weight (1079kN)")
     plt.grid()
     plt.tight_layout()
     plt.savefig(out_dir+"FB_dF_dt_BPF.png")
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
-    plt.scatter(dTheta_mag_BPF,dF_mag_BPF,c=FB_mag_BPF,cmap="viridis")
+    plt.scatter(dTheta_mag_BPF,np.true_divide(dF_mag_BPF,1079),c=FB_mag_BPF,cmap="viridis")
     plt.xlabel("$d\\theta$ [deg]")
-    plt.ylabel("$dF [kN]$")
+    plt.ylabel("Normalized $dF [-]$")
     plt.colorbar()
-    plt.title("BPF $F_B$ inc weight")
+    plt.title("BPF $F_B$ inc weight\nNormalized on rotor weight (1079kN)")
     plt.grid()
     plt.tight_layout()
     plt.savefig(out_dir+"FB_dF_dtheta_BPF.png")
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
-    plt.scatter(FB_mag_BPF,dF_mag_BPF)
+    plt.scatter(FB_mag_BPF,np.true_divide(dF_mag_BPF,1079))
     plt.xlabel("Initial $F_B$ inc weight [kN]")
-    plt.ylabel("$dF$ [kN]")
-    plt.title("BPF $F_B$")
+    plt.ylabel("Normalized $dF$ [-]")
+    plt.title("BPF $F_B$\nNormalized on rotor weight (1079kN)")
     plt.grid()
     plt.tight_layout()
     plt.savefig(out_dir+"FB_dF_F_BPF.png")
@@ -947,26 +947,26 @@ if dF_F_analysis == True:
 
 
     
-    out_dir = in_dir+"peak_peak_analysis/dF_all_times/"
-    Times = np.arange(200,1220,20)
-    for i in np.arange(0,len(Times)-1):
-        fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
-        ax1.plot(Time_mag_BPF,dF_mag_BPF)
-        ax1.axhline(y=1.5*np.std(dF_mag_BPF),linestyle="--",color="k")
-        ax1.axhline(y=-1.5*np.std(dF_mag_BPF),linestyle="--",color="k")
-        ax2.plot(Time_mag_HPF,dF_mag_HPF)
-        ax2.axhline(y=1.5*np.std(dF_mag_HPF),linestyle="--",color="k")
-        ax2.axhline(y=-1.5*np.std(dF_mag_HPF),linestyle="--",color="k")
-        fig.supxlabel("Times [s]")
-        ax1.set_ylabel("dF BPF Magnitude\nAerodynamic Main bearing force vector [kN]",fontsize=12)
-        ax1.grid()
-        ax1.set_xlim([Times[i],Times[i+1]])
-        ax2.set_ylabel("dF HPF Magnitude\nAerodynamic Main bearing force vector [kN]",fontsize=12)
-        ax2.grid()
-        ax2.set_xlim([Times[i],Times[i+1]])
-        plt.tight_layout()
-        plt.savefig(out_dir+"{}_{}.png".format(Times[i],Times[i+1]))
-        plt.close()
+    # out_dir = in_dir+"peak_peak_analysis/dF_all_times/"
+    # Times = np.arange(200,1220,20)
+    # for i in np.arange(0,len(Times)-1):
+    #     fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+    #     ax1.plot(Time_mag_BPF,dF_mag_BPF)
+    #     ax1.axhline(y=1.5*np.std(dF_mag_BPF),linestyle="--",color="k")
+    #     ax1.axhline(y=-1.5*np.std(dF_mag_BPF),linestyle="--",color="k")
+    #     ax2.plot(Time_mag_HPF,dF_mag_HPF)
+    #     ax2.axhline(y=1.5*np.std(dF_mag_HPF),linestyle="--",color="k")
+    #     ax2.axhline(y=-1.5*np.std(dF_mag_HPF),linestyle="--",color="k")
+    #     fig.supxlabel("Times [s]")
+    #     ax1.set_ylabel("dF BPF Magnitude\nAerodynamic Main bearing force vector [kN]",fontsize=12)
+    #     ax1.grid()
+    #     ax1.set_xlim([Times[i],Times[i+1]])
+    #     ax2.set_ylabel("dF HPF Magnitude\nAerodynamic Main bearing force vector [kN]",fontsize=12)
+    #     ax2.grid()
+    #     ax2.set_xlim([Times[i],Times[i+1]])
+    #     plt.tight_layout()
+    #     plt.savefig(out_dir+"{}_{}.png".format(Times[i],Times[i+1]))
+    #     plt.close()
 
 
     fig = plt.figure(figsize=(14,8))
@@ -1003,10 +1003,10 @@ if dF_F_analysis == True:
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
-    plt.scatter(dt_mag_HPF,dF_mag_HPF,c=FB_mag_HPF,cmap="viridis")
+    plt.scatter(dt_mag_HPF,np.true_divide(dF_mag_HPF,1079),c=FB_mag_HPF,cmap="viridis")
     plt.xlabel("$dt$ [s]")
-    plt.ylabel("$dF [kN]$")
-    plt.title("HPF $F_B$ inc weight")
+    plt.ylabel("Normalized $dF [-]$")
+    plt.title("HPF $F_B$ inc weight\nNormalized on rotor weight (1079kN)")
     plt.grid()
     plt.colorbar()
     plt.tight_layout()
@@ -1014,10 +1014,10 @@ if dF_F_analysis == True:
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
-    plt.scatter(dTheta_mag_HPF,dF_mag_HPF,c=FB_mag_HPF,cmap="viridis")
+    plt.scatter(dTheta_mag_HPF,np.true_divide(dF_mag_HPF,1079),c=FB_mag_HPF,cmap="viridis")
     plt.xlabel("$d\\theta$ [deg]")
-    plt.ylabel("$dF [kN]$")
-    plt.title("HPF $F_B$ inc weight")
+    plt.ylabel("Normalized $dF [-]$")
+    plt.title("HPF $F_B$ inc weight\nNormalized on rotor weight (1079kN)")
     plt.grid()
     plt.colorbar()
     plt.tight_layout()
@@ -1026,10 +1026,10 @@ if dF_F_analysis == True:
 
 
     fig = plt.figure(figsize=(14,8))
-    plt.scatter(FB_mag_HPF,dF_mag_HPF)
+    plt.scatter(FB_mag_HPF,np.true_divide(dF_mag_HPF,1079))
     plt.xlabel("Initial $F_B$ inc weight [kN]")
-    plt.ylabel("$dF$ [kN]")
-    plt.title("HPF $F_B$ inc weight")
+    plt.ylabel("Normalized $dF$ [-]")
+    plt.title("HPF $F_B$ inc weight\nNormalized on rotor weight (1079kN)")
     plt.grid()
     plt.tight_layout()
     plt.savefig(out_dir+"FB_dF_F_HPF.png")
@@ -1131,10 +1131,10 @@ if dF_F_analysis == True:
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
-    plt.scatter(dTheta_mag_HPF_threshold,dF_mag_HPF_threshold,c=FB_mag_HPF_threshold,cmap="viridis")
+    plt.scatter(dTheta_mag_HPF_threshold,np.true_divide(dF_mag_HPF_threshold,1079),c=FB_mag_HPF_threshold,cmap="viridis")
     plt.xlabel("$d\\theta$ [deg]")
-    plt.ylabel("$dF [kN]$")
-    plt.title("HPF $F_B$ Threshold on 1.5x standard deviation")
+    plt.ylabel("Normalized $dF [kN]$")
+    plt.title("HPF $F_B$ Threshold on 1.5x standard deviation\nNormalized on rotor weight (1079kN)")
     plt.grid()
     plt.colorbar()
     plt.tight_layout()
@@ -1143,10 +1143,10 @@ if dF_F_analysis == True:
 
 
     fig = plt.figure(figsize=(14,8))
-    plt.scatter(FB_mag_HPF_threshold,dF_mag_HPF_threshold)
+    plt.scatter(FB_mag_HPF_threshold,np.true_divide(dF_mag_HPF_threshold,1079))
     plt.xlabel("Initial $F_B$ inc weight [kN]")
-    plt.ylabel("$dF$ [kN]")
-    plt.title("HPF $F_B$ inc weight threshold on 1.5x standard deviation")
+    plt.ylabel("Normalized $dF$ [-]")
+    plt.title("HPF $F_B$ inc weight threshold on 1.5x standard deviation\nNormalized on rotor weight (1079kN)")
     plt.grid()
     plt.tight_layout()
     plt.savefig(out_dir+"FB_dF_F_HPF_threshold.png")
@@ -1240,13 +1240,13 @@ if dF_dt_analysis == True:
     ax5=fig.add_subplot(313)
     ax6=fig.add_subplot(313,frame_on=False)
 
-    ax.plot(Time_mag_BPF, dF_mag_BPF, "ob")
-    ax.set_title("$dF$ BPF 0.3-0.9Hz Magnitude of $F_B$ vector [kN]",pad=50)
+    ax.plot(Time_mag_BPF, np.true_divide(dF_mag_BPF,1079), "ob")
+    ax.set_title("$dF$ BPF 0.3-0.9Hz Magnitude of $F_B$ vector\nNormalized on rotor weight (1079kN) [-]",pad=75)
     ax.grid()
     ax.tick_params(axis='x')
     ax.tick_params(axis='y')
 
-    P,X=probability_dist(dF_mag_BPF)
+    P,X=probability_dist(np.true_divide(dF_mag_BPF,1079))
     ax2.plot(P, X,"-k")
     ax2.axvline(x=0.0,color="k")
     ax2.xaxis.tick_top()
@@ -1300,7 +1300,7 @@ if dF_dt_analysis == True:
     plt.savefig(out_dir+"dF_dt_dtheta_time_BPF.png")
     plt.close()
 
-    print(moments(dF_mag_BPF),moments(dt_mag_BPF),moments(dTheta_mag_BPF))
+    print(moments(np.true_divide(dF_mag_BPF,1079)),moments(dt_mag_BPF),moments(dTheta_mag_BPF))
 
     #BPF threshold calc
     perc_BPF = []
@@ -1343,9 +1343,9 @@ if dF_dt_analysis == True:
             Time_mag_BPF_threshold.append(Time_OF[it_1])
 
             if dF_left > dF_right:
-                dF_mag_BPF_threshold.append(dF_left); dt_mag_BPF_threshold.append(dt_left); dTheta_mag_BPF_threshold.append(abs(BPF_Theta_FB[it_1]-BPF_Theta_FB[it_0]))
+                dF_mag_BPF_threshold.append(dF_left/1079); dt_mag_BPF_threshold.append(dt_left); dTheta_mag_BPF_threshold.append(abs(BPF_Theta_FB[it_1]-BPF_Theta_FB[it_0]))
             else:
-                dF_mag_BPF_threshold.append(dF_right); dt_mag_BPF_threshold.append(dt_right); dTheta_mag_BPF_threshold.append(abs(BPF_Theta_FB[it_2]-BPF_Theta_FB[it_1]))
+                dF_mag_BPF_threshold.append(dF_right/1079); dt_mag_BPF_threshold.append(dt_right); dTheta_mag_BPF_threshold.append(abs(BPF_Theta_FB[it_2]-BPF_Theta_FB[it_1]))
 
     print((len(Time_mag_BPF_threshold)/len(Time_mag_BPF))*100)
     fig = plt.figure(figsize=(14,8))
@@ -1377,7 +1377,7 @@ if dF_dt_analysis == True:
     ax6=fig.add_subplot(313,frame_on=False)
 
     ax.plot(Time_mag_BPF_threshold, dF_mag_BPF_threshold, "ob")
-    ax.set_title("$dF$ BPF 0.3-0.9Hz Magnitude of $F_B$ vector [kN]",pad=50)
+    ax.set_title("$dF$ BPF 0.3-0.9Hz Magnitude of $F_B$ vector\nNormalized on rotor weight (1079kN) [-]",pad=75)
     ax.grid()
     ax.tick_params(axis='x')
     ax.tick_params(axis='y')
@@ -1494,13 +1494,13 @@ if dF_dt_analysis == True:
     ax5=fig.add_subplot(313)
     ax6=fig.add_subplot(313,frame_on=False)
 
-    ax.plot(Time_mag_HPF, dF_mag_HPF, "ob")
-    ax.set_title("$dF$ HPF 1.5Hz Magnitude of $F_B$ vector [kN]",pad=50)
+    ax.plot(Time_mag_HPF, np.true_divide(dF_mag_HPF,1079), "ob")
+    ax.set_title("$dF$ HPF 1.5Hz Magnitude of $F_B$ vector\nNormalized on rotor weight (1079kN) [-]",pad=75)
     ax.grid()
     ax.tick_params(axis='x')
     ax.tick_params(axis='y')
 
-    P,X=probability_dist(dF_mag_HPF)
+    P,X=probability_dist(np.true_divide(dF_mag_HPF,1079))
     ax2.plot(P, X,"-k")
     ax2.axvline(x=0.0,color="k")
     ax2.xaxis.tick_top()
@@ -1554,7 +1554,7 @@ if dF_dt_analysis == True:
     plt.savefig(out_dir+"dF_dt_dtheta_time_HPF.png")
     plt.close()
 
-    print(moments(dF_mag_HPF),moments(dt_mag_HPF),moments(dTheta_mag_HPF))
+    print(moments(np.true_divide(dF_mag_HPF,1079)),moments(dt_mag_HPF),moments(dTheta_mag_HPF))
 
     #HPF threshold calc
     perc_HPF = []
@@ -1611,9 +1611,9 @@ if dF_dt_analysis == True:
             Time_mag_HPF_threshold.append(Time_OF[it_1])
 
             if dF_left > dF_right:
-                dF_mag_HPF_threshold.append(dF_left); dt_mag_HPF_threshold.append(dt_left); dTheta_mag_HPF_threshold.append(abs(HPF_Theta_FB[it_1]-HPF_Theta_FB[it_0]))
+                dF_mag_HPF_threshold.append(dF_left/1079); dt_mag_HPF_threshold.append(dt_left); dTheta_mag_HPF_threshold.append(abs(HPF_Theta_FB[it_1]-HPF_Theta_FB[it_0]))
             else:
-                dF_mag_HPF_threshold.append(dF_right); dt_mag_HPF_threshold.append(dt_right); dTheta_mag_HPF_threshold.append(abs(HPF_Theta_FB[it_2]-HPF_Theta_FB[it_1]))
+                dF_mag_HPF_threshold.append(dF_right/1079); dt_mag_HPF_threshold.append(dt_right); dTheta_mag_HPF_threshold.append(abs(HPF_Theta_FB[it_2]-HPF_Theta_FB[it_1]))
 
     print((len(Time_mag_HPF_threshold)/len(Time_mag_HPF))*100)
 
@@ -1647,7 +1647,7 @@ if dF_dt_analysis == True:
     ax6=fig.add_subplot(313,frame_on=False)
 
     ax.plot(Time_mag_HPF_threshold, dF_mag_HPF_threshold, "ob")
-    ax.set_title("$dF$ HPF 1.5Hz Magnitude of $F_B$ vector [kN]",pad=50)
+    ax.set_title("$dF$ HPF 1.5Hz Magnitude of $F_B$ vector\nNormalized on rotor weight (1079kN) [-]",pad=75)
     ax.grid()
     ax.tick_params(axis='x')
     ax.tick_params(axis='y')

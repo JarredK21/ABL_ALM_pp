@@ -62,6 +62,8 @@ for i in np.arange(0,len(twist)):
     ux_mean_profile.append(u[i] * np.cos(twist[i]) + v[i] * np.sin(twist[i]))
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
+print("line 65")
+
 
 a = Dataset("./sampling_r_-63.0.nc")
 
@@ -100,6 +102,8 @@ xs = xs + rotor_coordiates[0]
 ys = ys + rotor_coordiates[1]
 zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
 
+print("line 105")
+
 
 u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
 v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
@@ -116,12 +120,12 @@ with Pool() as pool:
         print(len(u_pri),time.time()-start_time)
 u = np.array(u_pri)
 del u_pri; del v
-
+print("line 123")
 
 w = np.array(p.variables["velocityz"][tstart_idx:tend_idx])
 
 
-print("line 328",time.time()-start_time)
+print("line 128",time.time()-start_time)
 
 #find vmin and vmax for isocontour plots            
 #min and max over data
@@ -137,7 +141,7 @@ if nlevs>abs(cminu) or nlevs>cmaxu:
 levs_min = np.linspace(cminu,0,nlevs,dtype=int); levs_max = np.linspace(0,cmaxu,nlevs,dtype=int)
 levels_u = np.concatenate((levs_min,levs_max[1:]))
     
-print("line 370",levels_u)
+print("line 144",levels_u)
 
 nlevs = int(-0.7-cminu)
 levels_neg = np.linspace(cminu,-0.7,nlevs)
@@ -154,7 +158,7 @@ if nlevs>abs(cminw) or nlevs>cmaxw:
 levs_min = np.linspace(cminw,0,nlevs,dtype=int); levs_max = np.linspace(0,cmaxw,nlevs,dtype=int)
 levels_w = np.concatenate((levs_min,levs_max[1:]))
     
-print("line 370",levels_w)
+print("line 161",levels_w)
 
                 
 nlevs = int(cmaxw-0.43)
