@@ -57,9 +57,9 @@ def ejection_check_1(X,Y):
 
     X = X.tolist(); Y = Y.tolist()
 
-    print(X.count(round(np.min(ys),3)),X.count(round(np.max(ys),3)))
-
     if X.count(round(np.min(ys),3)) > 1 or X.count(round(np.max(ys),3)) > 1:
+        return False
+    elif round(np.max(zs),3) in Y:
         return False
     elif round(np.min(zs),3) in Y or round(np.min(ys),3) in X or round(np.max(ys),3) in X:
         return True
@@ -175,9 +175,7 @@ levels_neg = np.linspace(cmin,-0.7,4)
 print("line 159", levels_neg)
 
 
-colours = []
-for i in np.arange(0,len(levels_neg)):
-    colours.append('#%06X' % randint(0, 0xFFFFFF))
+colours = ["g","y","r","k"]
 
 
 folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0_surface_flucs_2/"
