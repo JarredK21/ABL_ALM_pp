@@ -66,6 +66,7 @@ def ejection_check_1(X,Y):
     else:
         return False
 
+
 start_time = time.time()
 
 #defining twist angles with height from precursor
@@ -86,14 +87,11 @@ print("line 61", time.time()-start_time)
 
 
 #directories
-#in_dir = "./"
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
+in_dir = "./"
 out_dir = in_dir + "ISOplots/"
 isExist = os.path.exists(out_dir)
 if isExist == False:
     os.makedirs(out_dir)
-
-
 
 a = Dataset("./sampling_r_-63.0.nc")
 
@@ -154,7 +152,6 @@ with Pool() as pool:
         u_pri.append(u_pri_it)
         print(len(u_pri),time.time()-start_time)
 u_pri = np.array(u_pri); del u; del v
-
 
 
 print("line 139",time.time()-start_time)
