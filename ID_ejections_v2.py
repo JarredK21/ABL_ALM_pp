@@ -171,11 +171,11 @@ levels = np.concatenate((levs_min,levs_max[1:]))
 
 print("line 155",levels)
 
-levels_neg = np.linspace(cmin,-0.7,4)
+levels_neg = np.linspace(-5.0,-1.4,4)
 print("line 159", levels_neg)
 
 
-colours = ["g","y","r","k"]
+colours = ["y","g","r","k"]
 
 
 folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0_surface_flucs_2/"
