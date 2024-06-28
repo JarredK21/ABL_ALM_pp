@@ -164,7 +164,7 @@ if isExist == False:
 
 
 #options
-plot_thresholds = True
+plot_thresholds = False
 output_data = False
 output_heights = True
 
@@ -318,6 +318,7 @@ if output_heights == True:
 
     #create global dimensions
     sampling_dim = ncfile.createDimension("sampling",None)
+    y_dim = ncfile.createDimension("num_points",None)
 
     Time_sampling = ncfile.createVariable("Time", np.float64, ('sampling',),zlib=True)
     Time_sampling[:] = Time
