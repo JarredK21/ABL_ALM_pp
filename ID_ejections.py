@@ -62,6 +62,11 @@ print("line 60", time.time()-start_time)
 
 #directories
 in_dir = "./"
+out_dir = in_dir + "ISOplots/"
+isExist = os.path.exists(out_dir)
+if isExist == False:
+    os.makedirs(out_dir)
+
 
 a = Dataset("./sampling_r_-63.0.nc")
 
@@ -141,6 +146,81 @@ levels = np.concatenate((levs_min,levs_max[1:]))
 print("line 141",levels)
 
 
+folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0_surface_flucs/"
+isExist = os.path.exists(folder)
+if isExist == False:
+    os.makedirs(folder)
+
+#options
+plot_thresholds = True
+output_data = False
+
+
+def Update(it):
+
+    U_pri = u_pri[it] #velocity time step it
+    
+    if it < 10:
+        Time_idx = "000{}".format(it)
+    elif it >= 10 and it < 100:
+        Time_idx = "00{}".format(it)
+    elif it >= 100 and it < 1000:
+        Time_idx = "0{}".format(it)
+    elif it >= 1000 and it < 10000:
+        Time_idx = "{}".format(it)
+
+
+
+    Z = U_pri.reshape(y,x)
+    X,Y = np.meshgrid(ys,zs)
+
+    T = Time[it]
+
+    fig,ax = plt.subplots(figsize=(50,30))
+    plt.rcParams['font.size'] = 40
+
+    cs = ax.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+
+    cb = plt.colorbar(cs)
+
+    Drawing_uncolored_circle = Circle( (2560, 90),radius=63 ,fill = False, linewidth=1)
+    ax.add_artist(Drawing_uncolored_circle)
+
+
+    for t in np.arange(0,len(thresholds)):
+        storage = np.zeros(len(ys))
+        for j in np.arange(0,len(ys)):
+            for k in np.arange(0,len(zs)-1):
+
+                if Z[k+1,j] > thresholds[t]:
+                    storage[j] = zs[k]
+                    break
+
+        ax.plot(ys,storage,linewidth=2,label="{}m/s".format(thresholds[t]))
+
+
+    plt.xlabel("y' axis (rotor frame of reference) [m]",fontsize=40)
+    plt.ylabel("z' axis (rotor frame of reference) [m]",fontsize=40)
+    plt.xticks(fontsize=40)
+    plt.yticks(fontsize=40)
+    ax.legend(loc="upper right")
+
+
+    #define titles and filenames for movie
+    Title = "Rotor Plane. \nFluctuating horizontal velocity [m/s]: Offset = -63.0m, Time = {0}[s]".format(round(T,4))
+    filename = "Rotor_Fluc_Horz_-63.0_{0}.png".format(Time_idx)
+        
+
+    plt.title(Title)
+    plt.tight_layout()
+    plt.savefig(folder+filename)
+    plt.cla()
+    cb.remove()
+    plt.close(fig)
+
+    return T
+
+
 def Update_locs(it):
 
     #algorithm for ejections
@@ -160,47 +240,56 @@ def Update_locs(it):
     return H
 
 
+if plot_thresholds == True:
+    #thresholds to plot
+    thresholds = [-1.4,-2.5,-5.0]
 
-
-ncfile = Dataset(in_dir+"Threshold_heights_Dataset.nc",mode="w",format="NETCDF4")
-ncfile.title = "Heights at threshold data sampling output"
-
-#create global dimensions
-sampling_dim = ncfile.createDimension("sampling",None)
-y_dim = ncfile.createDimension("num_points",None)
-
-Time_sampling = ncfile.createVariable("Time", np.float64, ('sampling',),zlib=True)
-Time_sampling[:] = Time
-y_locs = ncfile.createVariable("ys", np.float64, ('num_points',),zlib=True)
-y_locs[:] = ys
-
-#thresholds to output data
-thresholds = [-5.0,-4.5,-4.0,-3.5,-3.0,-2.5,-2.0,-1.4]
-
-
-for threshold in thresholds:
-
-    print("line 293",threshold)
-
-    group = ncfile.createGroup("{}".format(abs(threshold)))
-
-    H_ejection = group.createVariable("Height_ejection", np.float64, ('sampling','num_points'),zlib=True)
-
-    H_array = []
-    ix = 1
     with Pool() as pool:
-        for H_it in pool.imap(Update_locs,Time_steps):
+        for T in pool.imap(Update,Time_steps):
 
-            H_array.append(H_it)
-
-            print(ix,time.time()-start_time)
-
-            ix+=1
-
-    H_ejection[:] = np.array(H_array); del H_array
-
-    print(ncfile.groups)
+            print(T,time.time()-start_time)
 
 
-print(ncfile)
-ncfile.close()
+if output_data == True:
+    ncfile = Dataset(in_dir+"Threshold_heights_Dataset.nc",mode="w",format="NETCDF4")
+    ncfile.title = "Heights at threshold data sampling output"
+
+    #create global dimensions
+    sampling_dim = ncfile.createDimension("sampling",None)
+    y_dim = ncfile.createDimension("num_points",None)
+
+    Time_sampling = ncfile.createVariable("Time", np.float64, ('sampling',),zlib=True)
+    Time_sampling[:] = Time
+    y_locs = ncfile.createVariable("ys", np.float64, ('num_points',),zlib=True)
+    y_locs[:] = ys
+
+    #thresholds to output data
+    thresholds = [-5.0,-4.5,-4.0,-3.5,-3.0,-2.5,-2.0,-1.4]
+
+
+    for threshold in thresholds:
+
+        print("line 293",threshold)
+
+        group = ncfile.createGroup("{}".format(abs(threshold)))
+
+        H_ejection = group.createVariable("Height_ejection", np.float64, ('sampling','num_points'),zlib=True)
+
+        H_array = []
+        ix = 1
+        with Pool() as pool:
+            for H_it in pool.imap(Update_locs,Time_steps):
+
+                H_array.append(H_it)
+
+                print(ix,time.time()-start_time)
+
+                ix+=1
+
+        H_ejection[:] = np.array(H_array); del H_array
+
+        print(ncfile.groups)
+
+
+    print(ncfile)
+    ncfile.close()
