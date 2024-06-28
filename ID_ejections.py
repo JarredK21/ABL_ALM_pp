@@ -57,17 +57,11 @@ for i in np.arange(0,len(twist)):
     ux_mean_profile.append(u[i] * np.cos(twist[i]) + v[i] * np.sin(twist[i]))
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
-print("line 61", time.time()-start_time)
+print("line 60", time.time()-start_time)
 
 
 #directories
 in_dir = "./"
-out_dir = in_dir + "ISOplots/"
-isExist = os.path.exists(out_dir)
-if isExist == False:
-    os.makedirs(out_dir)
-
-
 
 a = Dataset("./sampling_r_-63.0.nc")
 
@@ -129,7 +123,7 @@ with Pool() as pool:
         print(len(u_pri),time.time()-start_time)
 u_pri = np.array(u_pri); del u; del v
 
-print("line 139",time.time()-start_time)
+print("line 126",time.time()-start_time)
 
 #find vmin and vmax for isocontour plots            
 #min and max over data
@@ -144,13 +138,7 @@ if nlevs>abs(cmin) or nlevs>cmax:
 levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
 levels = np.concatenate((levs_min,levs_max[1:]))
 
-print("line 155",levels)
-
-
-folder = out_dir+"Rotor_Plane_Fluctutating_horz_-63.0_surface_flucs/"
-isExist = os.path.exists(folder)
-if isExist == False:
-    os.makedirs(folder)
+print("line 141",levels)
 
 
 def Update_locs(it):
