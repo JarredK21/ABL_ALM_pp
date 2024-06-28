@@ -345,6 +345,10 @@ LPF_3_Theta_FBR = low_pass_filter(Theta_FB,1.5,dt)
 HPF_Theta_FB = np.subtract(Theta_FB,LPF_3_Theta_FBR)
 BPF_Theta_FB = np.subtract(LPF_2_Theta_FBR,LPF_1_Theta_FBR)
 
+plt.plot(Time_OF,LPF_1_FBR,"-g")
+plt.plot(Time_OF,BPF_FBR,"-r")
+plt.show()
+
 # plt.plot(Time_OF,LPF_1_FBR/1079,"-g",label="LPF $F_B$")
 # plt.plot(Time_OF,BPF_FBR/1079,"-r",label="BPF $F_B$")
 # plt.plot(Time_OF,HPF_FBR/1079,"-b",label="HPF $F_B$")

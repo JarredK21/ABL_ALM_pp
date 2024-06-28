@@ -57,8 +57,9 @@ precursor = Dataset("./abl_statistics76000.nc")
 Time_pre = np.array(precursor.variables["time"])
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
 t_start = np.searchsorted(precursor.variables["time"],38200)
-u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
-v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
+t_end = np.searchsorted(precursor.variables["time"],39201)
+u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
+v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 ux_mean_profile = []
@@ -83,7 +84,7 @@ a = Dataset("./sampling_r_-63.0.nc")
 #time options
 Time = np.array(a.variables["time"])
 dt = Time[1] - Time[0]
-tstart = 38000
+tstart = 38200
 tstart_idx = np.searchsorted(Time,tstart)
 tend = 39201
 tend_idx = np.searchsorted(Time,tend)
@@ -164,7 +165,8 @@ if isExist == False:
 
 #options
 plot_thresholds = True
-output_data = True
+output_data = False
+output_heights = True
 
 
 def Update(it):
@@ -232,6 +234,25 @@ def Update(it):
     return T
 
 
+def Update_locs(it):
+
+    #algorithm for ejections
+
+    U_pri = u_pri[it] #velocity time step it
+
+    u_plane = U_pri.reshape(y,x)
+
+    H = np.zeros(len(ys))
+    for j in np.arange(0,len(ys)):
+        for k in np.arange(0,len(zs)-1):
+
+            if u_plane[k+1,j] > threshold:
+                H[j] = zs[k]
+                break
+
+    return H
+
+
 def Update_data(it):
 
     #algorithm for ejections
@@ -241,12 +262,17 @@ def Update_data(it):
     u_plane = U_pri.reshape(y,x)
 
     H = []
+    jt = 0
     for j in np.arange(0,len(ys)):
         for k in np.arange(0,len(zs)-1):
 
             if u_plane[k+1,j] > threshold:
 
                 break
+        
+        #if coordinate over lowest point of rotor disk regardles of y' location
+        if zs[k] >= 27:
+            jt+=1
 
         #is coordinate inside rotor disk
         cc = isInside(ys[j],zs[k])
@@ -272,17 +298,63 @@ def Update_data(it):
         A+=((H[i+1] + H[i])/2)*dy
 
 
-    return A, H_avg
+    return A, H_avg, jt
 
 
 if plot_thresholds == True:
     #thresholds to plot
-    thresholds = [-0.7,-2.0,-5.0]
+    thresholds = [-1.4,-2.5,-5.0]
 
     with Pool() as pool:
         for T in pool.imap(Update,Time_steps):
 
             print(T,time.time()-start_time)
+
+
+
+if output_heights == True:
+    ncfile = Dataset(in_dir+"Threshold_heights_Dataset.nc",mode="w",format="NETCDF4")
+    ncfile.title = "Heights at threshold data sampling output"
+
+    #create global dimensions
+    sampling_dim = ncfile.createDimension("sampling",None)
+
+    Time_sampling = ncfile.createVariable("Time", np.float64, ('sampling',),zlib=True)
+    Time_sampling[:] = Time
+    y_locs = ncfile.createVariable("ys", np.float64, ('sampling',),zlib=True)
+    y_locs[:] = ys
+
+    #thresholds to output data
+    thresholds = [-5.0,-4.5,-4.0,-3.5,-3.0,-2.5,-2.0,-1.4]
+
+    
+    for threshold in thresholds:
+
+        print("line 293",threshold)
+
+        group = ncfile.createGroup("{}".format(abs(threshold)))
+
+        H_ejection = group.createVariable("Height_ejection", np.float64, ('sampling','num_points'),zlib=True)
+
+        H_array = []
+        ix = 1
+        with Pool() as pool:
+            for H_it in pool.imap(Update_locs,Time_steps):
+
+                H_array.append(H_it)
+
+                print(ix,time.time()-start_time)
+
+                ix+=1
+
+        H_ejection[:] = np.array(H_array); del H_array
+
+        print(ncfile.groups)
+
+
+    print(ncfile)
+    ncfile.close()
+
 
 
 if output_data == True:
@@ -308,16 +380,18 @@ if output_data == True:
 
         A_ejection = group.createVariable("Area_ejection", np.float64, ('sampling'),zlib=True)
         H_average = group.createVariable("Average_height", np.float64, ('sampling'),zlib=True)
+        jt_ejections = group.createVariable("times_ejection", np.float64, ('sampling'),zlib=True)
 
         A_ej = []
         H_avg_array = []
-
+        jt_array = []
         ix = 1
         with Pool() as pool:
-            for A_adv_it, H_avg_it in pool.imap(Update_data,Time_steps):
+            for A_adv_it, H_avg_it,jt_it in pool.imap(Update_data,Time_steps):
 
                 A_ej.append(A_adv_it)
                 H_avg_array.append(H_avg_it)
+                jt_array.append(jt_it)
 
                 print(ix,time.time()-start_time)
 
@@ -325,6 +399,7 @@ if output_data == True:
 
         A_ejection[:] = np.array(A_ej); del A_ej
         H_average[:] = np.array(H_avg_array); del H_avg_array
+        jt_ejections[:] = np.array(jt_array); del jt_array
 
         print(ncfile.groups)
 
