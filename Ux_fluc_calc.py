@@ -233,11 +233,15 @@ LPF_1_FBR = low_pass_filter(FBR,0.3,dt)
 
 plt.rcParams.update({'font.size': 18})
 
+Time_shift = 4.78
+Time_shift_idx = np.searchsorted(Time,Time_shift)
+
 fig,ax=plt.subplots(figsize=(14,8),sharex=True)
-ax.plot(Time,Ux_avg,"-b")
+ax.plot(Time[:-Time_shift_idx],Ux_avg[:-Time_shift_idx],"-b")
 ax.set_ylabel("Rotor averaged\nfluctuating streamwise velocity [m/s]")
 ax2=ax.twinx()
-ax2.plot(Time_OF,LPF_1_FBR,"-r")
+Time_shift_idx = np.searchsorted(Time_OF,Time_shift)
+ax2.plot(Time_OF[:-Time_shift_idx],LPF_1_FBR[Time_shift_idx:],"-r")
 ax2.set_ylabel("LPF (0.3Hz)\nMagnitude Main Bearing force vector [kN]")
 ax.axhline(y=0.7,linestyle="--",color="k")
 ax.axhline(y=-0.7,linestyle="--",color="k")
