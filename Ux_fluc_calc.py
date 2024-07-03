@@ -86,6 +86,7 @@ tend = 39201
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(0, tend_idx-tstart_idx)
 Time = Time[tstart_idx:tend_idx]
+Time = Time-Time[0]
 
 
 #rotor data
@@ -126,7 +127,6 @@ zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
 #velocity field
 u = np.array(p.variables["velocityx"])
 v = np.array(p.variables["velocityy"])
-del p
 
 u[u<0]=0; v[v<0]=0 #remove negative velocities
 
