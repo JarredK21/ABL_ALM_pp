@@ -98,6 +98,49 @@ y = p.ijk_dims[1] #no. data points
 normal = 29
 
 #define plotting axes
+x = p.ijk_dims[0] #no. data points
+y = p.ijk_dims[1] #no. data points
+
+#find normal
+
+normal = 29
+
+#define plotting axes
+coordinates = np.array(p.variables["coordinates"])
+
+xo = coordinates[0:x,0]
+yo = coordinates[0:x,1]
+
+rotor_coordiates = [2560,2560,90]
+
+x_trans = xo - rotor_coordiates[0]
+y_trans = yo - rotor_coordiates[1]
+
+phi = np.radians(-normal)
+xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
+ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
+xs = xs + rotor_coordiates[0]
+ys = ys + rotor_coordiates[1]
+zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
+
+#velocity field
+u = np.array(p.variables["velocityx"])
+v = np.array(p.variables["velocityy"])
+del p
+
+u[u<0]=0; v[v<0]=0 #remove negative velocities
+
+with Pool() as pool:
+    u_pri = []
+    for u_fluc_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+        
+        u_pri.append(u_fluc_hvel_it)
+        print(len(u_pri))
+u = np.array(u_pri); del u_pri; del v
+print(np.shape(u))
+
+
+#define plotting axes
 coordinates = np.array(p.variables["coordinates"])
 
 x = p.ijk_dims[0] #no. data points
@@ -118,22 +161,6 @@ ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
 zs = zo - rotor_coordiates[2]
 
 print(len(ys),len(zs))
-
-#velocity field
-u = np.array(p.variables["velocityx"])
-v = np.array(p.variables["velocityy"])
-del p
-
-u[u<0]=0; v[v<0]=0 #remove negative velocities
-
-with Pool() as pool:
-    u_pri = []
-    for u_fluc_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
-        
-        u_pri.append(u_fluc_hvel_it)
-        print(len(u_pri))
-u = np.array(u_pri); del u_pri; del v
-print(np.shape(u))
 
 
 def Ux_it_offset(it):
