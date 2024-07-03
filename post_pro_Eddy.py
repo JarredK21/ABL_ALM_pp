@@ -141,6 +141,8 @@ A_int = np.array(a.variables["Area_int"][Time_start_idx:])
 mu,sd,sk,k = moments(A_int)
 print("stats A_int ",mu,sd,sk,k)
 
+
+
 A_high_trend = low_pass_filter(A_high,cutoff,dt)
 A_high_flucs = np.subtract(A_high,A_high_trend)
 A_low_trend = low_pass_filter(A_low,cutoff,dt)
@@ -316,6 +318,40 @@ Frac_low_area = np.true_divide(A_low,A_rot)
 Frac_int_area = np.true_divide(A_int,A_rot)
 Tot_area = np.add(np.add(Frac_high_area,Frac_low_area),Frac_int_area)
 
+Times_high = []
+Times_low = []
+Times_int = []
+Times_high_low = []
+Times_high_int = []
+Times_low_int = []
+Times_high_low_int = []
+for it in Time_steps:
+    if Frac_high_area[it] >= 0.7:
+        Times_high.append(it)
+    elif Frac_low_area[it] >= 0.7:
+        Times_low.append(it)
+    elif Frac_int_area[it] >= 0.7:
+        Times_int.append(it)
+    elif Frac_high_area[it] >= 0.4 and Frac_low_area[it] >= 0.4:
+        Times_high_low.append(it)
+    elif Frac_high_area[it] >= 0.4 and Frac_int_area[it] >= 0.4:
+        Times_high_int.append(it)
+    elif Frac_low_area[it] >= 0.4 and Frac_int_area[it] >= 0.4:
+        Times_low_int.append(it)
+    else:
+        Times_high_low_int.append(it)
+
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time,I,"-k")
+plt.plot(Time[Times_high],I[Times_high],"or")
+plt.plot(Time[Times_low],I[Times_low],"ob")
+plt.plot(Time[Times_int],I[Times_int],"og")
+plt.grid()
+plt.tight_layout()
+
+
+
 P_high_Iy = np.true_divide(Iy_high,Iy)
 P_low_Iy = np.true_divide(Iy_low,Iy)
 P_int_Iy = np.true_divide(Iy_int,Iy)
@@ -369,27 +405,27 @@ Iy_df = np.array(group.variables["Iy"][Time_start_idx:])
 Iz_df = np.array(group.variables["Iz"][Time_start_idx:])
 
 
-fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+# fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
 
-ax1.plot(Time,Ux_high,'-r')
-ax1.plot(Time,Ux_low,"-b")
-ax1.plot(Time,Ux_int,"-g")
-ax1.set_ylabel("Average streamwise velocity [m/s]",fontsize=14)
-ax1.set_xlabel("Time [s]",fontsize=16)
-ax1.legend(["High speed area", "Low speed area", "intermediate area","Total"])
-ax1.grid()
+# ax1.plot(Time,Ux_high,'-r')
+# ax1.plot(Time,Ux_low,"-b")
+# ax1.plot(Time,Ux_int,"-g")
+# ax1.set_ylabel("Average streamwise velocity [m/s]",fontsize=14)
+# ax1.set_xlabel("Time [s]",fontsize=16)
+# ax1.legend(["High speed area", "Low speed area", "intermediate area","Total"])
+# ax1.grid()
 
 
-ax2.plot(Time,A_high,'-r')
-ax2.plot(Time,A_low,"-b")
-ax2.plot(Time,A_int,"-g")
-ax2.set_ylabel("Area [$m^2$]",fontsize=14)
-ax2.set_xlabel("Time [s]",fontsize=16)
-ax2.legend(["High speed area", "Low speed area", "intermediate area"])
-ax2.grid()
+# ax2.plot(Time,A_high,'-r')
+# ax2.plot(Time,A_low,"-b")
+# ax2.plot(Time,A_int,"-g")
+# ax2.set_ylabel("Area [$m^2$]",fontsize=14)
+# ax2.set_xlabel("Time [s]",fontsize=16)
+# ax2.legend(["High speed area", "Low speed area", "intermediate area"])
+# ax2.grid()
 
-plt.tight_layout()
-plt.show()
+# plt.tight_layout()
+# plt.show()
 
 
 
@@ -563,18 +599,38 @@ FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
 
 FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
 
-plt.rcParams['font.size'] = 12
-frq,PSD = temporal_spectra(FBR,dt_OF,"FBR")
-plt.figure(figsize=(14,8))
-plt.loglog(I_frq,I_PSD,"-b")
-plt.loglog(frq,PSD,"-r")
-plt.xlabel("Frequency [Hz]")
-plt.ylabel("PSD")
-plt.legend(["Magnitude Asymmetry vector [$m^4/s$]", "Magnitude Main bearing force vector [kN]"])
+f = interpolate.interp1d(Time_OF,FBR)
+FBR_interp = f(Time)
+
+print(moments(FBR_interp[Times_high]))
+print(moments(FBR_interp[Times_low]))
+print(moments(FBR_interp[Times_int]))
+print(moments(FBR_interp[Times_high_low]))
+print(moments(FBR_interp[Times_high_int]))
+print(moments(FBR_interp[Times_low_int]))
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time,FBR_interp,"-k")
+plt.plot(Time[Times_high],FBR_interp[Times_high],"or")
+plt.plot(Time[Times_low],FBR_interp[Times_low],"ob")
+plt.plot(Time[Times_int],FBR_interp[Times_int],"og")
 plt.grid()
 plt.tight_layout()
-plt.savefig(in_dir+"Bearing_force_analysis/FBR_I_spectra.png")
-plt.close()
+
+plt.show()
+
+# plt.rcParams['font.size'] = 12
+# frq,PSD = temporal_spectra(FBR,dt_OF,"FBR")
+# plt.figure(figsize=(14,8))
+# plt.loglog(I_frq,I_PSD,"-b")
+# plt.loglog(frq,PSD,"-r")
+# plt.xlabel("Frequency [Hz]")
+# plt.ylabel("PSD")
+# plt.legend(["Magnitude Asymmetry vector [$m^4/s$]", "Magnitude Main bearing force vector [kN]"])
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(in_dir+"Bearing_force_analysis/FBR_I_spectra.png")
+# plt.close()
 
 f = interpolate.interp1d(Time_OF,LSShftFys)
 LSShftFys = f(Time)

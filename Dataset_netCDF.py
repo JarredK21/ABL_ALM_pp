@@ -126,6 +126,7 @@ def delta_Ux(j,k,r,fx,fy):
 in_dir = "./"
 out_dir = in_dir
 
+
 #create netcdf file
 ncfile = Dataset(out_dir+"Dataset.nc",mode="w",format='NETCDF4')
 ncfile.title = "OpenFAST data sampling output"
@@ -214,6 +215,7 @@ a = Dataset(in_dir+"sampling_r_-5.5.nc")
 
 #sampling time
 Time_sample = np.array(a.variables["time"])
+Time_steps = np.arange(0,len(Time_sample))
 Time_sample = Time_sample - Time_sample[0]
 time_idx = len(Time_sample)
 time_sampling[:] = Time_sample
@@ -241,13 +243,14 @@ for offset in offsets:
 
     velocityx = np.array(p_rotor.variables["velocityx"]); velocityy = np.array(p_rotor.variables["velocityy"])
     velocityz = np.array(p_rotor.variables["velocityz"])
+    
 
     Variables = ["Ux_{0}".format(offset),"Uz_{0}".format(offset), "IA_{0}".format(offset), "Iy_{0}".format(offset),"Iz_{0}".format(offset)]
 
+    coordinates = np.array(p_rotor.variables["coordinates"])
+
     x = p_rotor.ijk_dims[0] #no. data points
     y = p_rotor.ijk_dims[1] #no. data points
-
-    coordinates = np.array(p_rotor.variables["coordinates"])
 
     xo = coordinates[:,0]
     yo = coordinates[:,1]

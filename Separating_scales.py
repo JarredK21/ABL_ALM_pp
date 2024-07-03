@@ -238,10 +238,6 @@ FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
 
 FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
 
-# plt.rcParams['font.size'] = 16
-# fig = plt.figure(figsize=(14,8))
-# plt.plot(Time_OF,FBR/1079,"-k",label="Total $F_B$")
-
 
 frq,PSD = temporal_spectra(FBR,dt,Var="FBR")
 
@@ -345,9 +341,151 @@ LPF_3_Theta_FBR = low_pass_filter(Theta_FB,1.5,dt)
 HPF_Theta_FB = np.subtract(Theta_FB,LPF_3_Theta_FBR)
 BPF_Theta_FB = np.subtract(LPF_2_Theta_FBR,LPF_1_Theta_FBR)
 
-plt.plot(Time_OF,LPF_1_FBR,"-g")
-plt.plot(Time_OF,BPF_FBR,"-r")
-plt.show()
+out_dir = in_dir+"peak_peak_analysis/frequencies_all_times/"
+Times = np.arange(200,1300,100)
+for i in np.arange(0,len(Times)-1):
+    idx1 = np.searchsorted(Time_OF,Times[i]);idx2 = np.searchsorted(Time_OF,Times[i+1])
+    plt.rcParams['font.size'] = 16
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time_OF[idx1:idx2],FBR[idx1:idx2],"-k",label="Total $F_{B_R}$")
+    plt.plot(Time_OF[idx1:idx2],LPF_1_FBR[idx1:idx2],"-g",label="LPF 0.3Hz $F_{B_R}$")
+    plt.plot(Time_OF[idx1:idx2],BPF_FBR[idx1:idx2],"-r",label="BPF 0.3-0.9Hz $F_{B_R}$")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Magnitude Main Bearing force vector [kN]")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"{}_{}.png".format(Times[i],Times[i+1]))
+    plt.close()
+
+# zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+
+# BPF_FBR_2 = []
+# Times_2 = []
+# for i in np.arange(0,len(zero_crossings_index_BPF_FBR),2):
+#     idx = zero_crossings_index_BPF_FBR[i]
+#     BPF_FBR_2.append(BPF_FBR[idx]); Times_2.append(Time_OF[idx])
+
+# # plt.plot(Time_OF,LPF_1_FBR,"-b")
+# # plt.plot(Time_OF,BPF_FBR,"-r")
+# # plt.plot(Times_2,BPF_FBR_2,"-k")
+
+# f = interpolate.interp1d(Time_OF,LPF_1_FBR)
+# LPF_1_FBR_interp = f(Times_2)
+
+# idx = np.searchsorted(Times_2,Times_2[0]+20)
+# cc = []
+# for it in np.arange(0,len(Times_2)-idx):
+#     cc.append(correlation_coef(BPF_FBR_2[it:it+idx],LPF_1_FBR_interp[it:it+idx]))
+
+# out_dir = in_dir+"peak_peak_analysis/"
+# plt.rcParams.update({'font.size': 18})
+
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time_OF,BPF_FBR,"-r")
+# plt.plot(Times_2,BPF_FBR_2,"-k")
+# plt.xlabel("Time [s]")
+# plt.ylabel("Magnitude Main Bearing force vector [kN]")
+# plt.xlim([200,300])
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"BPF.png")
+# plt.close()
+
+# fig,(ax,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+# ax.plot(Times_2,LPF_1_FBR_interp,"-b",label="LPF 0.3Hz $F_{B_R}$")
+# ax.plot(Times_2,BPF_FBR_2,"-r",label="BPF 0.3-0.9Hz $F_{B_R}$")
+# fig.suptitle("Correlation coefficient = {}".format(round(correlation_coef(LPF_1_FBR_interp,BPF_FBR_2),2)))
+# fig.supxlabel("Time [s]")
+# ax.set_ylabel("Magnitude Main Bearing\nforce vector [kN]")
+# ax.legend()
+# ax.grid()
+# ax2.plot(Times_2[idx:],cc,"-k")
+# ax2.set_ylabel("local correlation\ncoefficient T= 20s")
+# ax2.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"LPF_BPF.png")
+# plt.close()
+
+
+# zero_crossings_index_HPF_FBR = np.where(np.diff(np.sign(dHPF_FBR)))[0]
+
+# HPF_FBR_2 = []
+# Times_2 = []
+# for i in np.arange(0,len(zero_crossings_index_HPF_FBR),2):
+#     idx = zero_crossings_index_HPF_FBR[i]
+#     HPF_FBR_2.append(HPF_FBR[idx]); Times_2.append(Time_OF[idx])
+
+# # plt.plot(Time_OF,LPF_1_FBR,"-b")
+# # plt.plot(Time_OF,BPF_FBR,"-r")
+# # plt.plot(Times_2,BPF_FBR_2,"-k")
+
+# f = interpolate.interp1d(Time_OF,LPF_1_FBR)
+# LPF_1_FBR_interp = f(Times_2)
+
+# idx = np.searchsorted(Times_2,Times_2[0]+20)
+# cc = []
+# for it in np.arange(0,len(Times_2)-idx):
+#     cc.append(correlation_coef(HPF_FBR_2[it:it+idx],LPF_1_FBR_interp[it:it+idx]))
+
+# out_dir = in_dir+"peak_peak_analysis/"
+# plt.rcParams.update({'font.size': 18})
+
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time_OF,HPF_FBR,"-r")
+# plt.plot(Times_2,HPF_FBR_2,"-k")
+# plt.xlabel("Time [s]")
+# plt.ylabel("Magnitude Main Bearing force vector [kN]")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"HPF.png")
+# plt.close()
+
+# fig,(ax,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+# ax.plot(Times_2,LPF_1_FBR_interp,"-b",label="LPF 0.3Hz $F_{B_R}$")
+# ax.plot(Times_2,HPF_FBR_2,"-r",label="HPF 1.5Hz $F_{B_R}$")
+# fig.suptitle("Correlation coefficient = {}".format(round(correlation_coef(LPF_1_FBR_interp,HPF_FBR_2),2)))
+# fig.supxlabel("Time [s]")
+# ax.set_ylabel("Magnitude Main Bearing\nforce vector [kN]")
+# ax.legend()
+# ax.grid()
+# ax2.plot(Times_2[idx:],cc,"-k")
+# ax2.set_ylabel("local correlation\ncoefficient T= 20s")
+# ax2.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"LPF_HPF.png")
+# plt.close()
+
+
+# a = Dataset(in_dir+"Asymmetry_Dataset.nc")
+
+# Time = np.array(a.variables["time"])
+# Time = Time - Time[0]
+# dt = Time[1] - Time[0]
+# Time_steps = np.arange(0,len(Time))
+
+# Time_start = 200; Time_start_idx = np.searchsorted(Time,Time_start)
+# Time = Time[Time_start_idx:]
+
+# A_high = np.array(a.variables["Area_high"][Time_start_idx:])
+# A_low = np.array(a.variables["Area_low"][Time_start_idx:])
+
+# fig,(ax,ax2,ax3) = plt.subplots(3,1,figsize=(14,8),sharex=True)
+# ax.plot(Times_2,LPF_1_FBR_interp,"-b",label="LPF 0.3Hz $F_{B_R}$")
+# ax.plot(Times_2,BPF_FBR_2,"-r",label="BPF 0.3-0.9Hz $F_{B_R}$")
+# fig.suptitle("Correlation coefficient = {}".format(round(correlation_coef(LPF_1_FBR_interp,BPF_FBR_2),2)))
+# fig.supxlabel("Time [s]")
+# ax.set_ylabel("Magnitude Main Bearing\nforce vector [kN]")
+# ax.legend()
+# ax.grid()
+# ax2.plot(Times_2[7:-6],cc,"-k")
+# ax2.set_ylabel("local correlation\ncoefficient T= 20s")
+# ax2.grid()
+# ax3.plot(Time,A_high,"-r")
+# ax3.plot(Time,A_low,"-b")
+# ax3.set_ylabel("Area [$m^2$]")
+# ax3.grid()
+# plt.tight_layout()
+# plt.show()
 
 # plt.plot(Time_OF,LPF_1_FBR/1079,"-g",label="LPF $F_B$")
 # plt.plot(Time_OF,BPF_FBR/1079,"-r",label="BPF $F_B$")
@@ -746,6 +884,7 @@ if dF_F_analysis == True:
     # plt.show()
 
     plt.rcParams.update({'font.size': 18})
+
 
     fig = plt.figure(figsize=(14,8))
     plt.scatter(dt_mag_BPF,dF_mag_BPF,c=FBR_mag_BPF,cmap="viridis")
