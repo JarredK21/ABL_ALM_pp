@@ -36,16 +36,17 @@ def Asymmetry_calc(it):
             z.append(np.min(z_i)); z.append(np.max(z_i))
 
     if len(y) > 0:
-        Iy = Iy_it_calc(it,y,z); Iz = Iz_it_calc(it,y,z)
+        Iy,Iz = I_it_calc(it,y,z)
     else:
         Iy = 0; Iz = 0
 
     return Iy, Iz
 
 
-def Iy_it_calc(it,y,z):
+def I_it_calc(it,y,z):
 
     Iy = 0
+    Iz = 0
     ijk = 0
     for j,k in zip(ys,zs):
     
@@ -54,25 +55,10 @@ def Iy_it_calc(it,y,z):
 
             if z[idx] <= (zs[ijk]+rotor_coordiates[2]) <= z[idx+1]:
                 Iy += u[it,ijk]*k*dA
-        ijk+=1
-
-    return Iy
-
-
-def Iz_it_calc(it,y,z):
-
-    Iz = 0
-    ijk = 0
-    for j,k in zip(ys,zs):
-
-        if ys[ijk] in y:
-            idx = y.index(ys[ijk]+rotor_coordiates[1])
-
-            if z[idx] <= (zs[ijk]+rotor_coordiates[2]) <= z[idx+1]:
                 Iz += u[it,ijk]*j*dA
         ijk+=1
 
-    return Iz
+    return Iy,Iz
 
 
 
