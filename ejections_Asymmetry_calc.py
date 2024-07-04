@@ -100,7 +100,7 @@ h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
-
+print("line 103")
 
 a = Dataset("./sampling_r_-63.0.nc")
 
@@ -142,12 +142,11 @@ xs = xs + rotor_coordiates[0]
 ys = ys + rotor_coordiates[1]
 zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
 
-
+print("line 145")
 
 #velocity field
 u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
 v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
-del p
 
 u[u<0]=0; v[v<0]=0 #remove negative velocities
 
@@ -186,7 +185,7 @@ dA = dy * dz
 
 del p
 
-    
+print("line 189")
 
 a = Dataset("Threshold_heights_Dataset.nc")
 
@@ -216,6 +215,8 @@ for threshold in Thresholds:
     group = a.groups["{}".format(threshold)]
 
     Heights = np.array(group.variables["Height_ejection"])
+
+    print(threshold)
 
     Iy_array = []
     Iz_array = []
