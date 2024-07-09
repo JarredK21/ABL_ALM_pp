@@ -341,7 +341,15 @@ LPF_3_Theta_FBR = low_pass_filter(Theta_FB,1.5,dt)
 HPF_Theta_FB = np.subtract(Theta_FB,LPF_3_Theta_FBR)
 BPF_Theta_FB = np.subtract(LPF_2_Theta_FBR,LPF_1_Theta_FBR)
 
-out_dir = in_dir+"peak_peak_analysis/frequencies_all_times/"
+zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+
+BPF_FBR_2 = []
+Times_2 = []
+for i in np.arange(0,len(zero_crossings_index_BPF_FBR),2):
+    idx = zero_crossings_index_BPF_FBR[i]
+    BPF_FBR_2.append(BPF_FBR[idx]); Times_2.append(Time_OF[idx])
+
+out_dir = in_dir+"peak_peak_analysis/frequencies_all_times_3P_LPF/"
 Times = np.arange(200,1300,100)
 for i in np.arange(0,len(Times)-1):
     idx1 = np.searchsorted(Time_OF,Times[i]);idx2 = np.searchsorted(Time_OF,Times[i+1])
@@ -350,8 +358,30 @@ for i in np.arange(0,len(Times)-1):
     plt.plot(Time_OF[idx1:idx2],FBR[idx1:idx2],"-k",label="Total $F_{B_R}$")
     plt.plot(Time_OF[idx1:idx2],LPF_1_FBR[idx1:idx2],"-g",label="LPF 0.3Hz $F_{B_R}$")
     plt.plot(Time_OF[idx1:idx2],BPF_FBR[idx1:idx2],"-r",label="BPF 0.3-0.9Hz $F_{B_R}$")
+    idx1 = np.searchsorted(Times_2,Times[i]);idx2 = np.searchsorted(Times_2,Times[i+1])
+    plt.plot(Times_2[idx1:idx2],BPF_FBR_2[idx1:idx2],"--b",linewidth=0.7)
     plt.xlabel("Time [s]")
     plt.ylabel("Magnitude Main Bearing force vector [kN]")
+    plt.legend(loc="upper right")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"{}_{}.png".format(Times[i],Times[i+1]))
+    plt.close()
+
+
+
+out_dir = in_dir+"peak_peak_analysis/frequencies_all_times_HPF_3P/"
+Times = np.arange(200,1300,100)
+for i in np.arange(0,len(Times)-1):
+    idx1 = np.searchsorted(Time_OF,Times[i]);idx2 = np.searchsorted(Time_OF,Times[i+1])
+    plt.rcParams['font.size'] = 16
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time_OF[idx1:idx2],FBR[idx1:idx2],"-k",label="Total $F_{B_R}$")
+    plt.plot(Time_OF[idx1:idx2],HPF_FBR[idx1:idx2]-600,"-b",label="HPF 1.5Hz $F_{B_R}$\noffset: -600kN")
+    plt.plot(Time_OF[idx1:idx2],BPF_FBR[idx1:idx2],"-r",label="BPF 0.3-0.9Hz $F_{B_R}$")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Magnitude Main Bearing force vector [kN]")
+    plt.legend(loc="upper right")
     plt.grid()
     plt.tight_layout()
     plt.savefig(out_dir+"{}_{}.png".format(Times[i],Times[i+1]))

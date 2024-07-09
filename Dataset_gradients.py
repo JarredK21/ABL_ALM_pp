@@ -42,24 +42,60 @@ def Horizontal_velocity(it):
 
 
 
-#def dyUx_calc(it):
-def dyUx_calc():
-    #U = u[it]
-    U = u
+def dyUx_calc(it):
+    U = u[it]
     u_plane = U.reshape(y,x)
+
+    du_dy = []
+    for k in np.arange(0,len(u_plane)):
+        du_dy.append(np.subtract(u_plane[k][1:],u_plane[k][:-1])/dy)
+    du_dy = np.array(du_dy)
+    du_dy = du_dy.flatten()
+    mask = np.arange(0,len(ys),x)
+    ys_mod = np.delete(ys,mask); zs_mod = np.delete(zs,mask)
+
+    ijk = 0
+    du_dy_avg = []
+    for j,k in zip(ys_mod,zs_mod):
+        r = np.sqrt(j**2 + k**2)
+        if r <= 63 and r > 1.5:
+            du_dy_avg.append(du_dy[ijk])
+
+    return np.average(du_dy_avg)
+
+
+def dzUx_calc(it):
+    U = u[it]
+    u_plane = U.reshape(y,x)
+
+    du_dz = []
+    print(len(u_plane[0]))
+    for j in np.arange(0,len(u_plane[0])):
+        du_dz.append(np.subtract(u_plane[1:,j],u_plane[:-1,j])/dz)
+    du_dz = np.array(du_dz).reshape(y-1,x)
+    du_dz = du_dz.flatten()
+    mask = np.arange(0,x)
+    ys_mod = np.delete(ys,mask); zs_mod = np.delete(zs,mask)
+
+    ijk = 0
+    du_dz_avg = []
+    for j,k in zip(ys_mod,zs_mod):
+        r = np.sqrt(j**2 + k**2)
+        if r <= 63 and r > 1.5:
+            du_dz_avg.append(du_dz[ijk])
+    return np.average(du_dz_avg)
+
 
     
 
 
 
 #directories
-#in_dir = "./"
-in_dir = "../../ABL_precursor_2_restart/"
-#out_dir = in_dir
+in_dir = "./"
+out_dir = in_dir
 
 #defining twist angles with height from precursor
-#precursor = Dataset("./abl_statistics76000.nc")
-precursor = Dataset(in_dir+"abl_statistics70000.nc")
+precursor = Dataset("./abl_statistics76000.nc")
 Time_pre = np.array(precursor.variables["time"])
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
 t_start = np.searchsorted(precursor.variables["time"],38200)
@@ -75,47 +111,43 @@ del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 print("line 67", time.time()-start_time)
 
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
-# #create netcdf file
-# ncfile = Dataset(out_dir+"Dataset.nc",mode="w",format='NETCDF4')
-# ncfile.title = "OpenFAST data sampling gradients output"
+#create netcdf file
+ncfile = Dataset(out_dir+"Dataset.nc",mode="w",format='NETCDF4')
+ncfile.title = "OpenFAST data sampling gradients output"
 
-# #create global dimensions
-# sampling_dim = ncfile.createDimension("sampling",None)
+#create global dimensions
+sampling_dim = ncfile.createDimension("sampling",None)
 
-# #create variables
-# time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
+#create variables
+time_sampling = ncfile.createVariable("time_sampling", np.float64, ('sampling',),zlib=True)
 
 #sampling data
-# a = Dataset(in_dir+"sampling_r_-5.5.nc")
+a = Dataset(in_dir+"sampling_r_-5.5.nc")
 
-# #sampling time
-# Time_sample = np.array(a.variables["time"])
-# Time_steps = np.arange(0,len(Time_sample))
-# Time_sample = Time_sample - Time_sample[0]
-# time_idx = len(Time_sample)
-#time_sampling[:] = Time_sample
+#sampling time
+Time_sample = np.array(a.variables["time"])
+Time_steps = np.arange(0,len(Time_sample))
+Time_sample = Time_sample - Time_sample[0]
+time_idx = len(Time_sample)
+time_sampling[:] = Time_sample
 
-#print("line 201", time_idx, time.time()-start_time)
+print("line 201", time_idx, time.time()-start_time)
 
-# offsets = [-5.5,-63.0]
-# group_label = [5.5,63.0]
-offsets = [-63.0]
-group_label = [63.0]
+offsets = [-5.5,-63.0]
+group_label = [5.5,63.0]
 
 
 ic = 0
 for offset in offsets:
 
-    # a = Dataset(in_dir+"sampling_r_{}.nc".format(offset))
-    a = Dataset(in_dir+"sampling_r_{}_0.nc".format(offset))
+    a = Dataset(in_dir+"sampling_r_{}.nc".format(offset))
 
-    # group = ncfile.createGroup("{}".format(group_label[ic]))
+    group = ncfile.createGroup("{}".format(group_label[ic]))
 
-    # dyUx = group.createVariable("dyUx", np.float64, ('sampling'),zlib=True)
-    # dzUx = group.createVariable("dzUx", np.float64, ('sampling'),zlib=True)
-    # drUx = group.createVariable("drUx", np.float64, ('sampling'),zlib=True)
+    dyUx = group.createVariable("dyUx", np.float64, ('sampling'),zlib=True)
+    dzUx = group.createVariable("dzUx", np.float64, ('sampling'),zlib=True)
+    drUx = group.createVariable("drUx", np.float64, ('sampling'),zlib=True)
 
     p_rotor = a.groups["p_r"]; del a
     
@@ -157,29 +189,28 @@ for offset in offsets:
 
     u[u<0]=0; v[v<0]=0 #remove negative velocities
 
-    # with Pool() as pool:
-    #     u_hvel = []
-    #     for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+    with Pool() as pool:
+        u_hvel = []
+        for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
             
-    #         u_hvel.append(u_hvel_it)
-    #         print(len(u_hvel),time.time()-start_time)
-    # u = np.array(u_hvel); del u_hvel; del v
+            u_hvel.append(u_hvel_it)
+            print(len(u_hvel),time.time()-start_time)
+    u = np.array(u_hvel); del u_hvel; del v
 
-    f = interpolate.interp1d(h,twist)
-    mag_horz_vel = []
-    for i in np.arange(0,len(zs)):
-        u_i = u[i*x:(i+1)*x]; v_i = v[i*x:(i+1)*x]
-        if zs[i] < h[0]:
-            twist_h = f(h[0])
 
-        elif zs[i] > h[-1]:
-            twist_h = f(h[-1])
-        else:
-            twist_h = f(zs[i])
+    xo = coordinates[:,0]
+    yo = coordinates[:,1]
+    zo = coordinates[:,2]
 
-        mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
-        mag_horz_vel.extend(mag_horz_vel_i)
-    u = np.array(mag_horz_vel); del v; del mag_horz_vel; mag_horz_vel_i
+    rotor_coordiates = [2560,2560,90]
+
+    x_trans = xo - rotor_coordiates[0]
+    y_trans = yo - rotor_coordiates[1]
+
+    phi = np.radians(-29)
+    xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
+    ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
+    zs = zo - rotor_coordiates[2]
 
 
     print("line 139",time.time()-start_time)
@@ -189,28 +220,27 @@ for offset in offsets:
         print(Variable[0:2],"_",Variable[3:])
 
         if Variable[0:2] == "dy":
-            dyUx = dyUx_calc()
-            # dyUx_array = []
-            # print("dyUx calcs")
-            # with Pool() as pool:
-            #     cc = 1
-            #     for dyUx_it in pool.imap(dyUx_calc, np.arange(0,time_idx)):
-            #         dyUx_array.append(dyUx_it)
-            #         print(cc,time.time()-start_time)
-            #         cc+=1
-            #     dyUx[:] = np.array(dyUx_array); del dyUx_array
+            dyUx_array = []
+            print("dyUx calcs")
+            with Pool() as pool:
+                cc = 1
+                for dyUx_it in pool.imap(dyUx_calc, np.arange(0,time_idx)):
+                    dyUx_array.append(dyUx_it)
+                    print(cc,time.time()-start_time)
+                    cc+=1
+                dyUx[:] = np.array(dyUx_array); del dyUx_array
 
 
-        #elif Variable[0:2] == "dz":
-            # dzUx_array = []
-            # print("dzUx calcs")
-            # with Pool() as pool:
-            #     cc = 1
-            #     for dzUx_it in pool.imap(dzUx_calc, np.arange(0,time_idx)):
-            #         dzUx_array.append(dzUx_it)
-            #         print(cc,time.time()-start_time)
-            #         cc+=1
-            #     dzUx[:] = np.array(dzUx_array); del dzUx_array
+        elif Variable[0:2] == "dz":
+            dzUx_array = []
+            print("dzUx calcs")
+            with Pool() as pool:
+                cc = 1
+                for dzUx_it in pool.imap(dzUx_calc, np.arange(0,time_idx)):
+                    dzUx_array.append(dzUx_it)
+                    print(cc,time.time()-start_time)
+                    cc+=1
+                dzUx[:] = np.array(dzUx_array); del dzUx_array
 
 
         #elif Variable[0:2] == "dr":
@@ -227,10 +257,10 @@ for offset in offsets:
 
     del u
 
-#     print(ncfile.groups)
-#     ic+=1
+    print(ncfile.groups)
+    ic+=1
 
-# print(ncfile)
-# ncfile.close()
+print(ncfile)
+ncfile.close()
 
 print("line 308",time.time() - start_time)

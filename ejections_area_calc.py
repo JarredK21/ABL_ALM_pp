@@ -1,7 +1,14 @@
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 from multiprocessing import Pool
+
+def correlation_coef(x,y):
+
+    r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
+
+    return r
 
 
 def isInside(x, y):
@@ -46,39 +53,43 @@ def Area_calc(it):
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
-a = Dataset(in_dir+"Asymmetry_Dataset.nc")
+a = Dataset(in_dir+"Threshold_Asymmetry_Dataset.nc")
 
-Time = np.array(a.variables["time"])
-t_start_idx = np.searchsorted(Time,200+Time[0])
-Time = Time[t_start_idx:]
-A_high = np.array(a.variables["Area_high"][t_start_idx:])
-A_low = np.array(a.variables["Area_low"][t_start_idx:])
-A_int = np.array(a.variables["Area_int"][t_start_idx:])
+Time_a = np.array(a.variables["Time"])
 
-a = Dataset(in_dir+"Threshold_heights_Dataset.nc")
 
-Time_B = np.array(a.variables["Time"])
+b = Dataset(in_dir+"Threshold_heights_Dataset.nc")
+
+Time_B = np.array(b.variables["Time"])
 Time_steps = np.arange(0,len(Time_B))
-ys = np.array(a.variables["ys"])
+ys = np.array(b.variables["ys"])
 dy = ys[1]-ys[0]
 
 Thresholds = [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.4]
 
-out_dir=in_dir+"Asymmetry_analysis/"
+out_dir=in_dir+"Asymmetry_analysis/Threshold_Asymmetry/"
 
 for threshold in Thresholds:
 
+    group_a = a.groups["{}".format(threshold)]
+
+    print(group_a)
+
+    Iy = np.array(group_a.variables["Iy_ejection"])
+    Iz = -np.array(group_a.variables["Iz_ejection"])
+    I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
+
     plt.rcParams.update({'font.size': 18})
     fig,(ax1,ax2) = plt.subplots(2,1,figsize=(21,12),sharex=True)
-    ax1.plot(Time,A_low,"-b")
-    ax1.set_title("Area low [$m^2$]")
+    ax1.plot(Time_a,I,"-b")
+    ax1.set_title("Magnitude Asymmetry vector [$m^4/s$]")
     ax1.grid()
     fig.supxlabel("Time [s]")
 
 
-    group = a.groups["{}".format(threshold)]
+    group_b = b.groups["{}".format(threshold)]
 
-    Heights = np.array(group.variables["Height_ejection"])
+    Heights = np.array(group_b.variables["Height_ejection"])
 
     Area_array = []
     ix = 1
@@ -97,8 +108,10 @@ for threshold in Thresholds:
     ax2.set_title("Area of {}m/s surges inside rotor disk [$m^2$]".format(threshold))
     ax2.grid()
 
+    cc = round(correlation_coef(I,Area_array),2)
+    fig.suptitle("correlation coefficient = {}".format(cc))
     plt.tight_layout()
-    plt.savefig(out_dir+"{}_threshold_areas.png".format(threshold))
+    plt.savefig(out_dir+"I_{}_threshold_areas.png".format(threshold))
     plt.close()
 
 
