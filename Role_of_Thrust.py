@@ -28,6 +28,12 @@ def probability_dist(y):
     print(np.sum(P)*dX)
     return P,X
 
+def correlation_coef(x,y):
+
+    r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
+
+    return r
+
 
 in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
@@ -62,6 +68,8 @@ out_dir=in_dir+"Role_of_Thrust/"
 plt.rcParams.update({'font.size': 18})
 fig = plt.figure(figsize=(14,8))
 plt.plot(Time,Fa_Fr,"-b")
+plt.axhline(y=1.0,linestyle="dashdot",color="r")
+plt.axhline(y=1.5,linestyle="dashdot",color="r",label="$e=1.5tan(45)$")
 plt.axhline(y=0.22,linestyle="--",color="k",label="$e=1.5tan(8.34)$")
 plt.axhline(y=0.3,linestyle="--",color="k",label="$e=1.5tan(11.34)$")
 plt.xlabel("Time [s]")
@@ -97,7 +105,8 @@ for e in E:
         XFr.append(X*FBR[it]); YFa.append(Y*LSShftFxa[it])
         Pr.append(X*FBR[it]+Y*LSShftFxa[it])
     
-    
+    print(correlation_coef(Pr,FBR))
+    print(correlation_coef(Pr,LSShftFxa))
     print("XFr_2",moments(XFr_2))
     print("YFa_2",moments(YFa_2))
 

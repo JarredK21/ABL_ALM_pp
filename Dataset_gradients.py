@@ -42,50 +42,39 @@ def Horizontal_velocity(it):
 
 
 
-def dyUx_calc(it):
+def dUx_calc(it):
     U = u[it]
     u_plane = U.reshape(y,x)
 
     du_dy = []
     for k in np.arange(0,len(u_plane)):
-        du_dy.append(np.subtract(u_plane[k][1:],u_plane[k][:-1])/dy)
-    du_dy = np.array(du_dy)
-    du_dy = du_dy.flatten()
-    mask = np.arange(0,len(ys),x)
-    ys_mod = np.delete(ys,mask); zs_mod = np.delete(zs,mask)
+        du_dy_k = np.subtract(u_plane[k][1:],u_plane[k][:-1])/dy
+        du_dy_k = np.insert(du_dy_k,0,du_dy_k[0])
+        du_dy.append(du_dy_k)
+    du_dy = np.array(du_dy).flatten()
+
+    du_dz = []
+    for j in np.arange(0,x):
+        du_dz_j = np.subtract(u_plane[1:,j],u_plane[:-1,j])/dz
+        du_dz_j = np.insert(du_dz_j,0,du_dz_j[0])
+        du_dz.append(du_dz_j)
+    du_dz = np.array(du_dz).reshape(y-1,x).flatten()
+
+    du_dr = np.sqrt(np.add(np.square(du_dy),np.square(du_dz)))
 
     ijk = 0
     du_dy_avg = []
-    for j,k in zip(ys_mod,zs_mod):
+    du_dz_avg = []
+    du_dr_avg = []
+    ijk = 0
+    for j,k in zip(ys,zs):
         r = np.sqrt(j**2 + k**2)
         if r <= 63 and r > 1.5:
             du_dy_avg.append(du_dy[ijk])
-
-    return np.average(du_dy_avg)
-
-
-def dzUx_calc(it):
-    U = u[it]
-    u_plane = U.reshape(y,x)
-
-    du_dz = []
-    print(len(u_plane[0]))
-    for j in np.arange(0,len(u_plane[0])):
-        du_dz.append(np.subtract(u_plane[1:,j],u_plane[:-1,j])/dz)
-    du_dz = np.array(du_dz).reshape(y-1,x)
-    du_dz = du_dz.flatten()
-    mask = np.arange(0,x)
-    ys_mod = np.delete(ys,mask); zs_mod = np.delete(zs,mask)
-
-    ijk = 0
-    du_dz_avg = []
-    for j,k in zip(ys_mod,zs_mod):
-        r = np.sqrt(j**2 + k**2)
-        if r <= 63 and r > 1.5:
             du_dz_avg.append(du_dz[ijk])
-    return np.average(du_dz_avg)
+            du_dr_avg.append(du_dr[ijk])
 
-
+    return np.average(du_dy_avg),np.average(du_dz_avg),np.average(du_dr_avg)
     
 
 
@@ -113,7 +102,7 @@ print("line 67", time.time()-start_time)
 
 
 #create netcdf file
-ncfile = Dataset(out_dir+"Dataset.nc",mode="w",format='NETCDF4')
+ncfile = Dataset(out_dir+"Dataset_gradients.nc",mode="w",format='NETCDF4')
 ncfile.title = "OpenFAST data sampling gradients output"
 
 #create global dimensions
@@ -150,9 +139,6 @@ for offset in offsets:
     drUx = group.createVariable("drUx", np.float64, ('sampling'),zlib=True)
 
     p_rotor = a.groups["p_r"]; del a
-    
-
-    Variables = ["dyUx_{}".format(offset),"dzUx_{}".format(offset),"drUx_{}".format(offset)]
 
     x = p_rotor.ijk_dims[0] #no. data points
     y = p_rotor.ijk_dims[1] #no. data points
@@ -215,44 +201,22 @@ for offset in offsets:
 
     print("line 139",time.time()-start_time)
 
-    for iv in np.arange(0,len(Variables)):
-        Variable = Variables[iv]
-        print(Variable[0:2],"_",Variable[3:])
 
-        if Variable[0:2] == "dy":
-            dyUx_array = []
-            print("dyUx calcs")
-            with Pool() as pool:
-                cc = 1
-                for dyUx_it in pool.imap(dyUx_calc, np.arange(0,time_idx)):
-                    dyUx_array.append(dyUx_it)
-                    print(cc,time.time()-start_time)
-                    cc+=1
-                dyUx[:] = np.array(dyUx_array); del dyUx_array
-
-
-        elif Variable[0:2] == "dz":
-            dzUx_array = []
-            print("dzUx calcs")
-            with Pool() as pool:
-                cc = 1
-                for dzUx_it in pool.imap(dzUx_calc, np.arange(0,time_idx)):
-                    dzUx_array.append(dzUx_it)
-                    print(cc,time.time()-start_time)
-                    cc+=1
-                dzUx[:] = np.array(dzUx_array); del dzUx_array
-
-
-        #elif Variable[0:2] == "dr":
-            # drUx_array = []
-            # print("drUx calcs")
-            # with Pool() as pool:
-            #     cc = 1
-            #     for drUx_it in pool.imap(drUx_calc, np.arange(0,time_idx)):
-            #         drUx_array.append(drUx_it)
-            #         print(cc,time.time()-start_time)
-            #         cc+=1
-            #     drUx[:] = np.array(drUx_array); del drUx_array
+    dyUx_array = []
+    dzUx_array = []
+    drUx_array = []
+    print("dUx calcs")
+    with Pool() as pool:
+        cc = 1
+        for dyUx_it,dzUx_it,drUx_it in pool.imap(dUx_calc, Time_steps):
+            dyUx_array.append(dyUx_it)
+            dzUx_array.append(dzUx_it)
+            drUx_array.append(drUx_it)
+            print(cc,time.time()-start_time)
+            cc+=1
+        dyUx[:] = np.array(dyUx_array); del dyUx_array
+        dzUx[:] = np.array(dzUx_array); del dzUx_array
+        drUx[:] = np.array(drUx_array); del drUx_array
 
 
     del u
