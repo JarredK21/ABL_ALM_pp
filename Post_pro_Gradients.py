@@ -78,14 +78,13 @@ Time = np.array(a.variables["time_sampling"])
 Time_start_idx = np.searchsorted(Time,200)
 Time = Time[Time_start_idx:]
 
-group = a.groups["63.0"]
+group = a.groups["5.5"]
 
 dyUx = np.array(group.variables["dyUx"][Time_start_idx:])
 dzUx = np.array(group.variables["dzUx"][Time_start_idx:])
 drUx = np.sqrt(np.add(np.square(dyUx),np.square(dzUx)))
 
-
-
+    
 df_OF = Dataset(in_dir+"Dataset.nc")
 
 Time_OF = np.array(df_OF.variables["time_OF"])
@@ -136,7 +135,6 @@ HPF_FBR = np.array(low_pass_filter(HPF_FBR,40,dt))
 BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
 
 
-
 dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
 
 zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
@@ -157,8 +155,20 @@ dy_Ux_interp = f(Times_2)
 f = interpolate.interp1d(Time,dzUx)
 dz_Ux_interp = f(Times_2)
 
-print(correlation_coef(dy_Ux_interp,BPF_FBR_2))
-print(correlation_coef(dz_Ux_interp,BPF_FBR_2))
+
+idx = np.searchsorted(Times_2,Times_2[0]+20)
+cc = []
+for it in np.arange(0,len(Times_2)-idx):
+    cc.append(correlation_coef(BPF_FBR_2[it:it+idx],dr_Ux_interp[it:it+idx]))
+
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Times_2[idx:],cc,"-k")
+plt.xlabel("Time [s]")
+plt.ylabel("CC")
+plt.grid()
+plt.tight_layout()
+
 
 fig = plt.figure(figsize=(14,8))
 plt.plot(Time,dyUx)

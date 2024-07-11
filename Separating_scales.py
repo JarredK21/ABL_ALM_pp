@@ -333,6 +333,15 @@ BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
 dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
 dHPF_FBR = np.array(dt_calc(HPF_FBR,dt))
 
+print("Total LPF",correlation_coef(FBR,LPF_1_FBR))
+print("Total BPF",correlation_coef(FBR,BPF_FBR))
+print("Total HPF",correlation_coef(FBR,HPF_FBR))
+
+print("LPF BPF",correlation_coef(LPF_1_FBR,BPF_FBR))
+print("LPF HPF",correlation_coef(LPF_1_FBR,HPF_FBR))
+
+print("BPF HPF",correlation_coef(BPF_FBR,HPF_FBR))
+
 
 LPF_1_Theta_FBR = low_pass_filter(Theta_FB,0.3,dt)
 LPF_2_Theta_FBR = low_pass_filter(Theta_FB,0.9,dt)
@@ -348,6 +357,14 @@ Times_2 = []
 for i in np.arange(0,len(zero_crossings_index_BPF_FBR),2):
     idx = zero_crossings_index_BPF_FBR[i]
     BPF_FBR_2.append(BPF_FBR[idx]); Times_2.append(Time_OF[idx])
+
+f = interpolate.interp1d(Time_OF,LPF_1_FBR)
+LPF_1_FBR_interp = f(Times_2)
+print("LPF BPF env",correlation_coef(LPF_1_FBR_interp,BPF_FBR_2))
+
+f = interpolate.interp1d(Time_OF,HPF_FBR)
+HPF_FBR_interp = f(Times_2)
+print("BPF env HPF",correlation_coef(BPF_FBR_2,HPF_FBR_interp))
 
 out_dir = in_dir+"peak_peak_analysis/frequencies_all_times_3P_LPF/"
 Times = np.arange(200,1300,100)

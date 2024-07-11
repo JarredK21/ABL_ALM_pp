@@ -63,6 +63,8 @@ print("FBa",moments(LSShftFxa))
 
 Fa_Fr = np.true_divide(LSShftFxa,FBR)
 
+#print(np.mean(Fa_Fr),np.mean(Fa_Fr)+np.std(Fa_Fr),np.mean(Fa_Fr)-np.std(Fa_Fr))
+
 out_dir=in_dir+"Role_of_Thrust/"
 
 plt.rcParams.update({'font.size': 18})

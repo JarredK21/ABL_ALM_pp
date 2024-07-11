@@ -58,7 +58,7 @@ def dUx_calc(it):
         du_dz_j = np.subtract(u_plane[1:,j],u_plane[:-1,j])/dz
         du_dz_j = np.insert(du_dz_j,0,du_dz_j[0])
         du_dz.append(du_dz_j)
-    du_dz = np.array(du_dz).reshape(y-1,x).flatten()
+    du_dz = np.array(du_dz).reshape(y,x).flatten()
 
     du_dr = np.sqrt(np.add(np.square(du_dy),np.square(du_dz)))
 
