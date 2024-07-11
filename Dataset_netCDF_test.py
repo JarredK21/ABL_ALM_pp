@@ -426,7 +426,7 @@ out_dir = in_dir
 
 
 #create netcdf file
-ncfile = Dataset(out_dir+"Dataset.nc",mode="w",format='NETCDF4')
+ncfile = Dataset(out_dir+"Dataset_2.nc",mode="w",format='NETCDF4')
 ncfile.title = "OpenFAST data sampling output"
 
 #create global dimensions
