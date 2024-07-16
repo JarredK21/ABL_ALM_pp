@@ -516,7 +516,7 @@ precursor = Dataset("./abl_statistics76000.nc")
 Time_pre = np.array(precursor.variables["time"])
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
 t_start = np.searchsorted(precursor.variables["time"],38000)
-t_end = np.searchsorted(precursor.variables["time"],39200)
+t_end = np.searchsorted(precursor.variables["time"],39201)
 u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
 v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
 h = mean_profiles["h"][:]
