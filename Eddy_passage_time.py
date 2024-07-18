@@ -243,7 +243,7 @@ twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulat
 ux_mean_profile = []
 for i in np.arange(0,len(twist)):
     ux_mean_profile.append(u[i] * np.cos(twist[i]) + v[i] * np.sin(twist[i]))
-del precursor; del mean_profiles; del t_start; del u; del v
+del precursor; del mean_profiles; del u; del v
 
 print("line 252",time.time()-start_time)
 
@@ -278,6 +278,8 @@ v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
 
 u[u<0]=0; v[v<0]=0 #remove negative velocities
 
+print(len(u),len(v))
+
 with Pool() as pool:
     u_hvel = []; u_pri = []
     for u_hvel_it, u_hvel_pri_it in pool.imap(Horizontal_velocity,Time_steps):
@@ -293,7 +295,7 @@ D_high_array = []; Ux_avg_high_array = []; Tau_high_array = []
 filter_cutoff = [(1*3e-03),(1.5*3e-03),(2*3e-03),(2.5*3e-03),(3*3e-03)]
 for cutoff in filter_cutoff:
 
-    print("cuttoff = ",round(cutoff,0),time.time()-start_time)
+    print("cuttoff = ",round(1/cutoff,0),time.time()-start_time)
 
     filt_u = []; filt_u_pri = []
     with Pool() as pool:
