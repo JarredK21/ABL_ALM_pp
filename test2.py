@@ -1,10 +1,13 @@
 from netCDF4 import Dataset
+import numpy as np
+import matplotlib.pyplot as plt
 
-ncfile = Dataset("test_dataset.nc",mode="w",format='NETCDF4')
-group = ncfile.createGroup("OpenFAST_Variables")
+u = []
 
-group_2 = group.createGroup("Inner OpenFAST_Variables")
+u_it = [1,2,3]
 
-print(ncfile)
-print(ncfile.groups)
-print(group.groups)
+u.extend(u_it)
+
+u.extend(u_it)
+
+checkpoint = 1
