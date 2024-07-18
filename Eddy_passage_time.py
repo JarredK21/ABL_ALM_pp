@@ -248,196 +248,198 @@ del precursor; del mean_profiles; del u; del v; del t_start_idx; del t_end_idx
 
 print("line 252",time.time()-start_time)
 
-offset = 85
-a = Dataset("sampling_l_{}.nc".format(offset))
-height = offset+7.5
-p = a.groups["p_l"]
+offsets = [22.5,85,142.5]
+filter_cutoffs = [6.5e-03,3e-03,1.1e-03]
+for i in np.arange(0,len(offsets)):
+    a = Dataset("sampling_l_{}.nc".format(offsets[i]))
+    height = offsets[i]+7.5
+    p = a.groups["p_l"]
 
-#time options
-Time = np.array(a.variables["time"])
-tstart_idx = np.searchsorted(Time,t_start)
-tend_idx = np.searchsorted(Time,t_end)
-Time_steps = np.arange(0, tend_idx-tstart_idx)
-Time = Time[tstart_idx:tend_idx]
-
-
-x = p.ijk_dims[0] #no. data points
-y = p.ijk_dims[1] #no. data points
+    #time options
+    Time = np.array(a.variables["time"])
+    tstart_idx = np.searchsorted(Time,t_start)
+    tend_idx = np.searchsorted(Time,t_end)
+    Time_steps = np.arange(0, tend_idx-tstart_idx)
+    Time = Time[tstart_idx:tend_idx]
 
 
-#define plotting axes
-coordinates = np.array(p.variables["coordinates"])
-
-xs = np.linspace(p.origin[0],p.origin[0]+p.axis1[0],x)
-ys = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y)
-
-print("line 277",time.time()-start_time)
-
-#velocity field
-u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
-v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
-
-u[u<0]=0; v[v<0]=0 #remove negative velocities
-
-print(len(u),len(v))
-
-with Pool() as pool:
-    u_hvel = []; u_pri = []
-    for u_hvel_it, u_hvel_pri_it in pool.imap(Horizontal_velocity,Time_steps):
-        
-        u_hvel.append(u_hvel_it)
-        u_pri.append(u_hvel_pri_it)
-        print(len(u_hvel))
-u = np.array(u_hvel); u_pri = np.array(u_pri); del u_hvel; del v
+    x = p.ijk_dims[0] #no. data points
+    y = p.ijk_dims[1] #no. data points
 
 
-D_low_array = []; Ux_avg_low_array = []; Tau_low_array = []
-D_high_array = []; Ux_avg_high_array = []; Tau_high_array = []
-filter_cutoff = [(1*3e-03),(1.5*3e-03),(2*3e-03),(2.5*3e-03),(3*3e-03)]
-for cutoff in filter_cutoff:
+    #define plotting axes
+    coordinates = np.array(p.variables["coordinates"])
 
-    print("cuttoff = ",round(1/cutoff,0),time.time()-start_time)
+    xs = np.linspace(p.origin[0],p.origin[0]+p.axis1[0],x)
+    ys = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y)
 
-    filt_u = []; filt_u_pri = []
+    print("line 277",time.time()-start_time)
+
+    #velocity field
+    u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
+    v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
+
+    u[u<0]=0; v[v<0]=0 #remove negative velocities
+
+    print(len(u),len(v))
+
     with Pool() as pool:
-        for filt_u_it, filt_u_pri_it in pool.imap(two_dim_LPF,Time_steps):
-            filt_u.append(filt_u_it)
-            filt_u_pri.append(filt_u_pri_it)
-            print(len(filt_u))
-    filt_u = np.array(filt_u); filt_u_pri = np.array(filt_u_pri)
+        u_hvel = []; u_pri = []
+        for u_hvel_it, u_hvel_pri_it in pool.imap(Horizontal_velocity,Time_steps):
+            
+            u_hvel.append(u_hvel_it)
+            u_pri.append(u_hvel_pri_it)
+            print(len(u_hvel))
+    u = np.array(u_hvel); u_pri = np.array(u_pri); del u_hvel; del v
 
 
-    #find vmin and vmax for isocontour plots            
-    #min and max over data
-    cmin_pri = math.floor(np.min(filt_u_pri))
-    cmax_pri = math.ceil(np.max(filt_u_pri))
+    D_low_array = []; Ux_avg_low_array = []; Tau_low_array = []
+    D_high_array = []; Ux_avg_high_array = []; Tau_high_array = []
+    filter_cutoff = [(1*filter_cutoffs[i]),(1.5*filter_cutoffs[i]),(2*filter_cutoffs[i]),(2.5*filter_cutoffs[i]),(3*filter_cutoffs[i])]
+    for cutoff in filter_cutoff:
 
-    cmin = math.floor(np.min(filt_u))
-    cmax = math.ceil(np.max(filt_u))
+        print("cuttoff = ",round(1/cutoff,0),time.time()-start_time)
 
-
-    nlevs = int((cmax_pri-cmin_pri)/2)
-    if nlevs>abs(cmin_pri) or nlevs>cmax_pri:
-        nlevs = min([abs(cmin_pri),cmax_pri])+1
-
-    levs_min = np.linspace(cmin_pri,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax_pri,nlevs,dtype=int)
-    levels = np.concatenate((levs_min,levs_max[1:]))
-    print("line 326", levels)
+        filt_u = []; filt_u_pri = []
+        with Pool() as pool:
+            for filt_u_it, filt_u_pri_it in pool.imap(two_dim_LPF,Time_steps):
+                filt_u.append(filt_u_it)
+                filt_u_pri.append(filt_u_pri_it)
+                print(len(filt_u))
+        filt_u = np.array(filt_u); filt_u_pri = np.array(filt_u_pri)
 
 
-    nlevs = int((cmax_pri-cmin_pri)/2)
-    if nlevs>abs(cmin_pri) or nlevs>cmax_pri:
-        nlevs = min([abs(cmin_pri),cmax_pri])+1
+        #find vmin and vmax for isocontour plots            
+        #min and max over data
+        cmin_pri = math.floor(np.min(filt_u_pri))
+        cmax_pri = math.ceil(np.max(filt_u_pri))
 
-    #define thresholds with number of increments
-    levels_pos = np.linspace(0.7,cmax_pri,4)
-    print("line 335", levels_pos)
-    levels_neg = np.linspace(cmin_pri,-0.7,4)
-    print("line 337", levels_neg)
+        cmin = math.floor(np.min(filt_u))
+        cmax = math.ceil(np.max(filt_u))
 
 
+        nlevs = int((cmax_pri-cmin_pri)/2)
+        if nlevs>abs(cmin_pri) or nlevs>cmax_pri:
+            nlevs = min([abs(cmin_pri),cmax_pri])+1
 
-    xleft = np.min(xs); xright = np.max(xs)
-    ytop = np.max(ys); ybottom = np.min(ys)
-    X,Y = np.meshgrid(xs,ys)
-
-    print("line 345",time.time()-start_time)
-
-
-    D_high_time_arr = []; Ux_avg_high_time_arr = []; Tau_high_time_arr = []
-    with Pool() as pool:
-        ix = 0
-        for D_high_it, Ux_avg_high_it, Tau_high_it in pool.imap(high_Speed_eddy,Time_steps):
-            D_high_time_arr.extend(D_high_it)
-            Ux_avg_high_time_arr.extend(Ux_avg_high_it)
-            Tau_high_time_arr.extend(Tau_high_it)
-            print(ix,time.time()-start_time)
-            ix+=1
-
-    D_high_array.append(D_high_time_arr); Ux_avg_high_array.append(Ux_avg_high_time_arr); Tau_high_array.append(Tau_high_time_arr)
-    del D_high_time_arr; del Ux_avg_high_time_arr; del Tau_high_time_arr
+        levs_min = np.linspace(cmin_pri,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax_pri,nlevs,dtype=int)
+        levels = np.concatenate((levs_min,levs_max[1:]))
+        print("line 326", levels)
 
 
-    D_low_time_arr = []; Ux_avg_low_time_arr = []; Tau_low_time_arr = []
-    with Pool() as pool:
-        ix = 0
-        for D_low_it, Ux_avg_low_it, Tau_low_it in pool.imap(low_Speed_eddy,Time_steps):
-            D_low_time_arr.extend(D_low_it)
-            Ux_avg_low_time_arr.extend(Ux_avg_low_it)
-            Tau_low_time_arr.extend(Tau_low_it)
-            print(ix,time.time()-start_time)
+        nlevs = int((cmax_pri-cmin_pri)/2)
+        if nlevs>abs(cmin_pri) or nlevs>cmax_pri:
+            nlevs = min([abs(cmin_pri),cmax_pri])+1
 
-    D_low_array.append(D_low_time_arr); Ux_avg_low_array.append(Ux_avg_low_time_arr); Tau_low_array.append(Tau_low_time_arr)
-    del D_low_time_arr; del Ux_avg_low_time_arr; del Tau_low_time_arr
+        #define thresholds with number of increments
+        levels_pos = np.linspace(0.7,cmax_pri,4)
+        print("line 335", levels_pos)
+        levels_neg = np.linspace(cmin_pri,-0.7,4)
+        print("line 337", levels_neg)
 
 
 
-colors = ["g","c","b","r","k"]
-plt.rcParams['font.size'] = 12
-fig = plt.figure(figsize=(14,8))
-for i in np.arange(0,len(filter_cutoff)):
-    cutoff = filter_cutoff[i]
-    Tau_high = Tau_high_array[i]
-    Tau_low = Tau_low_array[i]
-    min_Tau_high = round(np.min(Tau_high),1); min_Tau_low = round(np.min(Tau_low),1)
-    max_Tau_high = round(np.max(Tau_high),1); max_Tau_low = round(np.max(Tau_low),1)
-    mean_Tau_high = round(np.mean(Tau_high),1); mean_Tau_low = round(np.mean(Tau_low),1)
-    std_Tau_high = round(np.std(Tau_high),1); std_Tau_low = round(np.std(Tau_low),1) 
-    P,X = probability_dist(Tau_high)
-    plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Tau_high,max_Tau_high,mean_Tau_high,std_Tau_high))
-    P,X = probability_dist(Tau_low)
-    plt.plot(X,P,"--",color=colors[i],label="Low speed: cuttoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Tau_low,max_Tau_low,mean_Tau_low,std_Tau_low))
-plt.xlabel("Eddy passage time [s]")
-plt.ylabel("Probability [-]")
-plt.title("Height from surface {}m".format(height))
-plt.legend()
-plt.grid()
-plt.tight_layout()
-plt.savefig("Eddy_passage_time.png")
-plt.close()
+        xleft = np.min(xs); xright = np.max(xs)
+        ytop = np.max(ys); ybottom = np.min(ys)
+        X,Y = np.meshgrid(xs,ys)
 
-fig = plt.figure(figsize=(14,8))
-for i in np.arange(0,len(filter_cutoff)):
-    cutoff = filter_cutoff[i]
-    Ux_avg_high = Ux_avg_high_array[i]
-    Ux_avg_low = Ux_avg_low_array[i]
-    min_Ux_high = round(np.min(Ux_avg_high),2); min_Ux_low = round(np.min(Ux_avg_low),2)
-    max_Ux_high = round(np.max(Ux_avg_high),2); max_Ux_low = round(np.max(Ux_avg_low),2)
-    mean_Ux_high = round(np.mean(Ux_avg_high),2); mean_Ux_low = round(np.mean(Ux_avg_low),2)
-    std_Ux_high = round(np.std(Ux_avg_high),2); std_Ux_low = round(np.std(Ux_avg_low),2) 
-    P,X = probability_dist(Ux_avg_high)
-    plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Ux_high,max_Ux_high,mean_Ux_high,std_Ux_high))
-    P,X = probability_dist(Ux_avg_low)
-    plt.plot(X,P,"--",color=colors[i],label="Low speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Ux_low,max_Ux_low,mean_Ux_low,std_Ux_low))
-plt.xlabel("Area average of eddy velocity [m/s]")
-plt.ylabel("Probability [-]")
-plt.title("Height from surface {}m".format(height))
-plt.legend()
-plt.grid()
-plt.tight_layout()
-plt.savefig("Eddy_velocity.png")
-plt.close()
+        print("line 345",time.time()-start_time)
 
-fig = plt.figure(figsize=(14,8))
-for i in np.arange(0,len(filter_cutoff)):
-    cutoff = filter_cutoff[i]
-    D_high = D_high_array[i]
-    D_low = D_low_array[i]
-    min_D_high = round(np.min(D_high),0); min_D_low = round(np.min(D_low),0)
-    max_D_high = round(np.max(D_high),0); max_D_low = round(np.max(D_low),0)
-    mean_D_high = round(np.mean(D_high),0); mean_D_low = round(np.mean(D_low),0)
-    std_D_high = round(np.std(D_high),0); std_D_low = round(np.std(D_low),0) 
-    P,X = probability_dist(D_high)
-    plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_D_high,max_D_high,mean_D_high,std_D_high))
-    P,X = probability_dist(D_low)
-    plt.plot(X,P,"--",color=colors[i],label="Low speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_D_low,max_D_low,mean_D_low,std_D_low))
-plt.xlabel("Eddy length x' direction [m]")
-plt.ylabel("Probability [-]")
-plt.title("Height from surface {}m".format(height))
-plt.legend()
-plt.grid()
-plt.tight_layout()
-plt.savefig("Eddy_length.png")
-plt.close()
+
+        D_high_time_arr = []; Ux_avg_high_time_arr = []; Tau_high_time_arr = []
+        with Pool() as pool:
+            ix = 0
+            for D_high_it, Ux_avg_high_it, Tau_high_it in pool.imap(high_Speed_eddy,Time_steps):
+                D_high_time_arr.extend(D_high_it)
+                Ux_avg_high_time_arr.extend(Ux_avg_high_it)
+                Tau_high_time_arr.extend(Tau_high_it)
+                print(ix,time.time()-start_time)
+                ix+=1
+
+        D_high_array.append(D_high_time_arr); Ux_avg_high_array.append(Ux_avg_high_time_arr); Tau_high_array.append(Tau_high_time_arr)
+        del D_high_time_arr; del Ux_avg_high_time_arr; del Tau_high_time_arr
+
+
+        D_low_time_arr = []; Ux_avg_low_time_arr = []; Tau_low_time_arr = []
+        with Pool() as pool:
+            ix = 0
+            for D_low_it, Ux_avg_low_it, Tau_low_it in pool.imap(low_Speed_eddy,Time_steps):
+                D_low_time_arr.extend(D_low_it)
+                Ux_avg_low_time_arr.extend(Ux_avg_low_it)
+                Tau_low_time_arr.extend(Tau_low_it)
+                print(ix,time.time()-start_time)
+
+        D_low_array.append(D_low_time_arr); Ux_avg_low_array.append(Ux_avg_low_time_arr); Tau_low_array.append(Tau_low_time_arr)
+        del D_low_time_arr; del Ux_avg_low_time_arr; del Tau_low_time_arr
+
+
+
+    colors = ["g","c","b","r","k"]
+    plt.rcParams['font.size'] = 12
+    fig = plt.figure(figsize=(14,8))
+    for j in np.arange(0,len(filter_cutoff)):
+        cutoff = filter_cutoff[j]
+        Tau_high = Tau_high_array[j]
+        Tau_low = Tau_low_array[j]
+        min_Tau_high = round(np.min(Tau_high),1); min_Tau_low = round(np.min(Tau_low),1)
+        max_Tau_high = round(np.max(Tau_high),1); max_Tau_low = round(np.max(Tau_low),1)
+        mean_Tau_high = round(np.mean(Tau_high),1); mean_Tau_low = round(np.mean(Tau_low),1)
+        std_Tau_high = round(np.std(Tau_high),1); std_Tau_low = round(np.std(Tau_low),1) 
+        P,X = probability_dist(Tau_high)
+        plt.plot(X,P,"-",color=colors[j],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Tau_high,max_Tau_high,mean_Tau_high,std_Tau_high))
+        P,X = probability_dist(Tau_low)
+        plt.plot(X,P,"--",color=colors[j],label="Low speed: cuttoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Tau_low,max_Tau_low,mean_Tau_low,std_Tau_low))
+    plt.xlabel("Eddy passage time [s]")
+    plt.ylabel("Probability [-]")
+    plt.title("Height from surface {}m".format(height))
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("Eddy_passage_time_{}m.png".format(height))
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    for j in np.arange(0,len(filter_cutoff)):
+        cutoff = filter_cutoff[j]
+        Ux_avg_high = Ux_avg_high_array[j]
+        Ux_avg_low = Ux_avg_low_array[j]
+        min_Ux_high = round(np.min(Ux_avg_high),2); min_Ux_low = round(np.min(Ux_avg_low),2)
+        max_Ux_high = round(np.max(Ux_avg_high),2); max_Ux_low = round(np.max(Ux_avg_low),2)
+        mean_Ux_high = round(np.mean(Ux_avg_high),2); mean_Ux_low = round(np.mean(Ux_avg_low),2)
+        std_Ux_high = round(np.std(Ux_avg_high),2); std_Ux_low = round(np.std(Ux_avg_low),2) 
+        P,X = probability_dist(Ux_avg_high)
+        plt.plot(X,P,"-",color=colors[j],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Ux_high,max_Ux_high,mean_Ux_high,std_Ux_high))
+        P,X = probability_dist(Ux_avg_low)
+        plt.plot(X,P,"--",color=colors[j],label="Low speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Ux_low,max_Ux_low,mean_Ux_low,std_Ux_low))
+    plt.xlabel("Area average of eddy velocity [m/s]")
+    plt.ylabel("Probability [-]")
+    plt.title("Height from surface {}m".format(height))
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("Eddy_velocity_{}m.png".format(height))
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    for j in np.arange(0,len(filter_cutoff)):
+        cutoff = filter_cutoff[j]
+        D_high = D_high_array[j]
+        D_low = D_low_array[j]
+        min_D_high = round(np.min(D_high),0); min_D_low = round(np.min(D_low),0)
+        max_D_high = round(np.max(D_high),0); max_D_low = round(np.max(D_low),0)
+        mean_D_high = round(np.mean(D_high),0); mean_D_low = round(np.mean(D_low),0)
+        std_D_high = round(np.std(D_high),0); std_D_low = round(np.std(D_low),0) 
+        P,X = probability_dist(D_high)
+        plt.plot(X,P,"-",color=colors[j],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_D_high,max_D_high,mean_D_high,std_D_high))
+        P,X = probability_dist(D_low)
+        plt.plot(X,P,"--",color=colors[j],label="Low speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_D_low,max_D_low,mean_D_low,std_D_low))
+    plt.xlabel("Eddy length x' direction [m]")
+    plt.ylabel("Probability [-]")
+    plt.title("Height from surface {}m".format(height))
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("Eddy_length_{}m.png".format(height))
+    plt.close()
 
 
