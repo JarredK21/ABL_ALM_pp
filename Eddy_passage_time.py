@@ -231,19 +231,20 @@ def low_Speed_eddy(it):
 
 start_time = time.time()
 
+t_start = 38000; t_end = 39201
 #defining twist angles with height from precursor
 precursor = Dataset("abl_statistics70000.nc")
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
-t_start = np.searchsorted(precursor.variables["time"],38000)
-t_end = np.searchsorted(precursor.variables["time"],39201)
-u = np.average(mean_profiles.variables["u"][t_start:t_end],axis=0)
-v = np.average(mean_profiles.variables["v"][t_start:t_end],axis=0)
+t_start_idx = np.searchsorted(precursor.variables["time"],t_start)
+t_end_idx = np.searchsorted(precursor.variables["time"],t_end)
+u = np.average(mean_profiles.variables["u"][t_start_idx:t_end_idx],axis=0)
+v = np.average(mean_profiles.variables["v"][t_start_idx:t_end_idx],axis=0)
 h = mean_profiles["h"][:]
 twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
 ux_mean_profile = []
 for i in np.arange(0,len(twist)):
     ux_mean_profile.append(u[i] * np.cos(twist[i]) + v[i] * np.sin(twist[i]))
-del precursor; del mean_profiles; del u; del v
+del precursor; del mean_profiles; del u; del v; del t_start_idx; del t_end_idx
 
 print("line 252",time.time()-start_time)
 
@@ -345,11 +346,13 @@ for cutoff in filter_cutoff:
 
     D_high_time_arr = []; Ux_avg_high_time_arr = []; Tau_high_time_arr = []
     with Pool() as pool:
+        ix = 0
         for D_high_it, Ux_avg_high_it, Tau_high_it in pool.imap(high_Speed_eddy,Time_steps):
             D_high_time_arr.extend(D_high_it)
             Ux_avg_high_time_arr.extend(Ux_avg_high_it)
             Tau_high_time_arr.extend(Tau_high_it)
-            print(len(Tau_high_time_arr))
+            print(ix,time.time()-start_time)
+            ix+=1
 
     D_high_array.append(D_high_time_arr); Ux_avg_high_array.append(Ux_avg_high_time_arr); Tau_high_array.append(Tau_high_time_arr)
     del D_high_time_arr; del Ux_avg_high_time_arr; del Tau_high_time_arr
@@ -357,11 +360,12 @@ for cutoff in filter_cutoff:
 
     D_low_time_arr = []; Ux_avg_low_time_arr = []; Tau_low_time_arr = []
     with Pool() as pool:
+        ix = 0
         for D_low_it, Ux_avg_low_it, Tau_low_it in pool.imap(low_Speed_eddy,Time_steps):
             D_low_time_arr.extend(D_low_it)
             Ux_avg_low_time_arr.extend(Ux_avg_low_it)
             Tau_low_time_arr.extend(Tau_low_it)
-            print(len(Tau_low_time_arr))
+            print(ix,time.time()-start_time)
 
     D_low_array.append(D_low_time_arr); Ux_avg_low_array.append(Ux_avg_low_time_arr); Tau_low_array.append(Tau_low_time_arr)
     del D_low_time_arr; del Ux_avg_low_time_arr; del Tau_low_time_arr
@@ -375,10 +379,14 @@ for i in np.arange(0,len(filter_cutoff)):
     cutoff = filter_cutoff[i]
     Tau_high = Tau_high_array[i]
     Tau_low = Tau_low_array[i]
+    min_Tau_high = round(np.min(Tau_high),0); min_Tau_low = round(np.min(Tau_low),0)
+    max_Tau_high = round(np.max(Tau_high),0); max_Tau_low = round(np.max(Tau_low),0)
+    mean_Tau_high = round(np.mean(Tau_high),0); mean_Tau_low = round(np.mean(Tau_low),0)
+    std_Tau_high = round(np.std(Tau_high),0); std_Tau_low = round(np.std(Tau_low),0) 
     P,X = probability_dist(Tau_high)
-    plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}".format(round(1/cutoff,0)))
+    plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Tau_high,max_Tau_high,mean_Tau_high,std_Tau_high))
     P,X = probability_dist(Tau_low)
-    plt.plot(X,P,"--",color=colors[i],label="Low speed: cuttoff = {}".format(round(1/cutoff,0)))
+    plt.plot(X,P,"--",color=colors[i],label="Low speed: cuttoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Tau_low,max_Tau_low,mean_Tau_low,std_Tau_low))
 plt.xlabel("Eddy passage time [s]")
 plt.ylabel("Probability [-]")
 plt.title("Height from surface {}m".format(height))
@@ -393,10 +401,14 @@ for i in np.arange(0,len(filter_cutoff)):
     cutoff = filter_cutoff[i]
     Ux_avg_high = Ux_avg_high_array[i]
     Ux_avg_low = Ux_avg_low_array[i]
+    min_Ux_high = round(np.min(Ux_avg_high),0); min_Ux_low = round(np.min(Ux_avg_low),0)
+    max_Ux_high = round(np.max(Ux_avg_high),0); max_Ux_low = round(np.max(Ux_avg_low),0)
+    mean_Ux_high = round(np.mean(Ux_avg_high),0); mean_Ux_low = round(np.mean(Ux_avg_low),0)
+    std_Ux_high = round(np.std(Ux_avg_high),0); std_Ux_low = round(np.std(Ux_avg_low),0) 
     P,X = probability_dist(Ux_avg_high)
-    plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}".format(round(1/cutoff,0)))
+    plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Ux_high,max_Ux_high,mean_Ux_high,std_Ux_high))
     P,X = probability_dist(Ux_avg_low)
-    plt.plot(X,P,"--",color=colors[i],label="Low speed: cutoff = {}".format(round(1/cutoff,0)))
+    plt.plot(X,P,"--",color=colors[i],label="Low speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Ux_low,max_Ux_low,mean_Ux_low,std_Ux_low))
 plt.xlabel("Area average of eddy velocity [m/s]")
 plt.ylabel("Probability [-]")
 plt.title("Height from surface {}m".format(height))
@@ -411,11 +423,14 @@ for i in np.arange(0,len(filter_cutoff)):
     cutoff = filter_cutoff[i]
     D_high = D_high_array[i]
     D_low = D_low_array[i]
-
+    min_D_high = round(np.min(D_high),0); min_D_low = round(np.min(D_low),0)
+    max_D_high = round(np.max(D_high),0); max_D_low = round(np.max(D_low),0)
+    mean_D_high = round(np.mean(D_high),0); mean_D_low = round(np.mean(D_low),0)
+    std_D_high = round(np.std(D_high),0); std_D_low = round(np.std(D_low),0) 
     P,X = probability_dist(D_high)
-    plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}".format(round(1/cutoff,0)))
+    plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_D_high,max_D_high,mean_D_high,std_D_high))
     P,X = probability_dist(D_low)
-    plt.plot(X,P,"--",color=colors[i],label="Low speed: cutoff = {}".format(round(1/cutoff,0)))
+    plt.plot(X,P,"--",color=colors[i],label="Low speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_D_low,max_D_low,mean_D_low,std_D_low))
 plt.xlabel("Eddy length x' direction [m]")
 plt.ylabel("Probability [-]")
 plt.title("Height from surface {}m".format(height))
