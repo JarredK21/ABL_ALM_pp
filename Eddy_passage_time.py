@@ -372,17 +372,17 @@ for cutoff in filter_cutoff:
 
 
 
-colors = ["g","m","b","r","k"]
+colors = ["g","c","b","r","k"]
 plt.rcParams['font.size'] = 12
 fig = plt.figure(figsize=(14,8))
 for i in np.arange(0,len(filter_cutoff)):
     cutoff = filter_cutoff[i]
     Tau_high = Tau_high_array[i]
     Tau_low = Tau_low_array[i]
-    min_Tau_high = round(np.min(Tau_high),0); min_Tau_low = round(np.min(Tau_low),0)
-    max_Tau_high = round(np.max(Tau_high),0); max_Tau_low = round(np.max(Tau_low),0)
-    mean_Tau_high = round(np.mean(Tau_high),0); mean_Tau_low = round(np.mean(Tau_low),0)
-    std_Tau_high = round(np.std(Tau_high),0); std_Tau_low = round(np.std(Tau_low),0) 
+    min_Tau_high = round(np.min(Tau_high),1); min_Tau_low = round(np.min(Tau_low),1)
+    max_Tau_high = round(np.max(Tau_high),1); max_Tau_low = round(np.max(Tau_low),1)
+    mean_Tau_high = round(np.mean(Tau_high),1); mean_Tau_low = round(np.mean(Tau_low),1)
+    std_Tau_high = round(np.std(Tau_high),1); std_Tau_low = round(np.std(Tau_low),1) 
     P,X = probability_dist(Tau_high)
     plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Tau_high,max_Tau_high,mean_Tau_high,std_Tau_high))
     P,X = probability_dist(Tau_low)
@@ -401,10 +401,10 @@ for i in np.arange(0,len(filter_cutoff)):
     cutoff = filter_cutoff[i]
     Ux_avg_high = Ux_avg_high_array[i]
     Ux_avg_low = Ux_avg_low_array[i]
-    min_Ux_high = round(np.min(Ux_avg_high),0); min_Ux_low = round(np.min(Ux_avg_low),0)
-    max_Ux_high = round(np.max(Ux_avg_high),0); max_Ux_low = round(np.max(Ux_avg_low),0)
-    mean_Ux_high = round(np.mean(Ux_avg_high),0); mean_Ux_low = round(np.mean(Ux_avg_low),0)
-    std_Ux_high = round(np.std(Ux_avg_high),0); std_Ux_low = round(np.std(Ux_avg_low),0) 
+    min_Ux_high = round(np.min(Ux_avg_high),2); min_Ux_low = round(np.min(Ux_avg_low),2)
+    max_Ux_high = round(np.max(Ux_avg_high),2); max_Ux_low = round(np.max(Ux_avg_low),2)
+    mean_Ux_high = round(np.mean(Ux_avg_high),2); mean_Ux_low = round(np.mean(Ux_avg_low),2)
+    std_Ux_high = round(np.std(Ux_avg_high),2); std_Ux_low = round(np.std(Ux_avg_low),2) 
     P,X = probability_dist(Ux_avg_high)
     plt.plot(X,P,"-",color=colors[i],label="High speed: cutoff = {}\nMin = {}, Max = {}\nMean = {}, Std = {}".format(round(1/cutoff,0),min_Ux_high,max_Ux_high,mean_Ux_high,std_Ux_high))
     P,X = probability_dist(Ux_avg_low)
