@@ -376,10 +376,11 @@ for offset in offsets:
 
         D_low_array.append(D_low_time_arr); Ux_avg_low_array.append(Ux_avg_low_time_arr); Tau_low_array.append(Tau_low_time_arr)
 
-        df["{}_{}".format(offset,round(1/filter),0)] = [round(np.min(Tau_high),1),round(np.min(Tau_low),1),round(np.mean(Tau_high),1),round(np.mean(Tau_low),1),round(np.std(Tau_high),1),
-                                                        round(np.std(Tau_low),1),round(np.min(Ux_avg_high),2),round(np.min(Ux_avg_low),2),round(np.mean(Ux_avg_high),2),round(np.mean(Ux_avg_low),2),
-                                                        round(np.std(Ux_avg_high),2),round(np.std(Ux_avg_low),2),round(np.min(D_high),0),round(np.min(D_low),0),round(np.mean(D_high),0),
-                                                        round(np.mean(D_low),0),round(np.std(D_high),0),round(np.std(D_low),0) ]
+        df["{}_{}".format(offset,round(1/filter),0)] = [round(np.min(Tau_high_time_arr),1),round(np.min(Tau_low_time_arr),1),round(np.mean(Tau_high_time_arr),1),round(np.mean(Tau_low_time_arr),1),
+                                                        round(np.std(Tau_high_time_arr),1),round(np.std(Tau_low_time_arr),1),round(np.min(Ux_avg_high_time_arr),2),round(np.min(Ux_avg_low_time_arr),2),
+                                                        round(np.mean(Ux_avg_high_time_arr),2),round(np.mean(Ux_avg_low_time_arr),2),(np.std(Ux_avg_high_time_arr),2),round(np.std(Ux_avg_low_time_arr),2),
+                                                        round(np.min(D_high_time_arr),0),round(np.min(D_low_time_arr),0),round(np.mean(D_high_time_arr),0),round(np.mean(D_low_time_arr),0),
+                                                        round(np.std(D_high_time_arr),0),round(np.std(D_low_time_arr),0) ]
         
         del D_high_time_arr; del Ux_avg_high_time_arr; del Tau_high_time_arr
         del D_low_time_arr; del Ux_avg_low_time_arr; del Tau_low_time_arr
