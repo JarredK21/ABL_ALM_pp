@@ -260,7 +260,7 @@ df =  pd.DataFrame(data=None, columns=col_names)
 for offset in offsets:
     print(offset)
     a = Dataset("sampling_l_{}.nc".format(offset))
-    height = offsets[i]+7.5
+    height = offset+7.5
     p = a.groups["p_l"]
 
     #time options
@@ -363,7 +363,6 @@ for offset in offsets:
                 ix+=1
 
         D_high_array.append(D_high_time_arr); Ux_avg_high_array.append(Ux_avg_high_time_arr); Tau_high_array.append(Tau_high_time_arr)
-        del D_high_time_arr; del Ux_avg_high_time_arr; del Tau_high_time_arr
 
         ix = 0
         D_low_time_arr = []; Ux_avg_low_time_arr = []; Tau_low_time_arr = []
@@ -382,6 +381,7 @@ for offset in offsets:
                                                         round(np.std(Ux_avg_high),2),round(np.std(Ux_avg_low),2),round(np.min(D_high),0),round(np.min(D_low),0),round(np.mean(D_high),0),
                                                         round(np.mean(D_low),0),round(np.std(D_high),0),round(np.std(D_low),0) ]
         
+        del D_high_time_arr; del Ux_avg_high_time_arr; del Tau_high_time_arr
         del D_low_time_arr; del Ux_avg_low_time_arr; del Tau_low_time_arr
 
 
