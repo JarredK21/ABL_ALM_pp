@@ -7,6 +7,7 @@ from multiprocessing import Pool
 import math
 from scipy import interpolate
 import time
+import pandas as pd
 
 
 def probability_dist(y):
@@ -228,7 +229,6 @@ def low_Speed_eddy(it):
     return D_low, Ux_avg_low, Tau_low
 
 
-
 start_time = time.time()
 
 t_start = 38000; t_end = 39201
@@ -249,9 +249,17 @@ del precursor; del mean_profiles; del u; del v; del t_start_idx; del t_end_idx
 print("line 252",time.time()-start_time)
 
 offsets = [22.5,85,142.5]
-filter_cutoffs = [6.5e-03,3e-03,1.1e-03]
-for i in np.arange(0,len(offsets)):
-    a = Dataset("sampling_l_{}.nc".format(offsets[i]))
+filter_cutoff = [(1*3e-03),(1.5*3e-03),(2*3e-03),(2.5*3e-03),(3*3e-03)]
+col_names = []
+for offset in offsets:
+    for filter in filter_cutoff:
+        col_names.append(["{}_{}".format(offset,round(1/filter),0)])
+df =  pd.DataFrame(data=None, columns=col_names)
+
+
+for offset in offsets:
+    print(offset)
+    a = Dataset("sampling_l_{}.nc".format(offset))
     height = offsets[i]+7.5
     p = a.groups["p_l"]
 
@@ -295,7 +303,6 @@ for i in np.arange(0,len(offsets)):
 
     D_low_array = []; Ux_avg_low_array = []; Tau_low_array = []
     D_high_array = []; Ux_avg_high_array = []; Tau_high_array = []
-    filter_cutoff = [(1*filter_cutoffs[i]),(1.5*filter_cutoffs[i]),(2*filter_cutoffs[i]),(2.5*filter_cutoffs[i]),(3*filter_cutoffs[i])]
     for cutoff in filter_cutoff:
 
         print("cuttoff = ",round(1/cutoff,0),time.time()-start_time)
@@ -345,10 +352,9 @@ for i in np.arange(0,len(offsets)):
 
         print("line 345",time.time()-start_time)
 
-
+        ix = 0
         D_high_time_arr = []; Ux_avg_high_time_arr = []; Tau_high_time_arr = []
         with Pool() as pool:
-            ix = 0
             for D_high_it, Ux_avg_high_it, Tau_high_it in pool.imap(high_Speed_eddy,Time_steps):
                 D_high_time_arr.extend(D_high_it)
                 Ux_avg_high_time_arr.extend(Ux_avg_high_it)
@@ -359,19 +365,24 @@ for i in np.arange(0,len(offsets)):
         D_high_array.append(D_high_time_arr); Ux_avg_high_array.append(Ux_avg_high_time_arr); Tau_high_array.append(Tau_high_time_arr)
         del D_high_time_arr; del Ux_avg_high_time_arr; del Tau_high_time_arr
 
-
+        ix = 0
         D_low_time_arr = []; Ux_avg_low_time_arr = []; Tau_low_time_arr = []
         with Pool() as pool:
-            ix = 0
             for D_low_it, Ux_avg_low_it, Tau_low_it in pool.imap(low_Speed_eddy,Time_steps):
                 D_low_time_arr.extend(D_low_it)
                 Ux_avg_low_time_arr.extend(Ux_avg_low_it)
                 Tau_low_time_arr.extend(Tau_low_it)
                 print(ix,time.time()-start_time)
+                ix+=1
 
         D_low_array.append(D_low_time_arr); Ux_avg_low_array.append(Ux_avg_low_time_arr); Tau_low_array.append(Tau_low_time_arr)
-        del D_low_time_arr; del Ux_avg_low_time_arr; del Tau_low_time_arr
 
+        df["{}_{}".format(offset,round(1/filter),0)] = [round(np.min(Tau_high),1),round(np.min(Tau_low),1),round(np.mean(Tau_high),1),round(np.mean(Tau_low),1),round(np.std(Tau_high),1),
+                                                        round(np.std(Tau_low),1),round(np.min(Ux_avg_high),2),round(np.min(Ux_avg_low),2),round(np.mean(Ux_avg_high),2),round(np.mean(Ux_avg_low),2),
+                                                        round(np.std(Ux_avg_high),2),round(np.std(Ux_avg_low),2),round(np.min(D_high),0),round(np.min(D_low),0),round(np.mean(D_high),0),
+                                                        round(np.mean(D_low),0),round(np.std(D_high),0),round(np.std(D_low),0) ]
+        
+        del D_low_time_arr; del Ux_avg_low_time_arr; del Tau_low_time_arr
 
 
     colors = ["g","c","b","r","k"]
@@ -443,3 +454,4 @@ for i in np.arange(0,len(offsets)):
     plt.close()
 
 
+df.to_csv('Eddy_passage_data.csv',index=False)
