@@ -226,10 +226,11 @@ def low_Speed_eddy(it):
 
 
 start_time = time.time()
-
+in_dir="../../ABL_precursor_2/"
 t_start = 38000; t_end = 39201
 #defining twist angles with height from precursor
-precursor = Dataset("abl_statistics70000.nc")
+# precursor = Dataset("abl_statistics70000.nc")
+precursor = Dataset(in_dir+"abl_statistics60000.nc")
 mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
 t_start_idx = np.searchsorted(precursor.variables["time"],t_start)
 t_end_idx = np.searchsorted(precursor.variables["time"],t_end)
@@ -244,13 +245,14 @@ del precursor; del mean_profiles; del u; del v; del t_start_idx; del t_end_idx
 
 print("line 252",time.time()-start_time)
 
-offsets = [22.5,85,142.5]
+#offsets = [22.5,85,142.5]
+offsets = [85]
 filter_cutoff = [(1*3e-03),(1.5*3e-03),(2*3e-03),(2.5*3e-03),(3*3e-03)]
 
 
 for offset in offsets:
     print(offset)
-    a = Dataset("sampling_l_{}.nc".format(offset))
+    a = Dataset(in_dir+"sampling_l_{}.nc".format(offset))
     height = offset+7.5
     p = a.groups["p_l"]
 
@@ -465,7 +467,7 @@ for offset in offsets:
         plt.xlabel("x axis [m]")
         plt.ylabel("y axis [m]")
         plt.title("{}m plane from surface, {}m filtered Streamwise fluctuating velocity, T = {}".format(offset,round(1/cutoff,0),0.0))
-        plt.savefig("{}_{}_filtered_eddies".format(offset,round(1/cutoff,0)))
+        plt.savefig(in_dir+"{}_{}_filtered_eddies.png".format(offset,round(1/cutoff,0)))
         plt.cla()
         cb.remove()
         plt.close(fig)
