@@ -152,9 +152,6 @@ dyUxH = np.array(Split_rotor_vars.variables["dyUxH"][Time_start_idx:])
 dzUxH = np.array(Split_rotor_vars.variables["dzUxH"][Time_start_idx:])
 drUxH = np.array(Split_rotor_vars.variables["drUxH"][Time_start_idx:])
 
-print(correlation_coef(dyUx,dyUxL))
-print(correlation_coef(dzUx,dzUxM))
-print(correlation_coef(drUx,drUxH))
 
 
 # fig = plt.figure(figsize=(14,8))

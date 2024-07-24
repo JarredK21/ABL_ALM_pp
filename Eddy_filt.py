@@ -356,112 +356,112 @@ for offset in offsets:
         fig = plt.figure(figsize=(50,30))
         plt.rcParams['font.size'] = 40
 
-        cs = plt.contourf(X,Y,filt_U_PRI,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+        cs = plt.contourf(X,Y,filt_U_PRI,levels=levels, cmap=cm.coolwarm,vmin=cmin_pri,vmax=cmax_pri)
         cb = plt.colorbar(cs)
         
-        lines = CS.allsegs[0] #plot only threshold velocity
-        for line in lines:
-            if xleft in np.around(line[:,0],1) or xright in np.around(line[:,0],1) or ytop in np.around(line[:,1],1) or ybottom in np.around(line[:,1],1):
-                continue
-            else:
-                x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
+        # lines = CS.allsegs[0] #plot only threshold velocity
+        # for line in lines:
+        #     if xleft in np.around(line[:,0],1) or xright in np.around(line[:,0],1) or ytop in np.around(line[:,1],1) or ybottom in np.around(line[:,1],1):
+        #         continue
+        #     else:
+        #         x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
 
-                Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
+        #         Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
 
-                Dist = np.max(x_pri) - np.min(x_pri)
+        #         Dist = np.max(x_pri) - np.min(x_pri)
 
-                if f_pri(Centroid[0],Centroid[1]) < 0.7 or Dist < 1/cutoff:
-                    continue
-                else:
+        #         if f_pri(Centroid[0],Centroid[1]) < 0.7 or Dist < 1/cutoff:
+        #             continue
+        #         else:
 
-                    xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
-                    x_array = np.arange(xmin+5,xmax-5,10)
+        #             xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
+        #             x_array = np.arange(xmin+5,xmax-5,10)
 
 
-                    coordinates = []
-                    for xr in x_array:
+        #             coordinates = []
+        #             for xr in x_array:
                 
-                        xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
-                        xidxlist = np.where(xidx)
-                        if len(xidxlist[0]) == 0:
-                            continue
+        #                 xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
+        #                 xidxlist = np.where(xidx)
+        #                 if len(xidxlist[0]) == 0:
+        #                     continue
 
-                        ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
+        #                 ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
 
-                        if ymin+10 < ymax-10:
-                            ylist = np.arange(ymin,ymax,10)
+        #                 if ymin+10 < ymax-10:
+        #                     ylist = np.arange(ymin,ymax,10)
                             
-                            for yr in ylist:
-                                coordinates.append([xr,yr])
+        #                     for yr in ylist:
+        #                         coordinates.append([xr,yr])
 
-                    Ux_avg = []
-                    for coordinate in coordinates:
+        #             Ux_avg = []
+        #             for coordinate in coordinates:
 
-                        ux = f(coordinate[0],coordinate[1])
-                        ux_pri = f_pri(coordinate[0],coordinate[1])
-                        if ux_pri >= 0.7 and cmin <= ux <= cmax:
-                            Ux_avg.append(ux)
-
-
-                    if len(Ux_avg) == 0:
-                        continue
-                    else:
-                        plt.plot(line[:,0],line[:,1],"-k")
+        #                 ux = f(coordinate[0],coordinate[1])
+        #                 ux_pri = f_pri(coordinate[0],coordinate[1])
+        #                 if ux_pri >= 0.7 and cmin <= ux <= cmax:
+        #                     Ux_avg.append(ux)
 
 
+        #             if len(Ux_avg) == 0:
+        #                 continue
+        #             else:
+        #                 plt.plot(line[:,0],line[:,1],"-k")
 
 
 
-        #low speed eddies
-
-        lines = CZ.allsegs[-1] #plot only threshold velocity
-        for line in lines:
-            if xleft in np.around(line[:,0],1) or xright in np.around(line[:,0],1) or ytop in np.around(line[:,1],1) or ybottom in np.around(line[:,1],1):
-                continue
-            else:
-                x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
-
-                Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
-
-                Dist = np.max(x_pri) - np.min(x_pri)
 
 
-                if f_pri(Centroid[0],Centroid[1]) > -0.7 or Dist < 1/cutoff:
-                    continue
-                else:
+        # #low speed eddies
 
-                    xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
-                    x_array = np.arange(xmin+5,xmax-5,10)
+        # lines = CZ.allsegs[-1] #plot only threshold velocity
+        # for line in lines:
+        #     if xleft in np.around(line[:,0],1) or xright in np.around(line[:,0],1) or ytop in np.around(line[:,1],1) or ybottom in np.around(line[:,1],1):
+        #         continue
+        #     else:
+        #         x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
+
+        #         Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
+
+        #         Dist = np.max(x_pri) - np.min(x_pri)
 
 
-                    coordinates = []
-                    for xr in x_array:
+        #         if f_pri(Centroid[0],Centroid[1]) > -0.7 or Dist < 1/cutoff:
+        #             continue
+        #         else:
+
+        #             xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
+        #             x_array = np.arange(xmin+5,xmax-5,10)
+
+
+        #             coordinates = []
+        #             for xr in x_array:
                 
-                        xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
-                        xidxlist = np.where(xidx)
-                        if len(xidxlist[0]) == 0:
-                            continue
+        #                 xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
+        #                 xidxlist = np.where(xidx)
+        #                 if len(xidxlist[0]) == 0:
+        #                     continue
 
-                        ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
+        #                 ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
 
-                        if ymin+10 < ymax-10:
-                            ylist = np.arange(ymin,ymax,10)
+        #                 if ymin+10 < ymax-10:
+        #                     ylist = np.arange(ymin,ymax,10)
                             
-                            for yr in ylist:
-                                coordinates.append([xr,yr])
+        #                     for yr in ylist:
+        #                         coordinates.append([xr,yr])
 
-                    Ux_avg = []
-                    for coordinate in coordinates:
-                        ux = f(coordinate[0],coordinate[1])
-                        ux_pri = f_pri(coordinate[0],coordinate[1])
-                        if ux_pri <= -0.7 and cmin <= ux <= cmax:
-                            Ux_avg.append(ux)
+        #             Ux_avg = []
+        #             for coordinate in coordinates:
+        #                 ux = f(coordinate[0],coordinate[1])
+        #                 ux_pri = f_pri(coordinate[0],coordinate[1])
+        #                 if ux_pri <= -0.7 and cmin <= ux <= cmax:
+        #                     Ux_avg.append(ux)
 
 
-                    if len(Ux_avg) == 0:
-                        continue
-                    else:
-                        plt.plot(line[:,0],line[:,1],"--k")
+        #             if len(Ux_avg) == 0:
+        #                 continue
+        #             else:
+        #                 plt.plot(line[:,0],line[:,1],"--k")
 
 
         plt.xlabel("x axis [m]")

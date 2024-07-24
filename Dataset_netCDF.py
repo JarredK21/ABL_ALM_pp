@@ -428,7 +428,7 @@ out_dir = in_dir
 
 
 #create netcdf file
-ncfile = Dataset(out_dir+"Dataset_2.nc",mode="w",format='NETCDF4')
+ncfile = Dataset(out_dir+"Dataset.nc",mode="w",format='NETCDF4')
 ncfile.title = "OpenFAST data sampling output"
 
 #create global dimensions
@@ -438,7 +438,6 @@ sampling_dim = ncfile.createDimension("sampling",None)
 #create variables
 time_OF = ncfile.createVariable("Time_OF", np.float64, ('OF',),zlib=True)
 time_sampling = ncfile.createVariable("Time_sampling", np.float64, ('sampling',),zlib=True)
-act_stations = ncfile.createVariable("Actuator_stations", np.float64, ("Act_stations",),zlib=True)
 
 print("Outputting openfast variables",time.time()-start_time)
 group = ncfile.createGroup("OpenFAST_Variables")
