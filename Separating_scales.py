@@ -187,8 +187,8 @@ in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 df_OF = Dataset(in_dir+"Dataset.nc")
 
-Time_OF = np.array(df_OF.variables["time_OF"])
-Time_sampling = np.array(df_OF.variables["time_sampling"])
+Time_OF = np.array(df_OF.variables["Time_OF"])
+Time_sampling = np.array(df_OF.variables["Time_sampling"])
 dt = Time_OF[1] - Time_OF[0]
 
 Time_start = 200; Time_end = Time_sampling[-1]
@@ -198,10 +198,12 @@ Time_OF = Time_OF[Time_start_idx:Time_end_idx]
 
 Time_steps = np.arange(0,len(Time_OF))
 
-Azimuth = np.radians(np.array(df_OF.variables["Azimuth"][Time_start_idx:Time_end_idx]))
+OpenFAST_vars = df_OF.groups["OpenFAST_Variables"]
 
-RtAeroFyh = np.array(df_OF.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
-RtAeroFzh = np.array(df_OF.variables["RtAeroFzh"][Time_start_idx:Time_end_idx])
+Azimuth = np.radians(np.array(OpenFAST_vars.variables["Azimuth"][Time_start_idx:Time_end_idx]))
+
+RtAeroFyh = np.array(OpenFAST_vars.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
+RtAeroFzh = np.array(OpenFAST_vars.variables["RtAeroFzh"][Time_start_idx:Time_end_idx])
 
 RtAeroFys = []; RtAeroFzs = []
 for i in np.arange(0,len(Time_OF)):
@@ -210,8 +212,8 @@ for i in np.arange(0,len(Time_OF)):
 RtAeroFys = np.array(RtAeroFys)/1000; RtAeroFzs = np.array(RtAeroFzs)/1000
 
 
-RtAeroMyh = np.array(df_OF.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
-RtAeroMzh = np.array(df_OF.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
+RtAeroMyh = np.array(OpenFAST_vars.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
+RtAeroMzh = np.array(OpenFAST_vars.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
 
 RtAeroMys = []; RtAeroMzs = []
 for i in np.arange(0,len(Time_OF)):
@@ -220,12 +222,12 @@ for i in np.arange(0,len(Time_OF)):
 RtAeroMys = np.array(RtAeroMys)/1000; RtAeroMzs = np.array(RtAeroMzs)/1000
 
 
-LSSTipMys = np.array(df_OF.variables["LSSTipMys"][Time_start_idx:Time_end_idx])
-LSSTipMzs = np.array(df_OF.variables["LSSTipMzs"][Time_start_idx:Time_end_idx])
+LSSTipMys = np.array(OpenFAST_vars.variables["LSSTipMys"][Time_start_idx:Time_end_idx])
+LSSTipMzs = np.array(OpenFAST_vars.variables["LSSTipMzs"][Time_start_idx:Time_end_idx])
 
-LSShftFxa = np.array(df_OF.variables["LSShftFxa"][Time_start_idx:Time_end_idx])
-LSShftFys = np.array(df_OF.variables["LSShftFys"][Time_start_idx:Time_end_idx])
-LSShftFzs = np.array(df_OF.variables["LSShftFzs"][Time_start_idx:Time_end_idx])
+LSShftFxa = np.array(OpenFAST_vars.variables["LSShftFxa"][Time_start_idx:Time_end_idx])
+LSShftFys = np.array(OpenFAST_vars.variables["LSShftFys"][Time_start_idx:Time_end_idx])
+LSShftFzs = np.array(OpenFAST_vars.variables["LSShftFzs"][Time_start_idx:Time_end_idx])
 
 #Total radial aerodynamic bearing force aeroFBR
 L1 = 1.912; L2 = 2.09
@@ -332,6 +334,48 @@ HPF_FBR = np.array(low_pass_filter(HPF_FBR,40,dt))
 BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
 dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
 dHPF_FBR = np.array(dt_calc(HPF_FBR,dt))
+
+#local variance calc
+local_var_LPF = []
+local_var_BPF = []
+local_var_HPF = []
+start_time_idx = np.searchsorted(Time_OF,20+Time_OF[0])
+for i in np.arange(0,len(Time_OF)-start_time_idx,1):
+    local_var_LPF.append(np.std(LPF_1_FBR[i:i+start_time_idx]))
+    local_var_BPF.append(np.std(BPF_FBR[i:i+start_time_idx]))
+    local_var_HPF.append(np.std(HPF_FBR[i:i+start_time_idx]))
+
+plt.rcParams['font.size'] = 12
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF[:-start_time_idx],np.add(local_var_LPF,200),"-g",label="LPF (0.3Hz), offset +200kN")
+plt.plot(Time_OF[:-start_time_idx],np.add(local_var_BPF,50),"-r",label="BPF (0.3-0.9Hz), offset +50kN")
+plt.plot(Time_OF[:-start_time_idx],local_var_HPF,"-b",label="HPF (1.5Hz)")
+plt.xlabel("Time [s]")
+plt.ylabel("Local standard deviation T=20s\nMagnitude Main bearing force vector $F_{B_R}$ [kN]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+
+print(correlation_coef(local_var_LPF,local_var_BPF))
+print(correlation_coef(local_var_LPF,local_var_HPF))
+print(correlation_coef(local_var_BPF,local_var_HPF))
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF[:-start_time_idx],LPF_1_FBR[:-start_time_idx],"-g",label="LPF (0.3Hz) total signal")
+plt.plot(Time_OF[:-start_time_idx],np.add(local_var_BPF,50),"-r",label="BPF (0.3-0.9Hz), offset +50kN")
+plt.plot(Time_OF[:-start_time_idx],local_var_HPF,"-b",label="HPF (1.5Hz)")
+plt.xlabel("Time [s]")
+plt.ylabel("Local standard deviation T=20s\nMagnitude Main bearing force vector $F_{B_R}$ [kN]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+
+print(correlation_coef(LPF_1_FBR[:-start_time_idx],local_var_BPF))
+print(correlation_coef(LPF_1_FBR[:-start_time_idx],local_var_HPF))
+print(correlation_coef(local_var_BPF,local_var_HPF))
+
+plt.show()
+
 
 print("Total LPF",correlation_coef(FBR,LPF_1_FBR))
 print("Total BPF",correlation_coef(FBR,BPF_FBR))

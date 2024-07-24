@@ -203,6 +203,8 @@ def dUx_calc(it):
             du_dy_avg.append(du_dy[ijk])
             du_dz_avg.append(du_dz[ijk])
             du_dr_avg.append(du_dr[ijk])
+    
+        ijk+=1
 
     return np.average(du_dy_avg),np.average(du_dz_avg),np.average(du_dr_avg)
 
@@ -350,7 +352,7 @@ def Split_dUx_calc(it):
                 du_dyH_avg.append(du_dy[ijk])
                 du_dzH_avg.append(du_dz[ijk])
                 du_drH_avg.append(du_dr[ijk])
-
+        ijk+=1
 
     return np.average(du_dyL_avg),np.average(du_dzL_avg),np.average(du_drL_avg), np.average(du_dyM_avg),np.average(du_dzM_avg),np.average(du_drM_avg),np.average(du_dyH_avg),np.average(du_dzH_avg),np.average(du_drH_avg)
 
@@ -436,6 +438,7 @@ sampling_dim = ncfile.createDimension("sampling",None)
 #create variables
 time_OF = ncfile.createVariable("Time_OF", np.float64, ('OF',),zlib=True)
 time_sampling = ncfile.createVariable("Time_sampling", np.float64, ('sampling',),zlib=True)
+act_stations = ncfile.createVariable("Actuator_stations", np.float64, ("Act_stations",),zlib=True)
 
 print("Outputting openfast variables",time.time()-start_time)
 group = ncfile.createGroup("OpenFAST_Variables")
@@ -466,8 +469,7 @@ time_OF[:] = np.array(df["Time_[s]"])
 print("line 466",time.time()-start_time)
 
 Variables = ["Azimuth","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh",
-             "LSSGagMys","LSSGagMzs", "LSShftMxa","LSSTipMys","LSSTipMzs",
-             "LSShftFxa","LSShftFys","LSShftFzs"]
+             "LSSGagMys","LSSGagMzs", "LSShftMxa","LSSTipMys","LSSTipMzs"]
 units = ["[deg]","[N]","[N]","[N]","[N-m]","[N-m]","[N-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]",
          "[kN]","[kN]","[kN]"]
 for i in np.arange(0,len(Variables)):
