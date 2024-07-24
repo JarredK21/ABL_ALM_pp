@@ -243,16 +243,22 @@ del precursor; del mean_profiles; del u; del v; del t_start_idx; del t_end_idx
 
 print("line 252",time.time()-start_time)
 
-#offsets = [22.5,85,142.5]
-offsets = [85]
-filter_cutoff = [(1*3e-03),(1.5*3e-03),(2*3e-03),(2.5*3e-03),(3*3e-03)]
+offsets = [22.5,85,142.5]
+wavenumber_cutoff = [6.5e-03,3e-03,1.1e-03]
 
 
+ix = 0
 for offset in offsets:
     print(offset)
     a = Dataset("sampling_l_{}.nc".format(offset))
     height = offset+7.5
     p = a.groups["p_l"]
+
+    wavenumber = wavenumber_cutoff[ix]
+
+    filter_cutoff = [(1*wavenumber),(1.5*wavenumber),(2*wavenumber),(2.5*wavenumber),(3*wavenumber)]
+
+    print(filter_cutoff)
 
     #time options
     Time = np.array(a.variables["time"])
@@ -465,7 +471,9 @@ for offset in offsets:
         plt.xlabel("x axis [m]")
         plt.ylabel("y axis [m]")
         plt.title("{}m plane from surface, {}m filtered Streamwise fluctuating velocity, T = {}".format(offset,round(1/cutoff,0),0.0))
-        plt.savefig("filt_isocontours/{}_{}_filtered_eddies.png".format(offset,round(1/cutoff,0)))
+        plt.savefig("filt_isocontours_2/{}_{}_filtered_eddies.png".format(offset,round(1/cutoff,0)))
         plt.cla()
         cb.remove()
         plt.close(fig)
+
+    ix+=1
