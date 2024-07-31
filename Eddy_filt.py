@@ -462,7 +462,7 @@ for offset in offsets:
         plt.xlabel("x axis [m]")
         plt.ylabel("y axis [m]")
         plt.title("{}m plane from surface, {}m filtered Streamwise fluctuating velocity, T = {}".format(offset,round(1/cutoff,0),0.0))
-        plt.savefig("filt_isocontours_2/{}_{}_filtered_eddies.png".format(offset,round(1/cutoff,0)))
+        plt.savefig("filt_isocontours_3/{}_{}_filtered_eddies.png".format(offset,round(1/cutoff,0)))
         plt.cla()
         cb.remove()
         plt.close(fig)
