@@ -244,19 +244,16 @@ del precursor; del mean_profiles; del u; del v; del t_start_idx; del t_end_idx
 print("line 252",time.time()-start_time)
 
 offsets = [22.5,85,142.5]
-wavenumber_cutoff = [6.5e-03,3e-03,1.1e-03]
 
 
-ix = 0
 for offset in offsets:
     print(offset)
     a = Dataset("sampling_l_{}.nc".format(offset))
     height = offset+7.5
     p = a.groups["p_l"]
 
-    wavenumber = wavenumber_cutoff[ix]
 
-    filter_cutoff = [(1*wavenumber),(1.5*wavenumber),(2*wavenumber),(2.5*wavenumber),(3*wavenumber)]
+    filter_cutoff = [(1*3e-03),(1.5*3e-03),(2*3e-03),(2.5*3e-03),(3*3e-03)]
 
     print(filter_cutoff)
 
@@ -365,52 +362,49 @@ for offset in offsets:
         
         lines = CS.allsegs[0] #plot only threshold velocity
         for line in lines:
-            if xleft in np.around(line[:,0],1) or xright in np.around(line[:,0],1) or ytop in np.around(line[:,1],1) or ybottom in np.around(line[:,1],1):
+            x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
+
+            Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
+
+            Dist = np.max(x_pri) - np.min(x_pri)
+
+            if f_pri(Centroid[0],Centroid[1]) < 0.7 or Dist < 1/cutoff:
                 continue
             else:
-                x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
 
-                Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
+                xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
+                x_array = np.arange(xmin+5,xmax-5,10)
 
-                Dist = np.max(x_pri) - np.min(x_pri)
 
-                if f_pri(Centroid[0],Centroid[1]) < 0.7 or Dist < 1/cutoff:
+                coordinates = []
+                for xr in x_array:
+            
+                    xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
+                    xidxlist = np.where(xidx)
+                    if len(xidxlist[0]) == 0:
+                        continue
+
+                    ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
+
+                    if ymin+10 < ymax-10:
+                        ylist = np.arange(ymin,ymax,10)
+                        
+                        for yr in ylist:
+                            coordinates.append([xr,yr])
+
+                Ux_avg = []
+                for coordinate in coordinates:
+
+                    ux = f(coordinate[0],coordinate[1])
+                    ux_pri = f_pri(coordinate[0],coordinate[1])
+                    if ux_pri >= 0.7 and cmin <= ux <= cmax:
+                        Ux_avg.append(ux)
+
+
+                if len(Ux_avg) == 0:
                     continue
                 else:
-
-                    xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
-                    x_array = np.arange(xmin+5,xmax-5,10)
-
-
-                    coordinates = []
-                    for xr in x_array:
-                
-                        xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
-                        xidxlist = np.where(xidx)
-                        if len(xidxlist[0]) == 0:
-                            continue
-
-                        ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
-
-                        if ymin+10 < ymax-10:
-                            ylist = np.arange(ymin,ymax,10)
-                            
-                            for yr in ylist:
-                                coordinates.append([xr,yr])
-
-                    Ux_avg = []
-                    for coordinate in coordinates:
-
-                        ux = f(coordinate[0],coordinate[1])
-                        ux_pri = f_pri(coordinate[0],coordinate[1])
-                        if ux_pri >= 0.7 and cmin <= ux <= cmax:
-                            Ux_avg.append(ux)
-
-
-                    if len(Ux_avg) == 0:
-                        continue
-                    else:
-                        plt.plot(line[:,0],line[:,1],"-k")
+                    plt.plot(line[:,0],line[:,1],"-k")
 
 
 
@@ -420,52 +414,49 @@ for offset in offsets:
 
         lines = CZ.allsegs[-1] #plot only threshold velocity
         for line in lines:
-            if xleft in np.around(line[:,0],1) or xright in np.around(line[:,0],1) or ytop in np.around(line[:,1],1) or ybottom in np.around(line[:,1],1):
+            x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
+
+            Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
+
+            Dist = np.max(x_pri) - np.min(x_pri)
+
+
+            if f_pri(Centroid[0],Centroid[1]) > -0.7 or Dist < 1/cutoff:
                 continue
             else:
-                x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
 
-                Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
-
-                Dist = np.max(x_pri) - np.min(x_pri)
+                xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
+                x_array = np.arange(xmin+5,xmax-5,10)
 
 
-                if f_pri(Centroid[0],Centroid[1]) > -0.7 or Dist < 1/cutoff:
+                coordinates = []
+                for xr in x_array:
+            
+                    xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
+                    xidxlist = np.where(xidx)
+                    if len(xidxlist[0]) == 0:
+                        continue
+
+                    ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
+
+                    if ymin+10 < ymax-10:
+                        ylist = np.arange(ymin,ymax,10)
+                        
+                        for yr in ylist:
+                            coordinates.append([xr,yr])
+
+                Ux_avg = []
+                for coordinate in coordinates:
+                    ux = f(coordinate[0],coordinate[1])
+                    ux_pri = f_pri(coordinate[0],coordinate[1])
+                    if ux_pri <= -0.7 and cmin <= ux <= cmax:
+                        Ux_avg.append(ux)
+
+
+                if len(Ux_avg) == 0:
                     continue
                 else:
-
-                    xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
-                    x_array = np.arange(xmin+5,xmax-5,10)
-
-
-                    coordinates = []
-                    for xr in x_array:
-                
-                        xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
-                        xidxlist = np.where(xidx)
-                        if len(xidxlist[0]) == 0:
-                            continue
-
-                        ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
-
-                        if ymin+10 < ymax-10:
-                            ylist = np.arange(ymin,ymax,10)
-                            
-                            for yr in ylist:
-                                coordinates.append([xr,yr])
-
-                    Ux_avg = []
-                    for coordinate in coordinates:
-                        ux = f(coordinate[0],coordinate[1])
-                        ux_pri = f_pri(coordinate[0],coordinate[1])
-                        if ux_pri <= -0.7 and cmin <= ux <= cmax:
-                            Ux_avg.append(ux)
-
-
-                    if len(Ux_avg) == 0:
-                        continue
-                    else:
-                        plt.plot(line[:,0],line[:,1],"--k")
+                    plt.plot(line[:,0],line[:,1],"--k")
 
 
         plt.xlabel("x axis [m]")
@@ -475,5 +466,3 @@ for offset in offsets:
         plt.cla()
         cb.remove()
         plt.close(fig)
-
-    ix+=1
