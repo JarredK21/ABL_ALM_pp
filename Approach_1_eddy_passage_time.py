@@ -6,8 +6,7 @@ out_dir = "../../ABL_precursor_2_restart/plots/"
 
 offsets = [22.5,85,142.5]
 
-filter_cutoff = [1*(1/3e-03),1.5*(1/3e-03),2*(1/3e-03),2.5*(1/3e-03),3*(1/3e-03)]
-filter_cutoff.reverse()
+filter_cutoff = [1/(1*3e-03),1/(1.5*3e-03),1/(2*3e-03),1/(2.5*3e-03),1/(3*3e-03)]
 
 colors = ["r","b","g"]
 

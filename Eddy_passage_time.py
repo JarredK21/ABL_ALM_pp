@@ -110,54 +110,51 @@ def high_Speed_eddy(it):
     Ux_avg_high = []
     lines = CS.allsegs[0] #plot only threshold velocity
     for line in lines:
-        if xleft in np.around(line[:,0],1) or xright in np.around(line[:,0],1) or ytop in np.around(line[:,1],1) or ybottom in np.around(line[:,1],1):
+        x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
+
+        Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
+
+        Dist = np.max(x_pri) - np.min(x_pri)
+
+        if f_pri(Centroid[0],Centroid[1]) < 0.7 or Dist < 1/cutoff:
             continue
         else:
-            x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
 
-            Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
+            xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
+            x_array = np.arange(xmin+5,xmax-5,10)
 
-            Dist = np.max(x_pri) - np.min(x_pri)
 
-            if f_pri(Centroid[0],Centroid[1]) < 0.7 or Dist < 1/cutoff:
+            coordinates = []
+            for xr in x_array:
+        
+                xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
+                xidxlist = np.where(xidx)
+                if len(xidxlist[0]) == 0:
+                    continue
+
+                ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
+
+                if ymin+10 < ymax-10:
+                    ylist = np.arange(ymin,ymax,10)
+                    
+                    for yr in ylist:
+                        coordinates.append([xr,yr])
+
+            Ux_avg = []
+            for coordinate in coordinates:
+
+                ux = f(coordinate[0],coordinate[1])
+                ux_pri = f_pri(coordinate[0],coordinate[1])
+                if ux_pri >= 0.7 and cmin <= ux <= cmax:
+                    Ux_avg.append(ux)
+
+
+            if len(Ux_avg) == 0:
                 continue
             else:
-
-                xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
-                x_array = np.arange(xmin+5,xmax-5,10)
-
-
-                coordinates = []
-                for xr in x_array:
-            
-                    xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
-                    xidxlist = np.where(xidx)
-                    if len(xidxlist[0]) == 0:
-                        continue
-
-                    ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
-
-                    if ymin+10 < ymax-10:
-                        ylist = np.arange(ymin,ymax,10)
-                        
-                        for yr in ylist:
-                            coordinates.append([xr,yr])
-
-                Ux_avg = []
-                for coordinate in coordinates:
-
-                    ux = f(coordinate[0],coordinate[1])
-                    ux_pri = f_pri(coordinate[0],coordinate[1])
-                    if ux_pri >= 0.7 and cmin <= ux <= cmax:
-                        Ux_avg.append(ux)
-
-
-                if len(Ux_avg) == 0:
-                    continue
-                else:
-                    D_high.append(Dist)
-                    Ux_avg_high.append(np.average(Ux_avg))
-                    Tau_high.append(Dist/np.average(Ux_avg))
+                D_high.append(Dist)
+                Ux_avg_high.append(np.average(Ux_avg))
+                Tau_high.append(Dist/np.average(Ux_avg))
     
     return D_high, Ux_avg_high, Tau_high
 
@@ -177,54 +174,51 @@ def low_Speed_eddy(it):
     Ux_avg_low = []
     lines = CZ.allsegs[-1] #plot only threshold velocity
     for line in lines:
-        if xleft in np.around(line[:,0],1) or xright in np.around(line[:,0],1) or ytop in np.around(line[:,1],1) or ybottom in np.around(line[:,1],1):
+        x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
+
+        Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
+
+        Dist = np.max(x_pri) - np.min(x_pri)
+
+
+        if f_pri(Centroid[0],Centroid[1]) > -0.7 or Dist < 1/cutoff:
             continue
         else:
-            x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
 
-            Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
-
-            Dist = np.max(x_pri) - np.min(x_pri)
+            xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
+            x_array = np.arange(xmin+5,xmax-5,10)
 
 
-            if f_pri(Centroid[0],Centroid[1]) > -0.7 or Dist < 1/cutoff:
+            coordinates = []
+            for xr in x_array:
+        
+                xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
+                xidxlist = np.where(xidx)
+                if len(xidxlist[0]) == 0:
+                    continue
+
+                ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
+
+                if ymin+10 < ymax-10:
+                    ylist = np.arange(ymin,ymax,10)
+                    
+                    for yr in ylist:
+                        coordinates.append([xr,yr])
+
+            Ux_avg = []
+            for coordinate in coordinates:
+                ux = f(coordinate[0],coordinate[1])
+                ux_pri = f_pri(coordinate[0],coordinate[1])
+                if ux_pri <= -0.7 and cmin <= ux <= cmax:
+                    Ux_avg.append(ux)
+
+
+            if len(Ux_avg) == 0:
                 continue
             else:
-
-                xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
-                x_array = np.arange(xmin+5,xmax-5,10)
-
-
-                coordinates = []
-                for xr in x_array:
-            
-                    xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
-                    xidxlist = np.where(xidx)
-                    if len(xidxlist[0]) == 0:
-                        continue
-
-                    ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
-
-                    if ymin+10 < ymax-10:
-                        ylist = np.arange(ymin,ymax,10)
-                        
-                        for yr in ylist:
-                            coordinates.append([xr,yr])
-
-                Ux_avg = []
-                for coordinate in coordinates:
-                    ux = f(coordinate[0],coordinate[1])
-                    ux_pri = f_pri(coordinate[0],coordinate[1])
-                    if ux_pri <= -0.7 and cmin <= ux <= cmax:
-                        Ux_avg.append(ux)
-
-
-                if len(Ux_avg) == 0:
-                    continue
-                else:
-                    D_low.append(Dist)
-                    Ux_avg_low.append(np.average(Ux_avg))
-                    Tau_low.append(Dist/np.average(Ux_avg))
+                D_low.append(Dist)
+                Ux_avg_low.append(np.average(Ux_avg))
+                Tau_low.append(Dist/np.average(Ux_avg))
     
     return D_low, Ux_avg_low, Tau_low
 
@@ -250,11 +244,6 @@ print("line 252",time.time()-start_time)
 
 offsets = [22.5,85,142.5]
 filter_cutoff = [(1*3e-03),(1.5*3e-03),(2*3e-03),(2.5*3e-03),(3*3e-03)]
-col_names = []
-for offset in offsets:
-    for filter in filter_cutoff:
-        col_names.append(["{}_{}".format(offset,round(1/filter),0)])
-df =  pd.DataFrame(data=None, columns=col_names)
 
 
 for offset in offsets:
@@ -376,11 +365,6 @@ for offset in offsets:
 
         D_low_array.append(D_low_time_arr); Ux_avg_low_array.append(Ux_avg_low_time_arr); Tau_low_array.append(Tau_low_time_arr)
 
-        df["{}_{}".format(offset,round(1/filter),0)] = [round(np.min(Tau_high_time_arr),1),round(np.min(Tau_low_time_arr),1),round(np.mean(Tau_high_time_arr),1),round(np.mean(Tau_low_time_arr),1),
-                                                        round(np.std(Tau_high_time_arr),1),round(np.std(Tau_low_time_arr),1),round(np.min(Ux_avg_high_time_arr),2),round(np.min(Ux_avg_low_time_arr),2),
-                                                        round(np.mean(Ux_avg_high_time_arr),2),round(np.mean(Ux_avg_low_time_arr),2),(np.std(Ux_avg_high_time_arr),2),round(np.std(Ux_avg_low_time_arr),2),
-                                                        round(np.min(D_high_time_arr),0),round(np.min(D_low_time_arr),0),round(np.mean(D_high_time_arr),0),round(np.mean(D_low_time_arr),0),
-                                                        round(np.std(D_high_time_arr),0),round(np.std(D_low_time_arr),0) ]
         
         del D_high_time_arr; del Ux_avg_high_time_arr; del Tau_high_time_arr
         del D_low_time_arr; del Ux_avg_low_time_arr; del Tau_low_time_arr
@@ -407,7 +391,7 @@ for offset in offsets:
     plt.legend()
     plt.grid()
     plt.tight_layout()
-    plt.savefig("Eddy_passage_time_{}m.png".format(height))
+    plt.savefig("Eddy_passage_time_2_{}m.png".format(height))
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
@@ -429,7 +413,7 @@ for offset in offsets:
     plt.legend()
     plt.grid()
     plt.tight_layout()
-    plt.savefig("Eddy_velocity_{}m.png".format(height))
+    plt.savefig("Eddy_velocity_{}m_2.png".format(height))
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
@@ -451,8 +435,5 @@ for offset in offsets:
     plt.legend()
     plt.grid()
     plt.tight_layout()
-    plt.savefig("Eddy_length_{}m.png".format(height))
+    plt.savefig("Eddy_length_{}m_2.png".format(height))
     plt.close()
-
-
-df.to_csv('Eddy_passage_data.csv',index=False)

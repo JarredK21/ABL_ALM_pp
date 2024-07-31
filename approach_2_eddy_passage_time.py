@@ -5,10 +5,9 @@ import matplotlib.pyplot as plt
 out_dir = "../../ABL_precursor_2_restart/plots/"
 
 offsets = [22.5,85,142.5]
-filter_cutoffs = [1/6.5e-03,1/3e-03,1/1.1e-03]
+filter_cutoffs = [6.5e-03,3e-03,1.1e-03]
 
 filter_cutoff = [1,1.5,2,2.5,3]
-filter_cutoff.reverse()
 
 colors = ["r","b","g"]
 
@@ -43,8 +42,8 @@ for i in np.arange(0,len(offsets)):
 
     height = offsets[i]+7.5
 
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),mean_high_D[i],"-o",color=colors[i],label="high speed: {}m".format(height))
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),mean_low_D[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),mean_high_D[i],"-o",color=colors[i],label="high speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),mean_low_D[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
 plt.xlabel("Filter width [m]")
 plt.ylabel("Mean Eddy length [m]")
 plt.legend()
@@ -60,8 +59,8 @@ for i in np.arange(0,len(offsets)):
     height = offsets[i]+7.5
 
 
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),std_high_D[i],"-o",color=colors[i],label="high speed: {}m".format(height))
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),std_low_D[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),std_high_D[i],"-o",color=colors[i],label="high speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),std_low_D[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
 plt.xlabel("Filter width [m]")
 plt.ylabel("Standard deviation Eddy length [m]")
 plt.legend()
@@ -77,8 +76,8 @@ for i in np.arange(0,len(offsets)):
 
     height = offsets[i]+7.5
 
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),mean_high_ux[i],"-o",color=colors[i],label="high speed: {}m".format(height))
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),mean_low_ux[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),mean_high_ux[i],"-o",color=colors[i],label="high speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),mean_low_ux[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
 plt.xlabel("Filter width [m]")
 plt.ylabel("Mean Eddy velocity [m/s]")
 plt.legend()
@@ -94,8 +93,8 @@ for i in np.arange(0,len(offsets)):
     height = offsets[i]+7.5
 
 
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),std_high_ux[i],"-o",color=colors[i],label="high speed: {}m".format(height))
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),std_low_ux[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),std_high_ux[i],"-o",color=colors[i],label="high speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),std_low_ux[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
 plt.xlabel("Filter width [m]")
 plt.ylabel("Standard deviation Eddy velocity [m/s]")
 plt.legend()
@@ -111,8 +110,8 @@ for i in np.arange(0,len(offsets)):
 
     height = offsets[i]+7.5
 
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),mean_high_Tau[i],"-o",color=colors[i],label="high speed: {}m".format(height))
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),mean_low_Tau[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),mean_high_Tau[i],"-o",color=colors[i],label="high speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),mean_low_Tau[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
 plt.xlabel("Filter width [m]")
 plt.ylabel("Mean Eddy passage time [s]")
 plt.legend()
@@ -128,8 +127,8 @@ for i in np.arange(0,len(offsets)):
     height = offsets[i]+7.5
 
 
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),std_high_Tau[i],"-o",color=colors[i],label="high speed: {}m".format(height))
-    plt.plot(np.multiply(filter_cutoffs[i],filter_cutoff),std_low_Tau[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),std_high_Tau[i],"-o",color=colors[i],label="high speed: {}m".format(height))
+    plt.plot(1/np.multiply(filter_cutoffs[i],filter_cutoff),std_low_Tau[i],"--*",color=colors[i],label="Low speed: {}m".format(height))
 plt.xlabel("Filter width [m]")
 plt.ylabel("Standard deviation Eddy passage time [s]")
 plt.legend()

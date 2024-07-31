@@ -188,22 +188,21 @@ in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 df_OF = Dataset(in_dir+"Dataset.nc")
 
 Time_OF = np.array(df_OF.variables["Time_OF"])
-Time_sampling = np.array(df_OF.variables["Time_sampling"])
 dt = Time_OF[1] - Time_OF[0]
 
-Time_start = 200; Time_end = Time_sampling[-1]
-Time_start_idx = np.searchsorted(Time_OF,Time_start); Time_end_idx = np.searchsorted(Time_OF,Time_end)
+Time_start = 200
+Time_start_idx = np.searchsorted(Time_OF,Time_start)
 
-Time_OF = Time_OF[Time_start_idx:Time_end_idx]
+Time_OF = Time_OF[Time_start_idx:]
 
 Time_steps = np.arange(0,len(Time_OF))
 
 OpenFAST_vars = df_OF.groups["OpenFAST_Variables"]
 
-Azimuth = np.radians(np.array(OpenFAST_vars.variables["Azimuth"][Time_start_idx:Time_end_idx]))
+Azimuth = np.radians(np.array(OpenFAST_vars.variables["Azimuth"][Time_start_idx:]))
 
-RtAeroFyh = np.array(OpenFAST_vars.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
-RtAeroFzh = np.array(OpenFAST_vars.variables["RtAeroFzh"][Time_start_idx:Time_end_idx])
+RtAeroFyh = np.array(OpenFAST_vars.variables["RtAeroFyh"][Time_start_idx:])
+RtAeroFzh = np.array(OpenFAST_vars.variables["RtAeroFzh"][Time_start_idx:])
 
 RtAeroFys = []; RtAeroFzs = []
 for i in np.arange(0,len(Time_OF)):
@@ -212,8 +211,8 @@ for i in np.arange(0,len(Time_OF)):
 RtAeroFys = np.array(RtAeroFys)/1000; RtAeroFzs = np.array(RtAeroFzs)/1000
 
 
-RtAeroMyh = np.array(OpenFAST_vars.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
-RtAeroMzh = np.array(OpenFAST_vars.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
+RtAeroMyh = np.array(OpenFAST_vars.variables["RtAeroMyh"][Time_start_idx:])
+RtAeroMzh = np.array(OpenFAST_vars.variables["RtAeroMzh"][Time_start_idx:])
 
 RtAeroMys = []; RtAeroMzs = []
 for i in np.arange(0,len(Time_OF)):
@@ -222,12 +221,283 @@ for i in np.arange(0,len(Time_OF)):
 RtAeroMys = np.array(RtAeroMys)/1000; RtAeroMzs = np.array(RtAeroMzs)/1000
 
 
-LSSTipMys = np.array(OpenFAST_vars.variables["LSSTipMys"][Time_start_idx:Time_end_idx])
-LSSTipMzs = np.array(OpenFAST_vars.variables["LSSTipMzs"][Time_start_idx:Time_end_idx])
+LSSTipMys = np.array(OpenFAST_vars.variables["LSSTipMys"][Time_start_idx:])
+LSSTipMzs = np.array(OpenFAST_vars.variables["LSSTipMzs"][Time_start_idx:])
 
-LSShftFxa = np.array(OpenFAST_vars.variables["LSShftFxa"][Time_start_idx:Time_end_idx])
-LSShftFys = np.array(OpenFAST_vars.variables["LSShftFys"][Time_start_idx:Time_end_idx])
-LSShftFzs = np.array(OpenFAST_vars.variables["LSShftFzs"][Time_start_idx:Time_end_idx])
+LSShftFxa = np.array(OpenFAST_vars.variables["LSShftFxa"][Time_start_idx:])
+LSShftFys = np.array(OpenFAST_vars.variables["LSShftFys"][Time_start_idx:])
+LSShftFzs = np.array(OpenFAST_vars.variables["LSShftFzs"][Time_start_idx:])
+
+#Asymmetry
+Time_sampling = np.array(df_OF.variables["Time_sampling"])
+Time_start = 200
+Time_sampling_start_idx = np.searchsorted(Time_sampling,Time_start)
+
+Time_sampling = Time_sampling[Time_sampling_start_idx:]
+
+Rotor_avg_vars = df_OF.groups["Rotor_Avg_Variables"]
+Iy = np.array(Rotor_avg_vars.variables["Iy"][Time_sampling_start_idx:])
+Iz = np.array(Rotor_avg_vars.variables["Iz"][Time_sampling_start_idx:])
+I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
+
+
+#OOPBM
+OOPBM = np.sqrt(np.add(np.square(RtAeroMys),np.square(RtAeroMzs)))
+
+#Filtering FBR aero
+LPF_1_OOPBM = low_pass_filter(OOPBM,0.3,dt)
+LPF_2_OOPBM = low_pass_filter(OOPBM,0.9,dt)
+LPF_3_OOPBM = low_pass_filter(OOPBM,1.5,dt)
+
+HPF_OOPBM = np.subtract(OOPBM,LPF_3_OOPBM)
+HPF_OOPBM = np.array(low_pass_filter(HPF_OOPBM,40,dt))
+BPF_OOPBM = np.subtract(LPF_2_OOPBM,LPF_1_OOPBM)
+dBPF_OOPBM = np.array(dt_calc(BPF_OOPBM,dt))
+dHPF_OOPBM = np.array(dt_calc(HPF_OOPBM,dt))
+
+
+zero_crossings_index_BPF_OOPBM = np.where(np.diff(np.sign(dBPF_OOPBM)))[0]
+
+Env_BPF_OOPBM = []
+Env_Times = []
+for i in np.arange(0,len(zero_crossings_index_BPF_OOPBM),2):
+    idx = zero_crossings_index_BPF_OOPBM[i]
+    Env_BPF_OOPBM.append(BPF_OOPBM[idx]); Env_Times.append(Time_OF[idx])
+
+
+out_dir = in_dir+"three_frequency_analysis/frequencies_all_times_3P_LPF_OOPBM/"
+Times = np.arange(200,1300,100)
+for i in np.arange(0,len(Times)-1):
+    idx1 = np.searchsorted(Time_OF,Times[i]);idx2 = np.searchsorted(Time_OF,Times[i+1])
+    plt.rcParams['font.size'] = 16
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time_OF[idx1:idx2],OOPBM[idx1:idx2],"-k",label="Total $M_{H}$")
+    plt.plot(Time_OF[idx1:idx2],LPF_1_OOPBM[idx1:idx2],"-g",label="LPF 0.3Hz $M_{H}$")
+    plt.plot(Time_OF[idx1:idx2],BPF_OOPBM[idx1:idx2],"-r",label="BPF 0.3-0.9Hz $M_{H}$")
+    idx1 = np.searchsorted(Env_Times,Times[i]);idx2 = np.searchsorted(Env_Times,Times[i+1])
+    plt.plot(Env_Times[idx1:idx2],Env_BPF_OOPBM[idx1:idx2],"--b",linewidth=0.7)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Magnitude Aerodynamic Rotor moment vector [kN-m]")
+    plt.legend(loc="upper right")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"{}_{}.png".format(Times[i],Times[i+1]))
+    plt.close()
+
+
+
+out_dir = in_dir+"three_frequency_analysis/frequencies_all_times_HPF_3P_OOPBM/"
+Times = np.arange(200,1300,100)
+for i in np.arange(0,len(Times)-1):
+    idx1 = np.searchsorted(Time_OF,Times[i]);idx2 = np.searchsorted(Time_OF,Times[i+1])
+    plt.rcParams['font.size'] = 16
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time_OF[idx1:idx2],OOPBM[idx1:idx2],"-k",label="Total $M_{H}$")
+    plt.plot(Time_OF[idx1:idx2],LPF_1_OOPBM[idx1:idx2],"-g",label="LPF 0.3Hz $M_{H}$")
+    plt.plot(Time_OF[idx1:idx2],BPF_OOPBM[idx1:idx2],"-r",label="BPF 0.3-0.9Hz $M_{H}$")
+    plt.plot(Time_OF[idx1:idx2],HPF_OOPBM[idx1:idx2]-1000,"-b",label="HPF 1.5Hz $M_{H}$\noffset: -1000kN-m")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Magnitude Aerodynamic Rotor moment vector [kN-m]")
+    plt.legend(loc="upper right")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"{}_{}.png".format(Times[i],Times[i+1]))
+    plt.close()
+
+
+
+f = interpolate.interp1d(Time_OF,LPF_1_OOPBM)
+LPF_1_OOPBM_interp = f(Env_Times)
+print("LPF BPF env",correlation_coef(LPF_1_OOPBM_interp,Env_BPF_OOPBM))
+
+idx = np.searchsorted(Env_Times,Env_Times[0]+10)
+cc = []
+for it in np.arange(0,len(Env_Times)-idx):
+    cc.append(correlation_coef(Env_BPF_OOPBM[it:it+idx],LPF_1_OOPBM_interp[it:it+idx]))
+
+out_dir=in_dir+"three_frequency_analysis/OOPBM_analysis/"
+plt.rcParams.update({'font.size': 18})
+
+
+fig,(ax,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+ax.plot(Env_Times,LPF_1_OOPBM_interp,"-b",label="LPF 0.3Hz $M_{H}$")
+ax.plot(Env_Times,Env_BPF_OOPBM,"-r",label="BPF 0.3-0.9Hz $M_{H}$")
+fig.suptitle("Correlation coefficient = {}".format(round(correlation_coef(LPF_1_OOPBM_interp,Env_BPF_OOPBM),2)))
+fig.supxlabel("Time [s]")
+ax.set_ylabel("Magnitude Aerodynamic\nRotor moment vector [kN-m]")
+ax.legend()
+ax.grid()
+ax2.plot(Env_Times[idx:],cc,"-k")
+ax2.set_ylabel("local correlation\ncoefficient T= 10s")
+ax2.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"local_cc_LPF_BPF.png")
+plt.close()
+
+out_dir = in_dir+"three_frequency_analysis/OOPBM_analysis/"
+LPF_1_OOPBM_interp_sampling = f(Time_sampling)
+cc = round(correlation_coef(I,LPF_1_OOPBM_interp_sampling),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_sampling,I,"-b")
+ax.set_ylabel("Magnitude Asymmetry vector [$m^4/s$]")
+
+ax2=ax.twinx()
+ax2.plot(Env_Times,Env_BPF_OOPBM,"-r")
+ax2.set_ylabel("Envelope BPF OOPBM [kN-m]")
+ax.grid()
+fig.suptitle("Correlation coefficient = {}".format(cc))
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"I_cc_BPF_OOPBM.png")
+plt.close()
+
+
+
+#local variance calc
+local_var_LPF = []
+local_var_BPF = []
+local_var_HPF = []
+start_time_idx = np.searchsorted(Time_OF,10+Time_OF[0])
+for i in np.arange(0,len(Time_OF)-start_time_idx,1):
+    local_var_LPF.append(np.std(LPF_1_OOPBM[i:i+start_time_idx]))
+    local_var_BPF.append(np.std(BPF_OOPBM[i:i+start_time_idx]))
+    local_var_HPF.append(np.std(HPF_OOPBM[i:i+start_time_idx]))
+
+plt.rcParams['font.size'] = 12
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF[:-start_time_idx],np.add(local_var_LPF,400),"-g",label="LPF (0.3Hz), offset +400kN-m")
+plt.plot(Time_OF[:-start_time_idx],np.add(local_var_BPF,50),"-r",label="BPF (0.3-0.9Hz), offset +50kN-m")
+plt.plot(Time_OF[:-start_time_idx],local_var_HPF,"-b",label="HPF (1.5Hz)")
+plt.xlabel("Time [s]")
+plt.ylabel("Local standard deviation T=10s\nAerodynamic Rotor moment vector $M_{H}$ [kN-m]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"loc_var.png")
+plt.close()
+
+print(correlation_coef(local_var_LPF,local_var_BPF))
+print(correlation_coef(local_var_LPF,local_var_HPF))
+print(correlation_coef(local_var_BPF,local_var_HPF))
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF,np.add(LPF_1_OOPBM,400),"-g",label="LPF $M_H$ (0.3Hz), offset +400kN-m")
+plt.plot(Env_Times,np.add(Env_BPF_OOPBM,50),"-r",label="Env: BPF (0.3-0.9Hz), offset +50kN-m")
+plt.plot(Time_OF[:-start_time_idx],local_var_HPF,"-b",label="Local std: HPF (1.5Hz)")
+plt.xlabel("Time [s]")
+plt.ylabel("Local standard deviation T=10s\nAerodynamic Rotor moment vector $M_{H}$ [kN-m]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"loc_var_rev2.png")
+plt.close()
+
+
+print(correlation_coef(LPF_1_OOPBM_interp,Env_BPF_OOPBM))
+print(correlation_coef(LPF_1_OOPBM[:-start_time_idx],local_var_HPF))
+print(correlation_coef(local_var_BPF,local_var_HPF))
+
+
+out_dir = in_dir+"three_frequency_analysis/OOPBM_analysis/"
+start_time_sampling_idx = np.searchsorted(Time_sampling,10+Time_sampling[0])
+I_cut = I[:-start_time_sampling_idx]
+
+f = interpolate.interp1d(Time_OF[:-start_time_idx],local_var_HPF)
+local_var_HPF_interp = f(Time_sampling[:-start_time_sampling_idx])
+
+cc = round(correlation_coef(I_cut,local_var_HPF_interp),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_sampling,I,"-b")
+ax.set_ylabel("Magnitude Asymmetry vector [$m^4/s$]")
+
+ax2=ax.twinx()
+ax2.plot(Time_OF[:-start_time_idx],local_var_HPF,"-r")
+ax2.set_ylabel("local standard deviation HPF OOPBM T = 10s [kN-m]")
+ax.grid()
+fig.suptitle("Correlation coefficient = {}".format(cc))
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"I_cc_HPF_OOPBM.png")
+plt.close()
+
+
+zero_crossings_index_HPF_OOPBM = np.where(np.diff(np.sign(dHPF_OOPBM)))[0]
+
+Env_HPF_OOPBM = []
+Env_Times = []
+for i in np.arange(0,len(zero_crossings_index_HPF_OOPBM),2):
+    idx = zero_crossings_index_HPF_OOPBM[i]
+    Env_HPF_OOPBM.append(HPF_OOPBM[idx]); Env_Times.append(Time_OF[idx])
+
+
+out_dir = in_dir+"three_frequency_analysis/HPF_env_all_times/"
+Times = np.arange(200,1250,50)
+for i in np.arange(0,len(Times)-1):
+    idx1 = np.searchsorted(Time_OF,Times[i]);idx2 = np.searchsorted(Time_OF,Times[i+1])
+    plt.rcParams['font.size'] = 16
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time_OF[idx1:idx2],HPF_OOPBM[idx1:idx2],"-r",label="HPF 1.5Hz $M_{H}$")
+    idx1 = np.searchsorted(Env_Times,Times[i]);idx2 = np.searchsorted(Env_Times,Times[i+1])
+    plt.plot(Env_Times[idx1:idx2],Env_HPF_OOPBM[idx1:idx2],"--b",linewidth=0.7,label="Envelope HPF $M_H$")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Magnitude Aerodynamic Rotor moment vector [kN-m]")
+    plt.legend(loc="upper right")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"{}_{}.png".format(Times[i],Times[i+1]))
+    plt.close()
+
+
+f = interpolate.interp1d(Time_OF,LPF_1_OOPBM)
+LPF_1_OOPBM_interp = f(Env_Times)
+
+idx = np.searchsorted(Env_Times,Env_Times[0]+10)
+cc = []
+for it in np.arange(0,len(Env_Times)-idx):
+    cc.append(correlation_coef(Env_HPF_OOPBM[it:it+idx],LPF_1_OOPBM_interp[it:it+idx]))
+
+
+
+fig,(ax,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+ax.plot(Env_Times,LPF_1_OOPBM_interp,"-b",label="LPF 0.3Hz $M_{H}$")
+ax.plot(Env_Times,Env_HPF_OOPBM,"-r",label="HPF 1.5Hz $M_{H}$")
+fig.suptitle("Correlation coefficient = {}".format(round(correlation_coef(LPF_1_OOPBM_interp,Env_HPF_OOPBM),2)))
+fig.supxlabel("Time [s]")
+ax.set_ylabel("Magnitude Aerodynamic\nRotor moment vector [kN-m]")
+ax.legend()
+ax.grid()
+ax2.plot(Env_Times[idx:],cc,"-k")
+ax2.set_ylabel("local correlation\ncoefficient T= 10s")
+ax2.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"LPF_HPF.png")
+plt.close()
+
+
+
+out_dir = in_dir+"three_frequency_analysis/frequencies_all_times_BPF_HPF_loc_std/"
+Times = np.arange(200,1300,100)
+for i in np.arange(0,len(Times)-1):
+    idx1 = np.searchsorted(Time_OF,Times[i]);idx2 = np.searchsorted(Time_OF,Times[i+1])
+    plt.rcParams['font.size'] = 16
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time_OF[idx1:idx2],np.subtract(HPF_OOPBM[idx1:idx2],600),"-b",label="HPF 1.5Hz $M_{H}$\noffset: -600kN-m") 
+    plt.plot(Time_OF[idx1:idx2],BPF_OOPBM[idx1:idx2],"-r",label="BPF 0.3-0.9Hz $M_{H}$")
+    if i == 9:
+        idx2 = len(Time_OF)-start_time_idx
+        plt.plot(np.add(Time_OF[idx1:idx2],5),np.subtract(local_var_HPF[idx1:idx2],600),"-k",label="loc std HPF 1.5Hz $M_H$\noffset -600kN-m")
+        plt.plot(np.add(Time_OF[idx1:idx2],5),local_var_BPF[idx1:idx2],"-k",label="loc std BPF 0.3-0.9Hz $M_H$")
+    else:
+        plt.plot(np.add(Time_OF[idx1:idx2],5),np.subtract(local_var_HPF[idx1:idx2],600),"-k",label="loc std HPF 1.5Hz $M_H$\noffset -600kN-m")
+        plt.plot(np.add(Time_OF[idx1:idx2],5),local_var_BPF[idx1:idx2],"-k",label="loc std BPF 0.3-0.9Hz $M_H$")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Magnitude Aerodynamic Rotor moment vector [kN-m]")
+    plt.legend(loc="upper right")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"{}_{}.png".format(Times[i],Times[i+1]))
+    plt.close()
+
 
 #Total radial aerodynamic bearing force aeroFBR
 L1 = 1.912; L2 = 2.09

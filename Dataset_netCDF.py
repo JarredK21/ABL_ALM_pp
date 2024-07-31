@@ -468,7 +468,7 @@ time_OF[:] = np.array(df["Time_[s]"])
 print("line 466",time.time()-start_time)
 
 Variables = ["Azimuth","RtAeroFxh","RtAeroFyh","RtAeroFzh","RtAeroMxh","RtAeroMyh","RtAeroMzh",
-             "LSSGagMys","LSSGagMzs", "LSShftMxa","LSSTipMys","LSSTipMzs"]
+             "LSSGagMys","LSSGagMzs", "LSShftMxa","LSSTipMys","LSSTipMzs","LSShftFxa","LSShftFys","LSShftFzs"]
 units = ["[deg]","[N]","[N]","[N]","[N-m]","[N-m]","[N-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]","[kN-m]",
          "[kN]","[kN]","[kN]"]
 for i in np.arange(0,len(Variables)):
