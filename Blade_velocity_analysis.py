@@ -7,6 +7,16 @@ import pyFAST.input_output as io
 import time
 from multiprocessing import Pool
 
+
+def tranform_fixed_frame(Fyb,Fzb,Theta):
+
+    Fy = np.add(np.multiply(Fzb,np.cos(Theta)), np.multiply(Fyb,np.sin(Theta)))
+    Fz = np.subtract(np.multiply(Fzb,np.sin(Theta)), np.multiply(Fyb,np.cos(Theta)))
+
+    return Fy,Fz
+
+
+
 def low_pass_filter(signal, cutoff,dt):  
 
     fs = 1/dt     # sample rate, Hz      
@@ -144,23 +154,36 @@ df_OF = io.fast_output_file.FASTOutputFile(in_dir+"NREL_5MW_Main.out").toDataFra
 RootFxb1 = np.array(df_OF["RootFxb1_[kN]"][Tstart_idx:-1])
 RootFyb1 = np.array(df_OF["RootFyb1_[kN]"][Tstart_idx:-1])
 RootFzc1 = np.array(df_OF["RootFzc1_[kN]"][Tstart_idx:-1])
+RootFy1, RootFz1 = tranform_fixed_frame(RootFyb1,RootFzc1,Azimuth)
 RootMxb1 = np.array(df_OF["RootMxb1_[kN-m]"][Tstart_idx:-1])
 RootMyb1 = np.array(df_OF["RootMyb1_[kN-m]"][Tstart_idx:-1])
 RootMzc1 = np.array(df_OF["RootMzc1_[kN-m]"][Tstart_idx:-1])
+RootMy1, RootMz1 = tranform_fixed_frame(RootMyb1,RootMzc1,Azimuth)
+
+# fig = plt.figure()
+# plt.plot(Time,RootMy1)
+
+# fig = plt.figure()
+# plt.plot(Time,RootMz1)
+# plt.show()
 
 RootFxb2 = np.array(df_OF["RootFxb2_[kN]"][Tstart_idx:-1])
 RootFyb2 = np.array(df_OF["RootFyb2_[kN]"][Tstart_idx:-1])
 RootFzc2 = np.array(df_OF["RootFzc2_[kN]"][Tstart_idx:-1])
+RootFy2, RootFz2 = tranform_fixed_frame(RootFyb2,RootFzc2,Azimuth)
 RootMxb2 = np.array(df_OF["RootMxb2_[kN-m]"][Tstart_idx:-1])
 RootMyb2 = np.array(df_OF["RootMyb2_[kN-m]"][Tstart_idx:-1])
 RootMzc2 = np.array(df_OF["RootMzc2_[kN-m]"][Tstart_idx:-1])
+RootMy2, RootMz2 = tranform_fixed_frame(RootMyb2,RootMzc2,Azimuth)
 
 RootFxb3 = np.array(df_OF["RootFxb3_[kN]"][Tstart_idx:-1])
 RootFyb3 = np.array(df_OF["RootFyb3_[kN]"][Tstart_idx:-1])
 RootFzc3 = np.array(df_OF["RootFzc3_[kN]"][Tstart_idx:-1])
+RootFy3, RootFz3 = tranform_fixed_frame(RootFyb3,RootFzc3,Azimuth)
 RootMxb3 = np.array(df_OF["RootMxb3_[kN-m]"][Tstart_idx:-1])
 RootMyb3 = np.array(df_OF["RootMyb3_[kN-m]"][Tstart_idx:-1])
 RootMzc3 = np.array(df_OF["RootMzc3_[kN-m]"][Tstart_idx:-1])
+RootMy3, RootMz3 = tranform_fixed_frame(RootMyb3,RootMzc3,Azimuth)
 
 # del df_OF
 
@@ -230,6 +253,12 @@ out_dir=in_dir+"High_frequency_analysis/"
 RtFx = RootFxb1 + RootFxb2 + RootFxb3
 RtMx = RootMxb1 + RootMxb2 + RootMxb3
 
+RtFy = RootFy1 + RootFy2 + RootFy3
+RtFz = RootFz1 + RootFz2 + RootFz3
+
+RtMy = RootMy1 + RootMy2 + RootMy3
+RtMz = RootMz1 + RootMz2 + RootMz3
+
 #calculate rotor My and Mz from blades
 #MH = sum(M_blades) + sum(r x F_blades)
 
@@ -239,8 +268,33 @@ LSShftFzs = np.array(df_OF["LSShftFzs_[kN]"][Tstart_idx:-1])
 
 LSSTipMxa = np.array(df_OF["LSShftMxa_[kN-m]"][Tstart_idx:-1])
 LSSTipMys = np.array(df_OF["LSSTipMys_[kN-m]"][Tstart_idx:-1])
+LSSTipMzs = np.array(df_OF["LSSTipMzs_[kN-m]"][Tstart_idx:-1])
 
-# fig = plt.figure()
+fig = plt.figure()
+plt.plot(Time,RtMy,"-r",label="summation over all 3 blades")
+plt.plot(Time,LSSTipMys,"-b",label="Elastodyn output")
+plt.xlabel("Time [s]")
+plt.ylabel("Rotor moment y component [kN]")
+plt.title("correlation coefficient = {}".format(round(correlation_coef(RtMy,LSSTipMys),2)))
+plt.grid()
+plt.tight_layout()
+plt.legend()
+
+fig = plt.figure()
+plt.plot(Time,RtMz,"-r",label="summation over all 3 blades")
+plt.plot(Time,LSSTipMzs,"-b",label="Elastodyn output")
+plt.xlabel("Time [s]")
+plt.ylabel("Rotor moment z component [kN]")
+plt.title("correlation coefficient = {}".format(round(correlation_coef(RtFz,LSShftFzs),2)))
+plt.grid()
+plt.tight_layout()
+plt.legend()
+
+plt.show()
+# plt.savefig(out_dir+"Fx.png")
+# plt.close()
+
+fig = plt.figure()
 # plt.plot(Time,RtFx,"-r",label="summation over all 3 blades")
 # plt.plot(Time,LSShftFxa,"-b",label="Elastodyn output")
 # plt.xlabel("Time [s]")
@@ -264,7 +318,7 @@ LSSTipMys = np.array(df_OF["LSSTipMys_[kN-m]"][Tstart_idx:-1])
 # plt.savefig(out_dir+"Mx.png")
 # plt.close()
 
-# out_dir=in_dir+"High_frequency_analysis/"
+#out_dir=in_dir+"High_frequency_analysis/"
 # fig = plt.figure()
 # plt.plot(Time,RootFxb1)
 # plt.ylabel("RootFxb1")
