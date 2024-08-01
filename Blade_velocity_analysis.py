@@ -5,6 +5,7 @@ from scipy.signal import butter,filtfilt
 from scipy import interpolate
 import pyFAST.input_output as io
 import time
+from multiprocessing import Pool
 
 def low_pass_filter(signal, cutoff,dt):  
 
@@ -82,14 +83,13 @@ df = Dataset(in_dir+"WTG01.nc")
 
 # num_act_points = 300
 
-# xco = np.array(df.variables["xco"])
-# yco = np.array(df.variables["yco"])
-# zco = np.array(df.variables["zco"])
+xco = np.array(df.variables["xco"])
+yco = np.array(df.variables["yco"])
+zco = np.array(df.variables["zco"])
 
 # print(xco[267],yco[267],zco[267])
 # print(xco[567],yco[567],zco[567])
 # print(xco[867],yco[867],zco[867])
-
 
 # fig = plt.figure()
 # ax = fig.add_subplot(projection='3d')
@@ -162,45 +162,67 @@ RootMxb3 = np.array(df_OF["RootMxb3_[kN-m]"][Tstart_idx:-1])
 RootMyb3 = np.array(df_OF["RootMyb3_[kN-m]"][Tstart_idx:-1])
 RootMzc3 = np.array(df_OF["RootMzc3_[kN-m]"][Tstart_idx:-1])
 
+# del df_OF
+
+# print("line 164")
+
+# cc = []
+# for i in np.arange(0,300):
+#     uvelB1 = np.array(df.variables["uvel"][Tstart_idx:,i])
+#     vvelB1 = np.array(df.variables["vvel"][Tstart_idx:,i])
+#     uvelB1[uvelB1<0]=0; vvelB1[vvelB1<0]=0 #remove negative velocities
+#     hvelB1 = np.add(np.cos(np.radians(29))*uvelB1, np.sin(np.radians(29))*vvelB1)
+
+#     cc.append(correlation_coef(hvelB1,RootMyb1))
+#     print(len(cc))
+
+
+
+# R = np.linspace(0,1,300)
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(R,cc)
+# plt.show()
+
+
 out_dir=in_dir+"High_frequency_analysis/"
-fig,ax = plt.subplots()
-ax.plot(Time,hvelB1,"-r")
-ax.set_ylabel("Streamwise velocity at 89% span [m/s]")
-ax2=ax.twinx()
-ax2.plot(Time,RootMyb1,"-b")
-ax2.set_ylabel("Edgewise bending Root moment [kN-m]")
-fig.suptitle("Blade 1: correlation coefficient = {}".format(round(correlation_coef(hvelB1,RootMyb1),2)))
-ax.grid()
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"B1Ux_cc_My.png")
-plt.close()
+# fig,ax = plt.subplots()
+# ax.plot(Time,hvelB1,"-r")
+# ax.set_ylabel("Streamwise velocity at 89% span [m/s]")
+# ax2=ax.twinx()
+# ax2.plot(Time,RootMyb1,"-b")
+# ax2.set_ylabel("Edgewise bending Root moment [kN-m]")
+# fig.suptitle("Blade 1: correlation coefficient = {}".format(round(correlation_coef(hvelB1,RootMyb1),2)))
+# ax.grid()
+# fig.supxlabel("Time [s]")
+# plt.tight_layout()
+# plt.savefig(out_dir+"B1Ux_cc_My.png")
+# plt.close()
 
-fig,ax = plt.subplots()
-ax.plot(Time,hvelB2,"-r")
-ax.set_ylabel("Streamwise velocity at 89% span [m/s]")
-ax2=ax.twinx()
-ax2.plot(Time,RootMyb2,"-b")
-ax2.set_ylabel("Edgewise bending Root moment [kN-m]")
-fig.suptitle("Blade 2: correlation coefficient = {}".format(round(correlation_coef(hvelB2,RootMyb2),2)))
-ax.grid()
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"B2Ux_cc_My.png")
-plt.close()
+# fig,ax = plt.subplots()
+# ax.plot(Time,hvelB2,"-r")
+# ax.set_ylabel("Streamwise velocity at 89% span [m/s]")
+# ax2=ax.twinx()
+# ax2.plot(Time,RootMyb2,"-b")
+# ax2.set_ylabel("Edgewise bending Root moment [kN-m]")
+# fig.suptitle("Blade 2: correlation coefficient = {}".format(round(correlation_coef(hvelB2,RootMyb2),2)))
+# ax.grid()
+# fig.supxlabel("Time [s]")
+# plt.tight_layout()
+# plt.savefig(out_dir+"B2Ux_cc_My.png")
+# plt.close()
 
-fig,ax = plt.subplots()
-ax.plot(Time,hvelB3,"-r")
-ax.set_ylabel("Streamwise velocity at 89% span [m/s]")
-ax2=ax.twinx()
-ax2.plot(Time,RootMyb3,"-b")
-ax2.set_ylabel("Edgewise bending Root moment [kN-m]")
-fig.suptitle("Blade 3: correlation coefficient = {}".format(round(correlation_coef(hvelB3,RootMyb3),2)))
-ax.grid()
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"B3Ux_cc_My.png")
-plt.close()
+# fig,ax = plt.subplots()
+# ax.plot(Time,hvelB3,"-r")
+# ax.set_ylabel("Streamwise velocity at 89% span [m/s]")
+# ax2=ax.twinx()
+# ax2.plot(Time,RootMyb3,"-b")
+# ax2.set_ylabel("Edgewise bending Root moment [kN-m]")
+# fig.suptitle("Blade 3: correlation coefficient = {}".format(round(correlation_coef(hvelB3,RootMyb3),2)))
+# ax.grid()
+# fig.supxlabel("Time [s]")
+# plt.tight_layout()
+# plt.savefig(out_dir+"B3Ux_cc_My.png")
+# plt.close()
 
 #spectra
 
@@ -242,14 +264,6 @@ LSSTipMys = np.array(df_OF["LSSTipMys_[kN-m]"][Tstart_idx:-1])
 # plt.savefig(out_dir+"Mx.png")
 # plt.close()
 
-fig,ax = plt.subplots()
-ax.plot(Time,RtMy,"-r")
-ax2=ax.twinx()
-ax2.plot(Time,LSSTipMys,"-b")
-fig.suptitle("{}".format(correlation_coef(RtMy,LSSTipMys)))
-plt.show()
-
-s=1
 # out_dir=in_dir+"High_frequency_analysis/"
 # fig = plt.figure()
 # plt.plot(Time,RootFxb1)

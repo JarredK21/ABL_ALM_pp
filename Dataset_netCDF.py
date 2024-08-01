@@ -531,7 +531,140 @@ del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 print("line 531", time.time()-start_time)
 
-#sampling data
+#sampling data -5.5 plane
+
+print("Rotor avg calcs -5.5 plane",time.time()-start_time)
+group = ncfile.createGroup("Rotor_Avg_Variables")
+
+a = Dataset(in_dir+"sampling_r_-5.5.nc")
+
+#sampling time
+Time_sample = np.array(a.variables["time"])
+Time_steps = np.arange(0,len(Time_sample))
+Time_sample = Time_sample - Time_sample[0]
+time_sampling[:] = Time_sample
+
+print("line 542", time.time()-start_time)
+
+
+p_rotor = a.groups["p_r"]; del a
+
+x = p_rotor.ijk_dims[0] #no. data points
+y = p_rotor.ijk_dims[1] #no. data points
+
+
+normal = 29
+
+#define plotting axes
+coordinates = np.array(p_rotor.variables["coordinates"])
+
+
+xo = coordinates[0:x,0]
+yo = coordinates[0:x,1]
+
+rotor_coordiates = [2560,2560,90]
+
+x_trans = xo - rotor_coordiates[0]
+y_trans = yo - rotor_coordiates[1]
+
+phi = np.radians(-normal)
+xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
+ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
+xs = xs + rotor_coordiates[0]
+ys = ys + rotor_coordiates[1]
+zs = np.linspace(p_rotor.origin[2],p_rotor.origin[2]+p_rotor.axis2[2],y)
+
+print("line 572",time.time()-start_time)
+
+#velocity field
+u = np.array(p_rotor.variables["velocityx"])
+v = np.array(p_rotor.variables["velocityy"])
+
+
+u[u<0]=0; v[v<0]=0 #remove negative velocities
+
+#fluctuating streamwise velocity
+with Pool() as pool:
+    u_hvel = []; u_pri = []
+    for u_hvel_it,u_fluc_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+        
+        u_pri.append(u_fluc_hvel_it)
+        u_hvel.append(u_hvel_it)
+        print(len(u_hvel),time.time()-start_time)
+u_pri = np.array(u_pri)
+u = np.array(u_hvel); del u_hvel; del v
+
+print("line 592",time.time()-start_time)
+
+YS = ys
+ZS = zs
+
+
+xo = coordinates[:,0]
+yo = coordinates[:,1]
+zo = coordinates[:,2]
+
+rotor_coordiates = [2560,2560,90]
+
+x_trans = xo - rotor_coordiates[0]
+y_trans = yo - rotor_coordiates[1]
+
+phi = np.radians(-29)
+xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
+ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
+zs = zo - rotor_coordiates[2]
+
+Y = np.linspace(round(np.min(ys),0), round(np.max(ys),0),x )
+Z = np.linspace(round(np.min(zs),0), round(np.max(zs),0),y )
+
+del coordinates
+
+dy = (max(Y) - min(Y))/x
+dz = (max(Z) - min(Z))/y
+dA = dy * dz
+
+del p_rotor
+
+print("line 623",time.time()-start_time)
+group_inner = group.createGroup("5.5")
+
+Ux = group_inner.createVariable("Ux", np.float64, ('sampling'),zlib=True)
+IA = group_inner.createVariable("IA", np.float64, ('sampling'),zlib=True)
+Iy = group_inner.createVariable("Iy", np.float64, ('sampling'),zlib=True)
+Iz = group_inner.createVariable("Iz", np.float64, ('sampling'),zlib=True)
+
+Ux_array = []; Iy_array = []; Iz_array = []
+with Pool() as pool:
+    ix = 1
+    for Ux_it,Iy_it,Iz_it in pool.imap(Rotor_Avg_calc, Time_steps):
+        Ux_array.append(Ux_it)
+        Iy_array.append(Iy_it)
+        Iz_array.append(Iz_it)
+        print(ix,time.time()-start_time)
+        ix+=1
+Ux[:] = np.array(Ux_array); del Ux_array
+Iy[:] = np.array(Iy_array); del Iy_array
+Iz[:] = np.array(Iz_array); del Iz_array
+
+
+
+IA_array = []
+print("IA calcs")
+with Pool() as pool:
+    ix = 1
+    for IA_it in pool.imap(IA_calc, Time_steps):
+        IA_array.append(IA_it)
+        print(ix,time.time()-start_time)
+        ix+=1
+IA[:] = np.array(IA_array); del IA_array
+
+print(group.groups)
+
+del u_pri; del u
+
+
+#sampling data -63.0 plane
+print("Rotor avg calcs -63.0 plane",time.time()-start_time)
 a = Dataset(in_dir+"sampling_r_-63.0.nc")
 
 #sampling time
@@ -622,15 +755,12 @@ dA = dy * dz
 del p_rotor
 
 print("line 623",time.time()-start_time)
+group_inner = group.createGroup("63.0")
 
-
-print("Rotor avg calcs",time.time()-start_time)
-group = ncfile.createGroup("Rotor_Avg_Variables")
-
-Ux = group.createVariable("Ux", np.float64, ('sampling'),zlib=True)
-IA = group.createVariable("IA", np.float64, ('sampling'),zlib=True)
-Iy = group.createVariable("Iy", np.float64, ('sampling'),zlib=True)
-Iz = group.createVariable("Iz", np.float64, ('sampling'),zlib=True)
+Ux = group_inner.createVariable("Ux", np.float64, ('sampling'),zlib=True)
+IA = group_inner.createVariable("IA", np.float64, ('sampling'),zlib=True)
+Iy = group_inner.createVariable("Iy", np.float64, ('sampling'),zlib=True)
+Iz = group_inner.createVariable("Iz", np.float64, ('sampling'),zlib=True)
 
 Ux_array = []; Iy_array = []; Iz_array = []
 with Pool() as pool:
@@ -657,7 +787,11 @@ with Pool() as pool:
         ix+=1
 IA[:] = np.array(IA_array); del IA_array
 
+print(group.groups)
+
 print(ncfile.groups)
+
+
 
 
 #IHL calc
