@@ -236,8 +236,9 @@ Time_sampling_start_idx = np.searchsorted(Time_sampling,Time_start)
 Time_sampling = Time_sampling[Time_sampling_start_idx:]
 
 Rotor_avg_vars = df_OF.groups["Rotor_Avg_Variables"]
-Iy = np.array(Rotor_avg_vars.variables["Iy"][Time_sampling_start_idx:])
-Iz = np.array(Rotor_avg_vars.variables["Iz"][Time_sampling_start_idx:])
+Rotor_avg_vars_63 = Rotor_avg_vars.groups["63.0"]
+Iy = np.array(Rotor_avg_vars_63.variables["Iy"][Time_sampling_start_idx:])
+Iz = np.array(Rotor_avg_vars_63.variables["Iz"][Time_sampling_start_idx:])
 I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
 
 
@@ -264,6 +265,53 @@ for i in np.arange(0,len(zero_crossings_index_BPF_OOPBM),2):
     idx = zero_crossings_index_BPF_OOPBM[i]
     Env_BPF_OOPBM.append(BPF_OOPBM[idx]); Env_Times.append(Time_OF[idx])
 
+
+Time_shift_idx = np.searchsorted(Env_Times,Env_Times[0]+4.6)
+
+Rotor_grads = df_OF.groups["Rotor_Gradients"]
+drUx = np.array(Rotor_grads.variables["drUx"][Time_sampling_start_idx:])
+f = interpolate.interp1d(Time_sampling,drUx)
+drUx_interp = f(Env_Times)
+drUx_interp_shifted = drUx_interp[:-Time_shift_idx]
+
+b = Dataset(in_dir+"Dataset_2.nc")
+Rotor_grads = b.groups["Rotor_Gradients"]
+drUx_2 = np.array(Rotor_grads.variables["drUx"][Time_sampling_start_idx:])
+f = interpolate.interp1d(Time_sampling,drUx_2)
+drUx_2_interp = f(Env_Times)
+drUx_2_interp_shifted = drUx_2_interp[:-Time_shift_idx]
+
+Env_Times_shifted = Env_Times[:-Time_shift_idx]
+Env_BPF_OOPBM_shifted = Env_BPF_OOPBM[Time_shift_idx:]
+
+out_dir = in_dir+"three_frequency_analysis/OOPBM_analysis/"
+cc = round(correlation_coef(Env_BPF_OOPBM_shifted,drUx_interp_shifted),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Env_Times_shifted,Env_BPF_OOPBM_shifted,"-r")
+ax.set_ylabel("Envelope BPF OOPBM [kN-m]")
+ax.grid()
+ax2=ax.twinx()
+ax2.plot(Env_Times_shifted,drUx_2_interp_shifted,"-b")
+ax2.set_ylabel("Rotor average Magntiude velocity gradient [1/s]\n0-100% span")
+fig.suptitle("correlation coefficient = {}".format(cc))
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"drUx_Env_BPF_OOPBM.png")
+plt.close()
+
+cc = round(correlation_coef(Env_BPF_OOPBM_shifted,drUx_2_interp_shifted),2)
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Env_Times_shifted,Env_BPF_OOPBM_shifted,"-r")
+ax.set_ylabel("Envelope BPF OOPBM [kN-m]")
+ax.grid()
+ax2=ax.twinx()
+ax2.plot(Env_Times_shifted,drUx_2_interp_shifted,"-b")
+ax2.set_ylabel("Rotor average Magntiude velocity gradient [1/s]\n70-80% span")
+fig.suptitle("correlation coefficient = {}".format(cc))
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"drUx_Env_BPF_OOPBM_2.png")
+plt.close()
 
 out_dir = in_dir+"three_frequency_analysis/frequencies_all_times_3P_LPF_OOPBM/"
 Times = np.arange(200,1300,100)

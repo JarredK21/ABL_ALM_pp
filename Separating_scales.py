@@ -200,10 +200,10 @@ Time_steps = np.arange(0,len(Time_OF))
 
 OpenFAST_vars = df_OF.groups["OpenFAST_Variables"]
 
-Azimuth = np.radians(np.array(OpenFAST_vars.variables["Azimuth"][Time_start_idx:Time_end_idx]))
+Azimuth = np.radians(np.array(OpenFAST_vars.variables["Azimuth"][Time_start_idx:]))
 
-RtAeroFyh = np.array(OpenFAST_vars.variables["RtAeroFyh"][Time_start_idx:Time_end_idx])
-RtAeroFzh = np.array(OpenFAST_vars.variables["RtAeroFzh"][Time_start_idx:Time_end_idx])
+RtAeroFyh = np.array(OpenFAST_vars.variables["RtAeroFyh"][Time_start_idx:])
+RtAeroFzh = np.array(OpenFAST_vars.variables["RtAeroFzh"][Time_start_idx:])
 
 RtAeroFys = []; RtAeroFzs = []
 for i in np.arange(0,len(Time_OF)):
@@ -212,8 +212,8 @@ for i in np.arange(0,len(Time_OF)):
 RtAeroFys = np.array(RtAeroFys)/1000; RtAeroFzs = np.array(RtAeroFzs)/1000
 
 
-RtAeroMyh = np.array(OpenFAST_vars.variables["RtAeroMyh"][Time_start_idx:Time_end_idx])
-RtAeroMzh = np.array(OpenFAST_vars.variables["RtAeroMzh"][Time_start_idx:Time_end_idx])
+RtAeroMyh = np.array(OpenFAST_vars.variables["RtAeroMyh"][Time_start_idx:])
+RtAeroMzh = np.array(OpenFAST_vars.variables["RtAeroMzh"][Time_start_idx:])
 
 RtAeroMys = []; RtAeroMzs = []
 for i in np.arange(0,len(Time_OF)):
@@ -221,6 +221,7 @@ for i in np.arange(0,len(Time_OF)):
     RtAeroMys.append(RtAeroMys_i); RtAeroMzs.append(RtAeroMzs_i)
 RtAeroMys = np.array(RtAeroMys)/1000; RtAeroMzs = np.array(RtAeroMzs)/1000
 
+MR = np.sqrt(np.add(np.square(RtAeroMys),np.square(RtAeroMzs)))
 
 LSSTipMys = np.array(OpenFAST_vars.variables["LSSTipMys"][Time_start_idx:Time_end_idx])
 LSSTipMzs = np.array(OpenFAST_vars.variables["LSSTipMzs"][Time_start_idx:Time_end_idx])
@@ -239,6 +240,12 @@ FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
 
 
 FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
+
+remainder = np.subtract(FBR,MR)
+
+fig = plt.figure()
+plt.plot(Time_OF,remainder)
+plt.show()
 
 
 frq,PSD = temporal_spectra(FBR,dt,Var="FBR")

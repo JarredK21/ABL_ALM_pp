@@ -44,12 +44,8 @@ def Horizontal_velocity(it):
 
 def blade_positions(it):
 
-    Time_it = Time[it] - Time[0] #find time from sampled data
-
-    it_OF = np.searchsorted(Time_OF,Time_it)#find index from openfast
-
     R = 63
-    Az = Azimuth[it_OF]
+    Az = Azimuth[it]
     Y = [2560]; Y2 = [2560]; Y3 = [2560]
     Z = [90]; Z2 = [90]; Z3 = [90]
 
@@ -110,7 +106,7 @@ if isExist == False:
     os.makedirs(out_dir)
 
 
-plot_l = True; plot_r = False; plot_tr = False; plot_i = False; plot_t = False
+plot_l = False; plot_r = True; plot_tr = False; plot_i = False; plot_t = False
 planes_plot = [plot_l,plot_r,plot_tr,plot_i,plot_t]
 
 #check if no velocity components selected
@@ -130,7 +126,7 @@ for plane in planes:
     if plane == "l":
         offsets = [85]
     elif plane == "r":
-        offsets = [-5.5,-63.0]
+        offsets = [-5.5]
     elif plane == "tr":
         offsets = [0.0]
     elif plane == "i":
@@ -147,15 +143,21 @@ for plane in planes:
 
         #time options
         Time = np.array(a.variables["time"])
-        tstart = 38200
+        Time = Time - Time[0]
+        tstart = 200
         tstart_idx = np.searchsorted(Time,tstart)
-        tend = 38400
+        tend = 1201
         tend_idx = np.searchsorted(Time,tend)
         Time_steps = np.arange(0, tend_idx-tstart_idx)
         Time = Time[tstart_idx:tend_idx]
 
+        f = interpolate.interp1d(Time_OF,Azimuth)
+        Azimuth = f(Time)
+        print(len(Azimuth))
+        print(len(Time))
+
         #plotting option
-        fluc_vel = True
+        fluc_vel = False
         plot_contours = False
         plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
@@ -236,7 +238,7 @@ for plane in planes:
                     u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
                     v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
 
-                    u[u<0]=0; v[v<0] #remove negative velocities
+                    u[u<0]=0; v[v<0]=0 #remove negative velocities
                     
                     if fluc_vel == True:
                         u = np.subtract(u,np.mean(u))
