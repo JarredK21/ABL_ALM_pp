@@ -45,19 +45,19 @@ def Horizontal_velocity(it):
 def blade_positions(it):
 
     R = 63
-    Az = Azimuth[it]
+    Az = -Azimuth[it]
     Y = [2560]; Y2 = [2560]; Y3 = [2560]
     Z = [90]; Z2 = [90]; Z3 = [90]
 
     Y.append(Y[0]+R*np.sin(Az))
     Z.append(Z[0]+R*np.cos(Az))
 
-    Az2 = Az+(2*np.pi)/3
-    if Az2 > 2*np.pi:
-        Az2 -= (2*np.pi)
+    Az2 = Az-(2*np.pi)/3
+    if Az2 < -2*np.pi:
+        Az2 += (2*np.pi)
     
-    Az3 = Az-(2*np.pi)/3
-    if Az2 < 0:
+    Az3 = Az(4*np.pi)/3
+    if Az2 < -2*np.pi:
         Az2 += (2*np.pi)
 
     Y2.append(Y2[0]+R*np.sin(Az2))
