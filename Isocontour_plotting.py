@@ -56,7 +56,7 @@ def blade_positions(it):
     if Az2 < -2*np.pi:
         Az2 += (2*np.pi)
     
-    Az3 = Az(4*np.pi)/3
+    Az3 = Az-(4*np.pi)/3
     if Az2 < -2*np.pi:
         Az2 += (2*np.pi)
 
