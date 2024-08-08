@@ -138,25 +138,27 @@ df = Dataset("WTG01.nc")
 
 Time = np.array(df.variables["time"])
 Tstart_idx = np.searchsorted(Time,200)
-Time = Time[Tstart_idx:]
+T_end_idx = np.searchsorted(Time,1199.6361)+1
+Time = Time[Tstart_idx:T_end_idx]
+print(Time)
 
-uvelB1 = np.array(df.variables["uvel"][Tstart_idx:,1:301])
-vvelB1 = np.array(df.variables["vvel"][Tstart_idx:,1:301])
+uvelB1 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,1:301])
+vvelB1 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,1:301])
 uvelB1[uvelB1<0]=0; vvelB1[vvelB1<0]=0 #remove negative velocities
 
-uvelB2 = np.array(df.variables["uvel"][Tstart_idx:,301:601])
-vvelB2 = np.array(df.variables["vvel"][Tstart_idx:,301:601])
+uvelB2 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,301:601])
+vvelB2 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,301:601])
 uvelB2[uvelB2<0]=0; vvelB2[vvelB2<0]=0 #remove negative velocities
 
-uvelB3 = np.array(df.variables["uvel"][Tstart_idx:,601:901])
-vvelB3 = np.array(df.variables["vvel"][Tstart_idx:,601:901])
+uvelB3 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,601:901])
+vvelB3 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,601:901])
 uvelB3[uvelB3<0]=0; vvelB3[vvelB3<0]=0 #remove negative velocities
 
 a = Dataset("Dataset.nc")
 
 OF_vars = a.groups["OpenFAST_Variables"]
 
-Azimuth = np.array(OF_vars.variables["Azimuth"][Tstart_idx:-1])
+Azimuth = np.array(OF_vars.variables["Azimuth"][Tstart_idx:T_end_idx-1])
 
 IyB = []
 IzB = []
@@ -168,6 +170,8 @@ with Pool() as pool:
         ix+=1
 
 IB = np.sqrt(np.add(np.square(IyB),np.square(IzB)))
+
+print(len(IB))
 
 
 a = Dataset("Dataset.nc")
@@ -259,14 +263,15 @@ for offset in offsets:
 
     I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
 
+    print(len(I))
+
     idx1 = np.searchsorted(Time_OF,200)
-    T_end = np.searchsorted(Time,1199.6361)
-    print(Time_OF,idx1)
-    print(Time_OF[T_end])
-    cc = round(correlation_coef(Iy[idx1+1:],IyB[:T_end]),2)
+    idx2 = np.searchsorted(Time_OF,1199.6361) + 1
+    print(Time_OF[idx1:idx2])
+    cc = round(correlation_coef(Iy[idx1:],IyB),2)
     fig = plt.figure(figsize=(14,8))
-    plt.plot(Time_OF[idx1+1:],Iy[idx1+1:],"-r",label="Blade asymmetry\nfrom planar data")
-    plt.plot(Time_OF[idx1+1:T_end],IyB[:T_end],"-b",label="Blade asymmetry\nfrom actuator data")
+    plt.plot(Time_OF[idx1:idx2],Iy[idx1:],"-r",label="Blade asymmetry\nfrom planar data")
+    plt.plot(Time,IyB,"-b",label="Blade asymmetry\nfrom actuator data")
     plt.xlabel("Time [s]")
     plt.ylabel("Asymmetry around y axis [$m^2/s$]")
     plt.title("correlation coefficient = {}".format(cc))
@@ -275,10 +280,10 @@ for offset in offsets:
     plt.savefig("Iy_{}.png".format(offset))
     plt.close()
 
-    cc = round(correlation_coef(Iz[idx1+1:],IzB[:T_end]),2)
+    cc = round(correlation_coef(Iz[idx1:],IzB),2)
     fig = plt.figure(figsize=(14,8))
-    plt.plot(Time_OF[idx1+1:],Iy[idx1+1:],"-r",label="Blade asymmetry\nfrom planar data")
-    plt.plot(Time_OF[idx1+1:T_end],IzB[:T_end],"-b",label="Blade asymmetry\nfrom actuator data")
+    plt.plot(Time_OF[idx1:idx2],Iy[idx1:],"-r",label="Blade asymmetry\nfrom planar data")
+    plt.plot(Time,IzB,"-b",label="Blade asymmetry\nfrom actuator data")
     plt.xlabel("Time [s]")
     plt.ylabel("Asymmetry around z axis [$m^2/s$]")
     plt.title("correlation coefficient = {}".format(cc))
@@ -287,10 +292,10 @@ for offset in offsets:
     plt.savefig("Iz_{}.png".format(offset))
     plt.close()
 
-    cc = round(correlation_coef(I[idx1+1:],IB[:T_end]),2)
+    cc = round(correlation_coef(I[idx1:],IB),2)
     fig = plt.figure(figsize=(14,8))
-    plt.plot(Time_OF[idx1+1:],I[idx1+1:],"-r",label="Blade asymmetry\nfrom planar data")
-    plt.plot(Time_OF[idx1+1:T_end],IB[:T_end],"-b",label="Blade asymmetry\nfrom actuator data")
+    plt.plot(Time_OF[idx1:idx2],I[idx1:],"-r",label="Blade asymmetry\nfrom planar data")
+    plt.plot(Time,IB,"-b",label="Blade asymmetry\nfrom actuator data")
     plt.xlabel("Time [s]")
     plt.ylabel("Magnitude Asymmetry [$m^2/s$]")
     plt.title("correlation coefficient = {}".format(cc))
