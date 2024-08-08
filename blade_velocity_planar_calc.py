@@ -194,11 +194,11 @@ print("line 126", time.time()-start_time)
 
 offsets = ["-5.5"]
 for offset in offsets:
-    a = Dataset("sampling_r_{}.nc")
+    a = Dataset("sampling_r_{}.nc".format(offset))
 
-    Time = np.array(a.variables["time"])
-    Time = Time - Time[0]
-    Time_steps = np.arange(0,len(Time)-1)
+    Time_sampling = np.array(a.variables["time"])
+    Time_sampling = Time_sampling - Time_sampling[0]
+    Time_steps = np.arange(0,len(Time_sampling)-1)
 
     p = a.groups["p_r"]
 
@@ -260,7 +260,7 @@ for offset in offsets:
     I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
 
     idx1 = np.searchsorted(Time_OF,200)
-    T_end = np.searchsorted(Time_OF,1199.6361)
+    T_end = np.searchsorted(Time,1199.6361)
     cc = round(correlation_coef(Iy[idx1:],IyB[:T_end]),2)
     fig = plt.figure(figsize=(14,8))
     plt.plot(Time_OF[idx1:],Iy[idx1:],"-r",label="Blade asymmetry\nfrom planar data")
