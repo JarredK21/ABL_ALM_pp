@@ -129,7 +129,7 @@ del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
 
 print("line 126", time.time()-start_time)
 
-offsets = ["-5.5","-63.0"]
+offsets = [-5.5,-63.0]
 for offset in offsets:
 
     Azimuth = np.radians(OF_vars.variables["Azimuth"])
@@ -202,7 +202,7 @@ for offset in offsets:
 
 
     
-    group_inner = group.createGroup("{}".format(offset))
+    group_inner = group.createGroup("{}".format(abs(offset)))
 
     Iy = group_inner.createVariable("Iy", np.float64, ('OF',),zlib=True)
     Iz = group_inner.createVariable("Iz", np.float64, ('OF',),zlib=True)
