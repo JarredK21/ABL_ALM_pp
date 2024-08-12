@@ -92,35 +92,35 @@ def blade_vel_calc(it):
     return Iy_inner_it, Iz_inner_it
 
 
-def actuator_asymmetry_calc(it):
-    R = np.linspace(0,63,300)
-    hvelB1 = np.add(np.cos(np.radians(29))*uvelB1[it], np.sin(np.radians(29))*vvelB1[it])
-    IyB1 = hvelB1*R*np.cos(Azimuth[it])
-    IzB1 = hvelB1*R*np.sin(Azimuth[it])
-    IyB1 = np.sum(IyB1)
-    IzB1 = np.sum(IzB1)
+# def actuator_asymmetry_calc(it):
+#     R = np.linspace(0,63,300)
+#     hvelB1 = np.add(np.cos(np.radians(29))*uvelB1[it], np.sin(np.radians(29))*vvelB1[it])
+#     IyB1 = hvelB1*R*np.cos(Azimuth[it])
+#     IzB1 = hvelB1*R*np.sin(Azimuth[it])
+#     IyB1 = np.sum(IyB1)
+#     IzB1 = np.sum(IzB1)
 
-    hvelB2 = np.add(np.cos(np.radians(29))*uvelB2[it], np.sin(np.radians(29))*vvelB2[it])
-    AzB2 = Azimuth[it] + 120
-    if AzB2 >= 360:
-        AzB2-=360
+#     hvelB2 = np.add(np.cos(np.radians(29))*uvelB2[it], np.sin(np.radians(29))*vvelB2[it])
+#     AzB2 = Azimuth[it] + 120
+#     if AzB2 >= 360:
+#         AzB2-=360
 
-    IyB2 = hvelB2*R*np.cos(AzB2)
-    IzB2 = hvelB2*R*np.sin(AzB2)
-    IyB2 = np.sum(IyB2)
-    IzB2 = np.sum(IzB2)
+#     IyB2 = hvelB2*R*np.cos(AzB2)
+#     IzB2 = hvelB2*R*np.sin(AzB2)
+#     IyB2 = np.sum(IyB2)
+#     IzB2 = np.sum(IzB2)
 
-    hvelB3 = np.add(np.cos(np.radians(29))*uvelB3[it], np.sin(np.radians(29))*vvelB3[it])
-    AzB3 = Azimuth[it] + 240
-    if AzB3 >= 360:
-        AzB3-=360
+#     hvelB3 = np.add(np.cos(np.radians(29))*uvelB3[it], np.sin(np.radians(29))*vvelB3[it])
+#     AzB3 = Azimuth[it] + 240
+#     if AzB3 >= 360:
+#         AzB3-=360
 
-    IyB3 = hvelB3*R*np.cos(AzB3)
-    IzB3 = hvelB3*R*np.sin(AzB3)
-    IyB3 = np.sum(IyB3)
-    IzB3 = np.sum(IzB3)
+#     IyB3 = hvelB3*R*np.cos(AzB3)
+#     IzB3 = hvelB3*R*np.sin(AzB3)
+#     IyB3 = np.sum(IyB3)
+#     IzB3 = np.sum(IzB3)
 
-    return IyB1+IyB2+IyB3, IzB1+IzB2+IzB3
+#     return IyB1+IyB2+IyB3, IzB1+IzB2+IzB3
 
 
 def correlation_coef(x,y):
@@ -133,45 +133,45 @@ def correlation_coef(x,y):
 
 start_time = time.time()
 
-#blade asymmetry calc
-df = Dataset("WTG01.nc")
+# #blade asymmetry calc
+# df = Dataset("WTG01.nc")
 
-Time = np.array(df.variables["time"])
-Tstart_idx = np.searchsorted(Time,200)
-T_end_idx = np.searchsorted(Time,1199.6361)+1
-Time = Time[Tstart_idx:T_end_idx]
-print(Time)
+# Time = np.array(df.variables["time"])
+# Tstart_idx = np.searchsorted(Time,200)
+# T_end_idx = np.searchsorted(Time,1199.6361)+1
+# Time = Time[Tstart_idx:T_end_idx]
+# print(Time)
 
-uvelB1 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,1:301])
-vvelB1 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,1:301])
-uvelB1[uvelB1<0]=0; vvelB1[vvelB1<0]=0 #remove negative velocities
+# uvelB1 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,1:301])
+# vvelB1 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,1:301])
+# uvelB1[uvelB1<0]=0; vvelB1[vvelB1<0]=0 #remove negative velocities
 
-uvelB2 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,301:601])
-vvelB2 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,301:601])
-uvelB2[uvelB2<0]=0; vvelB2[vvelB2<0]=0 #remove negative velocities
+# uvelB2 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,301:601])
+# vvelB2 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,301:601])
+# uvelB2[uvelB2<0]=0; vvelB2[vvelB2<0]=0 #remove negative velocities
 
-uvelB3 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,601:901])
-vvelB3 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,601:901])
-uvelB3[uvelB3<0]=0; vvelB3[vvelB3<0]=0 #remove negative velocities
+# uvelB3 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,601:901])
+# vvelB3 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,601:901])
+# uvelB3[uvelB3<0]=0; vvelB3[vvelB3<0]=0 #remove negative velocities
 
-a = Dataset("Dataset.nc")
+# a = Dataset("Dataset.nc")
 
-OF_vars = a.groups["OpenFAST_Variables"]
+# OF_vars = a.groups["OpenFAST_Variables"]
 
-Azimuth = np.array(OF_vars.variables["Azimuth"][Tstart_idx:T_end_idx-1])
+# Azimuth = np.array(OF_vars.variables["Azimuth"][Tstart_idx:T_end_idx-1])
 
-IyB = []
-IzB = []
-ix=0
-with Pool() as pool:
-    for Iy_it, Iz_it in pool.imap(actuator_asymmetry_calc,np.arange(0,len(Time))):
-        IyB.append(Iy_it); IzB.append(Iz_it)
-        print(ix)
-        ix+=1
+# IyB = []
+# IzB = []
+# ix=0
+# with Pool() as pool:
+#     for Iy_it, Iz_it in pool.imap(actuator_asymmetry_calc,np.arange(0,len(Time))):
+#         IyB.append(Iy_it); IzB.append(Iz_it)
+#         print(ix)
+#         ix+=1
 
-IB = np.sqrt(np.add(np.square(IyB),np.square(IzB)))
+# IB = np.sqrt(np.add(np.square(IyB),np.square(IzB)))
 
-print(len(IB))
+# print(len(IB))
 
 
 a = Dataset("Dataset.nc")
@@ -250,59 +250,81 @@ for offset in offsets:
 
     print("line 328",time.time()-start_time)
 
-    Iy = []; Iz = []
+    Iy_array = []; Iz_array = []
     ix=0
     with Pool() as pool:
         for Iy_it, Iz_it in pool.imap(blade_vel_calc,Time_steps):
             
-            Iy = np.concatenate((Iy,Iy_it))
-            Iz = np.concatenate((Iz,Iz_it))
+            Iy_array = np.concatenate((Iy_array,Iy_it))
+            Iz_array = np.concatenate((Iz_array,Iz_it))
             print(ix)
             ix+=1
 
 
-    I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
+    #create netcdf file
+    ncfile = Dataset("Dataset_Planar_asymmetry.nc",mode="w",format='NETCDF4')
+    ncfile.title = "Outputing blade asymmetry from planar data"
 
-    print(len(I))
+    #create global dimensions
+    OF_dim = ncfile.createDimension("OF",None)
 
-    idx1 = np.searchsorted(Time_OF,200)
-    idx2 = np.searchsorted(Time_OF,1199.6361) + 1
-    print(Time_OF[idx1:idx2])
-    cc = round(correlation_coef(Iy[idx1:],IyB),2)
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(Time_OF[idx1:idx2],Iy[idx1:],"-r",label="Blade asymmetry\nfrom planar data")
-    plt.plot(Time,IyB,"-b",label="Blade asymmetry\nfrom actuator data")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Asymmetry around y axis [$m^2/s$]")
-    plt.title("correlation coefficient = {}".format(cc))
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig("Iy_{}.png".format(offset))
-    plt.close()
+    #create variables
+    time_OF = ncfile.createVariable("Time_OF", np.float64, ('OF',),zlib=True)
 
-    cc = round(correlation_coef(Iz[idx1:],IzB),2)
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(Time_OF[idx1:idx2],Iy[idx1:],"-r",label="Blade asymmetry\nfrom planar data")
-    plt.plot(Time,IzB,"-b",label="Blade asymmetry\nfrom actuator data")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Asymmetry around z axis [$m^2/s$]")
-    plt.title("correlation coefficient = {}".format(cc))
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig("Iz_{}.png".format(offset))
-    plt.close()
+    print("Outputting planar asymmetry variables",time.time()-start_time)
+    group = ncfile.createGroup("Planar_Asymmetry_Variables")
 
-    cc = round(correlation_coef(I[idx1:],IB),2)
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(Time_OF[idx1:idx2],I[idx1:],"-r",label="Blade asymmetry\nfrom planar data")
-    plt.plot(Time,IB,"-b",label="Blade asymmetry\nfrom actuator data")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Magnitude Asymmetry [$m^2/s$]")
-    plt.title("correlation coefficient = {}".format(cc))
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig("I_{}.png".format(offset))
-    plt.close()
+    Iy = group.createVariable("Iy", np.float64, ('OF',),zlib=True)
+    Iz = group.createVariable("Iz", np.float64, ('OF',),zlib=True)
+
+    Iy[:] = Iy_array; del Iy_array
+    Iz[:] = Iz_array; del Iz_array
+
+    print(ncfile.groups)
+
+print(ncfile)
+ncfile.close()
+
+    # print(len(I))
+    # #debug timing issue
+    # idx1 = np.searchsorted(Time_OF,200)
+    # idx2 = np.searchsorted(Time_OF,1199.6361) + 1
+    # print(Time_OF[idx1:idx2])
+    # cc = round(correlation_coef(Iy[idx1:],IyB),2)
+    # fig = plt.figure(figsize=(14,8))
+    # plt.plot(Time_OF[idx1:idx2],Iy[idx1:],"-r",label="Blade asymmetry\nfrom planar data")
+    # plt.plot(Time,IyB,"-b",label="Blade asymmetry\nfrom actuator data")
+    # plt.xlabel("Time [s]")
+    # plt.ylabel("Asymmetry around y axis [$m^2/s$]")
+    # plt.title("correlation coefficient = {}".format(cc))
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.savefig("Iy_{}.png".format(offset))
+    # plt.close()
+
+    # cc = round(correlation_coef(Iz[idx1:],IzB),2)
+    # fig = plt.figure(figsize=(14,8))
+    # plt.plot(Time_OF[idx1:idx2],Iy[idx1:],"-r",label="Blade asymmetry\nfrom planar data")
+    # plt.plot(Time,IzB,"-b",label="Blade asymmetry\nfrom actuator data")
+    # plt.xlabel("Time [s]")
+    # plt.ylabel("Asymmetry around z axis [$m^2/s$]")
+    # plt.title("correlation coefficient = {}".format(cc))
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.savefig("Iz_{}.png".format(offset))
+    # plt.close()
+
+    # cc = round(correlation_coef(I[idx1:],IB),2)
+    # fig = plt.figure(figsize=(14,8))
+    # plt.plot(Time_OF[idx1:idx2],I[idx1:],"-r",label="Blade asymmetry\nfrom planar data")
+    # plt.plot(Time,IB,"-b",label="Blade asymmetry\nfrom actuator data")
+    # plt.xlabel("Time [s]")
+    # plt.ylabel("Magnitude Asymmetry [$m^2/s$]")
+    # plt.title("correlation coefficient = {}".format(cc))
+    # plt.grid()
+    # plt.tight_layout()
+    # plt.savefig("I_{}.png".format(offset))
+    # plt.close()
 
 
 
