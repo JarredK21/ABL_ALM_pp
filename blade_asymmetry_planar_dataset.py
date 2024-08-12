@@ -113,7 +113,6 @@ a = Dataset("Dataset.nc")
 Time_OF = np.array(a.variables["Time_OF"])
 
 OF_vars = a.groups["OpenFAST_Variables"]
-Azimuth = np.radians(OF_vars.variables["Azimuth"])
 
 print("line 15",time.time()-start_time)
 
@@ -133,9 +132,11 @@ print("line 126", time.time()-start_time)
 offsets = ["-5.5","-63.0"]
 for offset in offsets:
 
+    Azimuth = np.radians(OF_vars.variables["Azimuth"])
+
     if offset == "-63.0":
         Azimuth = Azimuth+np.radians(334)
-        
+
     a = Dataset("sampling_r_{}.nc".format(offset))
 
     Time_sampling = np.array(a.variables["time"])
@@ -201,7 +202,7 @@ for offset in offsets:
 
 
     
-    group_inner = group.createGroup("{}".format(abs(offset)))
+    group_inner = group.createGroup("{}".format(offset))
 
     Iy = group_inner.createVariable("Iy", np.float64, ('OF',),zlib=True)
     Iz = group_inner.createVariable("Iz", np.float64, ('OF',),zlib=True)
