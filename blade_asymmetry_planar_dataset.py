@@ -132,9 +132,12 @@ print("line 126", time.time()-start_time)
 offsets = [-5.5,-63.0]
 for offset in offsets:
 
+    print("offset = ",offset)
+
     Azimuth = np.radians(OF_vars.variables["Azimuth"])
 
-    if offset == "-63.0":
+    if offset == -63.0:
+        print("offset = ",offset)
         Azimuth = Azimuth+np.radians(334)
 
     a = Dataset("sampling_r_{}.nc".format(offset))
@@ -170,6 +173,8 @@ for offset in offsets:
     ys = ys + rotor_coordiates[1]
     zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
 
+    print("line 173",time.time()-start_time)
+
 
     u = np.array(p.variables["velocityx"])
     v = np.array(p.variables["velocityy"])
@@ -188,7 +193,7 @@ for offset in offsets:
     u = np.array(u_hvel); del u_hvel; del v
 
 
-    print("line 328",time.time()-start_time)
+    print("line 193",time.time()-start_time)
 
     Iy_array = []; Iz_array = []
     ix=0
@@ -211,8 +216,8 @@ for offset in offsets:
     Iz[:] = Iz_array; del Iz_array
 
     del u
-
-    print(ncfile.groups)
+    print(group.groups)
+print(ncfile.groups)
 
 print(ncfile)
 ncfile.close()

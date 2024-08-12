@@ -293,113 +293,130 @@ if planar_asymmetry_analysis == True:
 
     Planar_asymmetry = a.groups["Planar_Asymmetry_Variables"]
 
-    IyP = np.array(Planar_asymmetry.variables["Iy"][Tstart_idx:T_end_idx])
-    IzP = -np.array(Planar_asymmetry.variables["Iz"][Tstart_idx:T_end_idx])
+    offsets = [5.5,63.0]
 
-    IP = np.sqrt(np.add(np.square(IyP),np.square(IzP)))
+    for offset in offsets:
+        Planar_asymmetry_P = Planar_asymmetry.groups["{}".format(offset)]
 
-    #Filtering I
-    LPF_3_IP = low_pass_filter(IP,1.5,dt)
+        IyP = np.array(Planar_asymmetry_P.variables["Iy"][Tstart_idx:T_end_idx])
+        IzP = -np.array(Planar_asymmetry_P.variables["Iz"][Tstart_idx:T_end_idx])
+        IP = np.sqrt(np.add(np.square(IyP),np.square(IzP)))
 
-    HPF_IP = np.subtract(IP,LPF_3_IP)
-    HPF_IP = np.array(low_pass_filter(HPF_IP,40,dt))
+        if offset == 63.0:
+            Time_shift_idx = np.searchsorted(Time,Time[0]+4.6)
+            Time = Time[:-Time_shift_idx]
 
+            Iy = Iy[Time_shift_idx:]
+            Iz = Iz[Time_shift_idx:]
+            I = I[Time_shift_idx:]
 
-    out_dir=in_dir+"High_frequency_analysis/planar_blade_asymmetry/"
+            IyP = IyP[:-Time_shift_idx]
+            IzP = IzP[:-Time_shift_idx]
+            IP = IP[:-Time_shift_idx]
+            
 
-    plt.rcParams.update({'font.size': 18})
+        #Filtering I
+        LPF_3_IP = low_pass_filter(IP,1.5,dt)
 
-    cc = round(correlation_coef(IyP,Iy),2)
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(Time,IyP,"-r",label="Blade asymmetry\nfrom planar data")
-    plt.plot(Time,Iy,"-b",label="Blade asymmetry\nfrom actuator data")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Asymmetry around y axis [$m^2/s$]")
-    plt.legend()
-    plt.title("correlation coefficient = {}".format(cc))
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(out_dir+"Iy_5.5.png")
-    plt.close()
-
-    fig = plt.figure(figsize=(14,8))
-    frq,PSD = temporal_spectra(IyP,dt,Var="IyP")
-    plt.loglog(frq,PSD,"-r",label="Blade asymmetry\nfrom planar data")
-    frq,PSD = temporal_spectra(Iy,dt,Var="Iy")
-    plt.loglog(frq,PSD,"-b",label="Blade asymmetry\nfrom actuator data")
-    plt.xlabel("Frequency [Hz]")
-    plt.ylabel("Asymmetry around y axis [$m^2/s$]")
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(out_dir+"spectra_Iy_5.5.png")
-    plt.close()
-
-    cc = round(correlation_coef(IzP,Iz),2)
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(Time,IzP,"-r",label="Blade asymmetry\nfrom planar data")
-    plt.plot(Time,Iz,"-b",label="Blade asymmetry\nfrom actuator data")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Asymmetry around z axis [$m^2/s$]")
-    plt.title("correlation coefficient = {}".format(cc))
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(out_dir+"Iz_5.5.png")
-    plt.close()
-
-    fig = plt.figure(figsize=(14,8))
-    frq,PSD = temporal_spectra(IzP,dt,Var="IzP")
-    plt.loglog(frq,PSD,"-r",label="Blade asymmetry\nfrom planar data")
-    frq,PSD = temporal_spectra(Iz,dt,Var="Iz")
-    plt.loglog(frq,PSD,"-b",label="Blade asymmetry\nfrom actuator data")
-    plt.xlabel("Frequency [Hz]")
-    plt.ylabel("Asymmetry around z axis [$m^2/s$]")
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(out_dir+"spectra_Iz_5.5.png")
-    plt.close()
-
-    cc = round(correlation_coef(IP,I),2)
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(Time,IP,"-r",label="Blade asymmetry\nfrom planar data")
-    plt.plot(Time,I,"-b",label="Blade asymmetry\nfrom actuator data")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Magnitude Asymmetry [$m^2/s$]")
-    plt.title("correlation coefficient = {}".format(cc))
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(out_dir+"I_5.5.png")
-    plt.close()
-
-    cc = round(correlation_coef(HPF_IP,HPF_I),2)
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(Time,HPF_IP,"-r",label="HPF 1.5Hz Blade asymmetry\nfrom planar data")
-    plt.plot(Time,HPF_I,"-b",label="HPF 1.5Hz Blade asymmetry\nfrom actuator data")
-    plt.xlabel("Time [s]")
-    plt.ylabel("HPF 1.5Hz Magnitude Asymmetry [$m^2/s$]")
-    plt.title("correlation coefficient = {}".format(cc))
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(out_dir+"HPF_I_5.5.png")
-    plt.close()
+        HPF_IP = np.subtract(IP,LPF_3_IP)
+        HPF_IP = np.array(low_pass_filter(HPF_IP,40,dt))
 
 
-    fig = plt.figure(figsize=(14,8))
-    frq,PSD = temporal_spectra(IP,dt,Var="IP")
-    plt.loglog(frq,PSD,"-r",label="Blade asymmetry\nfrom planar data")
-    frq,PSD = temporal_spectra(I,dt,Var="I")
-    plt.loglog(frq,PSD,"-b",label="Blade asymmetry\nfrom actuator data")
-    plt.xlabel("Frequency [Hz]")
-    plt.ylabel("Magnitude Asymmetry [$m^2/s$]")
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(out_dir+"spectra_I_5.5.png")
-    plt.close()
+        out_dir=in_dir+"High_frequency_analysis/planar_blade_asymmetry/"
+
+        plt.rcParams.update({'font.size': 18})
+
+        cc = round(correlation_coef(IyP,Iy),2)
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,IyP,"-r",label="Blade asymmetry\nfrom planar data")
+        plt.plot(Time,Iy,"-b",label="Blade asymmetry\nfrom actuator data")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around y axis [$m^2/s$]")
+        plt.legend()
+        plt.title("correlation coefficient = {}".format(cc))
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"Iy_{}.png".format(offset))
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        frq,PSD = temporal_spectra(IyP,dt,Var="IyP")
+        plt.loglog(frq,PSD,"-r",label="Blade asymmetry\nfrom planar data")
+        frq,PSD = temporal_spectra(Iy,dt,Var="Iy")
+        plt.loglog(frq,PSD,"-b",label="Blade asymmetry\nfrom actuator data")
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("Asymmetry around y axis [$m^2/s$]")
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"spectra_Iy_{}.png".format(offset))
+        plt.close()
+
+        cc = round(correlation_coef(IzP,Iz),2)
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,IzP,"-r",label="Blade asymmetry\nfrom planar data")
+        plt.plot(Time,Iz,"-b",label="Blade asymmetry\nfrom actuator data")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Asymmetry around z axis [$m^2/s$]")
+        plt.title("correlation coefficient = {}".format(cc))
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"Iz_{}.png".format(offset))
+        plt.close()
+
+        fig = plt.figure(figsize=(14,8))
+        frq,PSD = temporal_spectra(IzP,dt,Var="IzP")
+        plt.loglog(frq,PSD,"-r",label="Blade asymmetry\nfrom planar data")
+        frq,PSD = temporal_spectra(Iz,dt,Var="Iz")
+        plt.loglog(frq,PSD,"-b",label="Blade asymmetry\nfrom actuator data")
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("Asymmetry around z axis [$m^2/s$]")
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"spectra_Iz_{}.png".format(offset))
+        plt.close()
+
+        cc = round(correlation_coef(IP,I),2)
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,IP,"-r",label="Blade asymmetry\nfrom planar data")
+        plt.plot(Time,I,"-b",label="Blade asymmetry\nfrom actuator data")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Magnitude Asymmetry [$m^2/s$]")
+        plt.title("correlation coefficient = {}".format(cc))
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"I_{}.png".format(offset))
+        plt.close()
+
+        cc = round(correlation_coef(HPF_IP,HPF_I),2)
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,HPF_IP,"-r",label="HPF 1.5Hz Blade asymmetry\nfrom planar data")
+        plt.plot(Time,HPF_I,"-b",label="HPF 1.5Hz Blade asymmetry\nfrom actuator data")
+        plt.xlabel("Time [s]")
+        plt.ylabel("HPF 1.5Hz Magnitude Asymmetry [$m^2/s$]")
+        plt.title("correlation coefficient = {}".format(cc))
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"HPF_I_{}.png".format(offset))
+        plt.close()
+
+
+        fig = plt.figure(figsize=(14,8))
+        frq,PSD = temporal_spectra(IP,dt,Var="IP")
+        plt.loglog(frq,PSD,"-r",label="Blade asymmetry\nfrom planar data")
+        frq,PSD = temporal_spectra(I,dt,Var="I")
+        plt.loglog(frq,PSD,"-b",label="Blade asymmetry\nfrom actuator data")
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("Magnitude Asymmetry [$m^2/s$]")
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"spectra_I_{}.png".format(offset))
+        plt.close()
 
 
 
