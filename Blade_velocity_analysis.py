@@ -124,7 +124,8 @@ R = np.linspace(0,63.0,300)
 Time = np.array(df.variables["time"])
 dt = Time[1] - Time[0]
 Tstart_idx = np.searchsorted(Time,200)
-Time = Time[Tstart_idx:]
+T_end_idx = np.searchsorted(Time,1199.6361)+1
+Time = Time[Tstart_idx:T_end_idx]
 
 
 a = Dataset(in_dir+"Dataset.nc")
@@ -196,7 +197,7 @@ FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
 # Time_sampling = np.array(a.variables["Time_sampling"])
 # dt_sampling = Time_sampling[1] - Time_sampling[0]
 # OF_vars = a.groups["OpenFAST_Variables"]
-Azimuth = np.array(OF_vars.variables["Azimuth"][Tstart_idx:-1])
+Azimuth = np.array(OF_vars.variables["Azimuth"][Tstart_idx:T_end_idx])
 # Rotor_avg_vars = a.groups["Rotor_Avg_Variables"]
 # Tstart_idx_sampling = np.searchsorted(Time_sampling,200)
 # Time_sampling = Time_sampling[Tstart_idx_sampling:]
@@ -206,16 +207,16 @@ Azimuth = np.array(OF_vars.variables["Azimuth"][Tstart_idx:-1])
 #     if Azimuth[i+1] < Azimuth[i]:
 #         Azimuth[i+1:]+=360
 
-uvelB1 = np.array(df.variables["uvel"][Tstart_idx:,1:301])
-vvelB1 = np.array(df.variables["vvel"][Tstart_idx:,1:301])
+uvelB1 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,1:301])
+vvelB1 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,1:301])
 uvelB1[uvelB1<0]=0; vvelB1[vvelB1<0]=0 #remove negative velocities
 #hvelB1 = np.add(np.cos(np.radians(29))*uvelB1, np.sin(np.radians(29))*vvelB1)
-uvelB2 = np.array(df.variables["uvel"][Tstart_idx:,301:601])
-vvelB2 = np.array(df.variables["vvel"][Tstart_idx:,301:601])
+uvelB2 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,301:601])
+vvelB2 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,301:601])
 uvelB2[uvelB2<0]=0; vvelB2[vvelB2<0]=0 #remove negative velocities
 #hvelB2 = np.add(np.cos(np.radians(29))*uvelB2, np.sin(np.radians(29))*vvelB2)
-uvelB3 = np.array(df.variables["uvel"][Tstart_idx:,601:901])
-vvelB3 = np.array(df.variables["vvel"][Tstart_idx:,601:901])
+uvelB3 = np.array(df.variables["uvel"][Tstart_idx:T_end_idx,601:901])
+vvelB3 = np.array(df.variables["vvel"][Tstart_idx:T_end_idx,601:901])
 uvelB3[uvelB3<0]=0; vvelB3[vvelB3<0]=0 #remove negative velocities
 #hvelB3 = np.add(np.cos(np.radians(29))*uvelB3, np.sin(np.radians(29))*vvelB3)
 
@@ -272,388 +273,517 @@ with Pool() as pool:
 
 
 I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
-I_75 = np.sqrt(np.add(np.square(Iy_75),np.square(Iz_75)))
 
-out_dir=in_dir+"High_frequency_analysis/"
-plt.rcParams.update({'font.size': 18})
-
-cc = round(correlation_coef(I,I_75),2)
-fig,ax = plt.subplots(figsize=(14,8))
-ax.plot(Time,I,"-b")
-ax.yaxis.label.set_color('blue') 
-ax.set_ylabel("Magnitude Asymmetry vector [$m^2/s$] $I_B$")
-ax.grid()
-ax2=ax.twinx()
-ax2.plot(Time,I_75,"-r")
-ax2.set_ylabel("Magnitude Asymmetry vector at 75% span [$m^2/s$] $I_B$")
-ax2.yaxis.label.set_color('red') 
-fig.suptitle("correlation coefficient = {}".format(cc))
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"cc_IB_I_75.png")
-plt.close()
-
-fig = plt.figure(figsize=(14,8))
-frq,PSD = temporal_spectra(I_75,dt,Var="I_75")
-plt.loglog(frq,PSD,"-r",label="$I_B$ 75% span")
-frq,PSD = temporal_spectra(I,dt,Var="I_B")
-plt.loglog(frq,PSD,"-b",label="$I_B$")
-plt.xlabel("Frequency [Hz]")
-plt.ylabel("PSD")
-plt.title("Spectra $I_B at 47m span [m^2/s]\,I_B [m^2/s]$")
-plt.grid()
-plt.legend()
-plt.tight_layout()
-plt.savefig(out_dir+"spectra_IB_IB_75.png")
-plt.close()
-
-cc = round(correlation_coef(Iy,RtAeroMys),2)
-fig,ax = plt.subplots(figsize=(14,8))
-ax.plot(Time,Iy,"-b")
-ax.yaxis.label.set_color('blue') 
-ax.set_ylabel("Asymmetry around y axis [$m^4/s$] $I_{B_y}$")
-ax.grid()
-ax2=ax.twinx()
-ax2.plot(Time,LSSTipMys,"-r")
-ax2.set_ylabel("Rotor Aerodynamic moment y component [kN-m]")
-ax2.yaxis.label.set_color('red') 
-fig.suptitle("correlation coefficient = {}".format(cc))
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"cc_Iy_My.png")
-plt.close()
-
-cc = round(correlation_coef(Iz,RtAeroMzs),2)
-fig,ax = plt.subplots(figsize=(14,8))
-ax.plot(Time,Iz,"-b")
-ax.yaxis.label.set_color('blue') 
-ax.set_ylabel("Asymmetry around z axis [$m^4/s$] $I_{B_z}$")
-ax.grid()
-ax2=ax.twinx()
-ax2.plot(Time,LSSTipMzs,"-r")
-ax2.set_ylabel("Rotor aerodynamic moment z component [kN-m]")
-ax2.yaxis.label.set_color('red') 
-fig.suptitle("correlation coefficient = {}".format(cc))
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"cc_Iz_Mz.png")
-plt.close()
-
-cc = round(correlation_coef(I,RtAeroMR),2)
-fig,ax = plt.subplots(figsize=(14,8))
-ax.plot(Time,I,"-b")
-ax.yaxis.label.set_color('blue') 
-ax.set_ylabel("Magnitude Asymmetry vector [$m^4/s$] $I_B$")
-ax.grid()
-ax2=ax.twinx()
-ax2.plot(Time,RtAeroMR,"-r")
-ax2.set_ylabel("Magnitude Aerodynamic Rotor moment [kN-m]")
-ax2.yaxis.label.set_color('red') 
-fig.suptitle("correlation coefficient = {}".format(cc))
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"cc_I_MR.png")
-plt.close()
-
-cc = round(correlation_coef(I_75,RtAeroMR),2)
-fig,ax = plt.subplots(figsize=(14,8))
-ax.plot(Time,I_75,"-b")
-ax.yaxis.label.set_color('blue') 
-ax.set_ylabel("Magnitude Asymmetry vector at 75% span [$m^2/s$] $I_B$")
-ax.grid()
-ax2=ax.twinx()
-ax2.plot(Time,RtAeroMR,"-r")
-ax2.set_ylabel("Magnitude Aerodynamic Rotor moment [kN-m]")
-ax2.yaxis.label.set_color('red') 
-fig.suptitle("correlation coefficient = {}".format(cc))
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"cc_IB_75_MR.png")
-plt.close()
-
-fig = plt.figure(figsize=(14,8))
-frq,PSD = temporal_spectra(RtAeroMR,dt,Var="MR")
-plt.loglog(frq,PSD,"-r",label="OOPBM")
-frq,PSD = temporal_spectra(FBR,dt,Var="MR")
-plt.loglog(frq,np.multiply(PSD,1e+05),"-g",label="$F_{B_R}$")
-frq,PSD = temporal_spectra(I,dt,Var="I_B")
-plt.loglog(frq,np.true_divide(PSD,1e+05),"-b",label="$I_B$")
-plt.xlabel("Frequency [Hz]")
-plt.ylabel("PSD")
-plt.title("Spectra OOPBM $[kN-m]\,F_{B_R} [kN] \,I_B [m^4/s]$")
-plt.grid()
-plt.legend()
-plt.tight_layout()
-plt.savefig(out_dir+"spectra_IB_MR_FBR.png")
-plt.close()
-
-fig = plt.figure(figsize=(14,8))
-frq,PSD = temporal_spectra(I_3,dt_sampling,Var="I")
-plt.loglog(frq,PSD,"-r",label="I")
-frq,PSD = temporal_spectra(I,dt,Var="I_B")
-plt.loglog(frq,PSD,"-b",label="$I_B$")
-plt.xlabel("Frequency [Hz]")
-plt.ylabel("PSD")
-plt.title("Spectra $I [m^4/s]\, I_B [m^4/s]$")
-plt.grid()
-plt.legend()
-plt.tight_layout()
-plt.savefig(out_dir+"spectra_IB_I.png")
-plt.close()
-
-fig = plt.figure(figsize=(14,8))
-frq,PSD = temporal_spectra(I_3,dt_sampling,Var="I")
-plt.loglog(frq,np.true_divide(PSD,2000),"-r",label="I")
-frq,PSD = temporal_spectra(I,dt,Var="I_B")
-plt.loglog(frq,np.multiply(PSD,100),"-b",label="$I_B$")
-plt.xlabel("Frequency [Hz]")
-plt.ylabel("PSD")
-plt.title("Spectra $I [m^4/s]\, I_B [m^4/s]$")
-plt.grid()
-plt.legend()
-plt.tight_layout()
-plt.savefig(out_dir+"spectra_IB_I_2.png")
-plt.close()
-
-#filtering 
-LPF_1_MR = low_pass_filter(RtAeroMR,0.3,dt)
-LPF_2_MR = low_pass_filter(RtAeroMR,0.9,dt)
-LPF_3_MR = low_pass_filter(RtAeroMR,1.5,dt)
-
-HPF_MR = np.subtract(RtAeroMR,LPF_3_MR)
-HPF_MR = np.array(low_pass_filter(HPF_MR,40,dt))
-BPF_MR = np.subtract(LPF_2_MR,LPF_1_MR)
-
-LPF_1_I = low_pass_filter(I,0.3,dt)
-LPF_2_I = low_pass_filter(I,0.9,dt)
+#Filtering I
 LPF_3_I = low_pass_filter(I,1.5,dt)
 
 HPF_I = np.subtract(I,LPF_3_I)
 HPF_I = np.array(low_pass_filter(HPF_I,40,dt))
-BPF_I = np.subtract(LPF_2_I,LPF_1_I)
+
+I_75 = np.sqrt(np.add(np.square(Iy_75),np.square(Iz_75)))
+
+#analysis options
+High_frequency_analysis = False
+planar_asymmetry_analysis = True
 
 
-cc = round(correlation_coef(LPF_1_MR,LPF_1_I),2)
-fig,ax = plt.subplots(figsize=(14,8))
-ax.plot(Time,LPF_1_I,"-b")
-ax.yaxis.label.set_color('blue') 
-ax.set_ylabel("LPF 0.3Hz Magnitude Asymmetry vector [$m^4/s$] $I_B$")
-ax.grid()
-ax2=ax.twinx()
-ax2.plot(Time,LPF_1_MR,"-r")
-ax2.set_ylabel("LPF 0.3Hz Magnitude Rotor moment [kN-m]")
-ax2.yaxis.label.set_color('red') 
-fig.suptitle("correlation coefficient = {}".format(cc))
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"LPF_cc_I_MR.png")
-plt.close()
+if planar_asymmetry_analysis == True:
 
-cc = round(correlation_coef(BPF_MR,BPF_I),2)
-fig,ax = plt.subplots(figsize=(14,8))
-ax.plot(Time,BPF_I,"-b")
-ax.yaxis.label.set_color('blue') 
-ax.set_ylabel("BPF 0.3-0.9Hz Magnitude Asymmetry vector [$m^4/s$] $I_B$")
-ax.grid()
-ax2=ax.twinx()
-ax2.plot(Time,BPF_MR,"-r")
-ax2.set_ylabel("BPF 0.3-0.9Hz Magnitude Rotor moment [kN-m]")
-ax2.yaxis.label.set_color('red') 
-fig.suptitle("correlation coefficient = {}".format(cc))
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"BPF_cc_I_MR.png")
-plt.close()
+    a = Dataset(in_dir+"Dataset_Planar_asymmetry.nc")
 
-cc = round(correlation_coef(HPF_MR,HPF_I),2)
-fig,ax = plt.subplots(figsize=(14,8))
-ax.plot(Time,HPF_I,"-b")
-ax.yaxis.label.set_color('blue') 
-ax.set_ylabel("HPF 1.5-40Hz Magnitude Asymmetry vector [$m^4/s$] $I_B$")
-ax.grid()
-ax2=ax.twinx()
-ax2.plot(Time,HPF_MR,"-r")
-ax2.set_ylabel("HPF 1.5-40Hz Magnitude Rotor moment [kN-m]")
-ax2.yaxis.label.set_color('red') 
-fig.suptitle("correlation coefficient = {}".format(cc))
-fig.supxlabel("Time [s]")
-plt.tight_layout()
-plt.savefig(out_dir+"HPF_cc_I_MR.png")
-plt.close()
+    Planar_asymmetry = a.groups["Planar_Asymmetry_Variables"]
+
+    IyP = np.array(Planar_asymmetry.variables["Iy"][Tstart_idx:T_end_idx])
+    IzP = -np.array(Planar_asymmetry.variables["Iz"][Tstart_idx:T_end_idx])
+
+    IP = np.sqrt(np.add(np.square(IyP),np.square(IzP)))
+
+    #Filtering I
+    LPF_3_IP = low_pass_filter(IP,1.5,dt)
+
+    HPF_IP = np.subtract(IP,LPF_3_IP)
+    HPF_IP = np.array(low_pass_filter(HPF_IP,40,dt))
 
 
-times = np.arange(200,1300,100)
-for i in np.arange(0,len(times)-1):
-    idx1 = np.searchsorted(Time,times[i])
-    idx2 = np.searchsorted(Time,times[i+1])
+    out_dir=in_dir+"High_frequency_analysis/planar_blade_asymmetry/"
+
+    plt.rcParams.update({'font.size': 18})
+
+    cc = round(correlation_coef(IyP,Iy),2)
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time,IyP,"-r",label="Blade asymmetry\nfrom planar data")
+    plt.plot(Time,Iy,"-b",label="Blade asymmetry\nfrom actuator data")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Asymmetry around y axis [$m^2/s$]")
+    plt.legend()
+    plt.title("correlation coefficient = {}".format(cc))
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"Iy_5.5.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    frq,PSD = temporal_spectra(IyP,dt,Var="IyP")
+    plt.loglog(frq,PSD,"-r",label="Blade asymmetry\nfrom planar data")
+    frq,PSD = temporal_spectra(Iy,dt,Var="Iy")
+    plt.loglog(frq,PSD,"-b",label="Blade asymmetry\nfrom actuator data")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Asymmetry around y axis [$m^2/s$]")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"spectra_Iy_5.5.png")
+    plt.close()
+
+    cc = round(correlation_coef(IzP,Iz),2)
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time,IzP,"-r",label="Blade asymmetry\nfrom planar data")
+    plt.plot(Time,Iz,"-b",label="Blade asymmetry\nfrom actuator data")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Asymmetry around z axis [$m^2/s$]")
+    plt.title("correlation coefficient = {}".format(cc))
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"Iz_5.5.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    frq,PSD = temporal_spectra(IzP,dt,Var="IzP")
+    plt.loglog(frq,PSD,"-r",label="Blade asymmetry\nfrom planar data")
+    frq,PSD = temporal_spectra(Iz,dt,Var="Iz")
+    plt.loglog(frq,PSD,"-b",label="Blade asymmetry\nfrom actuator data")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Asymmetry around z axis [$m^2/s$]")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"spectra_Iz_5.5.png")
+    plt.close()
+
+    cc = round(correlation_coef(IP,I),2)
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time,IP,"-r",label="Blade asymmetry\nfrom planar data")
+    plt.plot(Time,I,"-b",label="Blade asymmetry\nfrom actuator data")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Magnitude Asymmetry [$m^2/s$]")
+    plt.title("correlation coefficient = {}".format(cc))
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"I_5.5.png")
+    plt.close()
+
+    cc = round(correlation_coef(HPF_IP,HPF_I),2)
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time,HPF_IP,"-r",label="HPF 1.5Hz Blade asymmetry\nfrom planar data")
+    plt.plot(Time,HPF_I,"-b",label="HPF 1.5Hz Blade asymmetry\nfrom actuator data")
+    plt.xlabel("Time [s]")
+    plt.ylabel("HPF 1.5Hz Magnitude Asymmetry [$m^2/s$]")
+    plt.title("correlation coefficient = {}".format(cc))
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"HPF_I_5.5.png")
+    plt.close()
+
+
+    fig = plt.figure(figsize=(14,8))
+    frq,PSD = temporal_spectra(IP,dt,Var="IP")
+    plt.loglog(frq,PSD,"-r",label="Blade asymmetry\nfrom planar data")
+    frq,PSD = temporal_spectra(I,dt,Var="I")
+    plt.loglog(frq,PSD,"-b",label="Blade asymmetry\nfrom actuator data")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Magnitude Asymmetry [$m^2/s$]")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"spectra_I_5.5.png")
+    plt.close()
+
+
+
+if High_frequency_analysis == True:
+    out_dir=in_dir+"High_frequency_analysis/"
+    plt.rcParams.update({'font.size': 18})
+
+    cc = round(correlation_coef(I,I_75),2)
     fig,ax = plt.subplots(figsize=(14,8))
-    #ax2=ax.twinx()
-
-    ax.plot(Time[idx1:idx2],I[idx1:idx2],"-k",label="$I_B,tot$")
-
-    #ax2.plot(Time[idx1:idx2],RtAeroMR[idx1:idx2],"--k",label="OOPBM")
-
-    ax.plot(Time[idx1:idx2],LPF_1_I[idx1:idx2],"-b",label="LPF $I_B$")
-    
-    #ax2.plot(Time[idx1:idx2],LPF_1_MR[idx1:idx2],"--b",label="LPF OOPBM")
-
-    ax.plot(Time[idx1:idx2],BPF_I[idx1:idx2],"-r",label="BPF $I_B$")
-
-    #ax2.plot(Time[idx1:idx2],BPF_MR[idx1:idx2],"--r",label="BPF OOPBM")
-
-    ax.plot(Time[idx1:idx2],np.subtract(HPF_I[idx1:idx2],10000),"-g",label="HPF $I_B -10,000m^2/s$")
-
-    #ax2.plot(Time[idx1:idx2],HPF_MR[idx1:idx2],"--g",label="HPF OOPBM")
-
+    ax.plot(Time,I,"-b")
     ax.yaxis.label.set_color('blue') 
     ax.set_ylabel("Magnitude Asymmetry vector [$m^2/s$] $I_B$")
     ax.grid()
-    #ax2.set_ylabel("Magnitude aerodynamic Rotor moment [kN-m]")
-    #ax2.yaxis.label.set_color('red') 
+    ax2=ax.twinx()
+    ax2.plot(Time,I_75,"-r")
+    ax2.set_ylabel("Magnitude Asymmetry vector at 75% span [$m^2/s$] $I_B$")
+    ax2.yaxis.label.set_color('red') 
+    fig.suptitle("correlation coefficient = {}".format(cc))
     fig.supxlabel("Time [s]")
-    ax.legend(loc="upper right")
-    #ax2.legend(loc="upper right")
     plt.tight_layout()
-    plt.savefig(out_dir+"I_all_times/I_{}_{}.png".format(times[i],times[i+1]))
+    plt.savefig(out_dir+"cc_IB_I_75.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    frq,PSD = temporal_spectra(I_75,dt,Var="I_75")
+    plt.loglog(frq,PSD,"-r",label="$I_B$ 75% span")
+    frq,PSD = temporal_spectra(I,dt,Var="I_B")
+    plt.loglog(frq,PSD,"-b",label="$I_B$")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("PSD")
+    plt.title("Spectra $I_B at 47m span [m^2/s]\,I_B [m^2/s]$")
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_dir+"spectra_IB_IB_75.png")
+    plt.close()
+
+    cc = round(correlation_coef(Iy,RtAeroMys),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time,Iy,"-b")
+    ax.yaxis.label.set_color('blue') 
+    ax.set_ylabel("Asymmetry around y axis [$m^4/s$] $I_{B_y}$")
+    ax.grid()
+    ax2=ax.twinx()
+    ax2.plot(Time,LSSTipMys,"-r")
+    ax2.set_ylabel("Rotor Aerodynamic moment y component [kN-m]")
+    ax2.yaxis.label.set_color('red') 
+    fig.suptitle("correlation coefficient = {}".format(cc))
+    fig.supxlabel("Time [s]")
+    plt.tight_layout()
+    plt.savefig(out_dir+"cc_Iy_My.png")
+    plt.close()
+
+    cc = round(correlation_coef(Iz,RtAeroMzs),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time,Iz,"-b")
+    ax.yaxis.label.set_color('blue') 
+    ax.set_ylabel("Asymmetry around z axis [$m^4/s$] $I_{B_z}$")
+    ax.grid()
+    ax2=ax.twinx()
+    ax2.plot(Time,LSSTipMzs,"-r")
+    ax2.set_ylabel("Rotor aerodynamic moment z component [kN-m]")
+    ax2.yaxis.label.set_color('red') 
+    fig.suptitle("correlation coefficient = {}".format(cc))
+    fig.supxlabel("Time [s]")
+    plt.tight_layout()
+    plt.savefig(out_dir+"cc_Iz_Mz.png")
+    plt.close()
+
+    cc = round(correlation_coef(I,RtAeroMR),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time,I,"-b")
+    ax.yaxis.label.set_color('blue') 
+    ax.set_ylabel("Magnitude Asymmetry vector [$m^4/s$] $I_B$")
+    ax.grid()
+    ax2=ax.twinx()
+    ax2.plot(Time,RtAeroMR,"-r")
+    ax2.set_ylabel("Magnitude Aerodynamic Rotor moment [kN-m]")
+    ax2.yaxis.label.set_color('red') 
+    fig.suptitle("correlation coefficient = {}".format(cc))
+    fig.supxlabel("Time [s]")
+    plt.tight_layout()
+    plt.savefig(out_dir+"cc_I_MR.png")
+    plt.close()
+
+    cc = round(correlation_coef(I_75,RtAeroMR),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time,I_75,"-b")
+    ax.yaxis.label.set_color('blue') 
+    ax.set_ylabel("Magnitude Asymmetry vector at 75% span [$m^2/s$] $I_B$")
+    ax.grid()
+    ax2=ax.twinx()
+    ax2.plot(Time,RtAeroMR,"-r")
+    ax2.set_ylabel("Magnitude Aerodynamic Rotor moment [kN-m]")
+    ax2.yaxis.label.set_color('red') 
+    fig.suptitle("correlation coefficient = {}".format(cc))
+    fig.supxlabel("Time [s]")
+    plt.tight_layout()
+    plt.savefig(out_dir+"cc_IB_75_MR.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    frq,PSD = temporal_spectra(RtAeroMR,dt,Var="MR")
+    plt.loglog(frq,PSD,"-r",label="OOPBM")
+    frq,PSD = temporal_spectra(FBR,dt,Var="MR")
+    plt.loglog(frq,np.multiply(PSD,1e+05),"-g",label="$F_{B_R}$")
+    frq,PSD = temporal_spectra(I,dt,Var="I_B")
+    plt.loglog(frq,np.true_divide(PSD,1e+05),"-b",label="$I_B$")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("PSD")
+    plt.title("Spectra OOPBM $[kN-m]\,F_{B_R} [kN] \,I_B [m^4/s]$")
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_dir+"spectra_IB_MR_FBR.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    frq,PSD = temporal_spectra(I_3,dt_sampling,Var="I")
+    plt.loglog(frq,PSD,"-r",label="I")
+    frq,PSD = temporal_spectra(I,dt,Var="I_B")
+    plt.loglog(frq,PSD,"-b",label="$I_B$")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("PSD")
+    plt.title("Spectra $I [m^4/s]\, I_B [m^4/s]$")
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_dir+"spectra_IB_I.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    frq,PSD = temporal_spectra(I_3,dt_sampling,Var="I")
+    plt.loglog(frq,np.true_divide(PSD,2000),"-r",label="I")
+    frq,PSD = temporal_spectra(I,dt,Var="I_B")
+    plt.loglog(frq,np.multiply(PSD,100),"-b",label="$I_B$")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("PSD")
+    plt.title("Spectra $I [m^4/s]\, I_B [m^4/s]$")
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_dir+"spectra_IB_I_2.png")
+    plt.close()
+
+    #filtering 
+    LPF_1_MR = low_pass_filter(RtAeroMR,0.3,dt)
+    LPF_2_MR = low_pass_filter(RtAeroMR,0.9,dt)
+    LPF_3_MR = low_pass_filter(RtAeroMR,1.5,dt)
+
+    HPF_MR = np.subtract(RtAeroMR,LPF_3_MR)
+    HPF_MR = np.array(low_pass_filter(HPF_MR,40,dt))
+    BPF_MR = np.subtract(LPF_2_MR,LPF_1_MR)
+
+    LPF_1_I = low_pass_filter(I,0.3,dt)
+    LPF_2_I = low_pass_filter(I,0.9,dt)
+    LPF_3_I = low_pass_filter(I,1.5,dt)
+
+    HPF_I = np.subtract(I,LPF_3_I)
+    HPF_I = np.array(low_pass_filter(HPF_I,40,dt))
+    BPF_I = np.subtract(LPF_2_I,LPF_1_I)
+
+
+    cc = round(correlation_coef(LPF_1_MR,LPF_1_I),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time,LPF_1_I,"-b")
+    ax.yaxis.label.set_color('blue') 
+    ax.set_ylabel("LPF 0.3Hz Magnitude Asymmetry vector [$m^4/s$] $I_B$")
+    ax.grid()
+    ax2=ax.twinx()
+    ax2.plot(Time,LPF_1_MR,"-r")
+    ax2.set_ylabel("LPF 0.3Hz Magnitude Rotor moment [kN-m]")
+    ax2.yaxis.label.set_color('red') 
+    fig.suptitle("correlation coefficient = {}".format(cc))
+    fig.supxlabel("Time [s]")
+    plt.tight_layout()
+    plt.savefig(out_dir+"LPF_cc_I_MR.png")
+    plt.close()
+
+    cc = round(correlation_coef(BPF_MR,BPF_I),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time,BPF_I,"-b")
+    ax.yaxis.label.set_color('blue') 
+    ax.set_ylabel("BPF 0.3-0.9Hz Magnitude Asymmetry vector [$m^4/s$] $I_B$")
+    ax.grid()
+    ax2=ax.twinx()
+    ax2.plot(Time,BPF_MR,"-r")
+    ax2.set_ylabel("BPF 0.3-0.9Hz Magnitude Rotor moment [kN-m]")
+    ax2.yaxis.label.set_color('red') 
+    fig.suptitle("correlation coefficient = {}".format(cc))
+    fig.supxlabel("Time [s]")
+    plt.tight_layout()
+    plt.savefig(out_dir+"BPF_cc_I_MR.png")
+    plt.close()
+
+    cc = round(correlation_coef(HPF_MR,HPF_I),2)
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Time,HPF_I,"-b")
+    ax.yaxis.label.set_color('blue') 
+    ax.set_ylabel("HPF 1.5-40Hz Magnitude Asymmetry vector [$m^4/s$] $I_B$")
+    ax.grid()
+    ax2=ax.twinx()
+    ax2.plot(Time,HPF_MR,"-r")
+    ax2.set_ylabel("HPF 1.5-40Hz Magnitude Rotor moment [kN-m]")
+    ax2.yaxis.label.set_color('red') 
+    fig.suptitle("correlation coefficient = {}".format(cc))
+    fig.supxlabel("Time [s]")
+    plt.tight_layout()
+    plt.savefig(out_dir+"HPF_cc_I_MR.png")
     plt.close()
 
 
-f = interpolate.interp1d(Time,LPF_1_I)
-LPF_1_I_interp = f(Time_sampling)
-cc = round(correlation_coef(LPF_1_I_interp,I_2_LPF),2)
-fig,ax = plt.subplots(figsize=(14,8))
-ax.plot(Time_sampling,LPF_1_I_interp,"-b")
-ax.set_ylabel("LPF 0.3Hz Actuator Magnitude Asymmetry vector [$m^4/s$] $I_B$")
-ax.yaxis.label.set_color('blue') 
-ax2=ax.twinx()
-ax2.plot(Time_sampling,I_2_LPF,"-r")
-ax2.set_ylabel("LPF 0.3Hz Magnitude Asymmetry vector [$m^4/s$] $I$")
-ax2.yaxis.label.set_color('red') 
-fig.suptitle("correlation coefficient = {}".format(cc))
-ax.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"cc_I_I2.png")
-plt.close()
+    times = np.arange(200,1300,100)
+    for i in np.arange(0,len(times)-1):
+        idx1 = np.searchsorted(Time,times[i])
+        idx2 = np.searchsorted(Time,times[i+1])
+        fig,ax = plt.subplots(figsize=(14,8))
+        #ax2=ax.twinx()
 
-times = np.arange(200,1300,100)
-for i in np.arange(0,len(times)-1):
-    idx1 = np.searchsorted(Time,times[i])
-    idx2 = np.searchsorted(Time,times[i+1])
+        ax.plot(Time[idx1:idx2],I[idx1:idx2],"-k",label="$I_B,tot$")
+
+        #ax2.plot(Time[idx1:idx2],RtAeroMR[idx1:idx2],"--k",label="OOPBM")
+
+        ax.plot(Time[idx1:idx2],LPF_1_I[idx1:idx2],"-b",label="LPF $I_B$")
+        
+        #ax2.plot(Time[idx1:idx2],LPF_1_MR[idx1:idx2],"--b",label="LPF OOPBM")
+
+        ax.plot(Time[idx1:idx2],BPF_I[idx1:idx2],"-r",label="BPF $I_B$")
+
+        #ax2.plot(Time[idx1:idx2],BPF_MR[idx1:idx2],"--r",label="BPF OOPBM")
+
+        ax.plot(Time[idx1:idx2],np.subtract(HPF_I[idx1:idx2],10000),"-g",label="HPF $I_B -10,000m^2/s$")
+
+        #ax2.plot(Time[idx1:idx2],HPF_MR[idx1:idx2],"--g",label="HPF OOPBM")
+
+        ax.yaxis.label.set_color('blue') 
+        ax.set_ylabel("Magnitude Asymmetry vector [$m^2/s$] $I_B$")
+        ax.grid()
+        #ax2.set_ylabel("Magnitude aerodynamic Rotor moment [kN-m]")
+        #ax2.yaxis.label.set_color('red') 
+        fig.supxlabel("Time [s]")
+        ax.legend(loc="upper right")
+        #ax2.legend(loc="upper right")
+        plt.tight_layout()
+        plt.savefig(out_dir+"I_all_times/I_{}_{}.png".format(times[i],times[i+1]))
+        plt.close()
+
+
+    f = interpolate.interp1d(Time,LPF_1_I)
+    LPF_1_I_interp = f(Time_sampling)
+    cc = round(correlation_coef(LPF_1_I_interp,I_2_LPF),2)
     fig,ax = plt.subplots(figsize=(14,8))
-    ax.plot(Time[idx1:idx2],I[idx1:idx2],"-b",label="$I_{B,tot}$")
-    idx1 = np.searchsorted(Time_sampling,times[i])
-    idx2 = np.searchsorted(Time_sampling,times[i+1])
-    ax.plot(Time_sampling[idx1:idx2],LPF_1_I_interp[idx1:idx2],"-k",label="LPF $I_B$")
-    ax.set_ylabel("Actuator Magnitude Asymmetry vector [$m^4/s$] $I_B$")
-    ax.legend()
+    ax.plot(Time_sampling,LPF_1_I_interp,"-b")
+    ax.set_ylabel("LPF 0.3Hz Actuator Magnitude Asymmetry vector [$m^4/s$] $I_B$")
     ax.yaxis.label.set_color('blue') 
     ax2=ax.twinx()
-    ax2.plot(Time_sampling[idx1:idx2],I_2[idx1:idx2],"-r")
-    ax2.set_ylabel("Magnitude Asymmetry vector [$m^4/s$] $I$")
+    ax2.plot(Time_sampling,I_2_LPF,"-r")
+    ax2.set_ylabel("LPF 0.3Hz Magnitude Asymmetry vector [$m^4/s$] $I$")
     ax2.yaxis.label.set_color('red') 
+    fig.suptitle("correlation coefficient = {}".format(cc))
     ax.grid()
     plt.tight_layout()
-    plt.savefig(out_dir+"I_IB_all_times/cc_I_I2_{}_{}.png".format(times[i],times[i+1]))
+    plt.savefig(out_dir+"cc_I_I2.png")
+    plt.close()
+
+    times = np.arange(200,1300,100)
+    for i in np.arange(0,len(times)-1):
+        idx1 = np.searchsorted(Time,times[i])
+        idx2 = np.searchsorted(Time,times[i+1])
+        fig,ax = plt.subplots(figsize=(14,8))
+        ax.plot(Time[idx1:idx2],I[idx1:idx2],"-b",label="$I_{B,tot}$")
+        idx1 = np.searchsorted(Time_sampling,times[i])
+        idx2 = np.searchsorted(Time_sampling,times[i+1])
+        ax.plot(Time_sampling[idx1:idx2],LPF_1_I_interp[idx1:idx2],"-k",label="LPF $I_B$")
+        ax.set_ylabel("Actuator Magnitude Asymmetry vector [$m^4/s$] $I_B$")
+        ax.legend()
+        ax.yaxis.label.set_color('blue') 
+        ax2=ax.twinx()
+        ax2.plot(Time_sampling[idx1:idx2],I_2[idx1:idx2],"-r")
+        ax2.set_ylabel("Magnitude Asymmetry vector [$m^4/s$] $I$")
+        ax2.yaxis.label.set_color('red') 
+        ax.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"I_IB_all_times/cc_I_I2_{}_{}.png".format(times[i],times[i+1]))
+        plt.close()
+
+
+
+    dHPF_MR = np.array(dt_calc(HPF_MR,dt))
+
+    zero_crossings_index_HPF_MR = np.where(np.diff(np.sign(dHPF_MR)))[0]
+    #HPF calc
+    dF_mag_HPF = []
+    dt_mag_HPF = []
+    dF_I_HPF = []
+    for i in np.arange(0,len(zero_crossings_index_HPF_MR)-1):
+
+        it_1 = zero_crossings_index_HPF_MR[i]
+        it_2 = zero_crossings_index_HPF_MR[i+1]
+
+        dF_mag_HPF.append(HPF_MR[it_2] - HPF_MR[it_1])
+
+        dt_mag_HPF.append(Time[it_2] - Time[it_1])
+
+        dF_I_HPF.append(HPF_I[it_2] - HPF_I[it_1])
+
+
+    fig = plt.figure(figsize=(14,8))
+    plt.scatter(dF_I_HPF,dF_mag_HPF)
+    plt.xlabel("$dI_B [m^2/s]$")
+    plt.ylabel("dF [kN-m]")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"dIB_dF_HPF.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    plt.scatter(dt_mag_HPF,dF_mag_HPF,c=dF_I_HPF,cmap="viridis")
+    plt.xlabel("$dt$ [s]")
+    plt.ylabel("$dF [kN-m]$")
+    plt.title("HPF $M_R$")
+    plt.grid()
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig(out_dir+"MR_dF_dt_HPF_I.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    P,X = probability_dist(dF_mag_HPF)
+    plt.plot(X,P)
+    plt.xlabel("Jump in Magnitude Rotor moment [kN-m]")
+    plt.ylabel("Probabilty [-]")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"PDF_dF_MR.png")
+    plt.close()
+
+    fig = plt.figure(figsize=(14,8))
+    P,X = probability_dist(dt_mag_HPF)
+    plt.plot(X,P)
+    plt.xlabel("Time step [s]")
+    plt.ylabel("Probabilty [-]")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"PDF_dt_MR.png")
     plt.close()
 
 
+    #HPF calc
+    dF_mag_HPF_threshold = []
+    dt_mag_HPF_threshold = []
+    dF_I_HPF_threshold = []
+    for i in np.arange(0,len(zero_crossings_index_HPF_MR)-1):
 
-dHPF_MR = np.array(dt_calc(HPF_MR,dt))
+        it_1 = zero_crossings_index_HPF_MR[i]
+        it_2 = zero_crossings_index_HPF_MR[i+1]
 
-zero_crossings_index_HPF_MR = np.where(np.diff(np.sign(dHPF_MR)))[0]
-#HPF calc
-dF_mag_HPF = []
-dt_mag_HPF = []
-dF_I_HPF = []
-for i in np.arange(0,len(zero_crossings_index_HPF_MR)-1):
+        if HPF_MR[it_2] - HPF_MR[it_1] > 3*np.std(dF_mag_HPF) or HPF_MR[it_2] - HPF_MR[it_1] < -3*np.std(dF_mag_HPF):
 
-    it_1 = zero_crossings_index_HPF_MR[i]
-    it_2 = zero_crossings_index_HPF_MR[i+1]
+            dF_mag_HPF_threshold.append(HPF_MR[it_2] - HPF_MR[it_1])
 
-    dF_mag_HPF.append(HPF_MR[it_2] - HPF_MR[it_1])
+            dt_mag_HPF_threshold.append(Time[it_2] - Time[it_1])
 
-    dt_mag_HPF.append(Time[it_2] - Time[it_1])
-
-    dF_I_HPF.append(HPF_I[it_2] - HPF_I[it_1])
+            dF_I_HPF_threshold.append(HPF_I[it_2] - HPF_I[it_1])
 
 
-fig = plt.figure(figsize=(14,8))
-plt.scatter(dF_I_HPF,dF_mag_HPF)
-plt.xlabel("$dI_B [m^2/s]$")
-plt.ylabel("dF [kN-m]")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"dIB_dF_HPF.png")
-plt.close()
+    fig = plt.figure(figsize=(14,8))
+    plt.scatter(dF_I_HPF_threshold,dF_mag_HPF_threshold)
+    plt.xlabel("$dI_B [m^2/s]$")
+    plt.ylabel("dF [kN-m]")
+    plt.title("HPF $M_R$ Threshold on 3x std")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(out_dir+"dIB_dF_HPF_threshold.png")
+    plt.close()
 
-fig = plt.figure(figsize=(14,8))
-plt.scatter(dt_mag_HPF,dF_mag_HPF,c=dF_I_HPF,cmap="viridis")
-plt.xlabel("$dt$ [s]")
-plt.ylabel("$dF [kN-m]$")
-plt.title("HPF $M_R$")
-plt.grid()
-plt.colorbar()
-plt.tight_layout()
-plt.savefig(out_dir+"MR_dF_dt_HPF_I.png")
-plt.close()
-
-fig = plt.figure(figsize=(14,8))
-P,X = probability_dist(dF_mag_HPF)
-plt.plot(X,P)
-plt.xlabel("Jump in Magnitude Rotor moment [kN-m]")
-plt.ylabel("Probabilty [-]")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"PDF_dF_MR.png")
-plt.close()
-
-fig = plt.figure(figsize=(14,8))
-P,X = probability_dist(dt_mag_HPF)
-plt.plot(X,P)
-plt.xlabel("Time step [s]")
-plt.ylabel("Probabilty [-]")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"PDF_dt_MR.png")
-plt.close()
-
-
-#HPF calc
-dF_mag_HPF_threshold = []
-dt_mag_HPF_threshold = []
-dF_I_HPF_threshold = []
-for i in np.arange(0,len(zero_crossings_index_HPF_MR)-1):
-
-    it_1 = zero_crossings_index_HPF_MR[i]
-    it_2 = zero_crossings_index_HPF_MR[i+1]
-
-    if HPF_MR[it_2] - HPF_MR[it_1] > 3*np.std(dF_mag_HPF) or HPF_MR[it_2] - HPF_MR[it_1] < -3*np.std(dF_mag_HPF):
-
-        dF_mag_HPF_threshold.append(HPF_MR[it_2] - HPF_MR[it_1])
-
-        dt_mag_HPF_threshold.append(Time[it_2] - Time[it_1])
-
-        dF_I_HPF_threshold.append(HPF_I[it_2] - HPF_I[it_1])
-
-
-fig = plt.figure(figsize=(14,8))
-plt.scatter(dF_I_HPF_threshold,dF_mag_HPF_threshold)
-plt.xlabel("$dI_B [m^2/s]$")
-plt.ylabel("dF [kN-m]")
-plt.title("HPF $M_R$ Threshold on 3x std")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"dIB_dF_HPF_threshold.png")
-plt.close()
-
-print(len(dF_mag_HPF_threshold))
-fig = plt.figure(figsize=(14,8))
-plt.scatter(dt_mag_HPF_threshold,dF_mag_HPF_threshold,c=dF_I_HPF_threshold,cmap="viridis")
-plt.xlabel("$dt$ [s]")
-plt.ylabel("$dF [kN-m]$")
-plt.title("HPF $M_R$ Threshold on 3x std")
-plt.grid()
-plt.colorbar()
-plt.tight_layout()
-plt.savefig(out_dir+"MR_dF_dt_HPF_threshold_I.png")
-plt.close()
+    print(len(dF_mag_HPF_threshold))
+    fig = plt.figure(figsize=(14,8))
+    plt.scatter(dt_mag_HPF_threshold,dF_mag_HPF_threshold,c=dF_I_HPF_threshold,cmap="viridis")
+    plt.xlabel("$dt$ [s]")
+    plt.ylabel("$dF [kN-m]$")
+    plt.title("HPF $M_R$ Threshold on 3x std")
+    plt.grid()
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig(out_dir+"MR_dF_dt_HPF_threshold_I.png")
+    plt.close()
