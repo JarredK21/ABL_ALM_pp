@@ -239,10 +239,10 @@ for plane in planes:
 
                 if fluc_vel == True:
                     #defining twist angles with height from precursor
-                    precursor = Dataset("./abl_statistics76000.nc")
-                    Time_pre = np.array(precursor.variables["time"])
-                    mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
-                    t_start = np.searchsorted(precursor.variables["time"],38200)
+                    precursor_df = Dataset("./abl_statistics76000.nc")
+                    Time_pre = np.array(precursor_df.variables["time"])
+                    mean_profiles = precursor_df.groups["mean_profiles"] #create variable to hold mean profiles
+                    t_start = np.searchsorted(precursor_df.variables["time"],38200)
                     u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
                     v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
                     w = np.average(mean_profiles.variables["w"][t_start:],axis=0)
@@ -259,7 +259,7 @@ for plane in planes:
                     elif velocity_comp == "velocityz":
                         u_mean_profile = w
 
-                    del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v; del w
+                    del precursor_df; del Time_pre; del mean_profiles; del t_start; del u; del v; del w
 
                 print("line 126", time.time()-start_time)
 
