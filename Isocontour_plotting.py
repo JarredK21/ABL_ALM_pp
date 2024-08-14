@@ -22,24 +22,37 @@ def coriolis_twist(u,v):
 
 def Horizontal_velocity(it):
     f = interpolate.interp1d(h,twist)
-    if normal == "z":
-        height = offset
-        twist_h = f(height)
-        mag_horz_vel = u[it]*np.cos(twist_h) + v[it]*np.sin(twist_h)
-    else:
-        mag_horz_vel = []
-        for i in np.arange(0,len(zs)):
+    f_u = interpolate.interp1d(h,u_mean_profile)
+    vel = []
+    fluct_vel = []
+    for i in np.arange(0,len(zs)):
+        if velocity_comp == "Horizontal_velocity":
             u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
-            if zs[i] < h[0]:
-                twist_h = f(h[0])
-            elif zs[i] > h[-1]:
-                twist_h = f(h[-1])
-            else:
-                twist_h = f(zs[i])
-            mag_horz_vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
-            mag_horz_vel.extend(mag_horz_vel_i)
-        mag_horz_vel = np.array(mag_horz_vel)
-    return mag_horz_vel
+        else:
+            u_i = u[it,i*x:(i+1)*x]
+
+        if zs[i] < h[0]:
+            twist_h = f(h[0])
+            u_mean = f_u(h[0])
+
+        elif zs[i] > h[-1]:
+            twist_h = f(h[-1])
+            u_mean = f_u(h[-1])
+        else:
+            twist_h = f(zs[i])
+            u_mean = f_u(zs[i])
+
+        if velocity_comp == "Horizontal_velocity":
+            vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
+        else:
+            vel_i = u_i
+
+        fluc_vel_i = np.subtract(vel_i,u_mean)
+        vel.extend(vel_i)
+        fluct_vel.extend(fluc_vel_i)
+    vel = np.array(vel)
+    fluct_vel = np.array(fluct_vel)
+    return vel,fluct_vel
 
 
 def blade_positions(it):
@@ -70,19 +83,6 @@ def blade_positions(it):
 
 
 start_time = time.time()
-
-#defining twist angles with height from precursor
-precursor = Dataset("./abl_statistics76000.nc")
-Time_pre = np.array(precursor.variables["time"])
-mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
-t_start = np.searchsorted(precursor.variables["time"],38200)
-u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
-v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
-h = mean_profiles["h"][:]
-twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v
-
-print("line 126", time.time()-start_time)
 
 #plotting precursor planes?
 precursor = False
@@ -126,7 +126,7 @@ for plane in planes:
     if plane == "l":
         offsets = [85]
     elif plane == "r":
-        offsets = [-5.5]
+        offsets = [-63.0]
     elif plane == "tr":
         offsets = [0.0]
     elif plane == "i":
@@ -136,6 +136,10 @@ for plane in planes:
 
     ic = 0
     for offset in offsets:
+
+        if offset == -63.0:
+            print("offset = ",offset)
+            Azimuth = Azimuth+np.radians(334)
 
         a = Dataset("./sampling_{0}_{1}.nc".format(plane,offset))
 
@@ -157,8 +161,8 @@ for plane in planes:
         print(len(Time))
 
         #plotting option
-        fluc_vel = False
-        plot_contours = False
+        fluc_vel = True
+        plot_contours = True
         plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
@@ -225,13 +229,39 @@ for plane in planes:
             print(plane_labels[ip],velocity_comps[iv],offset,time.time()-start_time)
 
             if fluc_vel == True:
-                folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
+                folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}_contour_2/".format(plane_labels[ip],velocity_comp,offset)
             else:
                 folder = out_dir+"{0}_Plane_Total_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
 
             isExist = os.path.exists(folder)
             if isExist == False:
                 os.makedirs(folder)
+
+                if fluc_vel == True:
+                    #defining twist angles with height from precursor
+                    precursor = Dataset("./abl_statistics76000.nc")
+                    Time_pre = np.array(precursor.variables["time"])
+                    mean_profiles = precursor.groups["mean_profiles"] #create variable to hold mean profiles
+                    t_start = np.searchsorted(precursor.variables["time"],38200)
+                    u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
+                    v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
+                    w = np.average(mean_profiles.variables["w"][t_start:],axis=0)
+                    h = mean_profiles["h"][:]
+                    twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
+                    if velocity_comp == "Horizontal_velocity":
+                        u_mean_profile = []
+                        for i in np.arange(0,len(twist)):
+                            u_mean_profile.append(u[i] * np.cos(twist[i]) + v[i] * np.sin(twist[i]))
+                    elif velocity_comp == "velocityx":
+                        u_mean_profile = u
+                    elif velocity_comp == "velocityy":
+                        u_mean_profile = v
+                    elif velocity_comp == "velocityz":
+                        u_mean_profile = w
+
+                    del precursor; del Time_pre; del mean_profiles; del t_start; del u; del v; del w
+
+                print("line 126", time.time()-start_time)
 
                 #velocity field
                 if velocity_comp == "Horizontal_velocity":
@@ -240,24 +270,35 @@ for plane in planes:
 
                     u[u<0]=0; v[v<0]=0 #remove negative velocities
                     
-                    if fluc_vel == True:
-                        u = np.subtract(u,np.mean(u))
-                        v = np.subtract(v,np.mean(v))
-
+                    u_hvel = []; u_pri = []
+                    ix=0
                     with Pool() as pool:
-                        u_hvel = []
-                        for u_hvel_it in pool.imap(Horizontal_velocity,Time_steps):
+                        for u_hvel_it, u_hvel_pri_it in pool.imap(Horizontal_velocity,Time_steps):
                             
                             u_hvel.append(u_hvel_it)
-                            print(len(u_hvel),time.time()-start_time)
-                    u = np.array(u_hvel); del u_hvel; del v
+                            u_pri.append(u_hvel_pri_it)
+                            print(ix)
+                            ix+=1
+                    if fluc_vel == True:
+                        u = np.array(u_pri); del u_hvel; del u_pri; del v
+                    else:
+                        u = np.array(u_hvel); del u_pri; del u_hvel; del v
+                
                 else:
                     u = np.array(p.variables[velocity_comp][tstart_idx:tend_idx])
 
                     if fluc_vel == True:
-                        u = np.subtract(u,np.mean(u))
+                        with Pool() as pool:
+                            for u_hvel_it, u_hvel_pri_it in pool.imap(Horizontal_velocity,Time_steps):
+                                
+                                u_hvel.append(u_hvel_it)
+                                u_pri.append(u_hvel_pri_it)
+                                print(ix)
+                                ix+=1
+                        u = np.array(u_pri); del u_hvel; del u_pri
 
                 print("line 328",time.time()-start_time)
+
 
                 #find vmin and vmax for isocontour plots            
                 #min and max over data
@@ -278,13 +319,6 @@ for plane in planes:
                     levels = np.linspace(cmin,cmax,nlevs,dtype=int)
                     
                 print("line 370",levels)
-
-                if plot_contours == True and fluc_vel == True:
-                    nlevs = int(-0.7-cmin)
-                    levels_neg = np.linspace(cmin,-0.7,nlevs)
-
-                    nlevs = int(cmax-0.7)
-                    levels_pos = np.linspace(0.7,cmax,nlevs)
 
 
                 def Update(it):
@@ -323,13 +357,9 @@ for plane in planes:
 
                     cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
 
-                    if plot_contours == True and fluc_vel == True:
-                        #<-0.7 blue, <0.7 red
-                        CS = plt.contour(X, Y, Z, levels=levels_neg, colors='b')
+                    if plot_contours == True:
+                        CS = plt.contour(X, Y, Z, levels=levels, colors='k')
                         plt.clabel(CS, fontsize=18, inline=True)
-                        if plane == "l":
-                            CS = plt.contour(X, Y, Z, levels=levels_pos, colors='r')
-                            plt.clabel(CS, fontsize=18, inline=True)
 
 
                     #show where rotor is and reduce plot area
@@ -363,7 +393,7 @@ for plane in planes:
 
                     cb = plt.colorbar(cs)
 
-                    if precursor == False and plane == "r" and offset == -5.5:
+                    if precursor == False and plane == "r":
                         YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
 
                         plt.plot(YB1,ZB1,color="k",linewidth = 0.5)

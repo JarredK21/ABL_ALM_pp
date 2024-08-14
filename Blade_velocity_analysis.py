@@ -94,6 +94,27 @@ def probability_dist(y):
     return P,X
 
 
+def moments(y):
+    mu = np.mean(y)
+    std = np.std(y)
+    N = len(y)
+
+    skewness = (np.sum(np.power(np.subtract(y,mu),3)))/(N*std**3)
+    kurotsis = (np.sum(np.power(np.subtract(y,mu),4)))/(N*std**4)
+
+    return mu, std, skewness,kurotsis
+
+
+def dt_calc(y,dt):
+    d_dt = []
+    for i in np.arange(0,len(Time_OF)-1):
+        d_dt.append((y[i+1]-y[i])/dt)
+
+    return d_dt
+
+
+
+
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 
@@ -177,6 +198,48 @@ for i in np.arange(0,len(Time_OF)):
 RtAeroMys = np.array(RtAeroMys); RtAeroMzs = np.array(RtAeroMzs)
 
 RtAeroMR = np.sqrt( np.add(np.square(RtAeroMys), np.square(RtAeroMzs)) ) 
+
+#Filtering Mz
+LPF_3_MR = low_pass_filter(RtAeroMR,1.5,dt)
+HPF_MR = np.subtract(RtAeroMR,LPF_3_MR)
+HPF_MR = np.array(low_pass_filter(HPF_MR,40,dt))
+
+dHPF_MR = dt_calc(HPF_MR,dt)
+
+zero_crossings_index_HPF_MR = np.where(np.diff(np.sign(dHPF_MR)))[0]
+Time_zero_crossings_HPF_MR = Time_OF[zero_crossings_index_HPF_MR]
+
+#HPF calc
+dF_mag_HPF = []
+Time_mag_HPF = []
+MR_HPF = []
+for i in np.arange(0,len(zero_crossings_index_HPF_MR)-1):
+
+    it_1 = zero_crossings_index_HPF_MR[i]
+    it_2 = zero_crossings_index_HPF_MR[i+1]
+
+    Time_mag_HPF.append(Time_OF[it_1])
+
+    MR_HPF.append(HPF_MR[it_1])
+
+    dF_mag_HPF.append(HPF_MR[it_2] - HPF_MR[it_1])
+
+P,X = probability_dist(dF_mag_HPF)
+fig = plt.figure()
+plt.plot(X,P)
+plt.axvline(x=np.mean(dF_mag_HPF)+2*np.std(dF_mag_HPF),linestyle="--",color="k")
+plt.axvline(x=np.mean(dF_mag_HPF)-2*np.std(dF_mag_HPF),linestyle="--",color="k")
+plt.grid()
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF,HPF_MR,"-b")
+
+for i in np.arange(0,len(dF_mag_HPF)):
+    if abs(dF_mag_HPF[i]) >= np.mean(dF_mag_HPF)+2*np.std(dF_mag_HPF):
+        plt.plot(Time_mag_HPF[i],MR_HPF[i],"or")
+
+plt.grid()
+plt.show()
 
 LSSTipMys = np.array(OF_vars.variables["LSSTipMys"][Tstart_idx:-1])
 LSSTipMzs = np.array(OF_vars.variables["LSSTipMzs"][Tstart_idx:-1])
@@ -274,17 +337,11 @@ with Pool() as pool:
 
 I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
 
-#Filtering I
-LPF_3_I = low_pass_filter(I,1.5,dt)
-
-HPF_I = np.subtract(I,LPF_3_I)
-HPF_I = np.array(low_pass_filter(HPF_I,40,dt))
-
 I_75 = np.sqrt(np.add(np.square(Iy_75),np.square(Iz_75)))
 
 #analysis options
 High_frequency_analysis = False
-planar_asymmetry_analysis = True
+planar_asymmetry_analysis = False
 
 
 if planar_asymmetry_analysis == True:
@@ -313,11 +370,22 @@ if planar_asymmetry_analysis == True:
             IyP = IyP[:-Time_shift_idx]
             IzP = IzP[:-Time_shift_idx]
             IP = IP[:-Time_shift_idx]
-            
+
 
         #Filtering I
-        LPF_3_IP = low_pass_filter(IP,1.5,dt)
+        LPF_1_I = low_pass_filter(I,0.3,dt)
+        LPF_2_I = low_pass_filter(I,0.9,dt)
+        LPF_3_I = low_pass_filter(I,1.5,dt)
+        BPF_I = np.subtract(LPF_2_I,LPF_1_I)
+        HPF_I = np.subtract(I,LPF_3_I)
+        HPF_I = np.array(low_pass_filter(HPF_I,40,dt))
 
+
+        #Filtering I
+        LPF_1_IP = low_pass_filter(IP,0.3,dt)
+        LPF_2_IP = low_pass_filter(IP,0.9,dt)
+        LPF_3_IP = low_pass_filter(IP,1.5,dt)
+        BPF_IP = np.subtract(LPF_2_IP,LPF_1_IP)
         HPF_IP = np.subtract(IP,LPF_3_IP)
         HPF_IP = np.array(low_pass_filter(HPF_IP,40,dt))
 
@@ -325,6 +393,9 @@ if planar_asymmetry_analysis == True:
         out_dir=in_dir+"High_frequency_analysis/planar_blade_asymmetry/"
 
         plt.rcParams.update({'font.size': 18})
+
+        print("{} IyP {}".format(offset,moments(IyP)))
+        print("{} Iy {}".format(offset,moments(Iy)))
 
         cc = round(correlation_coef(IyP,Iy),2)
         fig = plt.figure(figsize=(14,8))
@@ -352,6 +423,9 @@ if planar_asymmetry_analysis == True:
         plt.savefig(out_dir+"spectra_Iy_{}.png".format(offset))
         plt.close()
 
+        print("{} IzP {}".format(offset,moments(IzP)))
+        print("{} Iz {}".format(offset,moments(Iz)))
+
         cc = round(correlation_coef(IzP,Iz),2)
         fig = plt.figure(figsize=(14,8))
         plt.plot(Time,IzP,"-r",label="Blade asymmetry\nfrom planar data")
@@ -378,6 +452,10 @@ if planar_asymmetry_analysis == True:
         plt.savefig(out_dir+"spectra_Iz_{}.png".format(offset))
         plt.close()
 
+
+        print("{} IP {}".format(offset,moments(IP)))
+        print("{} I {}".format(offset,moments(I)))
+
         cc = round(correlation_coef(IP,I),2)
         fig = plt.figure(figsize=(14,8))
         plt.plot(Time,IP,"-r",label="Blade asymmetry\nfrom planar data")
@@ -391,6 +469,42 @@ if planar_asymmetry_analysis == True:
         plt.savefig(out_dir+"I_{}.png".format(offset))
         plt.close()
 
+        print("{} LPF IP {}".format(offset,moments(LPF_1_IP)))
+        print("{} LPF I {}".format(offset,moments(LPF_1_I)))
+
+        cc = round(correlation_coef(LPF_1_IP,LPF_1_I),2)
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,LPF_1_IP,"-r",label="LPF 0.3Hz Blade asymmetry\nfrom planar data")
+        plt.plot(Time,LPF_1_I,"-b",label="LPF 0.3Hz Blade asymmetry\nfrom actuator data")
+        plt.xlabel("Time [s]")
+        plt.ylabel("LPF 0.3Hz Magnitude Asymmetry [$m^2/s$]")
+        plt.title("correlation coefficient = {}".format(cc))
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"LPF_I_{}.png".format(offset))
+        plt.close()
+                
+        print("{} BPF IP {}".format(offset,moments(BPF_IP)))
+        print("{} BPF I {}".format(offset,moments(BPF_I)))
+
+        cc = round(correlation_coef(BPF_IP,BPF_I),2)
+        fig = plt.figure(figsize=(14,8))
+        plt.plot(Time,BPF_IP,"-r",label="BPF 0.3-0.9Hz Blade asymmetry\nfrom planar data")
+        plt.plot(Time,BPF_I,"-b",label="BPF 0.3-0.9Hz Blade asymmetry\nfrom actuator data")
+        plt.xlabel("Time [s]")
+        plt.ylabel("BPF 0.3-0.9Hz Magnitude Asymmetry [$m^2/s$]")
+        plt.title("correlation coefficient = {}".format(cc))
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(out_dir+"BPF_I_{}.png".format(offset))
+        plt.close()
+
+
+        print("{} HPF IP {}".format(offset,moments(HPF_IP)))
+        print("{} HPF I {}".format(offset,moments(HPF_I)))
+        
         cc = round(correlation_coef(HPF_IP,HPF_I),2)
         fig = plt.figure(figsize=(14,8))
         plt.plot(Time,HPF_IP,"-r",label="HPF 1.5Hz Blade asymmetry\nfrom planar data")
