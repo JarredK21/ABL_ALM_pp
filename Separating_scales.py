@@ -241,12 +241,6 @@ FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
 
 FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
 
-remainder = np.subtract(FBR,MR)
-
-fig = plt.figure()
-plt.plot(Time_OF,remainder)
-plt.show()
-
 
 frq,PSD = temporal_spectra(FBR,dt,Var="FBR")
 
@@ -339,8 +333,137 @@ LPF_3_FBR = low_pass_filter(FBR,1.5,dt)
 HPF_FBR = np.subtract(FBR,LPF_3_FBR)
 HPF_FBR = np.array(low_pass_filter(HPF_FBR,40,dt))
 BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
+HPF_2_FBR = np.subtract(FBR,LPF_1_FBR)
+HPF_2_FBR = np.array(low_pass_filter(HPF_2_FBR,40,dt))
+dHPF_2_FBR = np.array(dt_calc(HPF_2_FBR,dt))
+
+FBR_2 = np.array(low_pass_filter(FBR,40,dt))
+dFBR = np.array(dt_calc(FBR_2,dt))
 dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
 dHPF_FBR = np.array(dt_calc(HPF_FBR,dt))
+
+zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(BPF_FBR)))[0]
+#FBR calc
+i = 200
+dF_mag = []
+FBR_mag = []
+Time_mag = []
+for i in np.arange(0,len(zero_crossings_index_BPF_FBR)-1):
+
+    idx1 = zero_crossings_index_BPF_FBR[i]
+    idx2 = zero_crossings_index_BPF_FBR[i+1]
+    idx_i=idx1
+    idx_min = np.argmin(FBR[idx1:idx2]); idx_max = np.argmax(FBR[idx1:idx2])
+        
+    Time_mag.append(Time_OF[idx_min+idx_i]); Time_mag.append(Time_OF[idx_max+idx_i])
+
+    dF_mag.append(BPF_FBR[idx_max+idx_i] - BPF_FBR[idx_min+idx_i])
+
+    FBR_mag.append(FBR_2[idx_min+idx_i]); FBR_mag.append(FBR_2[idx_max+idx_i])
+
+    i+=1.85
+
+fig = plt.figure()
+plt.plot(Time_OF,FBR_2)
+plt.scatter(Time_mag,FBR_mag)
+plt.show()
+
+#BPF calc
+zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+
+dF_mag_BPF = []
+FBR_mag_BPF = []
+Time_mag_BPF = []
+for i in np.arange(0,len(zero_crossings_index_BPF_FBR)-1):
+
+    it_1 = zero_crossings_index_BPF_FBR[i]
+    it_2 = zero_crossings_index_BPF_FBR[i+1]
+
+    Time_mag_BPF.append(Time_OF[it_1])
+
+    dF_mag_BPF.append(BPF_FBR[it_2] - BPF_FBR[it_1])
+
+    FBR_mag_BPF.append(FBR_2[it_1])
+
+
+#HPF calc
+zero_crossings_index_HPF_FBR = np.where(np.diff(np.sign(dHPF_FBR)))[0]
+
+dF_mag_HPF = []
+FBR_mag_HPF = []
+Time_mag_HPF = []
+for i in np.arange(0,len(zero_crossings_index_HPF_FBR)-1):
+
+    it_1 = zero_crossings_index_HPF_FBR[i]
+    it_2 = zero_crossings_index_HPF_FBR[i+1]
+
+    Time_mag_HPF.append(Time_OF[it_1])
+
+    dF_mag_HPF.append(HPF_FBR[it_2] - HPF_FBR[it_1])
+
+    FBR_mag_HPF.append(FBR_2[it_1])
+
+
+#HPF 2 calc
+zero_crossings_index_HPF_2_FBR = np.where(np.diff(np.sign(dHPF_2_FBR)))[0]
+
+dF_mag_HPF_2 = []
+FBR_mag_HPF_2 = []
+Time_mag_HPF_2 = []
+for i in np.arange(0,len(zero_crossings_index_HPF_2_FBR)-1):
+
+    it_1 = zero_crossings_index_HPF_2_FBR[i]
+    it_2 = zero_crossings_index_HPF_2_FBR[i+1]
+
+    Time_mag_HPF_2.append(Time_OF[it_1])
+
+    dF_mag_HPF_2.append(HPF_2_FBR[it_2] - HPF_2_FBR[it_1])
+
+    FBR_mag_HPF_2.append(FBR_2[it_1])
+
+
+out_dir=in_dir+"peak_peak_analysis/"
+plt.rcParams.update({'font.size': 18})
+
+fig = plt.figure(figsize=(14,8))
+plt.scatter(FBR_mag,dF_mag)
+plt.xlabel("Initial $F_{B_R}$ [kN]")
+plt.ylabel("$dF$ [kN]")
+plt.title("Total $F_{B_R}$")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_dF_F.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+plt.scatter(FBR_mag_BPF,dF_mag_BPF)
+plt.xlabel("Initial $F_{B_R}$ [kN]")
+plt.ylabel("$dF$ [kN]")
+plt.title("BPF 0.3-0.9Hz $F_{B_R}$")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_dF_F_BPF.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+plt.scatter(FBR_mag_HPF,dF_mag_HPF)
+plt.xlabel("Initial $F_{B_R}$ [kN]")
+plt.ylabel("$dF$ [kN]")
+plt.title("HPF 1.5Hz $F_{B_R}$")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_dF_F_HPF.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+plt.scatter(FBR_mag_HPF_2,dF_mag_HPF_2)
+plt.xlabel("Initial $F_{B_R}$ [kN]")
+plt.ylabel("$dF$ [kN]")
+plt.title("HPF 0.3Hz $F_{B_R}$")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_dF_F_HPF_2.png")
+plt.close()
 
 #local variance calc
 local_var_LPF = []

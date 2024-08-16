@@ -172,14 +172,14 @@ I_3_LPF = low_pass_filter(I_3,0.3,dt_sampling)
 
 a = Dataset(in_dir+"Dataset.nc")
 
-Time_OF = np.array(a.variables["Time_OF"][Tstart_idx:-1])
+Time_OF = np.array(a.variables["Time_OF"][Tstart_idx:T_end_idx])
 
 OF_vars = a.groups["OpenFAST_Variables"]
 
-Azimuth = np.radians(np.array(OF_vars.variables["Azimuth"][Tstart_idx:-1]))
+Azimuth = np.radians(np.array(OF_vars.variables["Azimuth"][Tstart_idx:T_end_idx]))
 
-RtAeroFyh = np.array(OF_vars.variables["RtAeroFyh"][Tstart_idx:-1])/1000
-RtAeroFzh = np.array(OF_vars.variables["RtAeroFzh"][Tstart_idx:-1])/1000
+RtAeroFyh = np.array(OF_vars.variables["RtAeroFyh"][Tstart_idx:T_end_idx])/1000
+RtAeroFzh = np.array(OF_vars.variables["RtAeroFzh"][Tstart_idx:T_end_idx])/1000
 
 RtAeroFys = []; RtAeroFzs = []
 for i in np.arange(0,len(Time_OF)):
@@ -188,8 +188,8 @@ for i in np.arange(0,len(Time_OF)):
 RtAeroFys = np.array(RtAeroFys); RtAeroFzs = np.array(RtAeroFzs)
 
 
-RtAeroMyh = np.array(OF_vars.variables["RtAeroMyh"][Tstart_idx:-1])/1000
-RtAeroMzh = np.array(OF_vars.variables["RtAeroMzh"][Tstart_idx:-1])/1000
+RtAeroMyh = np.array(OF_vars.variables["RtAeroMyh"][Tstart_idx:T_end_idx])/1000
+RtAeroMzh = np.array(OF_vars.variables["RtAeroMzh"][Tstart_idx:T_end_idx])/1000
 
 RtAeroMys = []; RtAeroMzs = []
 for i in np.arange(0,len(Time_OF)):
@@ -209,40 +209,10 @@ dHPF_MR = dt_calc(HPF_MR,dt)
 zero_crossings_index_HPF_MR = np.where(np.diff(np.sign(dHPF_MR)))[0]
 Time_zero_crossings_HPF_MR = Time_OF[zero_crossings_index_HPF_MR]
 
-#HPF calc
-dF_mag_HPF = []
-Time_mag_HPF = []
-MR_HPF = []
-for i in np.arange(0,len(zero_crossings_index_HPF_MR)-1):
 
-    it_1 = zero_crossings_index_HPF_MR[i]
-    it_2 = zero_crossings_index_HPF_MR[i+1]
 
-    Time_mag_HPF.append(Time_OF[it_1])
-
-    MR_HPF.append(HPF_MR[it_1])
-
-    dF_mag_HPF.append(HPF_MR[it_2] - HPF_MR[it_1])
-
-P,X = probability_dist(dF_mag_HPF)
-fig = plt.figure()
-plt.plot(X,P)
-plt.axvline(x=np.mean(dF_mag_HPF)+2*np.std(dF_mag_HPF),linestyle="--",color="k")
-plt.axvline(x=np.mean(dF_mag_HPF)-2*np.std(dF_mag_HPF),linestyle="--",color="k")
-plt.grid()
-
-fig = plt.figure(figsize=(14,8))
-plt.plot(Time_OF,HPF_MR,"-b")
-
-for i in np.arange(0,len(dF_mag_HPF)):
-    if abs(dF_mag_HPF[i]) >= np.mean(dF_mag_HPF)+2*np.std(dF_mag_HPF):
-        plt.plot(Time_mag_HPF[i],MR_HPF[i],"or")
-
-plt.grid()
-plt.show()
-
-LSSTipMys = np.array(OF_vars.variables["LSSTipMys"][Tstart_idx:-1])
-LSSTipMzs = np.array(OF_vars.variables["LSSTipMzs"][Tstart_idx:-1])
+LSSTipMys = np.array(OF_vars.variables["LSSTipMys"][Tstart_idx:T_end_idx])
+LSSTipMzs = np.array(OF_vars.variables["LSSTipMzs"][Tstart_idx:T_end_idx])
 LSSTipMR = np.sqrt( np.add(np.square(LSSTipMys), np.square(LSSTipMzs)) )
 
 #Total radial aerodynamic bearing force aeroFBR
@@ -319,7 +289,11 @@ def actuator_asymmetry_calc(it):
     IzB3_75 = IzB3[225]
     IzB3 = np.sum(IzB3)
 
-    return IyB1+IyB2+IyB3, IzB1+IzB2+IzB3, IyB1_75+IyB2_75+IyB3_75, IzB1_75+IzB2_75+IzB3_75
+    IB1 = np.sqrt(np.add(np.square(IyB1),np.square(IzB1)))
+    IB2 = np.sqrt(np.add(np.square(IyB2),np.square(IzB2)))
+    IB3 = np.sqrt(np.add(np.square(IyB3),np.square(IzB3)))
+
+    return IyB1+IyB2+IyB3, IzB1+IzB2+IzB3, IyB1_75+IyB2_75+IyB3_75, IzB1_75+IzB2_75+IzB3_75,IB1,IB2,IB3
 
 
 dA = 0.3125*0.3125
@@ -327,10 +301,13 @@ Iy = []
 Iz = []
 Iy_75 = []
 Iz_75 = []
+IB1_arr = []
+IB2_arr = []
+IB3_arr = []
 ix=0
 with Pool() as pool:
-    for Iy_it, Iz_it, Iy_75_it, Iz_it_75 in pool.imap(actuator_asymmetry_calc,np.arange(0,len(Time))):
-        Iy.append(Iy_it); Iz.append(Iz_it); Iy_75.append(Iy_75_it); Iz_75.append(Iz_it_75)
+    for Iy_it, Iz_it, Iy_75_it, Iz_it_75,IB1_it,IB2_it,IB3_it in pool.imap(actuator_asymmetry_calc,np.arange(0,len(Time))):
+        Iy.append(Iy_it); Iz.append(Iz_it); Iy_75.append(Iy_75_it); Iz_75.append(Iz_it_75); IB1_arr.append(IB1_it); IB2_arr.append(IB2_it); IB3_arr.append(IB3_it)
         print(ix)
         ix+=1
 
@@ -342,6 +319,72 @@ I_75 = np.sqrt(np.add(np.square(Iy_75),np.square(Iz_75)))
 #analysis options
 High_frequency_analysis = False
 planar_asymmetry_analysis = False
+
+
+#HPF calc
+dF_mag_HPF = []
+Time_mag_HPF = []
+MR_HPF = []
+IB1_HPF = []
+IB2_HPF = []
+IB3_HPF = []
+for i in np.arange(0,len(zero_crossings_index_HPF_MR)-1):
+
+    it_1 = zero_crossings_index_HPF_MR[i]
+    it_2 = zero_crossings_index_HPF_MR[i+1]
+
+    Time_mag_HPF.append(Time_OF[it_1])
+
+    MR_HPF.append(HPF_MR[it_1])
+
+    dF_mag_HPF.append(HPF_MR[it_2] - HPF_MR[it_1])
+
+    IB1_HPF.append(IB1_arr[it_1]); IB2_HPF.append(IB2_arr[it_1]); IB3_HPF.append(IB3_arr[it_1])
+
+
+# P,X = probability_dist(dF_mag_HPF)
+# fig = plt.figure()
+# plt.plot(X,P)
+# plt.axvline(x=np.mean(dF_mag_HPF)+2*np.std(dF_mag_HPF),linestyle="--",color="k")
+# plt.axvline(x=np.mean(dF_mag_HPF)-2*np.std(dF_mag_HPF),linestyle="--",color="k")
+# plt.grid()
+
+fig,ax1 = plt.subplots(figsize=(14,8),sharex=True)
+ax1.plot(Time_OF,IB1_arr,"-b")
+ax1_2 = ax1.twinx()
+ax1_2.plot(Time_OF,HPF_MR,"-r")
+ax1.set_title("IB1")
+
+for i in np.arange(0,len(dF_mag_HPF)):
+    if abs(dF_mag_HPF[i]) >= np.mean(dF_mag_HPF)+2*np.std(dF_mag_HPF):
+        ax1.plot(Time_mag_HPF[i],IB1_HPF[i],"or"); ax1_2.plot(Time_mag_HPF[i],MR_HPF[i],"ob")
+
+ax1.grid()
+
+fig,ax2 = plt.subplots(figsize=(14,8),sharex=True)
+ax2.plot(Time_OF,IB2_arr,"-b")
+ax2_2 = ax2.twinx()
+ax2_2.plot(Time_OF,HPF_MR,"-r")
+ax2.set_title("IB2")
+
+for i in np.arange(0,len(dF_mag_HPF)):
+    if abs(dF_mag_HPF[i]) >= np.mean(dF_mag_HPF)+2*np.std(dF_mag_HPF):
+        ax2.plot(Time_mag_HPF[i],IB2_HPF[i],"or"); ax2_2.plot(Time_mag_HPF[i],MR_HPF[i],"ob")
+
+ax2.grid()
+
+fig,ax3 = plt.subplots(figsize=(14,8),sharex=True)
+ax3.plot(Time_OF,IB3_arr,"-b")
+ax3_2 = ax3.twinx()
+ax3_2.plot(Time_OF,HPF_MR,"-r")
+ax3.set_title("IB3")
+
+for i in np.arange(0,len(dF_mag_HPF)):
+    if abs(dF_mag_HPF[i]) >= np.mean(dF_mag_HPF)+2*np.std(dF_mag_HPF):
+        ax3.plot(Time_mag_HPF[i],IB3_HPF[i],"or"); ax3_2.plot(Time_mag_HPF[i],MR_HPF[i],"ob")
+
+ax3.grid()
+plt.show()
 
 
 if planar_asymmetry_analysis == True:

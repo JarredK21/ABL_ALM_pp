@@ -162,7 +162,7 @@ for plane in planes:
 
         #plotting option
         fluc_vel = True
-        plot_contours = True
+        plot_contours = False
         plot_u = False; plot_v = False; plot_w = False; plot_hvelmag = True
         velocity_plot = [plot_u,plot_v,plot_w,plot_hvelmag]
 
@@ -229,7 +229,7 @@ for plane in planes:
             print(plane_labels[ip],velocity_comps[iv],offset,time.time()-start_time)
 
             if fluc_vel == True:
-                folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}_contour_2/".format(plane_labels[ip],velocity_comp,offset)
+                folder = out_dir+"{0}_Plane_Fluctutating_{1}_{2}_16_08/".format(plane_labels[ip],velocity_comp,offset)
             else:
                 folder = out_dir+"{0}_Plane_Total_{1}_{2}/".format(plane_labels[ip],velocity_comp,offset)
 
@@ -396,9 +396,9 @@ for plane in planes:
                     if precursor == False and plane == "r":
                         YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
 
-                        plt.plot(YB1,ZB1,color="k",linewidth = 0.5)
-                        plt.plot(YB2,ZB2,color="k",linewidth = 0.5)
-                        plt.plot(YB3,ZB3,color="k",linewidth = 0.5)  
+                        plt.plot(YB1,ZB1,color="k",linewidth = 1,label="blade 1")
+                        plt.plot(YB2,ZB2,color="r",linewidth = 1,label="blade 2")
+                        plt.plot(YB3,ZB3,color="b",linewidth = 1,label="blade 3")  
 
                     #define titles and filenames for movie
                     if fluc_vel == True:

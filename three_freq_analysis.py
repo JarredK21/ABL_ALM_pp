@@ -559,6 +559,8 @@ FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
 FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
 
 
+
+
 frq,PSD = temporal_spectra(FBR,dt,Var="FBR")
 
 # out_dir=in_dir+"peak_peak_analysis/"
@@ -652,6 +654,21 @@ HPF_FBR = np.array(low_pass_filter(HPF_FBR,40,dt))
 BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
 dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
 dHPF_FBR = np.array(dt_calc(HPF_FBR,dt))
+
+
+# idx1 = np.searchsorted(Time_OF,210);idx2 = np.searchsorted(Time_OF,230)
+# plt.rcParams['font.size'] = 16
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time_OF[idx1:idx2],FBR[idx1:idx2],"-k",label="Total $F_{B_R}$")
+# plt.plot(Time_OF[idx1:idx2],LPF_1_FBR[idx1:idx2],"-g",label="LPF 0.3Hz $F_{B_R}$")
+# plt.plot(Time_OF[idx1:idx2],HPF_FBR[idx1:idx2]-600,"-b",label="HPF 1.5Hz $F_{B_R}$\noffset: -600kN")
+# plt.plot(Time_OF[idx1:idx2],BPF_FBR[idx1:idx2],"-r",label="BPF 0.3-0.9Hz $F_{B_R}$")
+# plt.xlabel("Time [s]")
+# plt.ylabel("Magnitude Main Bearing force vector [kN]")
+# plt.legend(loc="upper right")
+# plt.grid()
+# plt.tight_layout()
+# plt.show()
 
 #local variance calc
 local_var_LPF = []
