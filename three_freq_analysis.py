@@ -181,7 +181,7 @@ peak_to_peak_directional_analysis = False
 peak_to_peak_weighted_analysis = False
 dF_dt_analysis = False
 dtheta_dt_analysis = False
-dF_F_analysis = True
+dF_F_analysis = False
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
@@ -230,6 +230,7 @@ LSShftFzs = np.array(OpenFAST_vars.variables["LSShftFzs"][Time_start_idx:])
 
 #Asymmetry
 Time_sampling = np.array(df_OF.variables["Time_sampling"])
+dt_sampling = Time_sampling[1] - Time_sampling[0]
 Time_start = 200
 Time_sampling_start_idx = np.searchsorted(Time_sampling,Time_start)
 
@@ -241,20 +242,726 @@ Iy = np.array(Rotor_avg_vars_63.variables["Iy"][Time_sampling_start_idx:])
 Iz = np.array(Rotor_avg_vars_63.variables["Iz"][Time_sampling_start_idx:])
 I = np.sqrt(np.add(np.square(Iy),np.square(Iz)))
 
+IA = np.array(Rotor_avg_vars_63.variables["IA"][Time_sampling_start_idx:])
+LPF_IA = low_pass_filter(IA,0.3,dt_sampling)
+
 
 #OOPBM
 OOPBM = np.sqrt(np.add(np.square(RtAeroMys),np.square(RtAeroMzs)))
 
 #Filtering FBR aero
+LPF_OOPBM = low_pass_filter(OOPBM,0.1,dt)
 LPF_1_OOPBM = low_pass_filter(OOPBM,0.3,dt)
 LPF_2_OOPBM = low_pass_filter(OOPBM,0.9,dt)
 LPF_3_OOPBM = low_pass_filter(OOPBM,1.5,dt)
 
+# f = interpolate.interp1d(Time_OF,LPF_1_OOPBM)
+# LPF_1_OOPBM_interp = f(Time_sampling)
+
+# Time_shift_idx = np.searchsorted(Time_sampling,Time_sampling[0]+4.6)
+
+# out_dir=in_dir+"three_frequency_analysis/OOPBM_analysis/"
+# plt.rcParams['font.size'] = 16
+# cc = round(correlation_coef(LPF_1_OOPBM_interp[Time_shift_idx:],LPF_IA[:-Time_shift_idx]),2)
+# fig,ax = plt.subplots(figsize=(14,8))
+# ax.plot(Time_OF[:-Time_shift_idx],LPF_1_OOPBM[Time_shift_idx:],"-r")
+# ax.set_ylabel("LPF Out-of-plane bending moment magnitude [kN-m]")
+# ax.grid()
+# ax2=ax.twinx()
+# ax2.plot(Time_sampling[:-Time_shift_idx],LPF_IA[:-Time_shift_idx],"-b")
+# ax2.set_ylabel("LPF Asymmetry Parameter [$m^4/s$]")
+# fig.supxlabel("Time [s]")
+# fig.suptitle("correlation coefficient = {}".format(cc))
+# plt.tight_layout()
+# plt.savefig(out_dir+"cc_LPF_IA_OOPBM.png")
+# plt.close()
+
+
 HPF_OOPBM = np.subtract(OOPBM,LPF_3_OOPBM)
 HPF_OOPBM = np.array(low_pass_filter(HPF_OOPBM,40,dt))
 BPF_OOPBM = np.subtract(LPF_2_OOPBM,LPF_1_OOPBM)
+dLPF_OOPBM = np.array(dt_calc(LPF_OOPBM,dt))
 dBPF_OOPBM = np.array(dt_calc(BPF_OOPBM,dt))
 dHPF_OOPBM = np.array(dt_calc(HPF_OOPBM,dt))
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+fig = plt.figure(figsize=(14,8))
+plt.yscale("log")
+P,X=probability_dist(OOPBM)
+plt.plot(X,P,"-k",label="Total")
+P,X=probability_dist(LPF_1_OOPBM)
+plt.plot(X,P,"-g",label="LPF")
+P,X=probability_dist(BPF_OOPBM)
+plt.plot(X,P,"-r",label="BPF")
+P,X=probability_dist(HPF_OOPBM)
+plt.plot(X,P,"-b",label="HPF")
+plt.xlabel("Out-of-plane bending moment magntiude [kN-m]")
+plt.ylabel("log() Probability [-]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"PDF_MR.png")
+plt.close()
+
+#Total radial aerodynamic bearing force aeroFBR
+L1 = 1.912; L2 = 2.09
+
+FBMy = RtAeroMzs/L2; FBFy = -RtAeroFys*((L1+L2)/L2)
+FBMz = -RtAeroMys/L2; FBFz = -RtAeroFzs*((L1+L2)/L2)
+
+FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
+
+
+FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
+
+
+
+LPF_1_FBR = low_pass_filter(FBR,0.3,dt)
+LPF_2_FBR = low_pass_filter(FBR,0.9,dt)
+LPF_3_FBR = low_pass_filter(FBR,1.5,dt)
+HPF_FBR = np.subtract(FBR,LPF_3_FBR)
+HPF_FBR = np.array(low_pass_filter(HPF_FBR,40,dt))
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+f = interpolate.interp1d(Time_OF,LPF_1_FBR)
+abs_HPF_FBR = abs(HPF_FBR)
+ccs = []
+windows = [7]
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,LPF_1_FBR,"-g")
+ax.axhline(y=np.mean(LPF_1_FBR)+2*np.std(LPF_1_FBR),linestyle="--",color="g")
+ax.set_ylabel("LPF Bearing force [kN]")
+ax2=ax.twinx()
+addition = 0
+for window in windows:
+    window_idx = np.searchsorted(Time_OF,Time_OF[0]+window)
+    if (window_idx % 2) != 0:
+        window_idx+=1
+    avg_HPF_FBR = []
+    for i in np.arange(0,len(Time_OF)-window_idx):
+        avg_HPF_FBR.append(np.average(abs_HPF_FBR[i:i+window_idx]))
+
+    LPF_1_FBR_interp = f(Time_OF[int(window_idx/2):-int(window_idx/2)])
+    cc = round(correlation_coef(LPF_1_FBR_interp,avg_HPF_FBR),2)
+    ccs.append(cc)
+    addition += 100
+avg_HPF_FBR_LPF = low_pass_filter(avg_HPF_FBR,0.3,dt)
+cc = round(correlation_coef(LPF_1_FBR_interp,avg_HPF_FBR_LPF),2)
+ax2.plot(Time_OF[int(window_idx/2):-int(window_idx/2)],avg_HPF_FBR_LPF,"-b")
+ax2.axhline(y=np.mean(avg_HPF_FBR)+2*np.std(avg_HPF_FBR),linestyle="--",color="b")
+ax2.set_ylabel("LPF Averaged over T=7s, absolute HPF Bearing force [kN]")
+fig.supxlabel("Time [s]")
+fig.suptitle("correlation coefficient = {}".format(cc))
+ax.grid()
+#plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"avg_HPF_LPF_FB.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+plt.yscale("log")
+P,X = probability_dist(LPF_1_FBR)
+plt.plot(X,P,"-g",label="LPF")
+P,X = probability_dist(avg_HPF_FBR)
+plt.plot(X,P,"-b",label="Avg abs HPF")
+plt.xlabel("Bearing force [kN]")
+plt.ylabel("log() probability [-]")
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"PDF_avg_HPF_LPF_FB.png")
+plt.close()
+
+
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(windows,ccs)
+# plt.xlabel("Window size [s]")
+# plt.ylabel("correlation coefficient (LPF $F_B$,avg(|$F_{B,HPF}$|)")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"cc_window_LPF_HPF_FB.png")
+# plt.close()
+
+
+
+
+
+BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
+
+FBR = low_pass_filter(FBR,40,dt)
+dFBR = np.array(dt_calc(FBR,dt))
+dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
+dHPF_FBR = np.array(dt_calc(HPF_FBR,dt))
+
+zero_crossings_index_FBR = np.where(np.diff(np.sign(dFBR)))[0]
+
+#FBR calc
+dF_mag = []
+dt_mag = []
+FBR_p = []
+Time_mag = []
+dF_mag_LPF = []
+for i in np.arange(0,len(zero_crossings_index_FBR)-1):
+
+    it_1 = zero_crossings_index_FBR[i]
+    it_2 = zero_crossings_index_FBR[i+1]
+
+    Time_mag.append(Time_OF[it_1])
+
+    dt_mag.append(Time_OF[it_2]-Time_OF[it_1])
+
+    FBR_p.append(FBR[it_1])
+
+    dF_mag.append(abs(FBR[it_2] - FBR[it_1]))
+
+    dF_mag_LPF.append(abs(LPF_2_FBR[it_2] - LPF_2_FBR[it_1]))
+
+
+dF_diff = np.subtract(dF_mag,dF_mag_LPF)
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_mag,dF_diff,"-k")
+plt.xlabel("Time [s]")
+plt.ylabel("Difference in $dF$ between BPF (inc LPF) and Total signal [kN]")
+plt.grid()
+plt.savefig(out_dir+"dF_diff.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+P,X = probability_dist(dF_diff)
+plt.plot(X,P,"-k")
+plt.xlabel("Difference in $dF$ between BPF (inc LPF) and Total signal [kN]")
+plt.ylabel("Probability [-]")
+plt.grid()
+plt.savefig(out_dir+"PDF_dF_diff.png")
+plt.close()
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FB_dF_all_times/"
+times = np.arange(200,1220,20)
+for j in np.arange(0,len(times)-1):
+    it_1 = np.searchsorted(Time_OF,times[j])
+    it_2 = np.searchsorted(Time_OF,times[j+1])
+
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time_OF[it_1:it_2],FBR[it_1:it_2],"-k")
+    plt.plot(Time_OF[it_1:it_2],LPF_2_FBR[it_1:it_2],"-r")
+    for i in np.arange(0,len(dF_mag)):
+        if dF_mag[i] >= 2*np.std(dF_mag) and Time_OF[it_1] <=Time_mag[i] <= Time_OF[it_2]:
+            plt.plot(Time_mag[i],FBR_p[i],"oy")
+    plt.grid()
+    plt.xlabel("Time [s]")
+    plt.ylabel("Bearing force magnitude [kN]")
+    plt.tight_layout()
+    plt.savefig(out_dir+"{}_{}.png".format(times[j],times[j+1]))
+    plt.close()
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8))
+ax1.scatter(Time_mag,dF_mag,s=1,color="b")
+ax1.grid()
+ax3=ax1.twiny()
+P,X = probability_dist(dF_mag)
+ax3.plot(P,X,"-k")
+ax3.axvline(x=0.0,color="k")
+ax1.set_title("$dF$ $F_B$ [kN]")
+ax2.scatter(Time_mag,dt_mag,s=1,color="b")
+ax2.grid()
+ax4=ax2.twiny()
+P,X = probability_dist(dt_mag)
+ax4.plot(P,X,"-k")
+ax4.axvline(x=0.0,color="k")
+ax2.set_title("$dt$ $F_B$ [s]")
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"dF_dt_FBR.png")
+plt.close()
+
+print("dF_mag",moments(dF_mag))
+print("dt mag",moments(dt_mag))
+
+
+dF_mag_threshold = []
+dt_mag_threshold = []
+time_mag_threshold = []
+for i in np.arange(0,len(dF_mag)):
+    if dF_mag[i] >= 2*np.std(dF_mag):
+        dF_mag_threshold.append(dF_mag[i]); dt_mag_threshold.append(dt_mag[i]);time_mag_threshold.append(Time_mag[i])
+fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8))
+ax1.scatter(time_mag_threshold,dF_mag_threshold,s=2,color="b")
+ax1.grid()
+ax3=ax1.twiny()
+P,X = probability_dist(dF_mag_threshold)
+ax3.plot(P,X,"-k")
+ax3.axvline(x=0.0,color="k")
+ax1.set_title("$dF$ $F_B$ threshold on $2\sigma$ [kN]")
+ax2.scatter(time_mag_threshold,dt_mag_threshold,s=2,color="b")
+ax2.grid()
+ax4=ax2.twiny()
+P,X = probability_dist(dt_mag_threshold)
+ax4.plot(P,X,"-k")
+ax4.axvline(x=0.0,color="k")
+ax2.set_title("$dt$ $F_B$ threshold on $2\sigma$ [s]")
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"dF_dt_FBR_threshold.png")
+plt.close()
+
+print("dF threshold",moments(dF_mag_threshold))
+print("dt threshold",moments(dt_mag_threshold))
+
+
+zero_crossings_index_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+#FBR BPF calc
+dF_mag = []
+dt_mag = []
+FBR_p = []
+Time_mag = []
+for i in np.arange(0,len(zero_crossings_index_FBR)-1):
+
+    it_1 = zero_crossings_index_FBR[i]
+    it_2 = zero_crossings_index_FBR[i+1]
+
+    Time_mag.append(Time_OF[it_1])
+
+    dt_mag.append(Time_OF[it_2]-Time_OF[it_1])
+
+    FBR_p.append(FBR[it_1])
+
+    dF_mag.append(abs(FBR[it_2] - FBR[it_1]))
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8))
+ax1.scatter(Time_mag,dF_mag,s=1,color="b")
+ax1.grid()
+ax3=ax1.twiny()
+P,X = probability_dist(dF_mag)
+ax3.plot(P,X,"-k")
+ax3.axvline(x=0.0,color="k")
+ax1.set_title("BPF $dF$ $F_B$ [kN]")
+ax2.scatter(Time_mag,dt_mag,s=1,color="b")
+ax2.grid()
+ax4=ax2.twiny()
+P,X = probability_dist(dt_mag)
+ax4.plot(P,X,"-k")
+ax4.axvline(x=0.0,color="k")
+ax2.set_title("BPF $dt$ $F_B$ [s]")
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"BPF_dF_dt_FBR.png")
+plt.close()
+
+print("BPF dF_mag",moments(dF_mag))
+print("BPF dt mag",moments(dt_mag))
+
+
+dF_mag_threshold = []
+dt_mag_threshold = []
+time_mag_threshold = []
+for i in np.arange(0,len(dF_mag)):
+    if dF_mag[i] >= 2*np.std(dF_mag):
+        dF_mag_threshold.append(dF_mag[i]); dt_mag_threshold.append(dt_mag[i]);time_mag_threshold.append(Time_mag[i])
+fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8))
+ax1.scatter(time_mag_threshold,dF_mag_threshold,s=2,color="b")
+ax1.grid()
+ax3=ax1.twiny()
+P,X = probability_dist(dF_mag_threshold)
+ax3.plot(P,X,"-k")
+ax3.axvline(x=0.0,color="k")
+ax1.set_title("BPF $dF$ $F_B$ threshold on $2\sigma$ [kN]")
+ax2.scatter(time_mag_threshold,dt_mag_threshold,s=2,color="b")
+ax2.grid()
+ax4=ax2.twiny()
+P,X = probability_dist(dt_mag_threshold)
+ax4.plot(P,X,"-k")
+ax4.axvline(x=0.0,color="k")
+ax2.set_title("BPF $dt$ $F_B$ threshold on $2\sigma$ [s]")
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"BPF_dF_dt_FBR_threshold.png")
+plt.close()
+
+print("BPF dF threshold",moments(dF_mag_threshold))
+print("BPF dt threshold",moments(dt_mag_threshold))
+
+
+zero_crossings_index_FBR = np.where(np.diff(np.sign(dHPF_FBR)))[0]
+
+
+#HPF FBR calc
+dF_mag = []
+dt_mag = []
+FBR_p = []
+Time_mag = []
+for i in np.arange(0,len(zero_crossings_index_FBR)-1):
+
+    it_1 = zero_crossings_index_FBR[i]
+    it_2 = zero_crossings_index_FBR[i+1]
+
+    Time_mag.append(Time_OF[it_1])
+
+    dt_mag.append(Time_OF[it_2]-Time_OF[it_1])
+
+    FBR_p.append(FBR[it_1])
+
+    dF_mag.append(abs(FBR[it_2] - FBR[it_1]))
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8))
+ax1.scatter(Time_mag,dF_mag,s=1,color="b")
+ax1.grid()
+ax3=ax1.twiny()
+P,X = probability_dist(dF_mag)
+ax3.plot(P,X,"-k")
+ax3.axvline(x=0.0,color="k")
+ax1.set_title("HPF $dF$ $F_B$ [kN]")
+ax2.scatter(Time_mag,dt_mag,s=1,color="b")
+ax2.grid()
+ax4=ax2.twiny()
+P,X = probability_dist(dt_mag)
+ax4.plot(P,X,"-k")
+ax4.axvline(x=0.0,color="k")
+ax2.set_title("HPF $dt$ $F_B$ [s]")
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"HPF_dF_dt_FBR.png")
+plt.close()
+
+print("HPF dF_mag",moments(dF_mag))
+print("HPF dt mag",moments(dt_mag))
+
+
+dF_mag_threshold = []
+dt_mag_threshold = []
+time_mag_threshold = []
+for i in np.arange(0,len(dF_mag)):
+    if dF_mag[i] >= 2*np.std(dF_mag):
+        dF_mag_threshold.append(dF_mag[i]); dt_mag_threshold.append(dt_mag[i]);time_mag_threshold.append(Time_mag[i])
+fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,8))
+ax1.scatter(time_mag_threshold,dF_mag_threshold,s=2,color="b")
+ax1.grid()
+ax3=ax1.twiny()
+P,X = probability_dist(dF_mag_threshold)
+ax3.plot(P,X,"-k")
+ax3.axvline(x=0.0,color="k")
+ax1.set_title("HPF $dF$ $F_B$ threshold on $2\sigma$ [kN]")
+ax2.scatter(time_mag_threshold,dt_mag_threshold,s=2,color="b")
+ax2.grid()
+ax4=ax2.twiny()
+P,X = probability_dist(dt_mag_threshold)
+ax4.plot(P,X,"-k")
+ax4.axvline(x=0.0,color="k")
+ax2.set_title("HPF $dt$ $F_B$ threshold on $2\sigma$ [s]")
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"HPF_dF_dt_FBR_threshold.png")
+plt.close()
+
+print("HPF dF threshold",moments(dF_mag_threshold))
+print("HPF dt threshold",moments(dt_mag_threshold))
+
+
+
+zero_crossings_index_LPF_OOPBM = np.where(np.diff(np.sign(dLPF_OOPBM)))[0]
+zero_crossings_index_BPF_OOPBM = np.where(np.diff(np.sign(dBPF_OOPBM)))[0]
+zero_crossings_index_HPF_OOPBM = np.where(np.diff(np.sign(dHPF_OOPBM)))[0]
+
+
+#LPF OOPBM calc
+dF_mag_LPF = []
+MR_LPF = []
+Time_mag_LPF = []
+for i in np.arange(0,len(zero_crossings_index_LPF_OOPBM)-1):
+
+    it_1 = zero_crossings_index_LPF_OOPBM[i]
+    it_2 = zero_crossings_index_LPF_OOPBM[i+1]
+
+    Time_mag_LPF.append(Time_OF[it_1])
+
+    MR_LPF.append(LPF_OOPBM[it_1])
+
+    dF_mag_LPF.append(abs(LPF_OOPBM[it_2] - LPF_OOPBM[it_1]))
+
+threshold = 2*np.std(dF_mag_LPF)
+
+
+LPF_burst_array = []
+burst = []
+for i in np.arange(0,len(zero_crossings_index_LPF_OOPBM)-2):
+
+    it_1 = zero_crossings_index_LPF_OOPBM[i]
+    it_2 = zero_crossings_index_LPF_OOPBM[i+1]
+    it_3 = zero_crossings_index_LPF_OOPBM[i+2]
+
+    dF_1 = abs(LPF_OOPBM[it_2] - LPF_OOPBM[it_1])
+    dF_2 = abs(LPF_OOPBM[it_3] - LPF_OOPBM[it_2])
+
+    
+    if dF_1 >= threshold and dF_2 >= threshold and len(burst)<2:
+        burst.append(Time_OF[it_1]); burst.append(Time_OF[it_3])
+    elif dF_1 >= threshold and dF_2 >= threshold and len(burst)==2:
+        burst[1] = Time_OF[it_2]
+    elif dF_1 >= threshold and dF_2 < threshold and len(burst) == 2:
+        LPF_burst_array.append(burst); burst = []
+
+LPF_burst_array = np.array(LPF_burst_array)
+
+#BPF OOPBM calc
+dF_mag_BPF = []
+MR_BPF = []
+Time_mag_BPF = []
+for i in np.arange(0,len(zero_crossings_index_BPF_OOPBM)-1):
+
+    it_1 = zero_crossings_index_BPF_OOPBM[i]
+    it_2 = zero_crossings_index_BPF_OOPBM[i+1]
+
+    Time_mag_BPF.append(Time_OF[it_1])
+
+    MR_BPF.append(BPF_OOPBM[it_1])
+
+    dF_mag_BPF.append(abs(BPF_OOPBM[it_2] - BPF_OOPBM[it_1]))
+
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF,BPF_OOPBM,"-r")
+for i in np.arange(0,len(dF_mag_BPF)):
+    if dF_mag_BPF[i] >= 2*np.std(dF_mag_BPF):
+        plt.plot(Time_mag_BPF[i],MR_BPF[i],"ob")
+plt.grid()
+plt.show()
+
+
+#HPF OOPBM calc
+dF_mag_HPF = []
+MR_HPF = []
+Time_mag_HPF = []
+for i in np.arange(0,len(zero_crossings_index_HPF_OOPBM)-1):
+
+    it_1 = zero_crossings_index_HPF_OOPBM[i]
+    it_2 = zero_crossings_index_HPF_OOPBM[i+1]
+
+    Time_mag_HPF.append(Time_OF[it_1])
+
+    MR_HPF.append(HPF_OOPBM[it_1])
+
+    dF_mag_HPF.append(abs(HPF_OOPBM[it_2] - HPF_OOPBM[it_1]))
+
+
+threshold = 2*np.std(dF_mag_BPF)
+
+burst_array = []
+burst = []
+for i in np.arange(0,len(zero_crossings_index_BPF_OOPBM)-2):
+
+    it_1 = zero_crossings_index_BPF_OOPBM[i]
+    it_2 = zero_crossings_index_BPF_OOPBM[i+1]
+    it_3 = zero_crossings_index_BPF_OOPBM[i+2]
+
+    dF_1 = abs(BPF_OOPBM[it_2] - BPF_OOPBM[it_1])
+    dF_2 = abs(BPF_OOPBM[it_3] - BPF_OOPBM[it_2])
+
+    
+    if dF_1 >= threshold and dF_2 >= threshold and len(burst)<2:
+        burst.append(Time_OF[it_1]); burst.append(Time_OF[it_3])
+    elif dF_1 >= threshold and dF_2 >= threshold and len(burst)==2:
+        burst[1] = Time_OF[it_2]
+    elif dF_1 >= threshold and dF_2 < threshold and len(burst) == 2:
+        burst_array.append(burst); burst = []
+
+burst_array = np.array(burst_array)
+threshold = 2*np.std(dF_mag_HPF)
+
+k = 0; burst_times = []; burst_MR_HPF = []
+for i in np.arange(0,len(zero_crossings_index_HPF_OOPBM)-1):
+
+    it_1 = zero_crossings_index_HPF_OOPBM[i]
+    it_2 = zero_crossings_index_HPF_OOPBM[i+1]
+
+
+    if abs(HPF_OOPBM[it_2] - HPF_OOPBM[it_1]) >= threshold:
+        Time_it_1 = Time_OF[it_1]
+        for j in np.arange(0,len(burst_array)):
+            if burst_array[j,0] <= Time_it_1 <= burst_array[j,1]:
+                k+=1; burst_times.append(Time_it_1); burst_MR_HPF.append(HPF_OOPBM[it_1])
+                break
+
+m = 0
+for i in np.arange(0,len(dF_mag_HPF)):
+    if dF_mag_HPF[i] >= 2*np.std(dF_mag_HPF):
+        m+=1
+
+
+
+
+
+
+out_dir=in_dir+"three_frequency_analysis/OOPBM_analysis/"
+plt.rcParams['font.size'] = 16
+
+perc = round((k/m)*100,2)
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF,BPF_OOPBM,"-r",label="BPF")
+plt.plot(Time_OF,HPF_OOPBM,"-b",label="HPF")
+for i in np.arange(0,len(dF_mag_BPF)):
+    if dF_mag_BPF[i] >= 2*np.std(dF_mag_BPF):
+        plt.plot(Time_mag_BPF[i],MR_BPF[i],"ob")
+for i in np.arange(0,len(dF_mag_HPF)):
+    if dF_mag_HPF[i] >= 2*np.std(dF_mag_HPF):
+        plt.plot(Time_mag_HPF[i],MR_HPF[i],"or")
+for burst in burst_array:
+    plt.axvline(x=burst[0],color="k")
+    plt.axvline(x=burst[1],color="k")
+for i in np.arange(0,len(burst_times)):
+    plt.plot(burst_times[i],burst_MR_HPF[i],"ok")
+
+xl = [0,-1]; yl = [0,-1]
+plt.plot(xl,yl,"ob",label="2$\sigma$ BPF")
+plt.plot(xl,yl,"or",label="2$\sigma$ HPF")
+plt.plot(xl,yl,"-k",label="burst event BPF")
+plt.plot(xl,yl,"ok",label="2$\sigma$ HPF within BPF burst")
+plt.xlim([150,1250])
+plt.ylim([-2000,2000])
+
+plt.xlabel("Time [s]")
+plt.ylabel("Out-of-plane bending moment magnitude [kN-m]")
+plt.title("percentage of 2$\sigma$ HPF jumps\nwithin bursts of BPF 2$\sigma$ events = {}".format(perc))
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"BPF_HPF_bursting_events.png")
+plt.close()
+
+threshold = 2*np.std(dF_mag_BPF)
+k = 0; burst_times = []; burst_MR_BPF = []
+for i in np.arange(0,len(zero_crossings_index_BPF_OOPBM)-1):
+
+    it_1 = zero_crossings_index_BPF_OOPBM[i]
+    it_2 = zero_crossings_index_BPF_OOPBM[i+1]
+
+
+    if abs(BPF_OOPBM[it_2] - BPF_OOPBM[it_1]) >= threshold:
+        Time_it_1 = Time_OF[it_1]
+        for j in np.arange(0,len(LPF_burst_array)):
+            if LPF_burst_array[j,0] <= Time_it_1 <= LPF_burst_array[j,1]:
+                k+=1; burst_times.append(Time_it_1); burst_MR_BPF.append(BPF_OOPBM[it_1])
+                break
+
+m = 0
+for i in np.arange(0,len(dF_mag_BPF)):
+    if dF_mag_BPF[i] >= 2*np.std(dF_mag_BPF):
+        m+=1
+
+perc = round((k/m)*100,2)
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF,LPF_OOPBM,"-g",label="LPF")
+plt.plot(Time_OF,BPF_OOPBM,"-r",label="BPF")
+for i in np.arange(0,len(dF_mag_LPF)):
+    if dF_mag_LPF[i] >= 2*np.std(dF_mag_LPF):
+        plt.plot(Time_mag_LPF[i],MR_LPF[i],"om")
+for i in np.arange(0,len(dF_mag_BPF)):
+    if dF_mag_BPF[i] >= 2*np.std(dF_mag_BPF):
+        plt.plot(Time_mag_BPF[i],MR_BPF[i],"ob")
+for burst in LPF_burst_array:
+    plt.axvline(x=burst[0],color="k")
+    plt.axvline(x=burst[1],color="k")
+for i in np.arange(0,len(burst_times)):
+    plt.plot(burst_times[i],burst_MR_BPF[i],"ok")
+
+xl = [0,-1]; yl = [0,-1]
+plt.plot(xl,yl,"om",label="2$\sigma$ LPF")
+plt.plot(xl,yl,"ob",label="2$\sigma$ BPF")
+plt.plot(xl,yl,"-k",label="burst event LPF")
+plt.plot(xl,yl,"ok",label="2$\sigma$ BPF within LPF burst")
+plt.xlim([150,1250])
+plt.ylim([-2000,4500])
+
+plt.xlabel("Time [s]")
+plt.ylabel("Out-of-plane bending moment magnitude [kN-m]")
+plt.title("percentage of 2$\sigma$ BPF jumps\nwithin bursts of LPF 2$\sigma$ events = {}".format(perc))
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"LPF_BPF_bursting_events.png")
+plt.close()
+
+
+
+threshold = 2*np.std(dF_mag_HPF)
+k = 0; burst_times = []; burst_MR_HPF = []
+for i in np.arange(0,len(zero_crossings_index_HPF_OOPBM)-1):
+
+    it_1 = zero_crossings_index_HPF_OOPBM[i]
+    it_2 = zero_crossings_index_HPF_OOPBM[i+1]
+
+
+    if abs(HPF_OOPBM[it_2] - HPF_OOPBM[it_1]) >= threshold:
+        Time_it_1 = Time_OF[it_1]
+        for j in np.arange(0,len(LPF_burst_array)):
+            if LPF_burst_array[j,0] <= Time_it_1 <= LPF_burst_array[j,1]:
+                k+=1; burst_times.append(Time_it_1); burst_MR_HPF.append(HPF_OOPBM[it_1])
+                break
+
+m = 0
+for i in np.arange(0,len(dF_mag_HPF)):
+    if dF_mag_HPF[i] >= 2*np.std(dF_mag_HPF):
+        m+=1
+
+perc = round((k/m)*100,2)
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF,LPF_OOPBM,"-g",label="LPF")
+plt.plot(Time_OF,HPF_OOPBM,"-b",label="HPF")
+for i in np.arange(0,len(dF_mag_LPF)):
+    if dF_mag_LPF[i] >= 2*np.std(dF_mag_LPF):
+        plt.plot(Time_mag_LPF[i],MR_LPF[i],"om")
+for i in np.arange(0,len(dF_mag_HPF)):
+    if dF_mag_HPF[i] >= 2*np.std(dF_mag_HPF):
+        plt.plot(Time_mag_HPF[i],MR_HPF[i],"or")
+for burst in LPF_burst_array:
+    plt.axvline(x=burst[0],color="k")
+    plt.axvline(x=burst[1],color="k")
+for i in np.arange(0,len(burst_times)):
+    plt.plot(burst_times[i],burst_MR_HPF[i],"ok")
+
+xl = [0,-1]; yl = [0,-1]
+plt.plot(xl,yl,"om",label="2$\sigma$ LPF")
+plt.plot(xl,yl,"or",label="2$\sigma$ HPF")
+plt.plot(xl,yl,"-k",label="burst event LPF")
+plt.plot(xl,yl,"ok",label="2$\sigma$ HPF within LPF burst")
+plt.xlim([150,1250])
+plt.ylim([-2000,4500])
+
+plt.xlabel("Time [s]")
+plt.ylabel("Out-of-plane bending moment magnitude [kN-m]")
+plt.title("percentage of 2$\sigma$ HPF jumps\nwithin bursts of LPF 2$\sigma$ events = {}".format(perc))
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"LPF_HPF_bursting_events.png")
+plt.close()
+
+
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF,OOPBM,"-k",label="$Total$")
+plt.plot(Time_OF,LPF_1_OOPBM,"-g",label="LPF")
+plt.plot(Time_OF,np.subtract(BPF_OOPBM,1000),"-r",label="BPF -1000kN-m")
+plt.plot(Time_OF,np.subtract(HPF_OOPBM,1000),"-b",label="HPF -1000kN-m")
+plt.grid()
+plt.xlabel("Time [s]")
+plt.ylabel("Aerodynamic Out-of-plane\nbending moment magnitude [kN-m]")
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"OOPBM_all_freqs.png")
+plt.close()
+
+
 
 
 zero_crossings_index_BPF_OOPBM = np.where(np.diff(np.sign(dBPF_OOPBM)))[0]
@@ -264,6 +971,40 @@ Env_Times = []
 for i in np.arange(0,len(zero_crossings_index_BPF_OOPBM),2):
     idx = zero_crossings_index_BPF_OOPBM[i]
     Env_BPF_OOPBM.append(BPF_OOPBM[idx]); Env_Times.append(Time_OF[idx])
+
+
+#local variance calc
+local_var_LPF = []
+local_var_BPF = []
+local_var_HPF = []
+start_time_idx = np.searchsorted(Time_OF,10+Time_OF[0])
+for i in np.arange(0,len(Time_OF)-start_time_idx,1):
+    local_var_LPF.append(np.std(LPF_1_OOPBM[i:i+start_time_idx]))
+    local_var_BPF.append(np.std(BPF_OOPBM[i:i+start_time_idx]))
+    local_var_HPF.append(np.std(HPF_OOPBM[i:i+start_time_idx]))
+
+f = interpolate.interp1d(Time_OF,LPF_1_OOPBM)
+LPF_1_OOPBM_interp = f(Env_Times)
+cc1 = round(correlation_coef(LPF_1_OOPBM_interp,Env_BPF_OOPBM),2)
+
+idx = int(start_time_idx/2)
+cc2 = round(correlation_coef(LPF_1_OOPBM[idx+1:-idx],local_var_HPF),2)
+cc3 = round(correlation_coef(local_var_BPF,local_var_HPF),2)
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time_OF,np.add(LPF_1_OOPBM,400),"-g",label="LPF +400kN-m")
+plt.plot(Env_Times,np.add(Env_BPF_OOPBM,50),"-r",label="Envelope BPF +50kN-m")
+plt.plot(Time_OF[idx+1:-idx],local_var_HPF,"-b",label="Local std HPF")
+plt.xlabel("Time [s]")
+plt.ylabel("Out-of-plane bending moment magnitude [kN-m]")
+plt.legend()
+plt.grid()
+plt.title("cc LPF BPF = {}, cc LPF HPF = {}, cc BPF HPF = {}".format(cc1,cc2,cc3))
+plt.tight_layout()
+plt.savefig(out_dir+"cc_all_freqs.png")
+plt.close()
+
+
 
 
 Time_shift_idx = np.searchsorted(Env_Times,Env_Times[0]+4.6)
@@ -283,6 +1024,29 @@ drUx_2_interp_shifted = drUx_2_interp[:-Time_shift_idx]
 
 Env_Times_shifted = Env_Times[:-Time_shift_idx]
 Env_BPF_OOPBM_shifted = Env_BPF_OOPBM[Time_shift_idx:]
+
+f = interpolate.interp1d(Time_OF,LPF_1_OOPBM)
+LPF_1_OOPBM_interp = f(Env_Times)
+print("LPF BPF env",correlation_coef(LPF_1_OOPBM_interp,Env_BPF_OOPBM))
+
+idx = np.searchsorted(Env_Times,Env_Times[0]+10)
+cc = []
+for it in np.arange(0,len(Env_Times)-idx):
+    cc.append(correlation_coef(Env_BPF_OOPBM[it:it+idx],LPF_1_OOPBM_interp[it:it+idx]))
+
+fig,(ax,ax2) = plt.subplots(2,1,figsize=(14,8),sharex=True)
+ax.plot(Env_Times,LPF_1_OOPBM_interp,"-b",label="LPF 0.3Hz $M_{H}$")
+ax.plot(Env_Times,Env_BPF_OOPBM,"-r",label="BPF 0.3-0.9Hz $M_{H}$")
+fig.suptitle("Correlation coefficient = {}".format(round(correlation_coef(LPF_1_OOPBM_interp,Env_BPF_OOPBM),2)))
+fig.supxlabel("Time [s]")
+ax.set_ylabel("Magnitude Aerodynamic\nRotor moment vector [kN-m]")
+ax.legend()
+ax.grid()
+ax2.plot(Env_Times[int(idx/2):-int(idx/2)],cc,"-k")
+ax2.set_ylabel("local correlation\ncoefficient T= 10s")
+ax2.grid()
+plt.tight_layout()
+plt.show()
 
 out_dir = in_dir+"three_frequency_analysis/OOPBM_analysis/"
 cc = round(correlation_coef(Env_BPF_OOPBM_shifted,drUx_interp_shifted),2)
@@ -375,12 +1139,13 @@ fig.supxlabel("Time [s]")
 ax.set_ylabel("Magnitude Aerodynamic\nRotor moment vector [kN-m]")
 ax.legend()
 ax.grid()
-ax2.plot(Env_Times[idx:],cc,"-k")
+ax2.plot(Env_Times[int(idx/2):-int(idx/2)],cc,"-k")
 ax2.set_ylabel("local correlation\ncoefficient T= 10s")
 ax2.grid()
 plt.tight_layout()
-plt.savefig(out_dir+"local_cc_LPF_BPF.png")
-plt.close()
+plt.show()
+# plt.savefig(out_dir+"local_cc_LPF_BPF.png")
+# plt.close()
 
 out_dir = in_dir+"three_frequency_analysis/OOPBM_analysis/"
 LPF_1_OOPBM_interp_sampling = f(Time_sampling)
@@ -654,6 +1419,44 @@ HPF_FBR = np.array(low_pass_filter(HPF_FBR,40,dt))
 BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
 dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
 dHPF_FBR = np.array(dt_calc(HPF_FBR,dt))
+
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+fig = plt.figure(figsize=(14,8))
+P,X=probability_dist(FBR)
+plt.plot(X,P,"-k",label="Total")
+P,X=probability_dist(LPF_1_FBR)
+plt.plot(X,P,"-g",label="LPF")
+P,X=probability_dist(BPF_FBR)
+plt.plot(X,P,"-r",label="BPF")
+P,X=probability_dist(HPF_FBR)
+plt.plot(X,P,"-b",label="HPF")
+plt.xlabel("Bearing force magntiude [kN]")
+plt.ylabel("Probability [-]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"PDF_FBR.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+P,X=probability_dist(FBR)
+plt.plot(X,P,"-k",label="Total")
+P,X=probability_dist(LPF_1_FBR)
+plt.plot(X,P,"-g",label="LPF")
+P,X=probability_dist(BPF_FBR)
+plt.plot(X,P,"-r",label="BPF")
+P,X=probability_dist(HPF_FBR)
+plt.plot(X,P,"-b",label="HPF")
+plt.xlabel("Bearing force magntiude [kN]")
+plt.ylabel("Probability [-]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"PDF_FBR.png")
+plt.close()
+
 
 
 # idx1 = np.searchsorted(Time_OF,210);idx2 = np.searchsorted(Time_OF,230)
@@ -997,6 +1800,7 @@ HPF_MR = np.array(low_pass_filter(HPF_MR,40,dt))
 BPF_MR = np.subtract(LPF_2_MR,LPF_1_MR)
 dBPF_MR = np.array(dt_calc(BPF_MR,dt))
 dHPF_MR = np.array(dt_calc(HPF_MR,dt))
+
 
 
 # out_dir = in_dir+"peak_peak_analysis/"

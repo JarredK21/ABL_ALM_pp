@@ -400,6 +400,8 @@ for plane in planes:
                         plt.plot(YB2,ZB2,color="r",linewidth = 1,label="blade 2")
                         plt.plot(YB3,ZB3,color="b",linewidth = 1,label="blade 3")  
 
+                    plt.legend()
+
                     #define titles and filenames for movie
                     if fluc_vel == True:
                         if velocity_comp == "Horizontal_velocity":
