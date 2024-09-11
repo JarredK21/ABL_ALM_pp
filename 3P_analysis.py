@@ -83,7 +83,7 @@ in_dir = "./"
 out_dir = in_dir
 
 #create netcdf file
-ncfile = Dataset(out_dir+"Dataset.nc",mode="w",format='NETCDF4')
+ncfile = Dataset(out_dir+"3P_Dataset.nc",mode="w",format='NETCDF4')
 ncfile.title = "OpenFAST data sampling output"
 
 #create global dimensions
@@ -186,7 +186,7 @@ dA = dy * dz
 del p_rotor
 
 ijk = 0
-mask = np.zeros(len(u))
+mask = np.zeros(len(ys))
 for j,k in zip(ys,zs):
     r = np.sqrt(j**2 + k**2)
     if r <= 57 and r > 44:
@@ -207,3 +207,6 @@ delta_Ux[:] = np.array(delta_Ux_array); del delta_Ux_array
 
 print(group)
 print(ncfile)
+ncfile.close()
+
+print("line 959",time.time()-start_time)
