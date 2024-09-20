@@ -161,7 +161,7 @@ df = Dataset(in_dir+"WTG01.nc")
 
 xco = np.array(df.variables["xco"])
 yco = np.array(df.variables["yco"])
-zco = np.array(df.variables["zco"])-90
+zco = np.array(df.variables["zco"])
 
 R = np.linspace(0,63.0,300)
 

@@ -6,7 +6,7 @@ import sys
 
 
 #directories
-in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/polar_plots/"
+in_dir = "../../NREL_5MW_MCBL_E_CRPM/post_processing/deforming_blade/"
 
 video_folder = in_dir+"videos/"
 isExist = os.path.exists(video_folder)

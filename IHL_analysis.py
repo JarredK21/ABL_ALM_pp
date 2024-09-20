@@ -5,6 +5,7 @@ from netCDF4 import Dataset
 from scipy import interpolate
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.signal import butter,filtfilt
+from scipy.fft import fft, fftfreq, fftshift,ifft
 
 
 def correlation_coef(x,y):
@@ -96,12 +97,29 @@ def probability_dist(y):
 
 def dt_calc(y,dt):
     d_dt = []
-    for i in np.arange(0,len(Time_OF)-1):
+    for i in np.arange(0,len(y)-1):
         d_dt.append((y[i+1]-y[i])/dt)
 
     return d_dt
 
 
+def hard_filter(signal,cutoff,dt,filter_type):
+
+    N = len(signal)
+    spectrum = fft(signal)
+    F = fftfreq(N,dt)
+    if filter_type=="lowpass":
+        spectrum_filter = spectrum*(np.absolute(F)<cutoff)
+    elif filter_type=="highpass":
+        spectrum_filter = spectrum*(np.absolute(F)>cutoff)
+    elif filter_type=="bandpass":
+        spectrum_filter = spectrum*(np.absolute(F)>cutoff[0])
+        spectrum_filter = spectrum_filter*(np.absolute(F)<cutoff[1])
+        
+
+    spectrum_filter = ifft(spectrum_filter)
+
+    return spectrum_filter
 
 
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
@@ -308,6 +326,46 @@ Area_high = np.array(IHL_Variables.variables["Area_high"][Time_start_idx:Time_en
 Area_low = np.array(IHL_Variables.variables["Area_low"][Time_start_idx:Time_end_idx])
 Area_int = np.array(IHL_Variables.variables["Area_int"][Time_start_idx:Time_end_idx])
 
+Area_high_LPF = hard_filter(Area_high,0.1,dt_sampling,"lowpass")
+Area_low_LPF = hard_filter(Area_low,0.1,dt_sampling,"lowpass")
+Area_high_LPF[Area_high_LPF<0]=0; Area_low_LPF[Area_low_LPF<0]=0
+Rotor_area = np.pi * 63**2
+Area_high_LPF[Area_high_LPF>Rotor_area]=Rotor_area; Area_low_LPF[Area_low_LPF>Rotor_area]=Rotor_area
+
+dArea_high = np.array(dt_calc(Area_high_LPF,dt_sampling))
+zero_crossings_index_Area_high = np.where(np.diff(np.sign(dArea_high)))[0]
+
+dt_high = []
+for i in np.arange(0,len(zero_crossings_index_Area_high)-2,2):
+    it_1 = zero_crossings_index_Area_high[i]
+    it_2 = zero_crossings_index_Area_high[i+1]
+    dt_high.append(Time_sampling[it_2]-Time_sampling[it_1])
+
+dArea_low = np.array(dt_calc(Area_low_LPF,dt_sampling))
+zero_crossings_index_Area_low = np.where(np.diff(np.sign(dArea_low)))[0]
+
+dt_low = []
+for i in np.arange(0,len(zero_crossings_index_Area_low)-2,2):
+    it_1 = zero_crossings_index_Area_low[i]
+    it_2 = zero_crossings_index_Area_low[i+1]
+    dt_low.append(Time_sampling[it_2]-Time_sampling[it_1])
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+fig = plt.figure(figsize=(14,8))
+P,X = probability_dist(dt_high)
+plt.plot(X,P,"-r",label="dt Area HSR")
+P,X = probability_dist(dt_low)
+plt.plot(X,P,"-b",label="dt Area LSS")
+plt.xlabel("Area [$m^2$]")
+plt.ylabel("Probability [-]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"Area_dt.png")
+plt.close()
+
+
 # fig,ax = plt.subplots(figsize=(14,8))
 # ax.plot(Time_sampling,Area_high,"-r")
 # ax.plot(Time_sampling,Area_low,"-b")
@@ -322,7 +380,6 @@ Area_int = np.array(IHL_Variables.variables["Area_int"][Time_start_idx:Time_end_
 Ux_high = np.array(IHL_Variables.variables["Ux_high"][Time_start_idx:Time_end_idx])
 Ux_low = np.array(IHL_Variables.variables["Ux_low"][Time_start_idx:Time_end_idx])
 Ux_int = np.array(IHL_Variables.variables["Ux_int"][Time_start_idx:Time_end_idx])
-
 
 # fig,(ax,ax3) = plt.subplots(2,1,figsize=(14,8))
 # ax.plot(Time_mag_BPF[:-Time_shift_idx],dF_mag_BPF[Time_shift_idx:],"-k")

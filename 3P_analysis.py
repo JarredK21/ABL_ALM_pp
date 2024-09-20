@@ -53,7 +53,7 @@ def Horizontal_velocity(it):
 def BPF_calc(it):
     U = u[it]*mask
     min_idx = np.argmin(U); max_idx = np.argmax(U)
-    delta_ux = (U[max_idx] - U[min_idx]) * abs(np.degrees(np.arctan2(zs[min_idx],ys[min_idx])) - np.degrees(np.arctan2(zs[max_idx],ys[max_idx])))/180
+    delta_ux = abs(U[max_idx] - U[min_idx]) * abs(np.degrees(np.arctan2(zs[min_idx],ys[min_idx])) - np.degrees(np.arctan2(zs[max_idx],ys[max_idx])))/180
     
     return delta_ux
 

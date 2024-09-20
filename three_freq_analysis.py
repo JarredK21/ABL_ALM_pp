@@ -9,6 +9,7 @@ from matplotlib.patches import Circle
 from scipy.signal import butter,filtfilt
 from scipy import interpolate
 import time
+from scipy.fft import fft, fftfreq, fftshift,ifft
 
 
 def butterwort_low_pass_filer(signal,cutoff,dt):
@@ -152,7 +153,7 @@ def tranform_fixed_frame(Y_pri,Z_pri,Theta):
 
 def dt_calc(y,dt):
     d_dt = []
-    for i in np.arange(0,len(Time_OF)-1):
+    for i in np.arange(0,len(y)-1):
         d_dt.append((y[i+1]-y[i])/dt)
 
     return d_dt
@@ -171,6 +172,27 @@ def dt_calc_theta(y,dt):
             d_dt.append((y[i+1]-y[i])/dt)
 
     return d_dt
+
+
+def hard_filter(signal,cutoff,dt,filter_type):
+
+    N = len(signal)
+    spectrum = fft(signal)
+    F = fftfreq(N,dt)
+    if filter_type=="lowpass":
+        spectrum_filter = spectrum*(np.absolute(F)<cutoff)
+    elif filter_type=="highpass":
+        spectrum_filter = spectrum*(np.absolute(F)>cutoff)
+    elif filter_type=="bandpass":
+        spectrum_filter = spectrum*(np.absolute(F)>cutoff[0])
+        spectrum_filter = spectrum_filter*(np.absolute(F)<cutoff[1])
+        
+
+    spectrum_filter = ifft(spectrum_filter)
+
+    return spectrum_filter
+
+
 
 
 FBR_analysis = False
@@ -284,25 +306,25 @@ dLPF_OOPBM = np.array(dt_calc(LPF_OOPBM,dt))
 dBPF_OOPBM = np.array(dt_calc(BPF_OOPBM,dt))
 dHPF_OOPBM = np.array(dt_calc(HPF_OOPBM,dt))
 
-plt.rcParams['font.size'] = 16
-out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
-fig = plt.figure(figsize=(14,8))
-plt.yscale("log")
-P,X=probability_dist(OOPBM)
-plt.plot(X,P,"-k",label="Total")
-P,X=probability_dist(LPF_1_OOPBM)
-plt.plot(X,P,"-g",label="LPF")
-P,X=probability_dist(BPF_OOPBM)
-plt.plot(X,P,"-r",label="BPF")
-P,X=probability_dist(HPF_OOPBM)
-plt.plot(X,P,"-b",label="HPF")
-plt.xlabel("Out-of-plane bending moment magntiude [kN-m]")
-plt.ylabel("log() Probability [-]")
-plt.grid()
-plt.legend()
-plt.tight_layout()
-plt.savefig(out_dir+"PDF_MR.png")
-plt.close()
+# plt.rcParams['font.size'] = 16
+# out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+# fig = plt.figure(figsize=(14,8))
+# plt.yscale("log")
+# P,X=probability_dist(OOPBM)
+# plt.plot(X,P,"-k",label="Total")
+# P,X=probability_dist(LPF_1_OOPBM)
+# plt.plot(X,P,"-g",label="LPF")
+# P,X=probability_dist(BPF_OOPBM)
+# plt.plot(X,P,"-r",label="BPF")
+# P,X=probability_dist(HPF_OOPBM)
+# plt.plot(X,P,"-b",label="HPF")
+# plt.xlabel("Out-of-plane bending moment magntiude [kN-m]")
+# plt.ylabel("log() Probability [-]")
+# plt.grid()
+# plt.legend()
+# plt.tight_layout()
+# plt.savefig(out_dir+"PDF_MR.png")
+# plt.close()
 
 #Total radial aerodynamic bearing force aeroFBR
 L1 = 1.912; L2 = 2.09
@@ -320,60 +342,245 @@ FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
 LPF_1_FBR = low_pass_filter(FBR,0.3,dt)
 LPF_2_FBR = low_pass_filter(FBR,0.9,dt)
 LPF_3_FBR = low_pass_filter(FBR,1.5,dt)
+BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
 HPF_FBR = np.subtract(FBR,LPF_3_FBR)
 HPF_FBR = np.array(low_pass_filter(HPF_FBR,40,dt))
 
-plt.rcParams['font.size'] = 16
-out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
-f = interpolate.interp1d(Time_OF,LPF_1_FBR)
+#LPF calc
+LPF_FBR = hard_filter(FBR,0.1,dt,"lowpass")
+
+dLPF_FBR = np.array(dt_calc(LPF_FBR,dt))
+zero_crossings_index_LPF_FBR = np.where(np.diff(np.sign(dLPF_FBR)))[0]
+
+dt_LPF = []
+Time_mag = []
+FBR_LPF = []
+for i in np.arange(0,len(zero_crossings_index_LPF_FBR)-2,2):
+    it_1 = zero_crossings_index_LPF_FBR[i]
+    it_2 = zero_crossings_index_LPF_FBR[i+1]
+    dt_LPF.append(Time_OF[it_2]-Time_OF[it_1])
+    Time_mag.append(Time_OF[it_1])
+    FBR_LPF.append(LPF_FBR[it_1])
+
+#BPF calc
+dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
+zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+Env_BPF_FBR = []
+Env_Times = []
+for i in np.arange(0,len(zero_crossings_index_BPF_FBR),2):
+    idx = zero_crossings_index_BPF_FBR[i]
+    Env_BPF_FBR.append(BPF_FBR[idx]); Env_Times.append(Time_OF[idx])
+
+
+f = interpolate.interp1d(Env_Times,Env_BPF_FBR)
+Env_Times = np.linspace(Env_Times[0],Env_Times[-1],len(Time_OF))
+dt_Env = Env_Times[1] - Env_Times[0]
+Env_BPF_FBR = f(Env_Times)
+Env_BPF_FBR_LPF = hard_filter(Env_BPF_FBR,0.1,dt_Env,"lowpass")
+
+dBPF_FBR = np.array(dt_calc(Env_BPF_FBR_LPF,dt_Env))
+zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+dt_BPF = []
+Time_mag = []
+FBR_BPF = []
+for i in np.arange(0,len(zero_crossings_index_BPF_FBR)-2,2):
+    it_1 = zero_crossings_index_BPF_FBR[i]
+    it_2 = zero_crossings_index_BPF_FBR[i+1]
+    dt_BPF.append(Env_Times[it_2]-Env_Times[it_1])
+    Time_mag.append(Env_Times[it_1])
+    FBR_BPF.append(Env_BPF_FBR_LPF[it_1])
+
+#HPF calc
 abs_HPF_FBR = abs(HPF_FBR)
-ccs = []
 windows = [7]
-fig,ax = plt.subplots(figsize=(14,8))
-ax.plot(Time_OF,LPF_1_FBR,"-g")
-ax.axhline(y=np.mean(LPF_1_FBR)+2*np.std(LPF_1_FBR),linestyle="--",color="g")
-ax.set_ylabel("LPF Bearing force [kN]")
-ax2=ax.twinx()
-addition = 0
 for window in windows:
     window_idx = np.searchsorted(Time_OF,Time_OF[0]+window)
     if (window_idx % 2) != 0:
         window_idx+=1
+    Times_avg_HPF = Time_OF[int(window_idx/2):-int(window_idx/2)]
     avg_HPF_FBR = []
     for i in np.arange(0,len(Time_OF)-window_idx):
         avg_HPF_FBR.append(np.average(abs_HPF_FBR[i:i+window_idx]))
 
-    LPF_1_FBR_interp = f(Time_OF[int(window_idx/2):-int(window_idx/2)])
-    cc = round(correlation_coef(LPF_1_FBR_interp,avg_HPF_FBR),2)
-    ccs.append(cc)
-    addition += 100
-avg_HPF_FBR_LPF = low_pass_filter(avg_HPF_FBR,0.3,dt)
-cc = round(correlation_coef(LPF_1_FBR_interp,avg_HPF_FBR_LPF),2)
-ax2.plot(Time_OF[int(window_idx/2):-int(window_idx/2)],avg_HPF_FBR_LPF,"-b")
-ax2.axhline(y=np.mean(avg_HPF_FBR)+2*np.std(avg_HPF_FBR),linestyle="--",color="b")
-ax2.set_ylabel("LPF Averaged over T=7s, absolute HPF Bearing force [kN]")
-fig.supxlabel("Time [s]")
-fig.suptitle("correlation coefficient = {}".format(cc))
-ax.grid()
-#plt.legend()
+avg_HPF_FBR_LPF = hard_filter(avg_HPF_FBR,0.1,dt,"lowpass")
+
+
+dAvg_HPF_FBR = np.array(dt_calc(avg_HPF_FBR_LPF,dt))
+
+zero_crossings_index_Avg_HPF_FBR = np.where(np.diff(np.sign(dAvg_HPF_FBR)))[0]
+
+dt_HPF = []
+Time_mag = []
+FBR_HPF = []
+for i in np.arange(0,len(zero_crossings_index_Avg_HPF_FBR)-2,2):
+    it_1 = zero_crossings_index_Avg_HPF_FBR[i]
+    it_2 = zero_crossings_index_Avg_HPF_FBR[i+1]
+    dt_HPF.append(Times_avg_HPF[it_2]-Times_avg_HPF[it_1])
+    Time_mag.append(Times_avg_HPF[it_1])
+    FBR_HPF.append(avg_HPF_FBR_LPF[it_1])
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+fig = plt.figure(figsize=(14,8))
+P,X = probability_dist(dt_LPF)
+plt.plot(X,P,"-g",label="LPF")
+P,X = probability_dist(dt_BPF)
+plt.plot(X,P,"-r",label="Envelope BPF")
+P,X = probability_dist(dt_HPF)
+plt.plot(X,P,"-b",label="Filtered HPF")
+plt.xlabel("dt [s]")
+plt.ylabel("Probability [-]")
+plt.grid()
+plt.legend()
 plt.tight_layout()
-plt.savefig(out_dir+"avg_HPF_LPF_FB.png")
+plt.savefig(out_dir+"PDF_dt_LPF_Env_BPF_avg_HPF.png")
 plt.close()
+
+
+
+mean_LPF = []
+thresholds = np.linspace(np.mean(LPF_1_FBR),np.mean(LPF_1_FBR)+2*np.std(LPF_1_FBR),5)
+thresholds = [np.mean(LPF_1_FBR)]
+for threshold in thresholds:
+    LPF_1_FBR_threshold = []
+    for it in np.arange(0,len(LPF_1_FBR)):
+        if LPF_1_FBR[it] >= threshold:
+            LPF_1_FBR_threshold.append(LPF_1_FBR[it])
+        else:
+            LPF_1_FBR_threshold.append(0.0)
+
+
+
+    dLPF_FBR = np.array(dt_calc(LPF_1_FBR_threshold,dt))
+
+    zero_crossings_index_LPF_FBR = np.where(np.diff(np.sign(dLPF_FBR)))[0]
+
+    dt_LPF = []
+    FBR_LPF = []
+    Time_mag  = []
+    for i in np.arange(0,len(zero_crossings_index_LPF_FBR)-1,1):
+        it_1 = zero_crossings_index_LPF_FBR[i]
+        it_2 = zero_crossings_index_LPF_FBR[i+1]
+        dt_LPF.append(Time_OF[it_2]-Time_OF[it_1])
+
+        Time_mag.append(Time_OF[it_1])
+        FBR_LPF.append(LPF_1_FBR_threshold[it_1])
+
+    
+    mean_LPF.append(np.mean(dt_LPF))
+    fig = plt.figure(figsize=(14,8))
+    plt.plot(Time_OF,LPF_1_FBR,"-g")
+    plt.plot(Time_OF,LPF_1_FBR_threshold,"-r")
+    plt.scatter(Time_mag,FBR_LPF)
+    plt.show()
 
 fig = plt.figure(figsize=(14,8))
-plt.yscale("log")
-P,X = probability_dist(LPF_1_FBR)
-plt.plot(X,P,"-g",label="LPF")
-P,X = probability_dist(avg_HPF_FBR)
-plt.plot(X,P,"-b",label="Avg abs HPF")
-plt.xlabel("Bearing force [kN]")
-plt.ylabel("log() probability [-]")
-plt.legend()
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"PDF_avg_HPF_LPF_FB.png")
-plt.close()
+plt.plot(thresholds,mean_LPF)
+plt.show()
 
+# Env_BPF_FBR = []
+# Env_Times = []
+# for i in np.arange(0,len(zero_crossings_index_BPF_FBR),2):
+#     idx = zero_crossings_index_BPF_FBR[i]
+#     Env_BPF_FBR.append(BPF_FBR[idx]); Env_Times.append(Time_OF[idx])
+
+# plt.rcParams['font.size'] = 16
+# out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+# f = interpolate.interp1d(Env_Times,Env_BPF_FBR)
+# Env_Times = np.linspace(Env_Times[0],Env_Times[-1],len(Time_OF))
+# dt_Env = Env_Times[1] - Env_Times[0]
+# Env_BPF_FBR = f(Env_Times)
+# Env_BPF_FBR_LPF = low_pass_filter(Env_BPF_FBR,0.3,dt_Env)
+# f = interpolate.interp1d(Time_OF,LPF_1_FBR)
+# LPF_1_FBR_interp = f(Env_Times)
+# cc = round(correlation_coef(LPF_1_FBR_interp,Env_BPF_FBR_LPF),2)
+# fig,ax = plt.subplots(figsize=(14,8))
+# ax.plot(Env_Times,Env_BPF_FBR_LPF,"-r")
+# ax.set_ylabel("LPF Envelope BPF Bearing force [kN]")
+# ax.grid()
+# ax2=ax.twinx()
+# ax2.plot(Time_OF,LPF_1_FBR,"-g")
+# ax2.set_ylabel("LPF Bearing force [kN]")
+# fig.supxlabel("Time [s]")
+# fig.suptitle("correlation coefficient = {}".format(cc))
+# plt.tight_layout()
+# plt.savefig(out_dir+"Env_BPF_LPF_FB.png")
+# plt.close()
+
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time_OF,BPF_FBR,"-r",label="BPF")
+# plt.plot(Env_Times,Env_BPF_FBR_LPF,"-b",label="LPF Envelope BPF")
+# plt.grid()
+# plt.xlabel("Time [s]")
+# plt.ylabel("BPF Bearing force [kN]")
+# plt.legend()
+# plt.tight_layout()
+# plt.savefig(out_dir+"Env_BPF.png")
+# plt.close()
+
+# plt.rcParams['font.size'] = 16
+# out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+# f = interpolate.interp1d(Time_OF,LPF_1_FBR)
+# abs_HPF_FBR = abs(HPF_FBR)
+# ccs = []
+# windows = [7]
+# fig,ax = plt.subplots(figsize=(14,8))
+# ax.plot(Time_OF,LPF_1_FBR,"-g")
+# ax.axhline(y=np.mean(LPF_1_FBR)+2*np.std(LPF_1_FBR),linestyle="--",color="g")
+# ax.set_ylabel("LPF Bearing force [kN]")
+# ax2=ax.twinx()
+# addition = 0
+# for window in windows:
+#     window_idx = np.searchsorted(Time_OF,Time_OF[0]+window)
+#     if (window_idx % 2) != 0:
+#         window_idx+=1
+#     avg_HPF_FBR = []
+#     for i in np.arange(0,len(Time_OF)-window_idx):
+#         avg_HPF_FBR.append(np.average(abs_HPF_FBR[i:i+window_idx]))
+
+#     LPF_1_FBR_interp = f(Time_OF[int(window_idx/2):-int(window_idx/2)])
+#     cc = round(correlation_coef(LPF_1_FBR_interp,avg_HPF_FBR),2)
+#     ccs.append(cc)
+#     addition += 100
+# avg_HPF_FBR_LPF = low_pass_filter(avg_HPF_FBR,0.3,dt)
+# cc = round(correlation_coef(LPF_1_FBR_interp,avg_HPF_FBR_LPF),2)
+# ax2.plot(Time_OF[int(window_idx/2):-int(window_idx/2)],avg_HPF_FBR_LPF,"-b")
+# ax2.axhline(y=np.mean(avg_HPF_FBR)+2*np.std(avg_HPF_FBR),linestyle="--",color="b")
+# ax2.set_ylabel("LPF Averaged over T=7s, absolute HPF Bearing force [kN]")
+# fig.supxlabel("Time [s]")
+# fig.suptitle("correlation coefficient = {}".format(cc))
+# ax.grid()
+# #plt.legend()
+# plt.tight_layout()
+# plt.savefig(out_dir+"avg_HPF_LPF_FB.png")
+# plt.close()
+
+# Times_avg_HPF = Time_OF[int(window_idx/2):-int(window_idx/2)]
+
+# fig = plt.figure(figsize=(14,8))
+# plt.yscale("log")
+# P,X = probability_dist(LPF_1_FBR)
+# plt.plot(X,P,"-g",label="LPF")
+# P,X = probability_dist(avg_HPF_FBR)
+# plt.plot(X,P,"-b",label="Avg abs HPF")
+# plt.xlabel("Bearing force [kN]")
+# plt.ylabel("log() probability [-]")
+# plt.legend()
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"PDF_avg_HPF_LPF_FB.png")
+# plt.close()
+
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time_OF,HPF_FBR,"-b",label="HPF")
+# plt.plot(Time_OF[int(window_idx/2):-int(window_idx/2)],avg_HPF_FBR_LPF,"-r",label="Averaged HPF T = 7s")
+# plt.xlabel("TIme [s]")
+# plt.ylabel("HPF Bearing force [kN]")
+# plt.legend()
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"Avg_HPF.png")
+# plt.close()
 
 # fig = plt.figure(figsize=(14,8))
 # plt.plot(windows,ccs)
@@ -385,7 +592,51 @@ plt.close()
 # plt.close()
 
 
+# dLPF_FBR = np.array(dt_calc(LPF_1_FBR,dt))
 
+# zero_crossings_index_LPF_FBR = np.where(np.diff(np.sign(dLPF_FBR)))[0]
+
+# DT_LPF = []
+# for i in np.arange(0,len(zero_crossings_index_LPF_FBR)-2,2):
+#     it_1 = zero_crossings_index_LPF_FBR[i]
+#     it_2 = zero_crossings_index_LPF_FBR[i+1]
+#     DT_LPF.append(Time_OF[it_2]-Time_OF[it_1])
+
+# dEnv_BPF_FBR = np.array(dt_calc(Env_BPF_FBR_LPF,dt_Env))
+
+# zero_crossings_index_Env_BPF_FBR = np.where(np.diff(np.sign(dEnv_BPF_FBR)))[0]
+
+# DT_BPF = []
+# for i in np.arange(0,len(zero_crossings_index_Env_BPF_FBR)-2,2):
+#     it_1 = zero_crossings_index_Env_BPF_FBR[i]
+#     it_2 = zero_crossings_index_Env_BPF_FBR[i+1]
+#     DT_BPF.append(Time_OF[it_2]-Time_OF[it_1])
+
+# dAvg_HPF_FBR = np.array(dt_calc(avg_HPF_FBR_LPF,dt))
+
+# zero_crossings_index_Avg_HPF_FBR = np.where(np.diff(np.sign(dAvg_HPF_FBR)))[0]
+
+# DT_HPF = []
+# for i in np.arange(1,len(zero_crossings_index_Avg_HPF_FBR)-2,2):
+#     it_1 = zero_crossings_index_Avg_HPF_FBR[i]
+#     it_2 = zero_crossings_index_Avg_HPF_FBR[i+1]
+#     DT_HPF.append(Times_avg_HPF[it_2]-Times_avg_HPF[it_1])
+
+
+# fig = plt.figure(figsize=(14,8))
+# P,X = probability_dist(DT_LPF)
+# plt.plot(X,P,"-g",label="LPF")
+# P,X = probability_dist(DT_BPF)
+# plt.plot(X,P,"-r",label="Env BPF")
+# P,X = probability_dist(DT_HPF)
+# plt.plot(X,P,"-r",label="Avg HPF")
+# plt.legend()
+# plt.xlabel("dt [s]")
+# plt.ylabel("Probability [-]")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"PDF_dt_LPF_Env_BPF_avg_HPF.png")
+# plt.close()
 
 
 BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
@@ -394,51 +645,206 @@ FBR = low_pass_filter(FBR,40,dt)
 dFBR = np.array(dt_calc(FBR,dt))
 dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
 dHPF_FBR = np.array(dt_calc(HPF_FBR,dt))
+dLPF_2_FBR = np.array(dt_calc(LPF_2_FBR,dt))
 
 zero_crossings_index_FBR = np.where(np.diff(np.sign(dFBR)))[0]
+zero_crossings_index_LPF_FBR = np.where(np.diff(np.sign(dLPF_2_FBR)))[0]
+zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+zero_crossings_index_HPF_FBR = np.where(np.diff(np.sign(dHPF_FBR)))[0]
+
 
 #FBR calc
 dF_mag = []
-dt_mag = []
-FBR_p = []
-Time_mag = []
-dF_mag_LPF = []
 for i in np.arange(0,len(zero_crossings_index_FBR)-1):
 
     it_1 = zero_crossings_index_FBR[i]
     it_2 = zero_crossings_index_FBR[i+1]
 
+    dF_mag.append(FBR[it_2] - FBR[it_1])
+
+threshold = 2*np.std(dF_mag)
+
+
+#FBR calc
+Time_mag = []
+dF_FBR_mag = []
+dF_BPF_mag = []
+dF_HPF_mag = []
+for i in np.arange(0,len(zero_crossings_index_FBR)-1):
+
+    it_1 = zero_crossings_index_FBR[i]
+    it_2 = zero_crossings_index_FBR[i+1]
+
+    if abs(FBR[it_2]-FBR[it_1]) >= threshold:
+        Time_mag.append(Time_OF[it_1])
+        dF_FBR_mag.append(abs(FBR[it_2]-FBR[it_1]))
+        dF_BPF_mag.append(abs(BPF_FBR[it_2]-BPF_FBR[it_1]))
+        dF_HPF_mag.append(abs(HPF_FBR[it_2]-HPF_FBR[it_1]))
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+fig,(ax1,ax2,ax3)=plt.subplots(3,1,figsize=(14,8),sharex=True)
+ax1.scatter(Time_mag,dF_FBR_mag)
+ax1.grid()
+ax1.set_title("$dF$ $F_{B,tot}$ threshold on $2\sigma$ $F_{B,tot}$ [kN]")
+ax1_2 = ax1.twiny()
+P,X=probability_dist(dF_FBR_mag)
+print(moments(dF_FBR_mag))
+ax1_2.plot(P,X,"-k")
+ax1_2.axvline(x=0.0,color="k")
+ax2.scatter(Time_mag,dF_BPF_mag)
+ax2.grid()
+ax2.set_title("$dF$ $F_{B,BPF}$ threshold on $2\sigma$ $F_{B,tot}$ [kN]")
+ax2_2 = ax2.twiny()
+P,X=probability_dist(dF_BPF_mag)
+print(moments(dF_BPF_mag))
+ax2_2.plot(P,X,"-k")
+ax2_2.axvline(x=0.0,color="k")
+ax3.scatter(Time_mag,dF_HPF_mag)
+ax3.grid()
+ax3.set_title("$dF$ $F_{B,HPF}$ threshold on $2\sigma$ $F_{B,tot}$ [kN]")
+ax3_2 = ax3.twiny()
+P,X=probability_dist(dF_HPF_mag)
+print(moments(dF_HPF_mag))
+ax3_2.plot(P,X,"-k")
+ax3_2.axvline(x=0.0,color="k")
+fig.supxlabel("Time [s]")
+plt.tight_layout()
+plt.savefig(out_dir+"dF_FBR_all_freqs.png")
+plt.close()
+
+
+
+#FBR calc
+Time_mag = []
+dF_diff = []
+dF_ratio = []
+Time_mag_threshold = []
+dF_diff_threshold = []
+dF_ratio_threshold = []
+for i in np.arange(0,len(zero_crossings_index_FBR)-1):
+
+    it_1 = zero_crossings_index_FBR[i]
+    it_2 = zero_crossings_index_FBR[i+1]
+
+   
     Time_mag.append(Time_OF[it_1])
+    dF_diff.append((abs(FBR[it_2] - FBR[it_1]) - abs(LPF_2_FBR[it_2] - LPF_2_FBR[it_1])))
+    #dF_ratio.append((FBR[it_2] - FBR[it_1])/(LPF_2_FBR[it_2] - LPF_2_FBR[it_1]))
 
-    dt_mag.append(Time_OF[it_2]-Time_OF[it_1])
-
-    FBR_p.append(FBR[it_1])
-
-    dF_mag.append(abs(FBR[it_2] - FBR[it_1]))
-
-    dF_mag_LPF.append(abs(LPF_2_FBR[it_2] - LPF_2_FBR[it_1]))
+    if abs(FBR[it_2] - FBR[it_1])>=threshold:
+        Time_mag_threshold.append(Time_OF[it_1])
+        dF_diff_threshold.append((abs(FBR[it_2] - FBR[it_1]) - abs(LPF_2_FBR[it_2] - LPF_2_FBR[it_1])))
+        #dF_ratio_threshold.append((FBR[it_2] - FBR[it_1])/(LPF_2_FBR[it_2] - LPF_2_FBR[it_1]))
 
 
-dF_diff = np.subtract(dF_mag,dF_mag_LPF)
 
 plt.rcParams['font.size'] = 16
 out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
 fig = plt.figure(figsize=(14,8))
-plt.plot(Time_mag,dF_diff,"-k")
+plt.scatter(Time_mag,dF_diff)
 plt.xlabel("Time [s]")
-plt.ylabel("Difference in $dF$ between BPF (inc LPF) and Total signal [kN]")
+plt.ylabel("$(|dF_{total}| - |dF_{LPF+BPF}|)$")
 plt.grid()
 plt.savefig(out_dir+"dF_diff.png")
 plt.close()
 
 fig = plt.figure(figsize=(14,8))
 P,X = probability_dist(dF_diff)
+plt.yscale("log")
 plt.plot(X,P,"-k")
-plt.xlabel("Difference in $dF$ between BPF (inc LPF) and Total signal [kN]")
+plt.xlabel("$(|dF_{total}| - |dF_{LPF+BPF})|$")
 plt.ylabel("Probability [-]")
 plt.grid()
 plt.savefig(out_dir+"PDF_dF_diff.png")
 plt.close()
+
+fig = plt.figure(figsize=(14,8))
+plt.scatter(Time_mag_threshold,dF_diff_threshold)
+plt.xlabel("Time [s]")
+plt.ylabel("$(|dF_{total}| - |dF_{LPF+BPF}|)$")
+plt.grid()
+plt.title("Threshold on $2\sigma$ $dF_{total}$")
+plt.savefig(out_dir+"dF_diff_threshold.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+P,X = probability_dist(dF_diff_threshold)
+plt.yscale("log")
+plt.plot(X,P,"-k")
+plt.xlabel("$(|dF_{total}| - |dF_{LPF+BPF}|)$")
+plt.ylabel("Probability [-]")
+plt.grid()
+plt.title("Threshold on $2\sigma$ $dF_{total}$")
+plt.savefig(out_dir+"PDF_dF_diff_threshold.png")
+plt.close()
+
+
+#LPF BPF FBR calc
+Time_mag = []
+dF_diff = []
+dF_ratio = []
+Time_mag_threshold = []
+dF_diff_threshold = []
+dF_ratio_threshold = []
+for i in np.arange(0,len(zero_crossings_index_LPF_FBR)-1):
+
+    it_1 = zero_crossings_index_LPF_FBR[i]
+    it_2 = zero_crossings_index_LPF_FBR[i+1]
+
+   
+    Time_mag.append(Time_OF[it_1])
+    dF_diff.append((abs(FBR[it_2] - FBR[it_1]) - abs(LPF_2_FBR[it_2] - LPF_2_FBR[it_1])))
+    #dF_ratio.append((FBR[it_2] - FBR[it_1])/(LPF_2_FBR[it_2] - LPF_2_FBR[it_1]))
+
+    if abs(FBR[it_2] - FBR[it_1])>=threshold:
+        Time_mag_threshold.append(Time_OF[it_1])
+        dF_diff_threshold.append((abs(FBR[it_2] - FBR[it_1]) - abs(LPF_2_FBR[it_2] - LPF_2_FBR[it_1])))
+        #dF_ratio_threshold.append((FBR[it_2] - FBR[it_1])/(LPF_2_FBR[it_2] - LPF_2_FBR[it_1]))
+
+
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+fig = plt.figure(figsize=(14,8))
+plt.scatter(Time_mag,dF_diff)
+plt.xlabel("Time [s]")
+plt.ylabel("$(|dF_{total}| - |dF_{LPF+BPF}|)$")
+plt.grid()
+plt.savefig(out_dir+"dF_diff_2.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+P,X = probability_dist(dF_diff)
+plt.yscale("log")
+plt.plot(X,P,"-k")
+plt.xlabel("$(|dF_{total}| - |dF_{LPF+BPF}|)$")
+plt.ylabel("Probability [-]")
+plt.grid()
+plt.savefig(out_dir+"PDF_dF_diff_2.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+plt.scatter(Time_mag_threshold,dF_diff_threshold)
+plt.xlabel("Time [s]")
+plt.ylabel("$(|dF_{total}| - |dF_{LPF+BPF})|$")
+plt.grid()
+plt.title("Threshold on $2\sigma$ $dF_{total}$")
+plt.savefig(out_dir+"dF_diff_threshold_2.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+P,X = probability_dist(dF_diff_threshold)
+plt.yscale("log")
+plt.plot(X,P,"-k")
+plt.xlabel("$(|dF_{total}| - |dF_{LPF+BPF}|)$")
+plt.ylabel("Probability [-]")
+plt.grid()
+plt.title("Threshold on $2\sigma$ $dF_{total}$")
+plt.savefig(out_dir+"PDF_dF_diff_threshold_2.png")
+plt.close()
+
+
 
 plt.rcParams['font.size'] = 16
 out_dir=in_dir+"three_frequency_analysis/FB_dF_all_times/"

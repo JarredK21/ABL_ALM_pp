@@ -84,13 +84,26 @@ def hard_filter(signal,cutoff,dt,filter_type):
     return spectrum_filter
 
 
+def moments(y):
+    mu = np.mean(y)
+    std = np.std(y)
+    N = len(y)
+
+    skewness = (np.sum(np.power(np.subtract(y,mu),3)))/(N*std**3)
+    kurotsis = (np.sum(np.power(np.subtract(y,mu),4)))/(N*std**4)
+
+    return mu, std, skewness,kurotsis
 
 
 in_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/"
 
+out_dir = in_dir+"Actuator_disp/"
+
 df = io.fast_output_file.FASTOutputFile(in_dir+"NREL_5MW_Main.out").toDataFrame()
 
 Time = np.array(df["Time_[s]"])
+
+Time_start_idx = np.searchsorted(Time,200)
 dt = Time[1]
 
 FLy_E = np.array(df["B1N016FLy_[kN]"])
@@ -105,33 +118,40 @@ FLy_R = np.array(df["B1N016FLy_[kN]"])
 
 A_E = np.subtract(FLy_E,FLy_R)
 
-fig = plt.figure(figsize=(14,8))
-frq,PSD = temporal_spectra(FLy_R,dt,Var="Rigid")
-plt.loglog(frq,PSD,"-b",label="Rigid")
-frq,PSD = temporal_spectra(FLy_E,dt,Var="Elastic")
-plt.loglog(frq,PSD,"-r",label="Elastic")
-plt.grid()
-plt.legend()
-
-fig = plt.figure(figsize=(14,8))
-plt.plot(Time,FLy_E,"-r",label="Elastic")
-plt.plot(Time,FLy_R,"-b",label="Rigid")
-plt.grid()
-plt.legend()
-
-
-fig = plt.figure(figsize=(14,8))
-frq,PSD = temporal_spectra(A_E,dt,Var="Accel")
-plt.loglog(frq,PSD)
-plt.grid()
-
 A_E = np.true_divide(A_E,1.39E+02)
 A_E[0] = 0.0
-fig = plt.figure(figsize=(14,8))
-plt.plot(Time,A_E,label="Aceleration")
-plt.grid()
 
-A_E = np.subtract(A_E,np.mean(A_E))
+E_LPF_My = hard_filter(A_E,0.1,dt,"lowpass")
+E_BPF_My = hard_filter(A_E,[0.3,0.9],dt,"bandpass")
+E_HPF_My = hard_filter(A_E,[1.5,40],dt,"bandpass")
+
+moms = moments(A_E)
+A_E_moms = []
+for m in moms:
+    A_E_moms.append(round(m,2))
+
+frq,PSD = temporal_spectra(A_E[Time_start_idx:],dt,Var="accel")
+
+plt.rcParams.update({'font.size': 16})
+
+fig = plt.figure(figsize=(14,8))
+plt.loglog(frq,PSD)
+plt.xlabel("Frequency [Hz]")
+plt.ylabel("Acceletion 75% span [$m/s^2$]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"Spectra_accel.png")
+plt.close()
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time[Time_start_idx:],A_E[Time_start_idx:],label="Acceleration")
+plt.grid()
+plt.title("{}".format(A_E_moms))
+plt.savefig(out_dir+"Accel.png")
+plt.close()
+
+
+#A_E = np.subtract(A_E,np.mean(A_E))
 
 A_E = hard_filter(A_E,[8E-03,40],dt,"bandpass")
 
@@ -139,9 +159,9 @@ y_int = integrate.cumtrapz(A_E, Time,initial=0)
 
 plt.plot(Time,y_int,"-r",label="Velocity")
 
-A_E = np.subtract(A_E,np.mean(A_E))
+# A_E = np.subtract(A_E,np.mean(A_E))
 
-A_E = hard_filter(A_E,[8E-03,40],dt,"bandpass")
+# A_E = hard_filter(A_E,[8E-03,40],dt,"bandpass")
 
 # y_int_int = integrate.cumtrapz(y_int, Time,initial=0)
 
