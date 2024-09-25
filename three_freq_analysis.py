@@ -10,6 +10,7 @@ from scipy.signal import butter,filtfilt
 from scipy import interpolate
 import time
 from scipy.fft import fft, fftfreq, fftshift,ifft
+import matplotlib.patches as patches
 
 
 def butterwort_low_pass_filer(signal,cutoff,dt):
@@ -190,7 +191,7 @@ def hard_filter(signal,cutoff,dt,filter_type):
 
     spectrum_filter = ifft(spectrum_filter)
 
-    return spectrum_filter
+    return np.real(spectrum_filter)
 
 
 
@@ -306,6 +307,255 @@ dLPF_OOPBM = np.array(dt_calc(LPF_OOPBM,dt))
 dBPF_OOPBM = np.array(dt_calc(BPF_OOPBM,dt))
 dHPF_OOPBM = np.array(dt_calc(HPF_OOPBM,dt))
 
+LPF_1_OOPBM = np.array(hard_filter(OOPBM,0.3,dt,"lowpass"))
+LPF_2_OOPBM = np.array(hard_filter(OOPBM,0.9,dt,"lowpass"))
+BPF_OOPBM = np.array(hard_filter(OOPBM,[0.3,0.9],dt,"bandpass"))
+HPF_OOPBM = np.array(hard_filter(OOPBM,[1.5,40],dt,"bandpass"))
+
+
+#BPF calc
+dBPF_OOPBM = np.array(dt_calc(BPF_OOPBM,dt))
+zero_crossings_index_BPF_OOPBM = np.where(np.diff(np.sign(dBPF_OOPBM)))[0]
+Env_BPF_OOPBM = []
+Env_Times = []
+for i in np.arange(0,len(zero_crossings_index_BPF_OOPBM),2):
+    idx = zero_crossings_index_BPF_OOPBM[i]
+    Env_BPF_OOPBM.append(BPF_OOPBM[idx]); Env_Times.append(Time_OF[idx])
+
+f = interpolate.interp1d(Env_Times,Env_BPF_OOPBM)
+Env_Times = np.arange(Env_Times[0],Env_Times[-1],0.39)
+Env_BPF_OOPBM = f(Env_Times)
+dt_BPF = Env_Times[1] - Env_Times[0]
+Env_BPF_OOPBM = hard_filter(Env_BPF_OOPBM,0.3,dt_BPF,"lowpass")
+
+Env_BPF_OOPBM = np.array(Env_BPF_OOPBM); Env_Times = np.array(Env_Times)
+
+f_BPF = interpolate.interp1d(Env_Times,Env_BPF_OOPBM)
+f_LPF = interpolate.interp1d(Time_OF,LPF_1_OOPBM)
+
+
+#HPF calc
+abs_HPF_OOPBM = abs(HPF_OOPBM)
+windows = [9]
+for window in windows:
+    window_idx = np.searchsorted(Time_OF,Time_OF[0]+window)
+    if (window_idx % 2) != 0:
+        window_idx+=1
+    Times_avg_HPF = Time_OF[int(window_idx/2):-int(window_idx/2)]
+    avg_HPF_OOPBM = []
+    for i in np.arange(0,len(Time_OF)-window_idx):
+        avg_HPF_OOPBM.append(np.average(abs_HPF_OOPBM[i:i+window_idx]))
+    
+    idx_min = np.searchsorted(Times_avg_HPF,np.min(Env_Times)); idx_max = np.searchsorted(Times_avg_HPF,np.max(Env_Times))
+    Env_BPF_OOPBM_interp = f_BPF(Times_avg_HPF[idx_min:idx_max])
+    cc_BPF = round(correlation_coef(Env_BPF_OOPBM_interp,avg_HPF_OOPBM[idx_min:idx_max]),3)
+
+    LPF_1_OOPBM_interp = f_LPF(Times_avg_HPF)
+    cc_LPF = round(correlation_coef(LPF_1_OOPBM_interp,avg_HPF_OOPBM),3)
+
+dt_HPF = Times_avg_HPF[1] - Times_avg_HPF[0]
+Times_avg_HPF = np.array(Times_avg_HPF); avg_HPF_OOPBM = np.array(hard_filter(avg_HPF_OOPBM,0.3,dt_HPF,"lowpass"))
+# fig = plt.figure(figsize=(14,8))
+# P,X = probability_dist(LPF_1_FBR)
+# plt.plot(X,P,"-g",label="LPF")
+# P,X = probability_dist(Env_BPF_FBR)
+# plt.plot(X,P,"-r",label="Env BPF")
+# P,X = probability_dist(avg_HPF_FBR)
+# plt.plot(X,P,"-b",label="Filtered (9s) HPF")
+# plt.grid()
+
+plt.rcParams['font.size'] = 16
+out_dir=in_dir+"three_frequency_analysis/OOPBM_analysis/"
+
+perc_overlap_LPF_HPF = []
+perc_overlap_HPF_LPF = []
+perc_overlap_BPF_HPF = []
+perc_overlap_HPF_BPF = []
+thresholds = np.linspace(0,1,5)
+ix = 0
+for threshold in thresholds:
+    print(threshold)
+
+
+    idx_min = np.searchsorted(Time_OF,np.min(Times_avg_HPF)); idx_max = np.searchsorted(Time_OF,np.max(Times_avg_HPF))
+    xco_array_LPF = []
+    xco = []
+    for it in np.arange(idx_min,idx_max,dtype=int):
+        if len(xco) == 0 and LPF_1_OOPBM[it] >= np.mean(LPF_1_OOPBM)+threshold*np.std(LPF_1_OOPBM):
+            xco.append(Time_OF[it])
+        
+        if len(xco) == 1 and LPF_1_OOPBM[it] < np.mean(LPF_1_OOPBM)+threshold*np.std(LPF_1_OOPBM):
+            xco.append(Time_OF[it])
+            xco_array_LPF.append(xco)
+            xco = []
+        print(it)
+
+
+    xco = []
+    xco_array_BPF = []
+    for it in np.arange(0,len(Env_Times)):
+        if len(xco) == 0 and Env_BPF_OOPBM[it] >= np.mean(Env_BPF_OOPBM)+threshold*np.std(Env_BPF_OOPBM):
+            xco.append(Env_Times[it])
+        
+        if len(xco) == 1 and Env_BPF_OOPBM[it] < np.mean(Env_BPF_OOPBM)+threshold*np.std(Env_BPF_OOPBM):
+            xco.append(Env_Times[it])
+            xco_array_BPF.append(xco)
+            xco = []
+        print(it)
+
+
+    xco_array_HPF = []
+    xco = []
+    for it in np.arange(0,len(Times_avg_HPF)):
+        if len(xco) == 0 and avg_HPF_OOPBM[it] >= np.mean(avg_HPF_OOPBM)+threshold*np.std(avg_HPF_OOPBM):
+            xco.append(Times_avg_HPF[it])
+        
+        if len(xco) == 1 and avg_HPF_OOPBM[it] < np.mean(avg_HPF_OOPBM)+threshold*np.std(avg_HPF_OOPBM):
+            xco.append(Times_avg_HPF[it])
+            xco_array_HPF.append(xco)
+            xco = []
+        print(it)
+
+    T_overlap_LPF_HPF = 0
+    T_LPF = 0
+    for xco_LPF in xco_array_LPF:
+        T_LPF+=(xco_LPF[1]-xco_LPF[0])
+        for xco_HPF in xco_array_HPF:
+            if xco_HPF[0] <= xco_LPF[0] <= xco_HPF[1] and xco_HPF[0] <= xco_LPF[1] <= xco_HPF[1]:
+                T_overlap_LPF_HPF+=(xco_LPF[1] - xco_LPF[0])
+            elif xco_HPF[0] <= xco_LPF[0] <= xco_HPF[1]:
+                T_overlap_LPF_HPF+=(xco_HPF[1] - xco_LPF[0])
+            elif xco_HPF[0] <= xco_LPF[1] <= xco_HPF[1]:
+                T_overlap_LPF_HPF+=(xco_LPF[1] - xco_HPF[0])
+            elif xco_LPF[0] <= xco_HPF[0] <= xco_LPF[1] and xco_LPF[0] <= xco_HPF[1] <= xco_LPF[1]:
+                T_overlap_LPF_HPF+=(xco_HPF[1] - xco_HPF[0])
+    
+
+    perc_overlap_LPF_HPF.append(round((T_overlap_LPF_HPF/T_LPF)*100,1))
+
+    T_overlap_HPF_LPF = 0
+    T_HPF = 0
+    for xco_HPF in xco_array_HPF:
+        T_HPF+=(xco_HPF[1]-xco_HPF[0])
+        for xco_LPF in xco_array_LPF:
+            if xco_LPF[0] <= xco_HPF[0] <= xco_LPF[1] and xco_LPF[0] <= xco_HPF[1] <= xco_LPF[1]:
+                T_overlap_HPF_LPF+=(xco_HPF[1] - xco_HPF[0])
+            elif xco_LPF[0] <= xco_HPF[0] <= xco_LPF[1]:
+                T_overlap_HPF_LPF+=(xco_LPF[1] - xco_HPF[0])
+            elif xco_LPF[0] <= xco_HPF[1] <= xco_LPF[1]:
+                T_overlap_HPF_LPF+=(xco_HPF[1] - xco_LPF[0])
+            elif xco_HPF[0] <= xco_LPF[0] <= xco_HPF[1] and xco_HPF[0] <= xco_LPF[1] <= xco_HPF[1]:
+                T_overlap_HPF_LPF+=(xco_LPF[1] - xco_LPF[0])
+
+    perc_overlap_HPF_LPF.append(round((T_overlap_HPF_LPF/T_HPF)*100,1))
+
+
+
+    T_overlap_BPF_HPF = 0
+    T_BPF = 0
+    for xco_BPF in xco_array_BPF:
+        T_BPF+=(xco_BPF[1]-xco_BPF[0])
+        for xco_HPF in xco_array_HPF:
+            if xco_HPF[0] <= xco_BPF[0] <= xco_HPF[1] and xco_HPF[0] <= xco_BPF[1] <= xco_HPF[1]:
+                T_overlap_BPF_HPF+=(xco_BPF[1] - xco_BPF[0])
+            elif xco_HPF[0] <= xco_BPF[0] <= xco_HPF[1]:
+                T_overlap_BPF_HPF+=(xco_HPF[1] - xco_BPF[0])
+            elif xco_HPF[0] <= xco_BPF[1] <= xco_HPF[1]:
+                T_overlap_BPF_HPF+=(xco_BPF[1] - xco_HPF[0])
+            elif xco_BPF[0] <= xco_HPF[0] <= xco_BPF[1] and xco_BPF[0] <= xco_HPF[1] <= xco_BPF[1]:
+                T_overlap_BPF_HPF+=(xco_HPF[1] - xco_HPF[0])
+
+    perc_overlap_BPF_HPF.append(round((T_overlap_BPF_HPF/T_BPF)*100,1))
+
+    T_overlap_HPF_BPF = 0
+    T_HPF = 0
+    for xco_HPF in xco_array_HPF:
+        T_HPF+=(xco_HPF[1]-xco_HPF[0])
+        for xco_BPF in xco_array_BPF:
+            if xco_BPF[0] <= xco_HPF[0] <= xco_BPF[1] and xco_BPF[0] <= xco_HPF[1] <= xco_BPF[1]:
+                T_overlap_HPF_BPF+=(xco_HPF[1] - xco_HPF[0])
+            elif xco_BPF[0] <= xco_HPF[0] <= xco_BPF[1]:
+                T_overlap_HPF_BPF+=(xco_BPF[1] - xco_HPF[0])
+            elif xco_BPF[0] <= xco_HPF[1] <= xco_BPF[1]:
+                T_overlap_HPF_BPF+=(xco_HPF[1] - xco_BPF[0])
+            elif xco_HPF[0] <= xco_BPF[0] <= xco_HPF[1] and xco_HPF[0] <= xco_BPF[1] <= xco_HPF[1]:
+                T_overlap_HPF_BPF+=(xco_BPF[1] - xco_BPF[0])
+
+    perc_overlap_HPF_BPF.append(round((T_overlap_HPF_BPF/T_HPF)*100,1))
+
+
+
+
+    fig,ax = plt.subplots(figsize=(14,8))
+    idx_min = np.searchsorted(Time_OF,np.min(Times_avg_HPF)); idx_max = np.searchsorted(Time_OF,np.max(Times_avg_HPF))
+    ax.plot(Time_OF[idx_min:idx_max],LPF_1_OOPBM[idx_min:idx_max],"-g")
+    ax.set_ylabel("LPF OOPBM magnitude [kN-m]")
+    ax.grid()
+    ax.axhline(y=np.mean(LPF_1_OOPBM)+threshold*np.std(LPF_1_OOPBM),linestyle="--",color="g")
+
+    for xco in xco_array_LPF:
+        square = patches.Rectangle((xco[0],np.min(LPF_1_OOPBM)), (xco[1]-xco[0]), (np.max(LPF_1_OOPBM)-np.min(LPF_1_OOPBM)), fill=True,color="g",alpha=0.1)
+        ax.add_patch(square)
+
+
+    ax2=ax.twinx()
+    ax2.plot(Times_avg_HPF,avg_HPF_OOPBM,"-b")
+    ax2.axhline(y=np.mean(avg_HPF_OOPBM)+threshold*np.std(avg_HPF_OOPBM),linestyle="--",color="b")
+
+    for xco in xco_array_HPF:
+        square = patches.Rectangle((xco[0],np.min(avg_HPF_OOPBM)), (xco[1]-xco[0]), (np.max(avg_HPF_OOPBM)-np.min(avg_HPF_OOPBM)), fill=True,color="b",alpha=0.1)
+        ax2.add_patch(square)
+
+    ax2.set_ylabel("Filtered (9s) HPF OOPBM magnitude [kN-m]")
+    fig.supxlabel("Time [s]")
+    fig.suptitle("Threshold T={}: mean(x)+T*std(x)\ncorrelation coefficient = {}\nPercentage overlap LPF to HPF = {}\nPercentage overlap HPF to LPF = {}".format(threshold,cc_LPF,perc_overlap_LPF_HPF[ix],perc_overlap_HPF_LPF[ix]))
+    plt.tight_layout()
+    plt.savefig(out_dir+"LPF_HPF_OOPBM_T_{}.png".format(threshold))
+    plt.close(fig)
+
+
+    fig,ax = plt.subplots(figsize=(14,8))
+    ax.plot(Env_Times,Env_BPF_OOPBM,"-r")
+    ax.axhline(y=np.mean(Env_BPF_OOPBM)+threshold*np.std(Env_BPF_OOPBM),linestyle="--",color="r")
+
+    for xco in xco_array_BPF:
+        square = patches.Rectangle((xco[0],np.min(Env_BPF_OOPBM), ), (xco[1]-xco[0]), (np.max(Env_BPF_OOPBM)-np.min(Env_BPF_OOPBM)), fill=True,color="r",alpha=0.1)
+        ax.add_patch(square)
+
+    ax.set_ylabel("Envelope BPF OOPBM magnitude [kN-m]")
+    ax.grid()
+    ax2=ax.twinx()
+    ax2.plot(Times_avg_HPF,avg_HPF_OOPBM,"-b")
+    ax2.axhline(y=np.mean(avg_HPF_OOPBM)+threshold*np.std(avg_HPF_OOPBM),linestyle="--",color="b")
+
+    for xco in xco_array_HPF:
+        square = patches.Rectangle((xco[0],np.min(avg_HPF_OOPBM)), (xco[1]-xco[0]), (np.max(avg_HPF_OOPBM)-np.min(avg_HPF_OOPBM)), fill=True,color="b",alpha=0.1)
+        ax2.add_patch(square)
+
+    ax2.set_ylabel("Filtered (9s) HPF OOPBM magnitude [kN-m]")
+    fig.supxlabel("Time [s]")
+    fig.suptitle("Threshold T={}: mean(x)+T*std(x)\ncorrelation coefficient = {}\nPercentage overlap BPF to HPF = {}\nPercentage overlap HPF to BPF = {}".format(threshold,cc_BPF,perc_overlap_BPF_HPF[ix],perc_overlap_HPF_BPF[ix]))
+    plt.tight_layout()
+    plt.savefig(out_dir+"BPF_HPF_OOPBM_T_{}.png".format(threshold))
+    plt.close(fig)
+
+    ix+=1
+
+
+
+plt.figure(figsize=(14,8))
+plt.plot(thresholds,perc_overlap_LPF_HPF,"-og",label="LPF to HPF")
+plt.plot(thresholds,perc_overlap_HPF_LPF,"-ob",label="HPF to LPF")
+plt.plot(thresholds,perc_overlap_BPF_HPF,"-or",label="BPF to HPF")
+plt.plot(thresholds,perc_overlap_HPF_BPF,"-om",label="HPF to BPF")
+plt.xlabel("Threshold $T$: $mean(x)+T*std(x)$ [kN]")
+plt.ylabel("Percentage overlap [%]")
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"Threshold_percentage_overlap.png")
+plt.close(fig)
+
 # plt.rcParams['font.size'] = 16
 # out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
 # fig = plt.figure(figsize=(14,8))
@@ -346,137 +596,492 @@ BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
 HPF_FBR = np.subtract(FBR,LPF_3_FBR)
 HPF_FBR = np.array(low_pass_filter(HPF_FBR,40,dt))
 
-#LPF calc
-LPF_FBR = hard_filter(FBR,0.1,dt,"lowpass")
+LPF_1_FBR = np.array(hard_filter(FBR,0.3,dt,"lowpass"))
+LPF_2_FBR = np.array(hard_filter(FBR,0.9,dt,"lowpass"))
+BPF_FBR = np.array(hard_filter(FBR,[0.3,0.9],dt,"bandpass"))
+HPF_FBR = np.array(hard_filter(FBR,[1.5,40],dt,"bandpass"))
 
-dLPF_FBR = np.array(dt_calc(LPF_FBR,dt))
-zero_crossings_index_LPF_FBR = np.where(np.diff(np.sign(dLPF_FBR)))[0]
+##calculate percentage overlap of high activity events in LPF, BPF and HPF FB signals
+# #BPF calc
+# dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
+# zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+# Env_BPF_FBR = []
+# Env_Times = []
+# for i in np.arange(0,len(zero_crossings_index_BPF_FBR),2):
+#     idx = zero_crossings_index_BPF_FBR[i]
+#     Env_BPF_FBR.append(BPF_FBR[idx]); Env_Times.append(Time_OF[idx])
 
-dt_LPF = []
-Time_mag = []
-FBR_LPF = []
-for i in np.arange(0,len(zero_crossings_index_LPF_FBR)-2,2):
-    it_1 = zero_crossings_index_LPF_FBR[i]
-    it_2 = zero_crossings_index_LPF_FBR[i+1]
-    dt_LPF.append(Time_OF[it_2]-Time_OF[it_1])
-    Time_mag.append(Time_OF[it_1])
-    FBR_LPF.append(LPF_FBR[it_1])
+# f = interpolate.interp1d(Env_Times,Env_BPF_FBR)
+# Env_Times = np.arange(Env_Times[0],Env_Times[-1],0.39)
+# Env_BPF_FBR = f(Env_Times)
+# dt_BPF = Env_Times[1] - Env_Times[0]
+# Env_BPF_FBR = hard_filter(Env_BPF_FBR,0.3,dt_BPF,"lowpass")
 
-#BPF calc
-dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
-zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
-Env_BPF_FBR = []
-Env_Times = []
-for i in np.arange(0,len(zero_crossings_index_BPF_FBR),2):
-    idx = zero_crossings_index_BPF_FBR[i]
-    Env_BPF_FBR.append(BPF_FBR[idx]); Env_Times.append(Time_OF[idx])
+# Env_BPF_FBR = np.array(Env_BPF_FBR); Env_Times = np.array(Env_Times)
 
-
-f = interpolate.interp1d(Env_Times,Env_BPF_FBR)
-Env_Times = np.linspace(Env_Times[0],Env_Times[-1],len(Time_OF))
-dt_Env = Env_Times[1] - Env_Times[0]
-Env_BPF_FBR = f(Env_Times)
-Env_BPF_FBR_LPF = hard_filter(Env_BPF_FBR,0.1,dt_Env,"lowpass")
-
-dBPF_FBR = np.array(dt_calc(Env_BPF_FBR_LPF,dt_Env))
-zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
-dt_BPF = []
-Time_mag = []
-FBR_BPF = []
-for i in np.arange(0,len(zero_crossings_index_BPF_FBR)-2,2):
-    it_1 = zero_crossings_index_BPF_FBR[i]
-    it_2 = zero_crossings_index_BPF_FBR[i+1]
-    dt_BPF.append(Env_Times[it_2]-Env_Times[it_1])
-    Time_mag.append(Env_Times[it_1])
-    FBR_BPF.append(Env_BPF_FBR_LPF[it_1])
-
-#HPF calc
-abs_HPF_FBR = abs(HPF_FBR)
-windows = [7]
-for window in windows:
-    window_idx = np.searchsorted(Time_OF,Time_OF[0]+window)
-    if (window_idx % 2) != 0:
-        window_idx+=1
-    Times_avg_HPF = Time_OF[int(window_idx/2):-int(window_idx/2)]
-    avg_HPF_FBR = []
-    for i in np.arange(0,len(Time_OF)-window_idx):
-        avg_HPF_FBR.append(np.average(abs_HPF_FBR[i:i+window_idx]))
-
-avg_HPF_FBR_LPF = hard_filter(avg_HPF_FBR,0.1,dt,"lowpass")
+# f_BPF = interpolate.interp1d(Env_Times,Env_BPF_FBR)
+# f_LPF = interpolate.interp1d(Time_OF,LPF_1_FBR)
 
 
-dAvg_HPF_FBR = np.array(dt_calc(avg_HPF_FBR_LPF,dt))
+# #HPF calc
+# abs_HPF_FBR = abs(HPF_FBR)
+# windows = [9]
+# for window in windows:
+#     window_idx = np.searchsorted(Time_OF,Time_OF[0]+window)
+#     if (window_idx % 2) != 0:
+#         window_idx+=1
+#     Times_avg_HPF = Time_OF[int(window_idx/2):-int(window_idx/2)]
+#     avg_HPF_FBR = []
+#     for i in np.arange(0,len(Time_OF)-window_idx):
+#         avg_HPF_FBR.append(np.average(abs_HPF_FBR[i:i+window_idx]))
+    
+#     idx_min = np.searchsorted(Times_avg_HPF,np.min(Env_Times)); idx_max = np.searchsorted(Times_avg_HPF,np.max(Env_Times))
+#     Env_BPF_FBR_interp = f_BPF(Times_avg_HPF[idx_min:idx_max])
+#     cc_BPF = round(correlation_coef(Env_BPF_FBR_interp,avg_HPF_FBR[idx_min:idx_max]),3)
 
-zero_crossings_index_Avg_HPF_FBR = np.where(np.diff(np.sign(dAvg_HPF_FBR)))[0]
+#     LPF_1_FBR_interp = f_LPF(Times_avg_HPF)
+#     cc_LPF = round(correlation_coef(LPF_1_FBR_interp,avg_HPF_FBR),3)
 
-dt_HPF = []
-Time_mag = []
-FBR_HPF = []
-for i in np.arange(0,len(zero_crossings_index_Avg_HPF_FBR)-2,2):
-    it_1 = zero_crossings_index_Avg_HPF_FBR[i]
-    it_2 = zero_crossings_index_Avg_HPF_FBR[i+1]
-    dt_HPF.append(Times_avg_HPF[it_2]-Times_avg_HPF[it_1])
-    Time_mag.append(Times_avg_HPF[it_1])
-    FBR_HPF.append(avg_HPF_FBR_LPF[it_1])
+# dt_HPF = Times_avg_HPF[1] - Times_avg_HPF[0]
+# Times_avg_HPF = np.array(Times_avg_HPF); avg_HPF_FBR = np.array(hard_filter(avg_HPF_FBR,0.3,dt_HPF,"lowpass"))
+# # fig = plt.figure(figsize=(14,8))
+# # P,X = probability_dist(LPF_1_FBR)
+# # plt.plot(X,P,"-g",label="LPF")
+# # P,X = probability_dist(Env_BPF_FBR)
+# # plt.plot(X,P,"-r",label="Env BPF")
+# # P,X = probability_dist(avg_HPF_FBR)
+# # plt.plot(X,P,"-b",label="Filtered (9s) HPF")
+# # plt.grid()
 
-plt.rcParams['font.size'] = 16
-out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
-fig = plt.figure(figsize=(14,8))
-P,X = probability_dist(dt_LPF)
-plt.plot(X,P,"-g",label="LPF")
-P,X = probability_dist(dt_BPF)
-plt.plot(X,P,"-r",label="Envelope BPF")
-P,X = probability_dist(dt_HPF)
-plt.plot(X,P,"-b",label="Filtered HPF")
-plt.xlabel("dt [s]")
-plt.ylabel("Probability [-]")
-plt.grid()
-plt.legend()
-plt.tight_layout()
-plt.savefig(out_dir+"PDF_dt_LPF_Env_BPF_avg_HPF.png")
-plt.close()
+# plt.rcParams['font.size'] = 16
+# out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
 
-
-
-mean_LPF = []
-thresholds = np.linspace(np.mean(LPF_1_FBR),np.mean(LPF_1_FBR)+2*np.std(LPF_1_FBR),5)
-thresholds = [np.mean(LPF_1_FBR)]
-for threshold in thresholds:
-    LPF_1_FBR_threshold = []
-    for it in np.arange(0,len(LPF_1_FBR)):
-        if LPF_1_FBR[it] >= threshold:
-            LPF_1_FBR_threshold.append(LPF_1_FBR[it])
-        else:
-            LPF_1_FBR_threshold.append(0.0)
+# perc_overlap_LPF_HPF = []
+# perc_overlap_HPF_LPF = []
+# perc_overlap_BPF_HPF = []
+# perc_overlap_HPF_BPF = []
+# thresholds = np.linspace(0,1,5)
+# ix = 0
+# for threshold in thresholds:
+#     print(threshold)
 
 
+#     idx_min = np.searchsorted(Time_OF,np.min(Times_avg_HPF)); idx_max = np.searchsorted(Time_OF,np.max(Times_avg_HPF))
+#     xco_array_LPF = []
+#     xco = []
+#     for it in np.arange(idx_min,idx_max,dtype=int):
+#         if len(xco) == 0 and LPF_1_FBR[it] >= np.mean(LPF_1_FBR)+threshold*np.std(LPF_1_FBR):
+#             xco.append(Time_OF[it])
+        
+#         if len(xco) == 1 and LPF_1_FBR[it] < np.mean(LPF_1_FBR)+threshold*np.std(LPF_1_FBR):
+#             xco.append(Time_OF[it])
+#             xco_array_LPF.append(xco)
+#             xco = []
+#         print(it)
 
-    dLPF_FBR = np.array(dt_calc(LPF_1_FBR_threshold,dt))
 
-    zero_crossings_index_LPF_FBR = np.where(np.diff(np.sign(dLPF_FBR)))[0]
+#     xco = []
+#     xco_array_BPF = []
+#     for it in np.arange(0,len(Env_Times)):
+#         if len(xco) == 0 and Env_BPF_FBR[it] >= np.mean(Env_BPF_FBR)+threshold*np.std(Env_BPF_FBR):
+#             xco.append(Env_Times[it])
+        
+#         if len(xco) == 1 and Env_BPF_FBR[it] < np.mean(Env_BPF_FBR)+threshold*np.std(Env_BPF_FBR):
+#             xco.append(Env_Times[it])
+#             xco_array_BPF.append(xco)
+#             xco = []
+#         print(it)
 
-    dt_LPF = []
-    FBR_LPF = []
-    Time_mag  = []
-    for i in np.arange(0,len(zero_crossings_index_LPF_FBR)-1,1):
-        it_1 = zero_crossings_index_LPF_FBR[i]
-        it_2 = zero_crossings_index_LPF_FBR[i+1]
-        dt_LPF.append(Time_OF[it_2]-Time_OF[it_1])
 
-        Time_mag.append(Time_OF[it_1])
-        FBR_LPF.append(LPF_1_FBR_threshold[it_1])
+#     xco_array_HPF = []
+#     xco = []
+#     for it in np.arange(0,len(Times_avg_HPF)):
+#         if len(xco) == 0 and avg_HPF_FBR[it] >= np.mean(avg_HPF_FBR)+threshold*np.std(avg_HPF_FBR):
+#             xco.append(Times_avg_HPF[it])
+        
+#         if len(xco) == 1 and avg_HPF_FBR[it] < np.mean(avg_HPF_FBR)+threshold*np.std(avg_HPF_FBR):
+#             xco.append(Times_avg_HPF[it])
+#             xco_array_HPF.append(xco)
+#             xco = []
+#         print(it)
+
+#     T_overlap_LPF_HPF = 0
+#     T_LPF = 0
+#     for xco_LPF in xco_array_LPF:
+#         T_LPF+=(xco_LPF[1]-xco_LPF[0])
+#         for xco_HPF in xco_array_HPF:
+#             if xco_HPF[0] <= xco_LPF[0] <= xco_HPF[1] and xco_HPF[0] <= xco_LPF[1] <= xco_HPF[1]:
+#                 T_overlap_LPF_HPF+=(xco_LPF[1] - xco_LPF[0])
+#             elif xco_HPF[0] <= xco_LPF[0] <= xco_HPF[1]:
+#                 T_overlap_LPF_HPF+=(xco_HPF[1] - xco_LPF[0])
+#             elif xco_HPF[0] <= xco_LPF[1] <= xco_HPF[1]:
+#                 T_overlap_LPF_HPF+=(xco_LPF[1] - xco_HPF[0])
+#             elif xco_LPF[0] <= xco_HPF[0] <= xco_LPF[1] and xco_LPF[0] <= xco_HPF[1] <= xco_LPF[1]:
+#                 T_overlap_LPF_HPF+=(xco_HPF[1] - xco_HPF[0])
+    
+
+#     perc_overlap_LPF_HPF.append(round((T_overlap_LPF_HPF/T_LPF)*100,1))
+
+#     T_overlap_HPF_LPF = 0
+#     T_HPF = 0
+#     for xco_HPF in xco_array_HPF:
+#         T_HPF+=(xco_HPF[1]-xco_HPF[0])
+#         for xco_LPF in xco_array_LPF:
+#             if xco_LPF[0] <= xco_HPF[0] <= xco_LPF[1] and xco_LPF[0] <= xco_HPF[1] <= xco_LPF[1]:
+#                 T_overlap_HPF_LPF+=(xco_HPF[1] - xco_HPF[0])
+#             elif xco_LPF[0] <= xco_HPF[0] <= xco_LPF[1]:
+#                 T_overlap_HPF_LPF+=(xco_LPF[1] - xco_HPF[0])
+#             elif xco_LPF[0] <= xco_HPF[1] <= xco_LPF[1]:
+#                 T_overlap_HPF_LPF+=(xco_HPF[1] - xco_LPF[0])
+#             elif xco_HPF[0] <= xco_LPF[0] <= xco_HPF[1] and xco_HPF[0] <= xco_LPF[1] <= xco_HPF[1]:
+#                 T_overlap_HPF_LPF+=(xco_LPF[1] - xco_LPF[0])
+
+#     perc_overlap_HPF_LPF.append(round((T_overlap_HPF_LPF/T_HPF)*100,1))
+
+
+
+#     T_overlap_BPF_HPF = 0
+#     T_BPF = 0
+#     for xco_BPF in xco_array_BPF:
+#         T_BPF+=(xco_BPF[1]-xco_BPF[0])
+#         for xco_HPF in xco_array_HPF:
+#             if xco_HPF[0] <= xco_BPF[0] <= xco_HPF[1] and xco_HPF[0] <= xco_BPF[1] <= xco_HPF[1]:
+#                 T_overlap_BPF_HPF+=(xco_BPF[1] - xco_BPF[0])
+#             elif xco_HPF[0] <= xco_BPF[0] <= xco_HPF[1]:
+#                 T_overlap_BPF_HPF+=(xco_HPF[1] - xco_BPF[0])
+#             elif xco_HPF[0] <= xco_BPF[1] <= xco_HPF[1]:
+#                 T_overlap_BPF_HPF+=(xco_BPF[1] - xco_HPF[0])
+#             elif xco_BPF[0] <= xco_HPF[0] <= xco_BPF[1] and xco_BPF[0] <= xco_HPF[1] <= xco_BPF[1]:
+#                 T_overlap_BPF_HPF+=(xco_HPF[1] - xco_HPF[0])
+
+#     perc_overlap_BPF_HPF.append(round((T_overlap_BPF_HPF/T_BPF)*100,1))
+
+#     T_overlap_HPF_BPF = 0
+#     T_HPF = 0
+#     for xco_HPF in xco_array_HPF:
+#         T_HPF+=(xco_HPF[1]-xco_HPF[0])
+#         for xco_BPF in xco_array_BPF:
+#             if xco_BPF[0] <= xco_HPF[0] <= xco_BPF[1] and xco_BPF[0] <= xco_HPF[1] <= xco_BPF[1]:
+#                 T_overlap_HPF_BPF+=(xco_HPF[1] - xco_HPF[0])
+#             elif xco_BPF[0] <= xco_HPF[0] <= xco_BPF[1]:
+#                 T_overlap_HPF_BPF+=(xco_BPF[1] - xco_HPF[0])
+#             elif xco_BPF[0] <= xco_HPF[1] <= xco_BPF[1]:
+#                 T_overlap_HPF_BPF+=(xco_HPF[1] - xco_BPF[0])
+#             elif xco_HPF[0] <= xco_BPF[0] <= xco_HPF[1] and xco_HPF[0] <= xco_BPF[1] <= xco_HPF[1]:
+#                 T_overlap_HPF_BPF+=(xco_BPF[1] - xco_BPF[0])
+
+#     perc_overlap_HPF_BPF.append(round((T_overlap_HPF_BPF/T_HPF)*100,1))
+
+
+
+
+#     fig,ax = plt.subplots(figsize=(14,8))
+#     idx_min = np.searchsorted(Time_OF,np.min(Times_avg_HPF)); idx_max = np.searchsorted(Time_OF,np.max(Times_avg_HPF))
+#     ax.plot(Time_OF[idx_min:idx_max],LPF_1_FBR[idx_min:idx_max],"-g")
+#     ax.set_ylabel("LPF Bearing force magnitude [kN]")
+#     ax.grid()
+#     ax.axhline(y=np.mean(LPF_1_FBR)+threshold*np.std(LPF_1_FBR),linestyle="--",color="g")
+
+#     for xco in xco_array_LPF:
+#         square = patches.Rectangle((xco[0],np.min(LPF_1_FBR)), (xco[1]-xco[0]), (np.max(LPF_1_FBR)-np.min(LPF_1_FBR)), fill=True,color="g",alpha=0.1)
+#         ax.add_patch(square)
+
+
+#     ax2=ax.twinx()
+#     ax2.plot(Times_avg_HPF,avg_HPF_FBR,"-b")
+#     ax2.axhline(y=np.mean(avg_HPF_FBR)+threshold*np.std(avg_HPF_FBR),linestyle="--",color="b")
+
+#     for xco in xco_array_HPF:
+#         square = patches.Rectangle((xco[0],np.min(avg_HPF_FBR)), (xco[1]-xco[0]), (np.max(avg_HPF_FBR)-np.min(avg_HPF_FBR)), fill=True,color="b",alpha=0.1)
+#         ax2.add_patch(square)
+
+#     ax2.set_ylabel("Filtered (9s) HPF Bearing force magnitude [kN]")
+#     fig.supxlabel("Time [s]")
+#     fig.suptitle("Threshold T={}: mean(x)+T*std(x)\ncorrelation coefficient = {}\nPercentage overlap LPF to HPF = {}\nPercentage overlap HPF to LPF = {}".format(threshold,cc_LPF,perc_overlap_LPF_HPF[ix],perc_overlap_HPF_LPF[ix]))
+#     plt.tight_layout()
+#     plt.savefig(out_dir+"LPF_HPF_FB_T_{}.png".format(threshold))
+#     plt.close(fig)
+
+
+#     fig,ax = plt.subplots(figsize=(14,8))
+#     ax.plot(Env_Times,Env_BPF_FBR,"-r")
+#     ax.axhline(y=np.mean(Env_BPF_FBR)+threshold*np.std(Env_BPF_FBR),linestyle="--",color="r")
+
+#     for xco in xco_array_BPF:
+#         square = patches.Rectangle((xco[0],np.min(Env_BPF_FBR), ), (xco[1]-xco[0]), (np.max(Env_BPF_FBR)-np.min(Env_BPF_FBR)), fill=True,color="r",alpha=0.1)
+#         ax.add_patch(square)
+
+#     ax.set_ylabel("Envelope BPF Bearing force magnitude [kN]")
+#     ax.grid()
+#     ax2=ax.twinx()
+#     ax2.plot(Times_avg_HPF,avg_HPF_FBR,"-b")
+#     ax2.axhline(y=np.mean(avg_HPF_FBR)+threshold*np.std(avg_HPF_FBR),linestyle="--",color="b")
+
+#     for xco in xco_array_HPF:
+#         square = patches.Rectangle((xco[0],np.min(avg_HPF_FBR)), (xco[1]-xco[0]), (np.max(avg_HPF_FBR)-np.min(avg_HPF_FBR)), fill=True,color="b",alpha=0.1)
+#         ax2.add_patch(square)
+
+#     ax2.set_ylabel("Filtered (9s) HPF Bearing force magnitude [kN]")
+#     fig.supxlabel("Time [s]")
+#     fig.suptitle("Threshold T={}: mean(x)+T*std(x)\ncorrelation coefficient = {}\nPercentage overlap BPF to HPF = {}\nPercentage overlap HPF to BPF = {}".format(threshold,cc_BPF,perc_overlap_BPF_HPF[ix],perc_overlap_HPF_BPF[ix]))
+#     plt.tight_layout()
+#     plt.savefig(out_dir+"BPF_HPF_FB_T_{}.png".format(threshold))
+#     plt.close(fig)
+
+#     ix+=1
+
+
+
+# plt.figure(figsize=(14,8))
+# plt.plot(thresholds,perc_overlap_LPF_HPF,"-og",label="LPF to HPF")
+# plt.plot(thresholds,perc_overlap_HPF_LPF,"-ob",label="HPF to LPF")
+# plt.plot(thresholds,perc_overlap_BPF_HPF,"-or",label="BPF to HPF")
+# plt.plot(thresholds,perc_overlap_HPF_BPF,"-om",label="HPF to BPF")
+# plt.xlabel("Threshold $T$: $mean(x)+T*std(x)$ [kN]")
+# plt.ylabel("Percentage overlap [%]")
+# plt.legend()
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"Threshold_percentage_overlap.png")
+# plt.close(fig)
+
+
+
+
+
+
+# #BPF calc
+# dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
+# zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+# Env_BPF_FBR = []
+# Env_Times = []
+# for i in np.arange(0,len(zero_crossings_index_BPF_FBR),2):
+#     idx = zero_crossings_index_BPF_FBR[i]
+#     Env_BPF_FBR.append(BPF_FBR[idx]); Env_Times.append(Time_OF[idx])
+
+# f_BPF = interpolate.interp1d(Env_Times,Env_BPF_FBR)
+# f_LPF = interpolate.interp1d(Time_OF,LPF_1_FBR)
+
+# plt.rcParams['font.size'] = 16
+# out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time_OF,abs(HPF_FBR),"-k")
+# shift = 0
+# #HPF calc
+# abs_HPF_FBR = abs(HPF_FBR)
+# windows = [1,5,9]
+# for window in windows:
+#     window_idx = np.searchsorted(Time_OF,Time_OF[0]+window)
+#     if (window_idx % 2) != 0:
+#         window_idx+=1
+#     Times_avg_HPF = Time_OF[int(window_idx/2):-int(window_idx/2)]
+#     avg_HPF_FBR = []
+#     for i in np.arange(0,len(Time_OF)-window_idx):
+#         avg_HPF_FBR.append(np.average(abs_HPF_FBR[i:i+window_idx]))
+    
+#     idx_min = np.searchsorted(Times_avg_HPF,np.min(Env_Times)); idx_max = np.searchsorted(Times_avg_HPF,np.max(Env_Times))
+#     Env_BPF_FBR_interp = f_BPF(Times_avg_HPF[idx_min:idx_max])
+#     cc_BPF = round(correlation_coef(Env_BPF_FBR_interp,avg_HPF_FBR[idx_min:idx_max]),3)
+
+#     LPF_1_FBR_interp = f_LPF(Times_avg_HPF)
+#     cc_LPF = round(correlation_coef(LPF_1_FBR_interp,avg_HPF_FBR),3)
+
+#     plt.plot(Times_avg_HPF,np.add(avg_HPF_FBR,shift),label="window = {}s".format(window)+"\n$cc_{LPF}$"+"= {}".format(cc_LPF)+"\n$cc_{BPF}$"+"= {}".format(cc_BPF))
+
+#     shift+=100
+
+
+# plt.xlabel("Time [s]")
+# plt.ylabel("HPF Bearing force magnitude [kN]")
+# plt.legend()
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"avg_HPF_FB.png")
+# plt.close(fig)
+
+
+#plotting cc against window size for LPF and env BPF with effectively filtered HPF
+# #BPF calc
+# dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
+# zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+# Env_BPF_FBR = []
+# Env_Times = []
+# for i in np.arange(0,len(zero_crossings_index_BPF_FBR),2):
+#     idx = zero_crossings_index_BPF_FBR[i]
+#     Env_BPF_FBR.append(BPF_FBR[idx]); Env_Times.append(Time_OF[idx])
+
+# f_BPF = interpolate.interp1d(Env_Times,Env_BPF_FBR)
+# f_LPF = interpolate.interp1d(Time_OF,LPF_1_FBR)
+# #HPF calc
+# abs_HPF_FBR = abs(HPF_FBR)
+# windows = np.arange(1,13,1)
+# cc_BPF = []
+# cc_LPF = []
+# for window in windows:
+#     window_idx = np.searchsorted(Time_OF,Time_OF[0]+window)
+#     if (window_idx % 2) != 0:
+#         window_idx+=1
+#     Times_avg_HPF = Time_OF[int(window_idx/2):-int(window_idx/2)]
+#     avg_HPF_FBR = []
+#     for i in np.arange(0,len(Time_OF)-window_idx):
+#         avg_HPF_FBR.append(np.average(abs_HPF_FBR[i:i+window_idx]))
+    
+#     idx_min = np.searchsorted(Times_avg_HPF,np.min(Env_Times)); idx_max = np.searchsorted(Times_avg_HPF,np.max(Env_Times))
+#     Env_BPF_FBR_interp = f_BPF(Times_avg_HPF[idx_min:idx_max])
+#     cc_BPF.append(correlation_coef(Env_BPF_FBR_interp,avg_HPF_FBR[idx_min:idx_max]))
+
+#     LPF_1_FBR_interp = f_LPF(Times_avg_HPF)
+#     cc_LPF.append(correlation_coef(LPF_1_FBR_interp,avg_HPF_FBR))
+
+# plt.rcParams['font.size'] = 16
+# out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(windows,cc_BPF,"-r",label="(BPF $F_B$, avg(|$F_{B,HPF}$|)")
+# plt.plot(windows,cc_LPF,"-b",label="(LPF $F_B$, avg(|$F_{B,HPF}$|)")
+# plt.xlabel("Window size [s]")
+# plt.ylabel("Correlation coefficient")
+# plt.grid()
+# plt.legend()
+# plt.tight_layout()
+# plt.savefig(out_dir+"cc_window_HPF_FB.png")
+# plt.close(fig)
+
+
+
+
+
+#Quantifying time period PDF's for LPF, BPF and HPF signals representing the overall envelopes of the respective signals
+# #LPF calc
+# LPF_FBR = hard_filter(FBR,0.1,dt,"lowpass")
+
+# dLPF_FBR = np.array(dt_calc(LPF_FBR,dt))
+# zero_crossings_index_LPF_FBR = np.where(np.diff(np.sign(dLPF_FBR)))[0]
+
+# dt_LPF = []
+# Time_mag = []
+# FBR_LPF = []
+# for i in np.arange(0,len(zero_crossings_index_LPF_FBR)-2,2):
+#     it_1 = zero_crossings_index_LPF_FBR[i]
+#     it_2 = zero_crossings_index_LPF_FBR[i+1]
+#     dt_LPF.append(Time_OF[it_2]-Time_OF[it_1])
+#     Time_mag.append(Time_OF[it_1])
+#     FBR_LPF.append(LPF_FBR[it_1])
+
+# #BPF calc
+# dBPF_FBR = np.array(dt_calc(BPF_FBR,dt))
+# zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+# Env_BPF_FBR = []
+# Env_Times = []
+# for i in np.arange(0,len(zero_crossings_index_BPF_FBR),2):
+#     idx = zero_crossings_index_BPF_FBR[i]
+#     Env_BPF_FBR.append(BPF_FBR[idx]); Env_Times.append(Time_OF[idx])
+
+
+# f = interpolate.interp1d(Env_Times,Env_BPF_FBR)
+# Env_Times = np.linspace(Env_Times[0],Env_Times[-1],len(Time_OF))
+# dt_Env = Env_Times[1] - Env_Times[0]
+# Env_BPF_FBR = f(Env_Times)
+# Env_BPF_FBR_LPF = hard_filter(Env_BPF_FBR,0.1,dt_Env,"lowpass")
+
+# dBPF_FBR = np.array(dt_calc(Env_BPF_FBR_LPF,dt_Env))
+# zero_crossings_index_BPF_FBR = np.where(np.diff(np.sign(dBPF_FBR)))[0]
+# dt_BPF = []
+# Time_mag = []
+# FBR_BPF = []
+# for i in np.arange(0,len(zero_crossings_index_BPF_FBR)-2,2):
+#     it_1 = zero_crossings_index_BPF_FBR[i]
+#     it_2 = zero_crossings_index_BPF_FBR[i+1]
+#     dt_BPF.append(Env_Times[it_2]-Env_Times[it_1])
+#     Time_mag.append(Env_Times[it_1])
+#     FBR_BPF.append(Env_BPF_FBR_LPF[it_1])
+
+# #HPF calc
+# abs_HPF_FBR = abs(HPF_FBR)
+# windows = [7]
+# for window in windows:
+#     window_idx = np.searchsorted(Time_OF,Time_OF[0]+window)
+#     if (window_idx % 2) != 0:
+#         window_idx+=1
+#     Times_avg_HPF = Time_OF[int(window_idx/2):-int(window_idx/2)]
+#     avg_HPF_FBR = []
+#     for i in np.arange(0,len(Time_OF)-window_idx):
+#         avg_HPF_FBR.append(np.average(abs_HPF_FBR[i:i+window_idx]))
+
+# avg_HPF_FBR_LPF = hard_filter(avg_HPF_FBR,0.1,dt,"lowpass")
+
+
+# dAvg_HPF_FBR = np.array(dt_calc(avg_HPF_FBR_LPF,dt))
+
+# zero_crossings_index_Avg_HPF_FBR = np.where(np.diff(np.sign(dAvg_HPF_FBR)))[0]
+
+# dt_HPF = []
+# Time_mag = []
+# FBR_HPF = []
+# for i in np.arange(0,len(zero_crossings_index_Avg_HPF_FBR)-2,2):
+#     it_1 = zero_crossings_index_Avg_HPF_FBR[i]
+#     it_2 = zero_crossings_index_Avg_HPF_FBR[i+1]
+#     dt_HPF.append(Times_avg_HPF[it_2]-Times_avg_HPF[it_1])
+#     Time_mag.append(Times_avg_HPF[it_1])
+#     FBR_HPF.append(avg_HPF_FBR_LPF[it_1])
+
+# plt.rcParams['font.size'] = 16
+# out_dir=in_dir+"three_frequency_analysis/FBR_analysis/"
+# fig = plt.figure(figsize=(14,8))
+# P,X = probability_dist(dt_LPF)
+# plt.plot(X,P,"-g",label="LPF")
+# P,X = probability_dist(dt_BPF)
+# plt.plot(X,P,"-r",label="Envelope BPF")
+# P,X = probability_dist(dt_HPF)
+# plt.plot(X,P,"-b",label="Filtered HPF")
+# plt.xlabel("dt [s]")
+# plt.ylabel("Probability [-]")
+# plt.grid()
+# plt.legend()
+# plt.tight_layout()
+# plt.savefig(out_dir+"PDF_dt_LPF_Env_BPF_avg_HPF.png")
+# plt.close()
+
+
+
+# mean_LPF = []
+# thresholds = np.linspace(np.mean(LPF_1_FBR),np.mean(LPF_1_FBR)+2*np.std(LPF_1_FBR),5)
+# thresholds = [np.mean(LPF_1_FBR)]
+# for threshold in thresholds:
+#     LPF_1_FBR_threshold = []
+#     for it in np.arange(0,len(LPF_1_FBR)):
+#         if LPF_1_FBR[it] >= threshold:
+#             LPF_1_FBR_threshold.append(LPF_1_FBR[it])
+#         else:
+#             LPF_1_FBR_threshold.append(0.0)
+
+
+
+#     dLPF_FBR = np.array(dt_calc(LPF_1_FBR_threshold,dt))
+
+#     zero_crossings_index_LPF_FBR = np.where(np.diff(np.sign(dLPF_FBR)))[0]
+
+#     dt_LPF = []
+#     FBR_LPF = []
+#     Time_mag  = []
+#     for i in np.arange(0,len(zero_crossings_index_LPF_FBR)-1,1):
+#         it_1 = zero_crossings_index_LPF_FBR[i]
+#         it_2 = zero_crossings_index_LPF_FBR[i+1]
+#         dt_LPF.append(Time_OF[it_2]-Time_OF[it_1])
+
+#         Time_mag.append(Time_OF[it_1])
+#         FBR_LPF.append(LPF_1_FBR_threshold[it_1])
 
     
-    mean_LPF.append(np.mean(dt_LPF))
-    fig = plt.figure(figsize=(14,8))
-    plt.plot(Time_OF,LPF_1_FBR,"-g")
-    plt.plot(Time_OF,LPF_1_FBR_threshold,"-r")
-    plt.scatter(Time_mag,FBR_LPF)
-    plt.show()
+#     mean_LPF.append(np.mean(dt_LPF))
+#     fig = plt.figure(figsize=(14,8))
+#     plt.plot(Time_OF,LPF_1_FBR,"-g")
+#     plt.plot(Time_OF,LPF_1_FBR_threshold,"-r")
+#     plt.scatter(Time_mag,FBR_LPF)
+#     plt.show()
 
-fig = plt.figure(figsize=(14,8))
-plt.plot(thresholds,mean_LPF)
-plt.show()
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(thresholds,mean_LPF)
+# plt.show()
 
 # Env_BPF_FBR = []
 # Env_Times = []

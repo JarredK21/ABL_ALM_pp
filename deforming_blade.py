@@ -76,7 +76,7 @@ def update(it):
     fig.suptitle("Time: {}s".format(Time[it]))
 
     plt.savefig(out_dir+"{}.png".format(Time_idx))
-    plt.close()
+    plt.close(fig)
 
     return Time_idx
 
@@ -92,7 +92,8 @@ Time = np.array(WT_E.variables["time"])
 dt = Time[1] - Time[0]
 
 Start_time_idx = np.searchsorted(Time,Time[0]+200)
-Time_steps = np.arange(Start_time_idx,len(Time))
+#Time_steps = np.arange(Start_time_idx,len(Time))
+Time_steps = np.arange(0,Start_time_idx)
 
 
 Rotor_coordinates = [np.float64(WT_E.variables["xyz"][0,0,0]),np.float64(WT_E.variables["xyz"][0,0,1]),np.float64(WT_E.variables["xyz"][0,0,2])]
@@ -104,7 +105,7 @@ df_R = Dataset(in_dir+"WTG01.nc")
 
 WT_R = df_R.groups["WTG01"]
 
-out_dir="deforming_blade/"
+out_dir="deforming_blade_2/"
 plt.rcParams['font.size'] = 30
 with Pool() as pool:
     for it in pool.imap(update,Time_steps):
