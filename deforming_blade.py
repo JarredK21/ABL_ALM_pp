@@ -42,15 +42,15 @@ def coordinate_rotation(it):
 def update(it):
 
     if it < 10:
-        Time_idx = "000{}".format(it)
+        Time_idx = "00000{}".format(it)
     elif it >= 10 and it < 100:
-        Time_idx = "00{}".format(it)
+        Time_idx = "0000{}".format(it)
     elif it >= 100 and it < 1000:
-        Time_idx = "0{}".format(it)
+        Time_idx = "000{}".format(it)
     elif it >= 1000 and it < 10000:
-        Time_idx = "{}".format(it)
+        Time_idx = "00{}".format(it)
     elif it >= 10000 and it < 100000:
-        Time_idx = "{}".format(it)
+        Time_idx = "0{}".format(it)
     elif it >= 100000 and it < 10000000:
         Time_idx = "{}".format(it)
 
