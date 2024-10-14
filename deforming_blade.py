@@ -86,7 +86,7 @@ def update(it):
     plt.savefig(out_dir+"{}.png".format(Time_idx))
     plt.close(fig)
 
-    return Time_idx
+    return xco_E,yE_fixed,zE_fixed
 
 
 
@@ -116,9 +116,17 @@ in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/actuator76000/"
 df_R = Dataset(in_dir+"WTG01.nc")
 
 WT_R = df_R.groups["WTG01"]
-
+Time_steps = [0,1]
+ix = 0
+x = []; y = []; z = []
 out_dir="deforming_blade_3/"
 plt.rcParams['font.size'] = 30
 with Pool() as pool:
-    for it in pool.imap(update,Time_steps):
-        print(it)
+    for xit,yit,zit in pool.imap(update,Time_steps):
+        x.append(xit); y.append(yit); z.append(zit)
+        print(np.shape(x))
+        print(ix)
+        ix+=1
+
+x = np.mean(x,axis=0); y = np.mean(y,axis=0); z = np.mean(z,axis=0)
+print(x); print(y); print(z)
