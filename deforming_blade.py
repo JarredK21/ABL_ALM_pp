@@ -37,7 +37,12 @@ def coordinate_rotation(it):
 
     return xs_E,ys_E,zs_E, xs_R,ys_R,zs_R
 
+def tranform_fixed_frame(Y_pri,Z_pri):
 
+    Y = Y_pri*np.cos(Azimuth[it]) - Z_pri*np.sin(Azimuth[it])
+    Z = Y_pri*np.sin(Azimuth[it]) + Z_pri*np.cos(Azimuth[it])
+
+    return Y,Z
 
 def update(it):
 
@@ -57,22 +62,25 @@ def update(it):
 
     xco_E,yco_E,zco_E, xco_R,yco_R,zco_R = coordinate_rotation(it)
 
+    yE_fixed,zE_fixed = tranform_fixed_frame(yco_E-Rotor_coordinates[1],zco_E-Rotor_coordinates[2])
+    yR_fixed,zR_fixed = tranform_fixed_frame(yco_R-Rotor_coordinates[1],zco_R-Rotor_coordinates[2])
+
     fig,(ax1,ax2) = plt.subplots(1,2,figsize=(32,16),sharey=True)
-    ax1.plot(xco_R[:300],zco_R[:300],"-r",label="Rigid")
-    ax1.plot(xco_E[:300],zco_E[:300],"-b",label="Elastic")
-    ax1.set_xlabel("x' coordinate [m]")
+    ax1.plot(xco_R[:300],zR_fixed[:300],"-r",label="Rigid")
+    ax1.plot(xco_E[:300],zE_fixed[:300],"-b",label="Elastic")
+    ax1.set_xlabel("x' coordinate rotating frame of reference [m]")
     ax1.grid()
     ax1.legend(loc="upper right")
-    ax1.set_xlim([Rotor_coordinates[0]-10,Rotor_coordinates[0]+10]); ax1.set_ylim([20,160])
+    ax1.set_xlim([Rotor_coordinates[0]-5,Rotor_coordinates[0]+10]); ax1.set_ylim([80,160])
 
-    ax2.plot(yco_R[:300],zco_R[:300],"-r",label="Rigid")
-    ax2.plot(yco_E[:300],zco_E[:300],"-b",label="Elastic")
-    ax2.set_xlabel("y' coordinate [m]")
+    ax2.plot(yR_fixed[:300],zR_fixed[:300],"-r",label="Rigid")
+    ax2.plot(yE_fixed[:300],zE_fixed[:300],"-b",label="Elastic")
+    ax2.set_xlabel("y' coordinate rotating frame of reference [m]")
     ax2.grid()
     ax2.legend(loc="upper right")
-    ax2.set_xlim([2480,2630]); ax2.set_ylim([20,160])
+    ax2.set_xlim([Rotor_coordinates[1]-5,Rotor_coordinates[1]+5]); ax2.set_ylim([80,160])
 
-    fig.supylabel("z coordinate [m]")
+    fig.supylabel("z coordinate rotating frame of reference [m]")
     fig.suptitle("Time: {}s".format(Time[it]))
 
     plt.savefig(out_dir+"{}.png".format(Time_idx))
@@ -84,6 +92,11 @@ def update(it):
 
 in_dir="actuator76000/"
 
+df = Dataset("Dataset.nc")
+OF_vars = df.groups["OpenFAST_Variables"]
+Azimuth = np.array(OF_vars.variables["Azimuth"])
+Azimuth = 360 - Azimuth[1:]
+
 df_E = Dataset(in_dir+"WTG01.nc")
 
 WT_E = df_E.groups["WTG01"]
@@ -91,9 +104,8 @@ WT_E = df_E.groups["WTG01"]
 Time = np.array(WT_E.variables["time"])
 dt = Time[1] - Time[0]
 
-Start_time_idx = np.searchsorted(Time,Time[0]+200)
-#Time_steps = np.arange(Start_time_idx,len(Time))
-Time_steps = np.arange(0,Start_time_idx)
+Time_steps = np.arange(0,len(Time))
+#Time_steps = np.arange(0,Start_time_idx)
 
 
 Rotor_coordinates = [np.float64(WT_E.variables["xyz"][0,0,0]),np.float64(WT_E.variables["xyz"][0,0,1]),np.float64(WT_E.variables["xyz"][0,0,2])]
@@ -105,7 +117,7 @@ df_R = Dataset(in_dir+"WTG01.nc")
 
 WT_R = df_R.groups["WTG01"]
 
-out_dir="deforming_blade_2/"
+out_dir="deforming_blade_3/"
 plt.rcParams['font.size'] = 30
 with Pool() as pool:
     for it in pool.imap(update,Time_steps):

@@ -243,6 +243,20 @@ for i in np.arange(0,len(Time_OF)):
     RtAeroMys.append(RtAeroMys_i); RtAeroMzs.append(RtAeroMzs_i)
 RtAeroMys = np.array(RtAeroMys)/1000; RtAeroMzs = np.array(RtAeroMzs)/1000
 
+#Total radial aerodynamic bearing force aeroFBR
+L1 = 1.912; L2 = 2.09
+
+FBMy = RtAeroMzs/L2; FBFy = -RtAeroFys*((L1+L2)/L2)
+FBMz = -RtAeroMys/L2; FBFz = -RtAeroFzs*((L1+L2)/L2)
+
+FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
+
+
+FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
+
+plt.plot(Time_OF,FBR)
+plt.show()
+
 
 LSSTipMys = np.array(OpenFAST_vars.variables["LSSTipMys"][Time_start_idx:])
 LSSTipMzs = np.array(OpenFAST_vars.variables["LSSTipMzs"][Time_start_idx:])

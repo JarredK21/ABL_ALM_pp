@@ -9,6 +9,7 @@ from matplotlib.patches import Circle
 from scipy.signal import butter,filtfilt
 from scipy import interpolate
 import time
+import pyFAST.input_output as io
 
 
 def butterwort_low_pass_filer(signal,cutoff,dt):
@@ -85,7 +86,12 @@ def energy_contents_check(Var,e_fft,signal,dt):
     print(Var, E, E2, abs(E2/E))
 
 
-def temporal_spectra(signal,dt,Var):
+def temporal_spectra(signal,dt,Var,detrend):
+
+    if detrend==True:
+        m = np.mean(signal)
+    else:
+        m=0
 
     fs =1/dt
     n = len(signal)
@@ -94,7 +100,7 @@ def temporal_spectra(signal,dt,Var):
     else:
         nhalf = int((n+1)/2)
     frq = np.arange(nhalf)*fs/n
-    Y   = np.fft.fft(signal)
+    Y   = np.fft.rfft(signal-m)
     PSD = abs(Y[range(nhalf)])**2 /(n*fs) # PSD
     PSD[1:-1] = PSD[1:-1]*2
 
@@ -269,8 +275,6 @@ LPF_3_FBR = low_pass_filter(FBR,1.5,dt)
 BPF_FBR = np.subtract(LPF_2_FBR,LPF_1_FBR)
 HPF_FBR = np.subtract(FBR,LPF_3_FBR)
 HPF_FBR = np.array(low_pass_filter(HPF_FBR,40,dt))
-
-
 
 df = Dataset(in_dir+"WTG01.nc")
 

@@ -155,7 +155,7 @@ def actuator_asymmetry_calc(it):
 in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
 
-df = Dataset(in_dir+"WTG01.nc")
+df = Dataset(in_dir+"WTG01a.nc")
 
 # num_act_points = 300
 
