@@ -37,10 +37,10 @@ def coordinate_rotation(it):
 
     return xs_E,ys_E,zs_E, xs_R,ys_R,zs_R
 
-def tranform_fixed_frame(Y_pri,Z_pri):
+def tranform_fixed_frame(Y_pri,Z_pri,it):
 
-    Y = Y_pri*np.cos(Azimuth[it]) - Z_pri*np.sin(Azimuth[it])
-    Z = Y_pri*np.sin(Azimuth[it]) + Z_pri*np.cos(Azimuth[it])
+    Y = ((Y_pri-Rotor_coordinates[1])*np.cos(Azimuth[it]) - (Z_pri-Rotor_coordinates[2])*np.sin(Azimuth[it])) + Rotor_coordinates[1]
+    Z = ((Y_pri-Rotor_coordinates[1])*np.sin(Azimuth[it]) + (Z_pri-Rotor_coordinates[2])*np.cos(Azimuth[it])) + Rotor_coordinates[2]
 
     return Y,Z
 
@@ -62,8 +62,8 @@ def update(it):
 
     xco_E,yco_E,zco_E, xco_R,yco_R,zco_R = coordinate_rotation(it)
 
-    yE_fixed,zE_fixed = tranform_fixed_frame(yco_E-Rotor_coordinates[1],zco_E-Rotor_coordinates[2])
-    yR_fixed,zR_fixed = tranform_fixed_frame(yco_R-Rotor_coordinates[1],zco_R-Rotor_coordinates[2])
+    yE_fixed,zE_fixed = tranform_fixed_frame(yco_E,zco_E,it)
+    yR_fixed,zR_fixed = tranform_fixed_frame(yco_R,zco_R,it)
 
     fig,(ax1,ax2) = plt.subplots(1,2,figsize=(32,16),sharey=True)
     ax1.plot(xco_R[:300],zR_fixed[:300],"-r",label="Rigid")
