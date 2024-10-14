@@ -2,13 +2,14 @@ from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
+import pandas as pd
 
 
 def coordinate_rotation(it):
 
-    xo = np.array(WT_E.variables["xyz"][it,1:,0])
-    yo = np.array(WT_E.variables["xyz"][it,1:,1])
-    zs_E = np.array(WT_E.variables["xyz"][it,1:,2])
+    xo = np.array(WT_E.variables["xyz"][it,1:299,0])
+    yo = np.array(WT_E.variables["xyz"][it,1:299,1])
+    zs_E = np.array(WT_E.variables["xyz"][it,1:299,2])
 
 
     x_trans = xo - Rotor_coordinates[0]
@@ -21,9 +22,9 @@ def coordinate_rotation(it):
     xs_E = xs + Rotor_coordinates[0]
     ys_E = ys + Rotor_coordinates[1]
 
-    xo = np.array(WT_R.variables["xyz"][it,1:,0])
-    yo = np.array(WT_R.variables["xyz"][it,1:,1])
-    zs_R = np.array(WT_R.variables["xyz"][it,1:,2])
+    xo = np.array(WT_R.variables["xyz"][it,1:299,0])
+    yo = np.array(WT_R.variables["xyz"][it,1:299,1])
+    zs_R = np.array(WT_R.variables["xyz"][it,1:299,2])
 
     x_trans = xo - Rotor_coordinates[0]
     y_trans = yo - Rotor_coordinates[1]
@@ -66,15 +67,15 @@ def update(it):
     yR_fixed,zR_fixed = tranform_fixed_frame(yco_R,zco_R,it)
 
     fig,(ax1,ax2) = plt.subplots(1,2,figsize=(32,16),sharey=True)
-    ax1.plot(xco_R[:300],zR_fixed[:300],"-r",label="Rigid")
-    ax1.plot(xco_E[:300],zE_fixed[:300],"-b",label="Elastic")
+    ax1.plot(xco_R,zR_fixed,"-r",label="Rigid")
+    ax1.plot(xco_E,zE_fixed,"-b",label="Elastic")
     ax1.set_xlabel("x' coordinate rotating frame of reference [m]")
     ax1.grid()
     ax1.legend(loc="upper right")
     ax1.set_xlim([Rotor_coordinates[0]-5,Rotor_coordinates[0]+10]); ax1.set_ylim([80,160])
 
-    ax2.plot(yR_fixed[:300],zR_fixed[:300],"-r",label="Rigid")
-    ax2.plot(yE_fixed[:300],zE_fixed[:300],"-b",label="Elastic")
+    ax2.plot(yR_fixed,zR_fixed,"-r",label="Rigid")
+    ax2.plot(yE_fixed,zE_fixed,"-b",label="Elastic")
     ax2.set_xlabel("y' coordinate rotating frame of reference [m]")
     ax2.grid()
     ax2.legend(loc="upper right")
@@ -116,7 +117,6 @@ in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/actuator76000/"
 df_R = Dataset(in_dir+"WTG01.nc")
 
 WT_R = df_R.groups["WTG01"]
-Time_steps = [0,1]
 ix = 0
 x = []; y = []; z = []
 out_dir="deforming_blade_3/"
@@ -129,4 +129,7 @@ with Pool() as pool:
         ix+=1
 
 x = np.mean(x,axis=0); y = np.mean(y,axis=0); z = np.mean(z,axis=0)
-print(x); print(y); print(z)
+d = {"x": x, "y": y, "z": z}
+df = pd.DataFrame(data=d)
+
+df.to_csv("mean_coordinates.csv",index=False)
