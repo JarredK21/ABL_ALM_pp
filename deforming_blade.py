@@ -105,20 +105,12 @@ in_dir="actuator76000/"
 
 #in_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/"
 
-df = Dataset(in_dir+"Dataset.nc")
+df = Dataset("Dataset.nc")
 OF_vars = df.groups["OpenFAST_Variables"]
 Azimuth = np.array(OF_vars.variables["Azimuth"])
-Rt = np.array(OF_vars.variables["RtAeroFxh"])
-
-Azimuth_new = Azimuth
-for it in np.arange(0,len(Azimuth_new)-1):
-    if Azimuth_new[it+1] < Azimuth_new[it]:
-        Azimuth_new[it+1:]+=360
 
 Azimuth = 360 - Azimuth[1:]
 Azimuth = np.radians(Azimuth)
-
-Azimuth_new = 360 - np.array(Azimuth_new[1:])
 
 df_E = Dataset(in_dir+"WTG01b.nc")
 
