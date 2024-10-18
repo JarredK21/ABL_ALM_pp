@@ -112,7 +112,7 @@ Azimuth = np.array(OF_vars.variables["Azimuth"])
 Azimuth = 360 - Azimuth[1:]
 Azimuth = np.radians(Azimuth)
 
-df_E = Dataset(in_dir+"WTG01b.nc")
+df_E = Dataset(in_dir+"WTG01.nc")
 
 WT_E = df_E.groups["WTG01"]
 
@@ -129,7 +129,7 @@ Rotor_coordinates = [np.float64(WT_E.variables["xyz"][0,0,0]),np.float64(WT_E.va
 in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/actuator76000/"
 #in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
-df_R = Dataset(in_dir+"WTG01b.nc")
+df_R = Dataset(in_dir+"WTG01.nc")
 
 WT_R = df_R.groups["WTG01"]
 
