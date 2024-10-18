@@ -1,6 +1,28 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pyFAST.input_output as io
+import pandas as pd
+from scipy import interpolate
+from netCDF4 import Dataset
+from multiprocessing import Pool
+
+
+def moment_calc(it):
+
+    xo = np.array(WT_E.variables["xyz"][it,1:300,0])
+    yo = np.array(WT_E.variables["xyz"][it,1:300,1])
+
+
+    x_trans = xo - Rotor_coordinates[0]
+    y_trans = yo - Rotor_coordinates[1]
+
+    phi = np.radians(-29.29)
+    xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
+
+    My = np.sum(BWeight*xs)/1000
+
+    return My
+
 
 twist = np.array([1.3308000E+01, 1.3308000E+01, 1.3308000E+01, 1.3308000E+01, 1.3308000E+01, 1.3308000E+01, 1.3308000E+01, 1.3308000E+01, 1.3308000E+01, 1.3308000E+01, 1.3308000E+01,
     1.3308000E+01, 1.3181000E+01, 1.2848000E+01, 1.2192000E+01, 1.1561000E+01, 1.1072000E+01, 1.0792000E+01, 1.0232000E+01, 9.6720000E+00, 9.1100000E+00, 8.5340000E+00,
@@ -25,6 +47,78 @@ EgdeStiffness = [1.8113600E+10, 1.8113600E+10, 1.9558600E+10, 1.9497800E+10, 1.9
     3.1390700E+09, 2.7342400E+09, 2.5548700E+09, 2.3340300E+09, 1.8287300E+09, 1.5841000E+09, 1.3233600E+09, 1.1836800E+09, 1.0201600E+09, 7.9781000E+08, 7.0961000E+08, 5.1819000E+08,
     4.5487000E+08, 3.9512000E+08, 3.5372000E+08, 3.0473000E+08, 2.8142000E+08, 2.6171000E+08, 1.5881000E+08, 1.3788000E+08, 1.1879000E+08, 1.0163000E+08, 8.5070000E+07, 6.4260000E+07,
     6.6100000E+06, 5.0100000E+06]
+
+BMassDen = [6.7893500E+02, 6.7893500E+02, 7.7336300E+02, 7.4055000E+02, 7.4004200E+02, 5.9249600E+02, 4.5027500E+02, 4.2405400E+02, 4.0063800E+02, 3.8206200E+02, 3.9965500E+02,
+            4.2632100E+02, 4.1682000E+02, 4.0618600E+02, 3.8142000E+02, 3.5282200E+02, 3.4947700E+02, 3.4653800E+02, 3.3933300E+02, 3.3000400E+02, 3.2199000E+02, 3.1382000E+02,
+            2.9473400E+02, 2.8712000E+02, 2.6334300E+02, 2.5320700E+02, 2.4166600E+02, 2.2063800E+02, 2.0029300E+02, 1.7940400E+02, 1.6509400E+02, 1.5441100E+02, 1.3893500E+02, 
+            1.2955500E+02, 1.0726400E+02, 9.8776000E+01, 9.0248000E+01, 8.3001000E+01, 7.2906000E+01, 6.8772000E+01, 6.6264000E+01, 5.9340000E+01, 5.5914000E+01, 5.2484000E+01,
+            4.9114000E+01, 4.5818000E+01, 4.1669000E+01, 1.1453000E+01, 1.0319000E+01]
+
+f = interpolate.interp1d(BlFract,BMassDen)
+BlFract_interp = np.linspace(0,1,300)
+BMassDen = f(BlFract_interp)[1:]
+
+BlFract_new = []
+BWeight = []
+for i in np.arange(0,len(BlFract_interp)-1):
+    BWeight.append((BMassDen[i]*((BlFract_interp[i+1]-BlFract_interp[i])*63))*9.81)
+    BlFract_new.append(((BlFract_interp[i+1]-BlFract_interp[i])/2)+BlFract_interp[i])
+
+fig = plt.figure(figsize=(14,8))
+plt.plot(BlFract_new,BWeight)
+plt.xlabel("Blade fraction [-]")
+plt.ylabel("Blade weight distribution [N]")
+plt.grid()
+plt.tight_layout()
+plt.savefig("../../NREL_5MW_3.4.1/BldWeightDist.png")
+plt.close(fig)
+
+
+in_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/"
+df = pd.read_csv(in_dir+"mean_coordinates.csv")
+xco = np.array(df["x"])
+
+My = 0
+for i in np.arange(0,len(xco)):
+    My+=BWeight[i]*(xco[i]-xco[0])
+
+print(My/1000)
+
+
+
+df_E = Dataset(in_dir+"WTG01b.nc")
+
+WT_E = df_E.groups["WTG01"]
+
+Time = np.array(WT_E.variables["time"])
+Start_time_idx = np.searchsorted(Time,Time[0]+200)
+
+Time_steps = np.arange(Start_time_idx,len(Time))
+Time = Time[Start_time_idx:]
+
+Rotor_coordinates = [np.float64(WT_E.variables["xyz"][0,0,0]),np.float64(WT_E.variables["xyz"][0,0,1]),np.float64(WT_E.variables["xyz"][0,0,2])]
+
+ix = 0
+My = []
+with Pool() as pool:
+    for My_it in pool.imap(moment_calc,Time_steps):
+        My.append(My_it)
+        print(ix)
+        ix+=1
+
+M_mean = round(np.mean(My),2); M_std = round(np.std(My),2) 
+out_dir=in_dir+"Elastic_deformations_analysis/"
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time,My)
+plt.axhline(y=np.mean(My),linestyle="--",color="k")
+plt.xlabel("Time [s]")
+plt.ylabel("Estimated moment due to weight (Blade 1) [kN-m]")
+plt.title("Mean = {}kN-m, Standard deviation = {}kN-m".format(M_mean,M_std))
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"My_WR_B1.png")
+plt.close(fig)
+
 
 
 R = 63; omega = (12.1*2*np.pi)/60

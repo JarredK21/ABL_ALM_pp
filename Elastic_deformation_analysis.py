@@ -159,6 +159,15 @@ def transform_rotating_frame(it):
 
     return z_fixed
 
+
+
+def correlation_coef(x,y):
+    
+    r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
+
+    return r
+
+
 #plotting options
 plot_relative_displacement = False
 plot_3d_rotor = False
@@ -167,9 +176,10 @@ plot_radial_vars = False
 plot_acceleration = False
 plot_OF_vars = False
 plot_radial_cc = False
-plot_bar_pairs = False
+plot_bar_pairs = True
 plot_radial_pairs = False
-plot_Aero_radial = True
+plot_Aero_radial = False
+plot_aero_bar_pairs = False
 
 
 in_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/"
@@ -179,13 +189,102 @@ df_E = Dataset(in_dir+"WTG01b.nc")
 
 WT_E = df_E.groups["WTG01"]
 
+dg_E = Dataset(in_dir+"WTG01a.nc")
+
 ds_E = Dataset(in_dir+"Dataset.nc")
+
+Time_OF = np.array(ds_E.variables["Time_OF"])
+dt_OF = Time_OF[1]-Time_OF[0]
+
+Start_time_idx = np.searchsorted(Time_OF,Time_OF[0]+200)
+
+Time_OF = Time_OF[Start_time_idx:]
+Time_steps = np.arange(0,len(Time_OF)-1)
+
+OF_vars = ds_E.groups["OpenFAST_Variables"]
+
+Azimuth = np.array(OF_vars.variables["Azimuth"][Start_time_idx:])
+
+#Azimuth = 360 - Azimuth
+
+# RtAeroFyh = np.array(OF_vars.variables["RtAeroFyh"][Start_time_idx:])/1000
+# RtAeroFzh = np.array(OF_vars.variables["RtAeroFzh"][Start_time_idx:])/1000
+
+# RtAeroFys,RtAeroFzs = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
+
+# # RtAeroMyh = np.array(OF_vars.variables["RtAeroMyh"][Start_time_idx:])/1000
+# # RtAeroMzh = np.array(OF_vars.variables["RtAeroMzh"][Start_time_idx:])/1000
+
+# # RtAeroMys,RtAeroMzs = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
+
+# # RtAeroMRE = np.sqrt( np.add(np.square(RtAeroMys), np.square(RtAeroMzs)) ) 
+
+# RtAeroMys = np.array(OF_vars.variables["LSSTipMys"][Start_time_idx:])
+# RtAeroMzs = np.array(OF_vars.variables["LSSTipMzs"][Start_time_idx:])
+
+# RtAeroMRE = np.sqrt(np.add(np.square(RtAeroMys),np.square(RtAeroMzs)))
+
+# MRE_moms = moments(RtAeroMRE)[:2]
+
+
+# uvelB1 = np.array(dg_E.variables["uvel"][Start_time_idx:,1:301])
+# vvelB1 = np.array(dg_E.variables["vvel"][Start_time_idx:,1:301])
+# uvelB1[uvelB1<0]=0; vvelB1[vvelB1<0]=0 #remove negative velocities
+# hvelB1 = np.add(np.cos(np.radians(29))*uvelB1, np.sin(np.radians(29))*vvelB1)
+# uvelB2 = np.array(dg_E.variables["uvel"][Start_time_idx:,301:601])
+# vvelB2 = np.array(dg_E.variables["vvel"][Start_time_idx:,301:601])
+# uvelB2[uvelB2<0]=0; vvelB2[vvelB2<0]=0 #remove negative velocities
+# hvelB2 = np.add(np.cos(np.radians(29))*uvelB2, np.sin(np.radians(29))*vvelB2)
+# uvelB3 = np.array(dg_E.variables["uvel"][Start_time_idx:,601:901])
+# vvelB3 = np.array(dg_E.variables["vvel"][Start_time_idx:,601:901])
+# uvelB3[uvelB3<0]=0; vvelB3[vvelB3<0]=0 #remove negative velocities
+# hvelB3 = np.add(np.cos(np.radians(29))*uvelB3, np.sin(np.radians(29))*vvelB3)
+
+# R = np.linspace(0,63,300)
+# dr = R[1] - R[0]
+# IyE = []
+# IzE = []
+# ix=0
+# with Pool() as pool:
+#     for Iy_it, Iz_it in pool.imap(actuator_asymmetry_calc,Time_steps):
+#         IyE.append(Iy_it); IzE.append(Iz_it)
+#         print(ix)
+#         ix+=1
+
+
+# IE = np.sqrt(np.add(np.square(IyE),np.square(IzE)))
+# IE_moms = moments(IE)[:2]
+
+
+# hvelB1E = hvelB1; hvelB2E = hvelB2; hvelB3E = hvelB3
+
+
+# ccE = round(correlation_coef(RtAeroMRE[:-1],IE),2)
+# plt.rcParams['font.size'] = 16
+# out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Rotor_Var_plots/"
+# fig,ax = plt.subplots(figsize=(14,8))
+# ax.plot(Time_OF,RtAeroMRE,"-r",label="Moments: {}".format(MRE_moms))
+# ax.set_ylabel("Out-of-plane bending moment deformable [kN-m]")
+# ax.grid()
+# ax.legend(loc="upper left")
+# ax2=ax.twinx()
+# ax2.plot(Time_OF[:-1],IE,"-b",label="Moments: {}".format(IE_moms))
+# ax2.set_ylabel("Blade Asymmetry [$m^3/s$]")
+# ax2.grid()
+# ax2.legend(loc="upper right")
+# fig.supxlabel("Time [s]")
+# fig.suptitle("Deformable case Correlation coefficient = {}".format(ccE))
+# plt.tight_layout()
+# plt.savefig(out_dir+"Elastic_MR_IB_2.png")
+# plt.close()
+
+
 
 Rotor_coordinates = [np.float64(WT_E.variables["xyz"][0,0,0]),np.float64(WT_E.variables["xyz"][0,0,1]),np.float64(WT_E.variables["xyz"][0,0,2])]
 
-OF_vars = ds_E.groups["OpenFAST_Variables"]
-Azimuth = np.array(OF_vars.variables["Azimuth"])
-Azimuth = 360 - Azimuth[1:]
+
+# Azimuth = np.array(OF_vars.variables["Azimuth"])
+# Azimuth = 360 - Azimuth[1:]
 
 # xo = np.array(WT_E.variables["xyz"][0,1:,0])
 # yo = np.array(WT_E.variables["xyz"][0,1:,1])
@@ -214,16 +313,148 @@ Azimuth = 360 - Azimuth[1:]
 
 in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
+a = Dataset(in_dir+"Dataset.nc")
+
+Time_OF = np.array(a.variables["Time_OF"])
+Tstart_idx = np.searchsorted(Time_OF,Time_OF[0]+200)
+Time_OF = Time_OF[Tstart_idx:]
+
+OF_vars = a.groups["OpenFAST_Variables"]
+
+Azimuth = np.radians(np.array(OF_vars.variables["Azimuth"][Tstart_idx:]))
+
+RtAeroFyh = np.array(OF_vars.variables["RtAeroFyh"][Tstart_idx:])/1000
+RtAeroFzh = np.array(OF_vars.variables["RtAeroFzh"][Tstart_idx:])/1000
+
+RtAeroFys, RtAeroFzs = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
+
+
+RtAeroMyh = np.array(OF_vars.variables["RtAeroMyh"][Tstart_idx:])/1000
+RtAeroMzh = np.array(OF_vars.variables["RtAeroMzh"][Tstart_idx:])/1000
+
+RtAeroMys, RtAeroMzs = tranform_fixed_frame(RtAeroMyh,RtAeroMzh,Azimuth)
+
+RtAeroMR = np.sqrt( np.add(np.square(RtAeroMys), np.square(RtAeroMzs)) ) 
+
+
+RtAeroFxa_E = np.array(OF_vars.variables["LSShftFxa"][Tstart_idx:])
+
+RtAeroFys_EE = np.array(OF_vars.variables["LSShftFys"][Tstart_idx:])
+RtAeroFzs_EE = np.array(OF_vars.variables["LSShftFzs"][Tstart_idx:])
+
+RtAeroMxa_EE = np.array(OF_vars.variables["LSShftMxa"][Tstart_idx:])
+
+RtAeroMys_EE = np.array(OF_vars.variables["LSSTipMys"][Tstart_idx:])
+RtAeroMzs_EE = np.array(OF_vars.variables["LSSTipMzs"][Tstart_idx:])
+
+
+
 df_R = Dataset(in_dir+"WTG01b.nc")
 
 WT_R = df_R.groups["WTG01"]
 
 ds_R = Dataset(in_dir+"Dataset.nc")
 
-xs_E,ys_E,zs_E, xs_R,ys_R,zs_R = coordinate_rotation(it=200)
-print(Azimuth[200])
-print(ys_R[299],zs_R[299])
-stop =1 
+dg_R = Dataset(in_dir+"WTG01a.nc")
+
+OF_vars = ds_R.groups["OpenFAST_Variables"]
+
+# RtAeroMyh = np.array(OF_vars.variables["RtAeroMyh"][Start_time_idx:])/1000
+# RtAeroMzh = np.array(OF_vars.variables["RtAeroMzh"][Start_time_idx:])/1000
+
+# RtAeroMys,RtAeroMzs = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
+
+# RtAeroMRR = np.sqrt( np.add(np.square(RtAeroMys), np.square(RtAeroMzs)) ) 
+
+# RtAeroMys = np.array(OF_vars.variables["LSSTipMys"][Start_time_idx:])
+# RtAeroMzs = np.array(OF_vars.variables["LSSTipMzs"][Start_time_idx:])
+
+# RtAeroMRR = np.sqrt(np.add(np.square(RtAeroMys),np.square(RtAeroMzs)))
+
+# MRR_moms = moments(RtAeroMRR)[:2]
+
+# uvelB1 = np.array(dg_R.variables["uvel"][Start_time_idx:,1:301])
+# vvelB1 = np.array(dg_R.variables["vvel"][Start_time_idx:,1:301])
+# uvelB1[uvelB1<0]=0; vvelB1[vvelB1<0]=0 #remove negative velocities
+# hvelB1 = np.add(np.cos(np.radians(29))*uvelB1, np.sin(np.radians(29))*vvelB1)
+# uvelB2 = np.array(dg_R.variables["uvel"][Start_time_idx:,301:601])
+# vvelB2 = np.array(dg_R.variables["vvel"][Start_time_idx:,301:601])
+# uvelB2[uvelB2<0]=0; vvelB2[vvelB2<0]=0 #remove negative velocities
+# hvelB2 = np.add(np.cos(np.radians(29))*uvelB2, np.sin(np.radians(29))*vvelB2)
+# uvelB3 = np.array(dg_R.variables["uvel"][Start_time_idx:,601:901])
+# vvelB3 = np.array(dg_R.variables["vvel"][Start_time_idx:,601:901])
+# uvelB3[uvelB3<0]=0; vvelB3[vvelB3<0]=0 #remove negative velocities
+#hvelB3 = np.add(np.cos(np.radians(29))*uvelB3, np.sin(np.radians(29))*vvelB3)
+
+
+# IyR = []
+# IzR = []
+# ix=0
+# with Pool() as pool:
+#     for Iy_it, Iz_it in pool.imap(actuator_asymmetry_calc,Time_steps):
+#         IyR.append(Iy_it); IzR.append(Iz_it)
+#         print(ix)
+#         ix+=1
+
+
+# IR = np.sqrt(np.add(np.square(IyR),np.square(IzR)))
+# IR_moms = moments(IR)[:2]
+
+# hvelB1R = hvelB1; hvelB2R = hvelB2; hvelB3R = hvelB3
+
+# ccR = round(correlation_coef(RtAeroMRR[:-1],IR),2)
+
+# fig,ax = plt.subplots(figsize=(14,8))
+# ax.plot(Time_OF,RtAeroMRR,"-r",label="Moments: {}".format(MRR_moms))
+# ax.set_ylabel("Out-of-plane bending moment [kN-m]")
+# ax.grid()
+# ax.legend(loc="upper left")
+# ax2=ax.twinx()
+# ax2.plot(Time_OF[:-1],IR,"-b",label="Moments: {}".format(IR_moms))
+# ax2.set_ylabel("Blade Asymmetry [$m^3/s$]")
+# ax2.grid()
+# ax2.legend(loc="upper right")
+# fig.supxlabel("Time [s]")
+# fig.suptitle("Rigid case Correlation coefficient = {}".format(ccR))
+# plt.tight_layout()
+# plt.savefig(out_dir+"Rigid_MR_IB_2.png")
+# plt.close()
+
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time_OF[:-1],IE,"-b",label="Elastic: {}".format(IE_moms))
+# plt.plot(Time_OF[:-1],IR,"-r",label="Rigid: {}".format(IR_moms))
+# plt.xlabel("Time [s]")
+# plt.ylabel("Blade Asymmetry [$m^3/s$]")
+# plt.legend()
+# plt.grid()LSShftFzs
+# plt.close()
+
+# fig = plt.figure(figsize=(14,8))
+# frq,PSD = temporal_spectra(RtAeroMRR,dt_OF,Var="MRR")
+# plt.loglog(frq,PSD,"-r",label="Rigid")
+# frq,PSD = temporal_spectra(RtAeroMRE,dt_OF,Var="MRE")
+# plt.loglog(frq,PSD,"-b",label="Elastic")
+# plt.ylabel("PSD Out-of-plane bending moment [kN-m]")
+# plt.legend()
+# plt.grid()
+# plt.xlabel("Frequency [Hz]")
+# plt.tight_layout()
+# plt.savefig(out_dir+"Spectra_MR.png")
+# plt.close()
+
+# fig = plt.figure(figsize=(14,8))
+# frq,PSD = temporal_spectra(IE,dt_OF,Var="IE")
+# plt.loglog(frq,PSD,"-b",label="Elastic")
+# frq,PSD = temporal_spectra(IR,dt_OF,Var="IR")
+# plt.loglog(frq,PSD,"-r",label="Rigid")
+# plt.ylabel("PSD Blade Asymmetry [$m^3/s$]")
+# plt.legend()
+# plt.grid()
+# plt.xlabel("Frequency [Hz]")
+# plt.tight_layout()
+# plt.savefig(out_dir+"Spectra_IB.png")
+# plt.close()
+
 
 if plot_acceleration == True:
     in_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/"
@@ -1856,6 +2087,54 @@ if plot_OF_vars == True:
     plt.close(fig)
 
 
+if plot_aero_bar_pairs == True:
+    in_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/"
+
+    out_dir=in_dir+"Elastic_deformations_analysis/"
+
+    df_E = io.fast_output_file.FASTOutputFile(in_dir+"NREL_5MW_Main.out").toDataFrame()    
+
+    Time_OF = np.array(df_E["Time_[s]"])
+
+    dt_OF = Time_OF[1] - Time_OF[0]
+
+    Start_time_idx = np.searchsorted(Time_OF,Time_OF[0]+200)
+
+    Time_OF = Time_OF[Start_time_idx:]
+
+    in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
+    
+    df_R = io.fast_output_file.FASTOutputFile(in_dir+"NREL_5MW_Main.out").toDataFrame()
+
+    Variables = ["Vrel_[m/s]", "Alpha_[deg]", "Cl_[-]", "Cd_[-]", "Fn_[N/m]", "Ft_[N/m]"]
+    label = ["Vrel", "AoA", "Cl", "Cd", "Fn", "Ft"]
+    mean_array = []; std_array = []
+    for j in np.arange(0,len(Variables)):
+        print(Variables[j])
+
+        num = "299"
+
+        txt = "AB1N"+num+Variables[j]
+
+        var_E = np.array(df_E[txt][Start_time_idx:])
+        var_R = np.array(df_R[txt][Start_time_idx:])
+
+        mean_array.append(np.mean(var_E)); mean_array.append(np.mean(var_R))
+        std_array.append(np.std(var_E)); std_array.append(np.std(var_R))
+
+    print(mean_array)
+    print(std_array)
+    xlabel = ["VrelE_[m/s]","VrelR_[m/s]", "AlphaE_[deg]","AlphaR_[deg]", "ClE_[-]","ClR_[-]", "CdE_[-]","CdR_[-]", "FnE_[N/m]","FnR_[N/m]", "FtE_[N/m]","FtR_[N/m]"]
+    colors = ["b","r","b","r","b","r","b","r","b","r","b","r"]
+    out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Elastic_deformations_analysis/"
+    plt.rcParams['font.size'] = 16
+    fig = plt.figure(figsize=(18,8))
+    plt.bar(xlabel,mean_array,color=colors)
+    plt.axhline(y=0.0,color="k")
+    plt.errorbar(xlabel,mean_array,yerr=std_array,fmt = "o",color="k",capsize=10)
+    plt.tight_layout()
+    plt.savefig(out_dir+"summary_aero_bar_pairs.png")
+    plt.close(fig)
 
 
 if plot_bar_pairs == True:
@@ -1870,15 +2149,96 @@ if plot_bar_pairs == True:
 
     print(OF_Vars)
 
+    Azimuth = np.radians(np.array(OF_Vars.variables["Azimuth"][Start_time_idx:]))
+
+    #Aerodynamic variables
+    RtAeroFxa_E = np.array(OF_Vars.variables["RtAeroFxh"][Start_time_idx:])
+
+    RtAeroFyh = np.array(OF_Vars.variables["RtAeroFyh"][Start_time_idx:])
+    RtAeroFzh = np.array(OF_Vars.variables["RtAeroFzh"][Start_time_idx:])
+
+    RtAeroFys_E, RtAeroFzs_E = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
+
+    RtAeroMxa_E = np.array(OF_Vars.variables["RtAeroMxh"][Start_time_idx:])
+
+    RtAeroMyh = np.array(OF_Vars.variables["RtAeroMyh"][Start_time_idx:])
+    RtAeroMzh = np.array(OF_Vars.variables["RtAeroMyh"][Start_time_idx:])
+
+    RtAeroMys_E, RtAeroMzs_E = tranform_fixed_frame(RtAeroMyh,RtAeroMzh,Azimuth)
+
+    MR_E = np.sqrt(np.add(np.square(RtAeroMys_E),np.square(RtAeroMzs_E)))
+
+    #Total radial aerodynamic bearing force aeroFBR
+    L1 = 1.912; L2 = 2.09
+
+    FBMy_E = RtAeroMzs_E/L2; FBFy_E = -RtAeroFys_E*((L1+L2)/L2)
+    FBMz_E = -RtAeroMys_E/L2; FBFz_E = -RtAeroFzs_E*((L1+L2)/L2)
+
+    FBy_E = -(FBMy_E + FBFy_E); FBz_E = -(FBMz_E + FBFz_E)
+
+    FBR_E = np.sqrt(np.add(np.square(FBy_E),np.square(FBz_E)))
+
+
+    #rigid variables
+    OF_Vars = ds_R.groups["OpenFAST_Variables"]
+
+    RtAeroFxa_R = np.array(OF_Vars.variables["RtAeroFxh"][Start_time_idx:])
+
+    RtAeroFyh = np.array(OF_Vars.variables["RtAeroFyh"][Start_time_idx:])
+    RtAeroFzh = np.array(OF_Vars.variables["RtAeroFzh"][Start_time_idx:])
+
+    RtAeroFys_R,RtAeroFzs_R = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
+
+    RtAeroMxa_R = np.array(OF_Vars.variables["RtAeroMxh"][Start_time_idx:])
+
+    RtAeroMyh = np.array(OF_Vars.variables["RtAeroMyh"][Start_time_idx:])
+    RtAeroMzh = np.array(OF_Vars.variables["RtAeroMyh"][Start_time_idx:])
+
+    RtAeroMys_R,RtAeroMzs_R = tranform_fixed_frame(RtAeroMyh,RtAeroMzh,Azimuth)
+
+    MR_R = np.sqrt(np.add(np.square(RtAeroMys_R),np.square(RtAeroMzs_R)))
+
+    #Total radial aerodynamic bearing force aeroFBR
+    L1 = 1.912; L2 = 2.09
+
+    FBMy_R = RtAeroMzs_R/L2; FBFy_R = -RtAeroFys_R*((L1+L2)/L2)
+    FBMz_R = -RtAeroMys_R/L2; FBFz_R = -RtAeroFzs_R*((L1+L2)/L2)
+
+    FBy_R = -(FBMy_R + FBFy_R); FBz_R = -(FBMz_R + FBFz_R)
+
+    FBR_R = np.sqrt(np.add(np.square(FBy_R),np.square(FBz_R)))
+
+    # xlabel = np.array(["$|F_B|_E$","$|F_B|_R$", "$F_{B,y,E}$","$F_{B,y,R}$", "$F_{B,z,E}$","$F_{B,z,R}$", "$|M_H|_E$","$|M_H|_R$", "$M_{H,y,E}$","$M_{H,y,R}$", 
+    #                    "$M_{H,z,E}$","$M_{H,z,R}$", "$F_{H,y,E}$","$F_{H,y,R}$", "$F_{H,z,E}$","$F_{H,z,R}$", "$F_{H,x,E}$","$F_{H,x,R}$", "$M_{H,x,E}$","$M_{H,x,R}$"])
+    # colors = ["b","r","b","r","b","r","b","r","b","r","b","r","b","r","b","r","b","r","b","r"]
+    # out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Elastic_deformations_analysis/"
+    # plt.rcParams['font.size'] = 16
+    # fig = plt.figure(figsize=(18,8))
+    # plt.bar(xlabel,mean_array,color=colors)
+    # plt.axhline(y=0.0,color="k")
+    # plt.errorbar(xlabel,mean_array,yerr=std_array,fmt = "o",color="k",capsize=10)
+    # plt.tight_layout()
+    # plt.savefig(out_dir+"summary_bar_pairs.png")
+    # plt.close(fig)
+
+
+
+    #Elastodyn variables
+    OF_Vars = ds_E.groups["OpenFAST_Variables"]
     RtAeroFxa_E = np.array(OF_Vars.variables["LSShftFxa"][Start_time_idx:])
 
-    RtAeroFys_E = np.array(OF_Vars.variables["LSShftFys"][Start_time_idx:])
-    RtAeroFzs_E = np.array(OF_Vars.variables["LSShftFzs"][Start_time_idx:])
+    RtAeroFys_EE = np.array(OF_Vars.variables["LSShftFys"][Start_time_idx:])
+    RtAeroFzs_EE = np.array(OF_Vars.variables["LSShftFzs"][Start_time_idx:])
 
-    RtAeroMxa_E = np.array(OF_Vars.variables["LSShftMxa"][Start_time_idx:])
+    RtAeroMxa_EE = np.array(OF_Vars.variables["LSShftMxa"][Start_time_idx:])
 
-    RtAeroMys_E = np.array(OF_Vars.variables["LSSTipMys"][Start_time_idx:])
-    RtAeroMzs_E = np.array(OF_Vars.variables["LSSTipMzs"][Start_time_idx:])
+    RtAeroMys_EE = np.array(OF_Vars.variables["LSSTipMys"][Start_time_idx:])
+    RtAeroMzs_EE = np.array(OF_Vars.variables["LSSTipMzs"][Start_time_idx:])
+
+    print(correlation_coef(RtAeroFys_E,RtAeroFys_EE))
+    print(correlation_coef(RtAeroFzs_E,RtAeroFzs_EE))
+    print(correlation_coef(RtAeroMys_E,RtAeroMys_EE))
+    print(correlation_coef(RtAeroMzs_E,RtAeroMzs_EE))
 
     MR_E = np.sqrt(np.add(np.square(RtAeroMys_E),np.square(RtAeroMzs_E)))
 
@@ -1899,13 +2259,17 @@ if plot_bar_pairs == True:
 
     RtAeroFxa_R = np.array(OF_Vars.variables["LSShftFxa"][Start_time_idx:])
 
-    RtAeroFys_R = np.array(OF_Vars.variables["LSShftFys"][Start_time_idx:])
-    RtAeroFzs_R = np.array(OF_Vars.variables["LSShftFzs"][Start_time_idx:])
+    RtAeroFys_RR = np.array(OF_Vars.variables["LSShftFys"][Start_time_idx:])
+    RtAeroFzs_RR = np.array(OF_Vars.variables["LSShftFzs"][Start_time_idx:])
 
     RtAeroMxa_R = np.array(OF_Vars.variables["LSShftMxa"][Start_time_idx:])
 
-    RtAeroMys_R = np.array(OF_Vars.variables["LSSTipMys"][Start_time_idx:])
-    RtAeroMzs_R = np.array(OF_Vars.variables["LSSTipMzs"][Start_time_idx:])
+    RtAeroMys_RR = np.array(OF_Vars.variables["LSSTipMys"][Start_time_idx:])
+    RtAeroMzs_RR = np.array(OF_Vars.variables["LSSTipMzs"][Start_time_idx:])
+
+    print(correlation_coef(RtAeroFzs_R,RtAeroFzs_RR))
+    print(correlation_coef(RtAeroMys_R,RtAeroMys_RR))
+    print(correlation_coef(RtAeroMzs_R,RtAeroMzs_RR))
 
     MR_R = np.sqrt(np.add(np.square(RtAeroMys_R),np.square(RtAeroMzs_R)))
 

@@ -225,23 +225,26 @@ Azimuth = np.radians(np.array(OF_vars.variables["Azimuth"][Tstart_idx:T_end_idx]
 RtAeroFyh = np.array(OF_vars.variables["RtAeroFyh"][Tstart_idx:T_end_idx])/1000
 RtAeroFzh = np.array(OF_vars.variables["RtAeroFzh"][Tstart_idx:T_end_idx])/1000
 
-RtAeroFys = []; RtAeroFzs = []
-for i in np.arange(0,len(Time_OF)):
-    RtAeroFys_i, RtAeroFzs_i = tranform_fixed_frame(RtAeroFyh[i],RtAeroFzh[i],Azimuth[i])
-    RtAeroFys.append(RtAeroFys_i); RtAeroFzs.append(RtAeroFzs_i)
-RtAeroFys = np.array(RtAeroFys); RtAeroFzs = np.array(RtAeroFzs)
+RtAeroFys, RtAeroFzs = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
 
 
 RtAeroMyh = np.array(OF_vars.variables["RtAeroMyh"][Tstart_idx:T_end_idx])/1000
 RtAeroMzh = np.array(OF_vars.variables["RtAeroMzh"][Tstart_idx:T_end_idx])/1000
 
-RtAeroMys = []; RtAeroMzs = []
-for i in np.arange(0,len(Time_OF)):
-    RtAeroMys_i, RtAeroMzs_i = tranform_fixed_frame(RtAeroMyh[i],RtAeroMzh[i],Azimuth[i])
-    RtAeroMys.append(RtAeroMys_i); RtAeroMzs.append(RtAeroMzs_i)
-RtAeroMys = np.array(RtAeroMys); RtAeroMzs = np.array(RtAeroMzs)
+RtAeroMys, RtAeroMzs = tranform_fixed_frame(RtAeroMyh,RtAeroMzh,Azimuth)
 
 RtAeroMR = np.sqrt( np.add(np.square(RtAeroMys), np.square(RtAeroMzs)) ) 
+
+
+RtAeroFxa_E = np.array(OF_vars.variables["LSShftFxa"][Tstart_idx:T_end_idx])
+
+RtAeroFys_EE = np.array(OF_vars.variables["LSShftFys"][Tstart_idx:T_end_idx])
+RtAeroFzs_EE = np.array(OF_vars.variables["LSShftFzs"][Tstart_idx:T_end_idx])
+
+RtAeroMxa_EE = np.array(OF_vars.variables["LSShftMxa"][Tstart_idx:T_end_idx])
+
+RtAeroMys_EE = np.array(OF_vars.variables["LSSTipMys"][Tstart_idx:T_end_idx])
+RtAeroMzs_EE = np.array(OF_vars.variables["LSSTipMzs"][Tstart_idx:T_end_idx])
 
 #Filtering MR
 LPF_1_MR = low_pass_filter(RtAeroMR,0.3,dt)
