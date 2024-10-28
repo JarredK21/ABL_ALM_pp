@@ -101,18 +101,49 @@ def rotating_frame_coordinates(it):
     return xco_E,yE_fixed,zE_fixed, xco_R, yR_fixed, zR_fixed
 
 
-in_dir="actuator76000/"
+def energy_contents_check(Var,e_fft,signal,dt):
 
-#in_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/"
+    E = (1/dt)*np.sum(e_fft)
 
-df = Dataset("Dataset.nc")
+    q = np.sum(np.square(signal))
+
+    E2 = q
+
+    print(Var, E, E2, abs(E2/E))    
+
+
+def temporal_spectra(signal,dt,Var):
+
+    fs =1/dt
+    n = len(signal) 
+    if n%2==0:
+        nhalf = int(n/2+1)
+    else:
+        nhalf = int((n+1)/2)
+    frq = np.arange(nhalf)*fs/n
+    Y   = np.fft.fft(signal)
+    PSD = abs(Y[range(nhalf)])**2 /(n*fs) # PSD
+    PSD[1:-1] = PSD[1:-1]*2
+
+
+    energy_contents_check(Var,PSD,signal,dt)
+
+    return frq, PSD
+
+
+
+#in_dir="actuator76000/"
+
+in_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/"
+
+df = Dataset(in_dir+"Dataset.nc")
 OF_vars = df.groups["OpenFAST_Variables"]
 Azimuth = np.array(OF_vars.variables["Azimuth"])
 
 Azimuth = 360 - Azimuth[1:]
 Azimuth = np.radians(Azimuth)
 
-df_E = Dataset(in_dir+"WTG01.nc")
+df_E = Dataset(in_dir+"WTG01b.nc")
 
 WT_E = df_E.groups["WTG01"]
 
@@ -126,20 +157,20 @@ Time_steps = np.arange(Tstart_idx,len(Time))
 Rotor_coordinates = [np.float64(WT_E.variables["xyz"][0,0,0]),np.float64(WT_E.variables["xyz"][0,0,1]),np.float64(WT_E.variables["xyz"][0,0,2])]
 
 
-in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/actuator76000/"
-#in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
+#in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/actuator76000/"
+in_dir="../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
 
-df_R = Dataset(in_dir+"WTG01.nc")
+df_R = Dataset(in_dir+"WTG01b.nc")
 
 WT_R = df_R.groups["WTG01"]
 
 
-out_dir="deforming_blade_3/"
-plt.rcParams['font.size'] = 30
-with Pool() as pool:
-    for it in pool.imap(update,Time_steps):
+# out_dir="deforming_blade_3/"
+# plt.rcParams['font.size'] = 30
+# with Pool() as pool:
+#     for it in pool.imap(update,Time_steps):
         
-        print(it)
+#         print(it)
 
 
 
@@ -163,19 +194,54 @@ with Pool() as pool:
 # plt.close(fig)
 
 
-# ix = 0
-# xE = []; yE = []; zE = []
-# xR = []; yR = []; zR = []
-# #out_dir="deforming_blade_3/"
+ix = 0
+xE = []; yE = []; zE = []
+xR = []; yR = []; zR = []
+out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Elastic_deformations_analysis/"
 
-# #plt.rcParams['font.size'] = 30
-# with Pool() as pool:
-#     for xEit,yEit,zEit,xRit,yRit,zRit in pool.imap(rotating_frame_coordinates,Time_steps):
-#         xE.append(xEit); yE.append(yEit); zE.append(zEit)
-#         xR.append(xRit); yR.append(yRit); zR.append(zRit)
-#         #print(np.shape(x))
-#         print(ix)
-#         ix+=1
+#plt.rcParams['font.size'] = 30
+with Pool() as pool:
+    for xEit,yEit,zEit,xRit,yRit,zRit in pool.imap(rotating_frame_coordinates,Time_steps):
+        xE.append(xEit[-1]); yE.append(yEit[-1]); zE.append(zEit[-1])
+        xR.append(xRit[-1]); yR.append(yRit[-1]); zR.append(zRit[-1])
+        #print(np.shape(x))
+        print(ix)
+        ix+=1
+
+xD = np.subtract(xE,xR); yD = np.subtract(yE,yR); zD = np.subtract(zE,zR)
+
+fig = plt.figure(figsize=(14,8))
+frq,PSD = temporal_spectra(xD,dt,"xD")
+plt.loglog(frq,PSD)
+plt.ylabel("PSD: Displacement relative to rigid blade in x direction [m]")
+plt.xlabel("Frequency [Hz]")
+plt.title("Measured at the tip 63m")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"Spectra_x_disp.png")
+plt.close(fig)
+
+fig = plt.figure(figsize=(14,8))
+frq,PSD = temporal_spectra(yD,dt,"zD")
+plt.loglog(frq,PSD)
+plt.ylabel("PSD: Displacement relative to rigid blade in y direction [m]")
+plt.xlabel("Frequency [Hz]")
+plt.title("Measured at the tip 63m")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"Spectra_y_disp.png")
+plt.close(fig)
+
+fig = plt.figure(figsize=(14,8))
+frq,PSD = temporal_spectra(zD,dt,"zD")
+plt.loglog(frq,PSD)
+plt.ylabel("PSD: Displacement relative to rigid blade in z direction [m]")
+plt.xlabel("Frequency [Hz]")
+plt.title("Measured at the tip 63m")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"Spectra_z_disp.png")
+plt.close(fig)
 
 # xE = np.mean(xE,axis=0); yE = np.mean(yE,axis=0); zE = np.mean(zE,axis=0)
 # xR = np.mean(xR,axis=0); yR = np.mean(yR,axis=0); zR = np.mean(zR,axis=0)

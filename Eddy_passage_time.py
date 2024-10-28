@@ -8,6 +8,7 @@ import math
 from scipy import interpolate
 import time
 import pandas as pd
+from matplotlib import cm
 
 
 def probability_dist(y):
@@ -76,11 +77,16 @@ def two_dim_LPF(it):
     ufft = np.fft.fftshift(np.fft.fft2(U))
     ufft_pri = np.fft.fftshift(np.fft.fft2(U_pri))
 
+    delx = 10
+    freqs = fftshift(fftfreq(x, d=delx)) #mirror frequencies are equal and opposite sign in the Re, Im are zero.
+    freq2d = np.array(np.meshgrid( freqs, freqs)) #mirror frequencies are equal in the Re, Im are zero
+    freqs2d = np.sqrt( freq2d[0]**2 + freq2d[1]**2)
+
 
     #multiply filter
-    H = butterwort_low_pass_filer(U)
-    ufft_filt = ufft * H
-    ufft_pri_filt = ufft_pri * H
+    #H = butterwort_low_pass_filer(U)
+    ufft_filt = ufft * (freqs2d < cutoff)
+    ufft_pri_filt = ufft_pri * (freqs2d < cutoff)
 
     #IFFT
     ufft_filt_shift = np.fft.ifftshift(ufft_filt)
@@ -110,51 +116,67 @@ def high_Speed_eddy(it):
     Ux_avg_high = []
     lines = CS.allsegs[0] #plot only threshold velocity
     for line in lines:
-        x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
+        ux_pri_avg = 0
+        if 5 in line[:,1]:
+            eddy="B"
+        elif 5115 in line[:,1]:
+            eddy="T"
+        else:
+            eddy="E"
 
-        Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
+        plt.plot(line[:,0],line[:,1],"-k")
+        line_mod = line[1:-1]
+
+        x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
 
         Dist = np.max(x_pri) - np.min(x_pri)
 
-        if f_pri(Centroid[0],Centroid[1]) < 0.7 or Dist < 1/cutoff:
-            continue
-        else:
+        #calc average velocity of isocontour
+        coo = []
+        x_array = line_mod[:,0]
+        for xr in x_array:
 
-            xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
-            x_array = np.arange(xmin+5,xmax-5,10)
+            xidx = np.where((line_mod[:,0]>(xr-5)) & (line_mod[:,0]<(xr+5)))[0]
 
-
-            coordinates = []
-            for xr in x_array:
-        
-                xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
-                xidxlist = np.where(xidx)
-                if len(xidxlist[0]) == 0:
-                    continue
-
-                ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
-
-                if ymin+10 < ymax-10:
-                    ylist = np.arange(ymin,ymax,10)
-                    
-                    for yr in ylist:
-                        coordinates.append([xr,yr])
-
-            Ux_avg = []
-            for coordinate in coordinates:
-
-                ux = f(coordinate[0],coordinate[1])
-                ux_pri = f_pri(coordinate[0],coordinate[1])
-                if ux_pri >= 0.7 and cmin <= ux <= cmax:
-                    Ux_avg.append(ux)
-
-
-            if len(Ux_avg) == 0:
-                continue
+            yedges = line_mod[xidx,1]
+            ymin = np.min(yedges); ymax = np.max(yedges)
+            if eddy=="B":
+                if (ymax - 10) < 10:
+                    y_array = [(5+ymax)/2]
+                else:
+                    y_array = np.arange(5,ymax-5,10)
+            elif eddy == "T":
+                if (5115- (ymin + 10)) < 10:
+                    y_array = [(ymin + 5115)/2]
+                else:
+                    y_array = np.arange(ymin,5115,10)
             else:
+                if (ymax - 5) - (ymin + 5) < 10:
+                    y_array = [(ymax+ymin)/2]
+                else:
+                    y_array = np.arange(ymin+5,ymax-5,10)
+
+            for yr in y_array:
+                if f_pri(xr,yr) >= 0.7:
+                    coo.append([xr,yr])
+
+
+        if len(coo) > 0:
+            coo = np.array(coo)
+            ux_pri_avg = []
+            for co in coo:
+                ux_pri_avg.append(f_pri(co[0],co[1]))
+            ux_pri_avg = np.average(ux_pri_avg)
+
+            if ux_pri_avg >= 0.7:
                 D_high.append(Dist)
-                Ux_avg_high.append(np.average(Ux_avg))
-                Tau_high.append(Dist/np.average(Ux_avg))
+                ux_avg = []
+                for co in coo:
+                    ux_avg.append(f(co[0],co[1]))
+                ux_avg = np.average(ux_pri_avg)
+                Ux_avg_high.append(ux_avg)
+                Tau_high.append(Dist/ux_avg)
+
     
     return D_high, Ux_avg_high, Tau_high
 
@@ -166,6 +188,8 @@ def low_Speed_eddy(it):
 
     CZ = plt.contour(X,Y,filt_U_PRI, levels=levels_neg)
 
+    Isocontour_plotting(filt_u_pri[it],levels,cmin_pri,cmax_pri,False)
+
     f = interpolate.interp2d(xs,ys,filt_U,kind="linear")
     f_pri = interpolate.interp2d(xs,ys,filt_U_PRI,kind="linear")
 
@@ -174,53 +198,97 @@ def low_Speed_eddy(it):
     Ux_avg_low = []
     lines = CZ.allsegs[-1] #plot only threshold velocity
     for line in lines:
-        x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
+        ux_pri_avg = 0
+        if 5 in line[:,1]:
+            eddy="B"
+        elif 5115 in line[:,1]:
+            eddy="T"
+        else:
+            eddy="E"
 
-        Centroid = [np.sum(line[:,0])/len(line[:,0]), np.sum(line[:,1])/len(line[:,1])]
+        plt.plot(line[:,0],line[:,1],"-k")
+        line_mod = line[1:-1]
+
+        x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
 
         Dist = np.max(x_pri) - np.min(x_pri)
 
+        #calc average velocity of isocontour
+        coo = []
+        x_array = line_mod[:,0]
+        for xr in x_array:
 
-        if f_pri(Centroid[0],Centroid[1]) > -0.7 or Dist < 1/cutoff:
-            continue
-        else:
+            xidx = np.where((line_mod[:,0]>(xr-5)) & (line_mod[:,0]<(xr+5)))[0]
 
-            xmin = np.min(line[:,0]); xmax = np.max(line[:,0])
-            x_array = np.arange(xmin+5,xmax-5,10)
-
-
-            coordinates = []
-            for xr in x_array:
-        
-                xidx = (line[:,0]>(xr-5))*(line[:,0]<xr+5)
-                xidxlist = np.where(xidx)
-                if len(xidxlist[0]) == 0:
-                    continue
-
-                ymin = np.min(line[xidxlist[0],1]); ymax = np.max(line[xidxlist[0],1])
-
-                if ymin+10 < ymax-10:
-                    ylist = np.arange(ymin,ymax,10)
-                    
-                    for yr in ylist:
-                        coordinates.append([xr,yr])
-
-            Ux_avg = []
-            for coordinate in coordinates:
-                ux = f(coordinate[0],coordinate[1])
-                ux_pri = f_pri(coordinate[0],coordinate[1])
-                if ux_pri <= -0.7 and cmin <= ux <= cmax:
-                    Ux_avg.append(ux)
-
-
-            if len(Ux_avg) == 0:
-                continue
+            yedges = line_mod[xidx,1]
+            ymin = np.min(yedges); ymax = np.max(yedges)
+            if eddy=="B":
+                if (ymax - 10) < 10:
+                    y_array = [(5+ymax)/2]
+                else:
+                    y_array = np.arange(5,ymax-5,10)
+            elif eddy == "T":
+                if (5115- (ymin + 10)) < 10:
+                    y_array = [(ymin + 5115)/2]
+                else:
+                    y_array = np.arange(ymin,5115,10)
             else:
+                if (ymax - 5) - (ymin + 5) < 10:
+                    y_array = [(ymax+ymin)/2]
+                else:
+                    y_array = np.arange(ymin+5,ymax-5,10)
+
+            for yr in y_array:
+                if f_pri(xr,yr) <= 0.7:
+                    coo.append([xr,yr])
+
+
+        if len(coo) > 0:
+            coo = np.array(coo)
+            ux_pri_avg = []
+            for co in coo:
+                ux_pri_avg.append(f_pri(co[0],co[1]))
+            ux_pri_avg = np.average(ux_pri_avg)
+
+            if ux_pri_avg <= 0.7:
                 D_low.append(Dist)
-                Ux_avg_low.append(np.average(Ux_avg))
-                Tau_low.append(Dist/np.average(Ux_avg))
+                ux_avg = []
+                for co in coo:
+                    ux_avg.append(f(co[0],co[1]))
+                ux_avg = np.average(ux_pri_avg)
+                Ux_avg_low.append(ux_avg)
+                Tau_low.append(Dist/ux_avg)
+
     
     return D_low, Ux_avg_low, Tau_low
+
+
+
+def Isocontour_plotting(u,levels,cmin,cmax,plot_contours):
+
+    U = u #velocity time step it
+
+    u_plane = U.reshape(x,y)
+    X,Y = np.meshgrid(xs,ys)
+
+
+    Z = u_plane
+
+    fig = plt.figure(figsize=(50,30))
+    plt.rcParams['font.size'] = 40
+
+    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
+
+    if plot_contours == True:
+        CS = plt.contour(X, Y, Z, levels=[-0.7,0.7], colors='k')
+        plt.clabel(CS, fontsize=9, inline=True)
+
+
+    plt.xlabel("x axis [m]")
+    plt.ylabel("y axis [m]")
+
+
+    cb = plt.colorbar(cs)
 
 
 start_time = time.time()
@@ -245,7 +313,7 @@ print("line 252",time.time()-start_time)
 offsets = [22.5,85,142.5]
 filter_cutoff = [(1*3e-03),(1.5*3e-03),(2*3e-03),(2.5*3e-03),(3*3e-03)]
 
-
+folder = "Eddy_passage_time_analysis/"
 for offset in offsets:
     print(offset)
     a = Dataset("sampling_l_{}.nc".format(offset))
@@ -288,6 +356,32 @@ for offset in offsets:
             u_pri.append(u_hvel_pri_it)
             print(len(u_hvel))
     u = np.array(u_hvel); u_pri = np.array(u_pri); del u_hvel; del v
+
+    cmin = math.floor(np.min(u))
+    cmax = math.ceil(np.max(u))
+
+    nlevs = (cmax-cmin)
+    levels = np.linspace(cmin,cmax,nlevs,dtype=int)
+
+    cmin_pri = math.floor(np.min(u_pri))
+    cmax_pri = math.ceil(np.max(u_pri))
+
+
+    nlevs = int((cmax_pri-cmin_pri)/2)
+    if nlevs>abs(cmin_pri) or nlevs>cmax_pri:
+        nlevs = min([abs(cmin_pri),cmax_pri])+1
+
+    levs_min = np.linspace(cmin_pri,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax_pri,nlevs,dtype=int)
+    levels = np.concatenate((levs_min,levs_max[1:]))
+    print("line 326", levels)
+
+    Isocontour_plotting(u_pri[0],levels,cmin_pri,cmax_pri,False)   
+    Title = "Unfiltered Fluctuating streamwise velocity [m/s]\nHeight from surface = {}m, Time = 200s".format(offset)
+    filename = ".png"
+    plt.title(Title)
+    plt.savefig(folder+filename)
+    plt.cla()
+    plt.close(fig)
 
 
     D_low_array = []; Ux_avg_low_array = []; Tau_low_array = []
@@ -333,7 +427,13 @@ for offset in offsets:
         levels_neg = np.linspace(cmin_pri,-0.7,4)
         print("line 337", levels_neg)
 
-
+        Isocontour_plotting(filt_u_pri[0],levels,cmin_pri,cmax_pri,True)
+        Title = "Filtered Fluctuating streamwise velocity [m/s]\nHeight from surface = {}m, Filterwidth = {}m, Time = 200s".format(offset,round(1/cutoff,0))
+        filename = ".png"
+        plt.title(Title)
+        plt.savefig(folder+filename)
+        plt.cla()
+        plt.close(fig)
 
         xleft = np.min(xs); xright = np.max(xs)
         ytop = np.max(ys); ybottom = np.min(ys)
@@ -391,7 +491,7 @@ for offset in offsets:
     plt.legend()
     plt.grid()
     plt.tight_layout()
-    plt.savefig("Eddy_passage_time_2_{}m.png".format(height))
+    plt.savefig(folder+"Eddy_passage_time_{}m.png".format(height))
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
@@ -413,7 +513,7 @@ for offset in offsets:
     plt.legend()
     plt.grid()
     plt.tight_layout()
-    plt.savefig("Eddy_velocity_{}m_2.png".format(height))
+    plt.savefig(folder+"Eddy_velocity_{}m.png".format(height))
     plt.close()
 
     fig = plt.figure(figsize=(14,8))
@@ -435,5 +535,5 @@ for offset in offsets:
     plt.legend()
     plt.grid()
     plt.tight_layout()
-    plt.savefig("Eddy_length_{}m_2.png".format(height))
+    plt.savefig(folder+"Eddy_length_{}m.png".format(height))
     plt.close()

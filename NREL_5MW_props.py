@@ -7,10 +7,10 @@ from netCDF4 import Dataset
 from multiprocessing import Pool
 
 
-def moment_calc(it):
+def rotate_coordinates(it):
 
-    xo = np.array(WT_E.variables["xyz"][it,1:300,0])
-    yo = np.array(WT_E.variables["xyz"][it,1:300,1])
+    xo = np.array(WT_E.variables["xyz"][it,300,0])
+    yo = np.array(WT_E.variables["xyz"][it,300,1])
 
 
     x_trans = xo - Rotor_coordinates[0]
@@ -19,7 +19,24 @@ def moment_calc(it):
     phi = np.radians(-29.29)
     xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
 
-    My = np.sum(BWeight*xs)/1000
+    return xs
+
+
+def moment_calc(it):
+
+    xo = np.array(WT_E.variables["xyz"][it,1:,0])
+    yo = np.array(WT_E.variables["xyz"][it,1:,1])
+
+
+    x_trans = xo - Rotor_coordinates[0]
+    y_trans = yo - Rotor_coordinates[1]
+
+    phi = np.radians(-29.29)
+    xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
+
+
+
+    My = np.sum(BWeight_ext*xs)/1000
 
     return My
 
@@ -54,38 +71,52 @@ BMassDen = [6.7893500E+02, 6.7893500E+02, 7.7336300E+02, 7.4055000E+02, 7.400420
             1.2955500E+02, 1.0726400E+02, 9.8776000E+01, 9.0248000E+01, 8.3001000E+01, 7.2906000E+01, 6.8772000E+01, 6.6264000E+01, 5.9340000E+01, 5.5914000E+01, 5.2484000E+01,
             4.9114000E+01, 4.5818000E+01, 4.1669000E+01, 1.1453000E+01, 1.0319000E+01]
 
+# out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Elastic_deformations_analysis/"
+# plt.rcParams['font.size'] = 16
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(BlFract,BMassDen)
+# plt.xlabel("Blade fraction [-]")
+# plt.ylabel("Blade mass density [kg/m]")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"BMassDen.png")
+# plt.close()
+
 f = interpolate.interp1d(BlFract,BMassDen)
 BlFract_interp = np.linspace(0,1,300)
-BMassDen = f(BlFract_interp)[1:]
+dr = BlFract[1] - BlFract[0]
+BMassDen = f(BlFract_interp)
 
+BWeight = list(BMassDen*dr*63*9.81)
 BlFract_new = []
-BWeight = []
 for i in np.arange(0,len(BlFract_interp)-1):
-    BWeight.append((BMassDen[i]*((BlFract_interp[i+1]-BlFract_interp[i])*63))*9.81)
     BlFract_new.append(((BlFract_interp[i+1]-BlFract_interp[i])/2)+BlFract_interp[i])
 
-fig = plt.figure(figsize=(14,8))
-plt.plot(BlFract_new,BWeight)
-plt.xlabel("Blade fraction [-]")
-plt.ylabel("Blade weight distribution [N]")
-plt.grid()
-plt.tight_layout()
-plt.savefig("../../NREL_5MW_3.4.1/BldWeightDist.png")
-plt.close(fig)
+
+BWeight_ext = BWeight+BWeight+BWeight
+
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(BlFract_new,BWeight)
+# plt.xlabel("Blade fraction [-]")
+# plt.ylabel("Blade weight distribution [N]")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig("../../NREL_5MW_3.4.1/BldWeightDist.png")
+# plt.close(fig)
+
+
+# in_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/"
+# df = pd.read_csv(in_dir+"mean_coordinates.csv")
+# xco = np.array(df["x"])
+
+# My = 0
+# for i in np.arange(0,len(xco)):
+#     My+=BWeight[i]*(xco[i]-xco[0])
+
+# print(My/1000)
 
 
 in_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/"
-df = pd.read_csv(in_dir+"mean_coordinates.csv")
-xco = np.array(df["x"])
-
-My = 0
-for i in np.arange(0,len(xco)):
-    My+=BWeight[i]*(xco[i]-xco[0])
-
-print(My/1000)
-
-
-
 df_E = Dataset(in_dir+"WTG01b.nc")
 
 WT_E = df_E.groups["WTG01"]
@@ -93,10 +124,41 @@ WT_E = df_E.groups["WTG01"]
 Time = np.array(WT_E.variables["time"])
 Start_time_idx = np.searchsorted(Time,Time[0]+200)
 
-Time_steps = np.arange(Start_time_idx,len(Time))
-Time = Time[Start_time_idx:]
+Time_steps = np.arange(0,len(Time))
+#Time = Time[Start_time_idx:]
 
 Rotor_coordinates = [np.float64(WT_E.variables["xyz"][0,0,0]),np.float64(WT_E.variables["xyz"][0,0,1]),np.float64(WT_E.variables["xyz"][0,0,2])]
+
+
+ix = 0
+xs = []
+with Pool() as pool:
+    for xs_it in pool.imap(rotate_coordinates,Time_steps):
+        xs.append(xs_it)
+        print(ix)
+        ix+=1
+
+out_dir=in_dir+"Elastic_deformations_analysis/"
+plt.rcParams['font.size'] = 16
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time,xs)
+plt.xlabel("Time [s]")
+plt.ylabel("$x_H$ coordinate blade tip [m]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"xH_tip_coordinate.png")
+plt.close(fig)
+
+idx = np.searchsorted(Time,Time[0]+100)
+fig = plt.figure(figsize=(14,8))
+plt.plot(Time[:idx],xs[:idx])
+plt.xlabel("Time [s]")
+plt.ylabel("$x_H$ coordinate blade tip [m]")
+plt.title("First 100s initial OpenFAST transients")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"xH_tip_coordinate_100.png")
+plt.close(fig)
 
 ix = 0
 My = []
@@ -108,15 +170,16 @@ with Pool() as pool:
 
 M_mean = round(np.mean(My),2); M_std = round(np.std(My),2) 
 out_dir=in_dir+"Elastic_deformations_analysis/"
+plt.rcParams['font.size'] = 16
 fig = plt.figure(figsize=(14,8))
 plt.plot(Time,My)
 plt.axhline(y=np.mean(My),linestyle="--",color="k")
 plt.xlabel("Time [s]")
-plt.ylabel("Estimated moment due to weight (Blade 1) [kN-m]")
+plt.ylabel("Estimated $M_{H,y}$ due to weight [kN-m]")
 plt.title("Mean = {}kN-m, Standard deviation = {}kN-m".format(M_mean,M_std))
 plt.grid()
 plt.tight_layout()
-plt.savefig(out_dir+"My_WR_B1.png")
+plt.savefig(out_dir+"My_WR.png")
 plt.close(fig)
 
 

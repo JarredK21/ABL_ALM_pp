@@ -3,6 +3,37 @@ import numpy as np
 from scipy.fft import fft, fftfreq, fftshift,ifft
 from scipy import interpolate
 from multiprocessing import Pool
+import matplotlib.pyplot as plt
+
+def energy_contents_check(Var,e_fft,signal,dt):
+
+    E = (1/dt)*np.sum(e_fft)
+
+    q = np.sum(np.square(signal))
+
+    E2 = q
+
+    print(Var, E, E2, abs(E2/E))    
+
+
+def temporal_spectra(signal,dt,Var):
+
+    fs =1/dt
+    n = len(signal) 
+    if n%2==0:
+        nhalf = int(n/2+1)
+    else:
+        nhalf = int((n+1)/2)
+    frq = np.arange(nhalf)*fs/n
+    Y   = np.fft.fft(signal)
+    PSD = abs(Y[range(nhalf)])**2 /(n*fs) # PSD
+    PSD[1:-1] = PSD[1:-1]*2
+
+
+    energy_contents_check(Var,PSD,signal,dt)
+
+    return frq, PSD
+
 
 
 def correlation_coef(x,y):
@@ -190,3 +221,33 @@ print(correlation_coef(Iy,RtAeroMys[:-1]))
 print(correlation_coef(Iz,RtAeroMzs[:-1]))
 
 print(correlation_coef(I,RtAeroMR[:-1]))
+
+out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Rotor_Var_plots/"
+plt.rcParams['font.size'] = 16
+fig,ax = plt.subplots(figsize=(14,8))
+frq,PSD = temporal_spectra(I,dt_OF,"IB")
+ax.loglog(frq,PSD,"-b")
+ax.set_ylabel("Blade Asymmetry [$m^3/s$]")
+ax.grid()
+ax2=ax.twinx()
+frq,PSD = temporal_spectra(RtAeroMR,dt_OF,"MR")
+ax2.loglog(frq,PSD,"-r")
+ax2.set_ylabel("Out-of-plane bending moment [kN-m]")
+fig.supxlabel("Frequency [Hz]")
+plt.tight_layout()
+plt.savefig(out_dir+"Spectra_IB_MR.png")
+plt.close(fig)
+
+fig,ax = plt.subplots(figsize=(14,8))
+frq,PSD = temporal_spectra(RtAeroMR,dt_OF,"MR")
+ax.loglog(frq,PSD,"-r")
+ax.set_ylabel("Out-of-plane bending moment [kN-m]")
+ax.grid()
+ax2=ax.twinx()
+frq,PSD = temporal_spectra(I,dt_OF,"IB")
+ax2.loglog(frq,PSD,"-b")
+ax2.set_ylabel("Blade Asymmetry [$m^3/s$]")
+fig.supxlabel("Frequency [Hz]")
+plt.tight_layout()
+plt.savefig(out_dir+"Spectra_IB_MR_2.png")
+plt.close(fig)
