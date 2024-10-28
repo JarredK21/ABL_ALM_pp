@@ -124,12 +124,13 @@ def high_Speed_eddy(it):
         else:
             eddy="E"
 
-        plt.plot(line[:,0],line[:,1],"-k")
         line_mod = line[1:-1]
 
         x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
 
         Dist = np.max(x_pri) - np.min(x_pri)
+        if Dist == 0:
+            continue
 
         #calc average velocity of isocontour
         coo = []
@@ -173,7 +174,7 @@ def high_Speed_eddy(it):
                 ux_avg = []
                 for co in coo:
                     ux_avg.append(f(co[0],co[1]))
-                ux_avg = np.average(ux_pri_avg)
+                ux_avg = np.average(ux_avg)
                 Ux_avg_high.append(ux_avg)
                 Tau_high.append(Dist/ux_avg)
 
@@ -204,12 +205,13 @@ def low_Speed_eddy(it):
         else:
             eddy="E"
 
-        plt.plot(line[:,0],line[:,1],"-k")
         line_mod = line[1:-1]
 
         x_pri = np.subtract( line[:,0] * np.cos(np.radians(-29)), line[:,1] * np.sin(np.radians(-29)) )
 
         Dist = np.max(x_pri) - np.min(x_pri)
+        if Dist == 0:
+            continue
 
         #calc average velocity of isocontour
         coo = []
@@ -253,7 +255,7 @@ def low_Speed_eddy(it):
                 ux_avg = []
                 for co in coo:
                     ux_avg.append(f(co[0],co[1]))
-                ux_avg = np.average(ux_pri_avg)
+                ux_avg = np.average(ux_avg)
                 Ux_avg_low.append(ux_avg)
                 Tau_low.append(Dist/ux_avg)
 
@@ -443,7 +445,7 @@ for offset in offsets:
 
 
         cb = plt.colorbar(cs)
-        Title = "Unfiltered Fluctuating streamwise velocity [m/s]\nHeight from surface = {}m, Time = 200s".format(offset)
+        Title = "filtered {}m Fluctuating streamwise velocity [m/s]\nHeight from surface = {}m, Time = 200s".format(round(1/cutoff,0),offset)
         filename = "filtered_{}_hvel_{}.png".format(round(1/cutoff,0),offset)
         plt.title(Title)
         plt.savefig(folder+filename)
