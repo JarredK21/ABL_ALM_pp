@@ -188,8 +188,6 @@ def low_Speed_eddy(it):
 
     CZ = plt.contour(X,Y,filt_U_PRI, levels=levels_neg)
 
-    Isocontour_plotting(filt_u_pri[it],levels,cmin_pri,cmax_pri,False)
-
     f = interpolate.interp2d(xs,ys,filt_U,kind="linear")
     f_pri = interpolate.interp2d(xs,ys,filt_U_PRI,kind="linear")
 
@@ -262,33 +260,6 @@ def low_Speed_eddy(it):
     
     return D_low, Ux_avg_low, Tau_low
 
-
-
-def Isocontour_plotting(u,levels,cmin,cmax,plot_contours):
-
-    U = u #velocity time step it
-
-    u_plane = U.reshape(x,y)
-    X,Y = np.meshgrid(xs,ys)
-
-
-    Z = u_plane
-
-    fig = plt.figure(figsize=(50,30))
-    plt.rcParams['font.size'] = 40
-
-    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
-
-    if plot_contours == True:
-        CS = plt.contour(X, Y, Z, levels=[-0.7,0.7], colors='k')
-        plt.clabel(CS, fontsize=9, inline=True)
-
-
-    plt.xlabel("x axis [m]")
-    plt.ylabel("y axis [m]")
-
-
-    cb = plt.colorbar(cs)
 
 
 start_time = time.time()
@@ -375,12 +346,33 @@ for offset in offsets:
     levels = np.concatenate((levs_min,levs_max[1:]))
     print("line 326", levels)
 
-    Isocontour_plotting(u_pri[0],levels,cmin_pri,cmax_pri,False)   
+
+    #plotting fluctuating velocity isocontour unfiltered at each offset at 200s
+    U = u_pri[0] #velocity time step it
+
+    u_plane = U.reshape(x,y)
+    X,Y = np.meshgrid(xs,ys)
+
+
+    Z = u_plane
+
+    fig = plt.figure(figsize=(50,30))
+    plt.rcParams['font.size'] = 40
+
+    cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin_pri,vmax=cmax_pri)
+
+
+    plt.xlabel("x axis [m]")
+    plt.ylabel("y axis [m]")
+
+
+    cb = plt.colorbar(cs)
     Title = "Unfiltered Fluctuating streamwise velocity [m/s]\nHeight from surface = {}m, Time = 200s".format(offset)
-    filename = ".png"
+    filename = "Unfiltered_hvel_{}.png".format(offset)
     plt.title(Title)
     plt.savefig(folder+filename)
     plt.cla()
+    cb.remove()
     plt.close(fig)
 
 
@@ -427,13 +419,39 @@ for offset in offsets:
         levels_neg = np.linspace(cmin_pri,-0.7,4)
         print("line 337", levels_neg)
 
-        Isocontour_plotting(filt_u_pri[0],levels,cmin_pri,cmax_pri,True)
-        Title = "Filtered Fluctuating streamwise velocity [m/s]\nHeight from surface = {}m, Filterwidth = {}m, Time = 200s".format(offset,round(1/cutoff,0))
-        filename = ".png"
+
+        #plotting fluctuating velocity isocontour as a function of filter width at each offset at 200s
+        U = filt_u_pri[0] #velocity time step it
+
+        u_plane = U.reshape(x,y)
+        X,Y = np.meshgrid(xs,ys)
+
+
+        Z = u_plane
+
+        fig = plt.figure(figsize=(50,30))
+        plt.rcParams['font.size'] = 40
+
+        cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin_pri,vmax=cmax_pri)
+
+        CS = plt.contour(X, Y, Z, levels=[-0.7,0.7], colors='k')
+        plt.clabel(CS, fontsize=18, inline=True)
+
+
+        plt.xlabel("x axis [m]")
+        plt.ylabel("y axis [m]")
+
+
+        cb = plt.colorbar(cs)
+        Title = "Unfiltered Fluctuating streamwise velocity [m/s]\nHeight from surface = {}m, Time = 200s".format(offset)
+        filename = "filtered_{}_hvel_{}.png".format(round(1/cutoff,0),offset)
         plt.title(Title)
         plt.savefig(folder+filename)
         plt.cla()
+        cb.remove()
         plt.close(fig)
+
+
 
         xleft = np.min(xs); xright = np.max(xs)
         ytop = np.max(ys); ybottom = np.min(ys)
