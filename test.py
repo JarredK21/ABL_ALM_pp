@@ -116,14 +116,6 @@ for velocity in velocities:
         #PDF of filtered data
         data = pd.read_csv('LPF_data_uu.csv')
 
-        data_max = data.to_numpy().max()
-        data_min = data.to_numpy().min()
-
-        std = data.std()
-        bin_width = std/20
-        x = np.arange(data_min,data_max,bin_width)
-        dx = x[1]-x[0]
-
         filtered_data = True
         ix = 0
         with Pool() as pool:
