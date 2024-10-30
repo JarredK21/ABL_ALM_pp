@@ -23,37 +23,31 @@ def probability_dist(it):
     else:
         y = u[it]
 
-    mu = np.mean(y)
-    var = np.var(y)
-    no_bin = 1000
-    X = np.linspace(data_min,data_max,no_bin)
-    dx = X[1]-X[0]
     P = []
-    p = 0
-    i = 0
-    for x in X:
-        denom = np.sqrt(var*2*np.pi)
-        num = np.exp(-((x-mu)**2)/(2*var))
-        P.append(num/denom)
-        p+=(num/denom)*dx
-        i+=1
-    print(p)
+    X = []
+    for i in np.arange(0,len(x)-1):
+        p = 0
+        for yi in y:
+            if yi >= x[i] and yi <= x[i+1]:
+                p+=1
+        P.append(p/(dx*len(y)))
+        X.append((x[i+1]+x[i])/2)
+
+    print(np.sum(P)*dx)
+
     return P,X
 
 
-in_dir = "../../ABL_precursor_2_restart_sampling/"
-out_dir = in_dir+"plots/"
 
-
-a = Dataset(in_dir+"sampling_l_85.nc")
+a = Dataset("sampling_l_85.nc")
 
 p = a.groups["p_l"]
 
 #time options
 Time = np.array(a.variables["time"])
-tstart = 32500
+tstart = 38000
 tstart_idx = np.searchsorted(Time,tstart)
-tend = 33700
+tend = 39200
 tend_idx = np.searchsorted(Time,tend)
 Time_steps = np.arange(0, tend_idx-tstart_idx)
 Time = Time[tstart_idx:tend_idx]
@@ -101,6 +95,11 @@ for velocity in velocities:
         data_max = np.max(u)
         data_min = np.min(u)
 
+        std = np.std(u)
+        bin_width = std/20
+        x = np.arange(data_min,data_max,bin_width)
+        dx = x[1]-x[0]
+
         filtered_data = False
         ix = 0
         unfilted_data = []
@@ -115,10 +114,7 @@ for velocity in velocities:
 
 
         #PDF of filtered data
-        data = pd.read_csv(in_dir+'LPF_data_uu.csv')
-
-        data_max = data.to_numpy().max()
-        data_min = data.to_numpy().min()
+        data = pd.read_csv('LPF_data_uu.csv')
 
         filtered_data = True
         ix = 0
@@ -134,7 +130,7 @@ for velocity in velocities:
 
         PDF_data_uu['X'] = X
 
-        PDF_data_uu.to_csv(in_dir+'PDF_data_uu.csv',index=False)
+        PDF_data_uu.to_csv('PDF_data_uu.csv',index=False)
 
         plt.rcParams['font.size'] = 12
 
@@ -157,7 +153,7 @@ for velocity in velocities:
         plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
         plt.title("CDF averaged over final 1000s",fontsize=18)
         plt.tight_layout()
-        plt.savefig(out_dir+"CDF_Horizontal_velocity.png")
+        plt.savefig("CDF_Horizontal_velocity.png")
         plt.close()
 
         fig = plt.figure(figsize=(14,8))
@@ -171,7 +167,7 @@ for velocity in velocities:
         plt.title("PDF averaged over final 1000s",fontsize=18)
         plt.legend(["filtered", "unfiltered"],fontsize=12)
         plt.tight_layout()
-        plt.savefig(out_dir+"PDF_Horizontal_velocity.png")
+        plt.savefig("PDF_Horizontal_velocity.png")
         plt.close()
 
 
@@ -197,7 +193,7 @@ for velocity in velocities:
 
 
         #PDF of filtered data
-        data = pd.read_csv(in_dir+'LPF_data_ww.csv')
+        data = pd.read_csv('LPF_data_ww.csv')
 
         data_max = data.to_numpy().max()
         data_min = data.to_numpy().min()
@@ -216,7 +212,7 @@ for velocity in velocities:
 
         PDF_data_ww['X'] = X
 
-        PDF_data_ww.to_csv(in_dir+'PDF_data_ww.csv',index=False)
+        PDF_data_ww.to_csv('PDF_data_ww.csv',index=False)
 
         plt.rcParams['font.size'] = 12
 
@@ -239,7 +235,7 @@ for velocity in velocities:
         plt.xticks(np.arange(floor(np.min(X)),ceil(np.max(X)),1))
         plt.title("CDF averaged over final 1000s",fontsize=18)
         plt.tight_layout()
-        plt.savefig(out_dir+"CDF_Vertical_velocity.png")
+        plt.savefig("CDF_Vertical_velocity.png")
         plt.close()
 
         fig = plt.figure(figsize=(14,8))
@@ -253,5 +249,5 @@ for velocity in velocities:
         plt.title("PDF averaged over final 1000s",fontsize=18)
         plt.legend(["filtered", "unfiltered"],fontsize=12)
         plt.tight_layout()
-        plt.savefig(out_dir+"PDF_Vertical_velocity.png")
+        plt.savefig("PDF_Vertical_velocity.png")
         plt.close()

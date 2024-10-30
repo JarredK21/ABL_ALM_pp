@@ -12,19 +12,22 @@ from matplotlib import cm
 
 
 def probability_dist(y):
-
-    mu = np.mean(y)
-    var = np.var(y)
-    sd = np.std(y)
-    no_bin = 1000
-    X = np.linspace(np.min(y),np.max(y),no_bin)
-    dX = X[1] - X[0]
+    std = np.std(y)
+    bin_width = std/20
+    x = np.arange(np.min(y),np.max(y)+bin_width,bin_width)
+    dx = x[1]-x[0]
     P = []
-    for x in X:
-        denom = np.sqrt(var*2*np.pi)
-        num = np.exp(-((x-mu)**2)/(2*var))
-        P.append(num/denom)
-    print(np.sum(P)*dX)
+    X = []
+    for i in np.arange(0,len(x)-1):
+        p = 0
+        for yi in y:
+            if yi >= x[i] and yi <= x[i+1]:
+                p+=1
+        P.append(p/(dx*len(y)))
+        X.append((x[i+1]+x[i])/2)
+
+    print(np.sum(P)*dx)
+
     return P,X
 
 
@@ -158,7 +161,7 @@ def high_Speed_eddy(it):
                     y_array = np.arange(ymin+5,ymax-5,10)
 
             for yr in y_array:
-                if f_pri(xr,yr) >= 0.7:
+                if f_pri(xr,yr) >= 0.76:
                     coo.append([xr,yr])
 
 
@@ -169,7 +172,7 @@ def high_Speed_eddy(it):
                 ux_pri_avg.append(f_pri(co[0],co[1]))
             ux_pri_avg = np.average(ux_pri_avg)
 
-            if ux_pri_avg >= 0.7:
+            if ux_pri_avg >= 0.76:
                 D_high.append(Dist)
                 ux_avg = []
                 for co in coo:
@@ -239,7 +242,7 @@ def low_Speed_eddy(it):
                     y_array = np.arange(ymin+5,ymax-5,10)
 
             for yr in y_array:
-                if f_pri(xr,yr) <= 0.7:
+                if f_pri(xr,yr) <= -0.61:
                     coo.append([xr,yr])
 
 
@@ -250,7 +253,7 @@ def low_Speed_eddy(it):
                 ux_pri_avg.append(f_pri(co[0],co[1]))
             ux_pri_avg = np.average(ux_pri_avg)
 
-            if ux_pri_avg <= 0.7:
+            if ux_pri_avg <= -0.61:
                 D_low.append(Dist)
                 ux_avg = []
                 for co in coo:
@@ -416,9 +419,9 @@ for offset in offsets:
             nlevs = min([abs(cmin_pri),cmax_pri])+1
 
         #define thresholds with number of increments
-        levels_pos = np.linspace(0.7,cmax_pri,4)
+        levels_pos = np.linspace(0.76,cmax_pri,4)
         print("line 335", levels_pos)
-        levels_neg = np.linspace(cmin_pri,-0.7,4)
+        levels_neg = np.linspace(cmin_pri,-0.61,4)
         print("line 337", levels_neg)
 
 
@@ -436,7 +439,7 @@ for offset in offsets:
 
         cs = plt.contourf(X,Y,Z,levels=levels, cmap=cm.coolwarm,vmin=cmin_pri,vmax=cmax_pri)
 
-        CS = plt.contour(X, Y, Z, levels=[-0.7,0.7], colors='k')
+        CS = plt.contour(X, Y, Z, levels=[-0.61,0.76], colors='k')
         plt.clabel(CS, fontsize=18, inline=True)
 
 
