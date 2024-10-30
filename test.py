@@ -16,7 +16,13 @@ def Horizontal_velocity(it):
 
 
 
-def probability_dist(y):
+def probability_dist(it):
+    
+    if filtered_data == True:
+        y = data[str(Time[it])]
+    else:
+        y = u[it]
+
     std = np.std(y)
     bin_width = std/20
     x = np.arange(np.min(y),np.max(y)+bin_width,bin_width)
