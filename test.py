@@ -23,10 +23,6 @@ def probability_dist(it):
     else:
         y = u[it]
 
-    std = np.std(y)
-    bin_width = std/20
-    x = np.arange(data_min,data_max,bin_width)
-    dx = x[1]-x[0]
     P = []
     X = []
     for i in np.arange(0,len(x)-1):
@@ -99,6 +95,11 @@ for velocity in velocities:
         data_max = np.max(u)
         data_min = np.min(u)
 
+        std = np.std(u)
+        bin_width = std/20
+        x = np.arange(data_min,data_max,bin_width)
+        dx = x[1]-x[0]
+
         filtered_data = False
         ix = 0
         unfilted_data = []
@@ -117,6 +118,11 @@ for velocity in velocities:
 
         data_max = data.to_numpy().max()
         data_min = data.to_numpy().min()
+
+        std = data.std()
+        bin_width = std/20
+        x = np.arange(data_min,data_max,bin_width)
+        dx = x[1]-x[0]
 
         filtered_data = True
         ix = 0
