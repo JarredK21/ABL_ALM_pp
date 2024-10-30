@@ -57,8 +57,8 @@ def tranform_fixed_frame(y,z,Theta):
 def hard_filter(signal,cutoff,dt,filter_type):
 
     N = len(signal)
-    spectrum = np.fft.fftshift(np.fft.fft(signal,N))
-    F = np.fft.fftshift(np.fft.fftfreq(N,dt))
+    spectrum = np.fft.fft(signal)
+    F = np.fft.fftfreq(N,dt)
     #F = (1/(dt*N)) * np.arange(N)
     if filter_type=="lowpass":
         spectrum_filter = spectrum*(np.abs(F)<cutoff)
@@ -69,7 +69,7 @@ def hard_filter(signal,cutoff,dt,filter_type):
         spectrum_filter = spectrum_filter*(np.abs(F)<cutoff[1])
         
 
-    spectrum_filter = np.fft.ifft(np.fft.ifftshift(spectrum_filter))
+    spectrum_filter = np.fft.ifft(spectrum_filter)
 
     return np.real(spectrum_filter)
 
@@ -82,21 +82,26 @@ def dt_calc(y,dt):
     return d_dt
 
 
-def probability_dist(y):
 
-    mu = np.mean(y)
-    var = np.var(y)
-    sd = np.std(y)
-    no_bin = 1000
-    X = np.linspace(np.min(y),np.max(y),no_bin)
-    dX = X[1] - X[0]
+def probability_dist(y):
+    std = np.std(y)
+    bin_width = std/20
+    x = np.arange(np.min(y),np.max(y)+bin_width,bin_width)
+    dx = x[1]-x[0]
     P = []
-    for x in X:
-        denom = np.sqrt(var*2*np.pi)
-        num = np.exp(-((x-mu)**2)/(2*var))
-        P.append(num/denom)
-    print(np.sum(P)*dX)
+    X = []
+    for i in np.arange(0,len(x)-1):
+        p = 0
+        for yi in y:
+            if yi >= x[i] and yi <= x[i+1]:
+                p+=1
+        P.append(p/(dx*len(y)))
+        X.append((x[i+1]+x[i])/2)
+
+    print(np.sum(P)*dx)
+
     return P,X
+
 
 
 def moments(y):
@@ -134,6 +139,8 @@ RtAeroFzh = np.array(OF_vars.variables["RtAeroFzh"][Tstart_idx:])/1000
 
 RtAeroFys_E, RtAeroFzs_E = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
 
+RtAeroFR_E = np.sqrt( np.add(np.square(RtAeroFys_E), np.square(RtAeroFzs_E)) ) 
+
 RtAeroMxh_E = np.array(OF_vars.variables["RtAeroMxh"][Tstart_idx:])/1000
 
 RtAeroMyh = np.array(OF_vars.variables["RtAeroMyh"][Tstart_idx:])/1000
@@ -142,6 +149,31 @@ RtAeroMzh = np.array(OF_vars.variables["RtAeroMzh"][Tstart_idx:])/1000
 RtAeroMys_E, RtAeroMzs_E = tranform_fixed_frame(RtAeroMyh,RtAeroMzh,Azimuth)
 
 RtAeroMR_E = np.sqrt( np.add(np.square(RtAeroMys_E), np.square(RtAeroMzs_E)) ) 
+
+
+#LPFMH = hard_filter(RtAeroMR_E,0.3,dt_OF,"lowpass")
+# BPFMH = hard_filter(RtAeroMR_E,[0.3,0.9],dt_OF,"bandpass")
+# HPFMH = hard_filter(RtAeroMR_E,[1.5,40],dt_OF,"bandpass")
+
+# plt.rcParams['font.size'] = 16
+# out_dir=in_dir+"Three_frequency_analysis/MH_all_freqs/"
+# times = np.arange(200,1300,100)
+# for j in np.arange(0,len(times)-1):
+#     it_1 = np.searchsorted(Time_OF,times[j])
+#     it_2 = np.searchsorted(Time_OF,times[j+1])
+
+#     fig = plt.figure(figsize=(14,8))
+#     plt.plot(Time_OF[it_1:it_2],RtAeroMR_E[it_1:it_2],"-k",label="Total $|M_H|$")
+#     plt.plot(Time_OF[it_1:it_2],LPFMH[it_1:it_2],"-g",label="LPF 0.3Hz $|M_H|$")
+#     plt.plot(Time_OF[it_1:it_2],BPFMH[it_1:it_2],"-r",label="BPF 0.3-0.9Hz $|M_H|$")
+#     plt.plot(Time_OF[it_1:it_2],HPFMH[it_1:it_2]-1000,"-b",label="HPF 1.5Hz $|M_H|$\noffset:-1000kN-m")
+#     plt.legend()
+#     plt.grid()
+#     plt.xlabel("Time [s]")
+#     plt.ylabel("Aerodynamic out-of-plane bending moment [kN-m]")
+#     plt.tight_layout()
+#     plt.savefig(out_dir+"{}_{}.png".format(times[j],times[j+1]))
+#     plt.close()
 
 #Total radial aerodynamic bearing force aeroFBR
 L1 = 1.912; L2 = 2.09
@@ -282,6 +314,8 @@ RtAeroFzh = np.array(OF_vars.variables["RtAeroFzh"][Tstart_idx:])/1000
 
 RtAeroFys_R, RtAeroFzs_R = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
 
+RtAeroFR_R = np.sqrt( np.add(np.square(RtAeroFys_R), np.square(RtAeroFzs_R)) ) 
+
 RtAeroMxh_R = np.array(OF_vars.variables["RtAeroMxh"][Tstart_idx:])/1000
 
 RtAeroMyh = np.array(OF_vars.variables["RtAeroMyh"][Tstart_idx:])/1000
@@ -332,6 +366,24 @@ Ux_R = np.array(Rotor_avg_vars.variables["Ux"][Tstart_idx_sampling:])
 Iy_R = np.array(Rotor_avg_vars.variables["Iy"][Tstart_idx_sampling:])
 Iz_R = np.array(Rotor_avg_vars.variables["Iz"][Tstart_idx_sampling:])
 IR = np.sqrt(np.add(np.square(Iy_R),np.square(Iz_R)))
+
+
+# FH_E = RtAeroFzs_E*((L1+L2)/L2); MH_E = RtAeroMys_E/L2
+# M_F = round(np.mean(FH_E),2); S_F = round(np.std(FH_E),2)
+# M_M = round(np.mean(MH_E),2); S_M = round(np.std(MH_E),2)
+
+# out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Elastic_deformations_analysis/"
+# plt.rcParams['font.size'] = 16
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time_OF,MH_E,"-b",label="$M_{H,y}/L_2$:"+"{}, {}".format(M_M,S_M))
+# plt.plot(Time_OF,FH_E,"-r",label="$F_{H,z}L/L_2$:"+"{}, {}".format(M_F,S_F))
+# plt.xlabel("Time [s]")
+# plt.ylabel("Aerodynamic contributions to $F_{B,z}$ [kN]")
+# plt.legend()
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"FH_MH.png")
+# plt.close(fig)
 
 # #steady shear inflow elastic case
 #in_dir="../../NREL_5MW_3.4.1/Steady_Elastic_blades_shear_0.085/"
@@ -888,312 +940,306 @@ ys_R = ys + Rotor_coordinates[1]
 
 
 # #Three frequency analysis
-# WR = 1079.1
-# FBR_E = hard_filter(Elasto_FBR_E,40,dt_OF,"lowpass")
-# LPF_FBR_E = hard_filter(Elasto_FBR_E,0.3,dt_OF,"lowpass")
-# LPF_2_FBR_E = hard_filter(Elasto_FBR_E,0.9,dt_OF,"lowpass")
-# BPF_FBR_E = hard_filter(Elasto_FBR_E,[0.3,0.9],dt_OF,"bandpass")
-# HPF_FBR_E = hard_filter(Elasto_FBR_E,[1.5,40],dt_OF,"bandpass")
+WR = 1079.1
+FBR_E = hard_filter(Elasto_FBR_E,40,dt_OF,"lowpass")
+LPF_FBR_E = hard_filter(Elasto_FBR_E,0.3,dt_OF,"lowpass")
+LPF_2_FBR_E = hard_filter(Elasto_FBR_E,0.9,dt_OF,"lowpass")
+BPF_FBR_E = hard_filter(Elasto_FBR_E,[0.3,0.9],dt_OF,"bandpass")
+HPF_FBR_E = hard_filter(Elasto_FBR_E,[1.5,40],dt_OF,"bandpass")
 
-# FBR_R = hard_filter(Elasto_FBR_R,40,dt_OF,"lowpass")
-# LPF_FBR_R = hard_filter(Elasto_FBR_R,0.3,dt_OF,"lowpass")
-# LPF_2_FBR_R = hard_filter(Elasto_FBR_R,0.9,dt_OF,"lowpass")
-# BPF_FBR_R = hard_filter(Elasto_FBR_R,[0.3,0.9],dt_OF,"bandpass")
-# HPF_FBR_R = hard_filter(Elasto_FBR_R,[1.5,40],dt_OF,"bandpass")
-
-
-# dFBR_E = np.array(dt_calc(FBR_E,dt_OF))
-# zero_crossings_index_FBR_E = np.where(np.diff(np.sign(dFBR_E)))[0]
-# dLPF_FBR_E = np.array(dt_calc(LPF_FBR_E,dt_OF))
-# zero_crossings_index_LPF_FBR_E = np.where(np.diff(np.sign(dLPF_FBR_E)))[0]
-# dBPF_FBR_E = np.array(dt_calc(BPF_FBR_E,dt_OF))
-# zero_crossings_index_BPF_FBR_E = np.where(np.diff(np.sign(dBPF_FBR_E)))[0]
-# dHPF_FBR_E = np.array(dt_calc(HPF_FBR_E,dt_OF))
-# zero_crossings_index_HPF_FBR_E = np.where(np.diff(np.sign(dHPF_FBR_E)))[0]
-
-# dFBR_R = np.array(dt_calc(FBR_R,dt_OF))
-# zero_crossings_index_FBR_R = np.where(np.diff(np.sign(dFBR_R)))[0]
-# dLPF_FBR_R = np.array(dt_calc(LPF_FBR_R,dt_OF))
-# zero_crossings_index_LPF_FBR_R = np.where(np.diff(np.sign(dLPF_FBR_R)))[0]
-# dBPF_FBR_R = np.array(dt_calc(BPF_FBR_R,dt_OF))
-# zero_crossings_index_BPF_FBR_R = np.where(np.diff(np.sign(dBPF_FBR_R)))[0]
-# dHPF_FBR_R = np.array(dt_calc(HPF_FBR_R,dt_OF))
-# zero_crossings_index_HPF_FBR_R = np.where(np.diff(np.sign(dHPF_FBR_R)))[0]
-
-# # frq,PSD = temporal_spectra(LPF_FBR_E,dt_OF,"LPF FBR")
-# # plt.loglog(frq,PSD)
-
-# #jump analysis elastic rotor total signal
-# dF_E = []
-# dt_E = []
-# T_E = []
-# for i in np.arange(0,len(zero_crossings_index_FBR_E)-1):
-#     it_1 = zero_crossings_index_FBR_E[i]
-#     it_2 = zero_crossings_index_FBR_E[i+1]
-#     T_E.append(Time_OF[it_1])
-#     dt_E.append(Time_OF[it_2]-Time_OF[it_1])
-#     dF_E.append(FBR_E[it_2]-FBR_E[it_1])
-
-# dF_E = np.true_divide(dF_E,(WR*((L1+L2)/L2)))
-
-# #Low pass filtered
-# dF_LPF_E = []
-# dt_LPF_E = []
-# T_LPF_E = []
-# for i in np.arange(0,len(zero_crossings_index_LPF_FBR_E)-1):
-#     it_1 = zero_crossings_index_LPF_FBR_E[i]
-#     it_2 = zero_crossings_index_LPF_FBR_E[i+1]
-#     T_LPF_E.append(Time_OF[it_1])
-#     dt_LPF_E.append(Time_OF[it_2]-Time_OF[it_1])
-#     dF_LPF_E.append(LPF_FBR_E[it_2]-LPF_FBR_E[it_1])
-
-# dF_LPF_E = np.true_divide(dF_LPF_E,(WR*((L1+L2)/L2)))
-
-# # fig,ax = plt.subplots()
-# # ax.plot(Time_OF,LPF_FBR_E)
-# # ax2=ax.twinx()
-# # ax2.scatter(T_LPF_E,dt_LPF_E)
-# # ax2.axhline(y=3.3333)
-# # plt.show()
-
-# #band pass filtered
-# dF_BPF_E = []
-# dt_BPF_E = []
-# T_BPF_E = []
-# for i in np.arange(0,len(zero_crossings_index_BPF_FBR_E)-1):
-#     it_1 = zero_crossings_index_BPF_FBR_E[i]
-#     it_2 = zero_crossings_index_BPF_FBR_E[i+1]
-#     T_BPF_E.append(Time_OF[it_1])
-#     dt_BPF_E.append(Time_OF[it_2]-Time_OF[it_1])
-#     dF_BPF_E.append(BPF_FBR_E[it_2]-BPF_FBR_E[it_1])
-
-# dF_BPF_E = np.true_divide(dF_BPF_E,(WR*((L1+L2)/L2)))
-
-# #high pass filtered
-# dF_HPF_E = []
-# dt_HPF_E = []
-# T_HPF_E = []
-# for i in np.arange(0,len(zero_crossings_index_HPF_FBR_E)-1):
-#     it_1 = zero_crossings_index_HPF_FBR_E[i]
-#     it_2 = zero_crossings_index_HPF_FBR_E[i+1]
-#     T_HPF_E.append(Time_OF[it_1])
-#     dt_HPF_E.append(Time_OF[it_2]-Time_OF[it_1])
-#     dF_HPF_E.append(HPF_FBR_E[it_2]-HPF_FBR_E[it_1])
-
-# dF_HPF_E = np.true_divide(dF_HPF_E,(WR*((L1+L2)/L2)))
+FBR_R = hard_filter(Elasto_FBR_R,40,dt_OF,"lowpass")
+LPF_FBR_R = hard_filter(Elasto_FBR_R,0.3,dt_OF,"lowpass")
+LPF_2_FBR_R = hard_filter(Elasto_FBR_R,0.9,dt_OF,"lowpass")
+BPF_FBR_R = hard_filter(Elasto_FBR_R,[0.3,0.9],dt_OF,"bandpass")
+HPF_FBR_R = hard_filter(Elasto_FBR_R,[1.5,40],dt_OF,"bandpass")
 
 
-# #jump analysis rigid rotor total signal
-# dF_R = []
-# dt_R = []
-# T_R = []
-# for i in np.arange(0,len(zero_crossings_index_FBR_R)-1):
-#     it_1 = zero_crossings_index_FBR_R[i]
-#     it_2 = zero_crossings_index_FBR_R[i+1]
-#     T_R.append(Time_OF[it_1])
-#     dt_R.append(Time_OF[it_2]-Time_OF[it_1])
-#     dF_R.append(FBR_R[it_2]-FBR_R[it_1])
+dFBR_E = np.array(dt_calc(FBR_E,dt_OF))
+zero_crossings_index_FBR_E = np.where(np.diff(np.sign(dFBR_E)))[0]
+dLPF_FBR_E = np.array(dt_calc(LPF_FBR_E,dt_OF))
+zero_crossings_index_LPF_FBR_E = np.where(np.diff(np.sign(dLPF_FBR_E)))[0]
+dBPF_FBR_E = np.array(dt_calc(BPF_FBR_E,dt_OF))
+zero_crossings_index_BPF_FBR_E = np.where(np.diff(np.sign(dBPF_FBR_E)))[0]
+dHPF_FBR_E = np.array(dt_calc(HPF_FBR_E,dt_OF))
+zero_crossings_index_HPF_FBR_E = np.where(np.diff(np.sign(dHPF_FBR_E)))[0]
 
-# dF_R = np.true_divide(dF_R,(WR*((L1+L2)/L2)))
+dFBR_R = np.array(dt_calc(FBR_R,dt_OF))
+zero_crossings_index_FBR_R = np.where(np.diff(np.sign(dFBR_R)))[0]
+dLPF_FBR_R = np.array(dt_calc(LPF_FBR_R,dt_OF))
+zero_crossings_index_LPF_FBR_R = np.where(np.diff(np.sign(dLPF_FBR_R)))[0]
+dBPF_FBR_R = np.array(dt_calc(BPF_FBR_R,dt_OF))
+zero_crossings_index_BPF_FBR_R = np.where(np.diff(np.sign(dBPF_FBR_R)))[0]
+dHPF_FBR_R = np.array(dt_calc(HPF_FBR_R,dt_OF))
+zero_crossings_index_HPF_FBR_R = np.where(np.diff(np.sign(dHPF_FBR_R)))[0]
 
-# #Low pass filtered
-# dF_LPF_R = []
-# dt_LPF_R = []
-# T_LPF_R = []
-# for i in np.arange(0,len(zero_crossings_index_LPF_FBR_R)-1):
-#     it_1 = zero_crossings_index_LPF_FBR_R[i]
-#     it_2 = zero_crossings_index_LPF_FBR_R[i+1]
-#     T_LPF_R.append(Time_OF[it_1])
-#     dt_LPF_R.append(Time_OF[it_2]-Time_OF[it_1])
-#     dF_LPF_R.append(LPF_FBR_R[it_2]-LPF_FBR_R[it_1])
+# frq,PSD = temporal_spectra(LPF_FBR_E,dt_OF,"LPF FBR")
+# plt.loglog(frq,PSD)
 
-# dF_LPF_R = np.true_divide(dF_LPF_R,(WR*((L1+L2)/L2)))
+#jump analysis elastic rotor total signal
+dF_E = []
+dt_E = []
+T_E = []
+for i in np.arange(0,len(zero_crossings_index_FBR_E)-1):
+    it_1 = zero_crossings_index_FBR_E[i]
+    it_2 = zero_crossings_index_FBR_E[i+1]
+    T_E.append(Time_OF[it_1])
+    dt_E.append(Time_OF[it_2]-Time_OF[it_1])
+    dF_E.append(FBR_E[it_2]-FBR_E[it_1])
 
-# #band pass filtered
-# dF_BPF_R = []
-# dt_BPF_R = []
-# T_BPF_R = []
-# for i in np.arange(0,len(zero_crossings_index_BPF_FBR_R)-1):
-#     it_1 = zero_crossings_index_BPF_FBR_R[i]
-#     it_2 = zero_crossings_index_BPF_FBR_R[i+1]
-#     T_BPF_R.append(Time_OF[it_1])
-#     dt_BPF_R.append(Time_OF[it_2]-Time_OF[it_1])
-#     dF_BPF_R.append(BPF_FBR_R[it_2]-BPF_FBR_R[it_1])
+dF_E = np.true_divide(dF_E,(WR*((L1+L2)/L2)))
 
-# dF_BPF_R = np.true_divide(dF_BPF_R,(WR*((L1+L2)/L2)))
+#Low pass filtered
+dF_LPF_E = []
+dt_LPF_E = []
+T_LPF_E = []
+for i in np.arange(0,len(zero_crossings_index_LPF_FBR_E)-1):
+    it_1 = zero_crossings_index_LPF_FBR_E[i]
+    it_2 = zero_crossings_index_LPF_FBR_E[i+1]
+    T_LPF_E.append(Time_OF[it_1])
+    dt_LPF_E.append(Time_OF[it_2]-Time_OF[it_1])
+    dF_LPF_E.append(LPF_FBR_E[it_2]-LPF_FBR_E[it_1])
 
-# #high pass filtered
-# dF_HPF_R = []
-# dt_HPF_R = []
-# T_HPF_R = []
-# for i in np.arange(0,len(zero_crossings_index_HPF_FBR_R)-1):
-#     it_1 = zero_crossings_index_HPF_FBR_R[i]
-#     it_2 = zero_crossings_index_HPF_FBR_R[i+1]
-#     T_HPF_R.append(Time_OF[it_1])
-#     dt_HPF_R.append(Time_OF[it_2]-Time_OF[it_1])
-#     dF_HPF_R.append(HPF_FBR_R[it_2]-HPF_FBR_R[it_1])
+dF_LPF_E = np.true_divide(dF_LPF_E,(WR*((L1+L2)/L2)))
 
-# dF_HPF_R = np.true_divide(dF_HPF_R,(WR*((L1+L2)/L2)))
+fig,ax = plt.subplots()
+ax.plot(Time_OF,LPF_FBR_E)
+ax2=ax.twinx()
+ax2.scatter(T_LPF_E,dt_LPF_E)
+plt.show()
+
+#band pass filtered
+dF_BPF_E = []
+dt_BPF_E = []
+T_BPF_E = []
+for i in np.arange(0,len(zero_crossings_index_BPF_FBR_E)-1):
+    it_1 = zero_crossings_index_BPF_FBR_E[i]
+    it_2 = zero_crossings_index_BPF_FBR_E[i+1]
+    T_BPF_E.append(Time_OF[it_1])
+    dt_BPF_E.append(Time_OF[it_2]-Time_OF[it_1])
+    dF_BPF_E.append(BPF_FBR_E[it_2]-BPF_FBR_E[it_1])
+
+dF_BPF_E = np.true_divide(dF_BPF_E,(WR*((L1+L2)/L2)))
+
+#high pass filtered
+dF_HPF_E = []
+dt_HPF_E = []
+T_HPF_E = []
+for i in np.arange(0,len(zero_crossings_index_HPF_FBR_E)-1):
+    it_1 = zero_crossings_index_HPF_FBR_E[i]
+    it_2 = zero_crossings_index_HPF_FBR_E[i+1]
+    T_HPF_E.append(Time_OF[it_1])
+    dt_HPF_E.append(Time_OF[it_2]-Time_OF[it_1])
+    dF_HPF_E.append(HPF_FBR_E[it_2]-HPF_FBR_E[it_1])
+
+dF_HPF_E = np.true_divide(dF_HPF_E,(WR*((L1+L2)/L2)))
+
+
+#jump analysis rigid rotor total signal
+dF_R = []
+dt_R = []
+T_R = []
+for i in np.arange(0,len(zero_crossings_index_FBR_R)-1):
+    it_1 = zero_crossings_index_FBR_R[i]
+    it_2 = zero_crossings_index_FBR_R[i+1]
+    T_R.append(Time_OF[it_1])
+    dt_R.append(Time_OF[it_2]-Time_OF[it_1])
+    dF_R.append(FBR_R[it_2]-FBR_R[it_1])
+
+dF_R = np.true_divide(dF_R,(WR*((L1+L2)/L2)))
+
+#Low pass filtered
+dF_LPF_R = []
+dt_LPF_R = []
+T_LPF_R = []
+for i in np.arange(0,len(zero_crossings_index_LPF_FBR_R)-1):
+    it_1 = zero_crossings_index_LPF_FBR_R[i]
+    it_2 = zero_crossings_index_LPF_FBR_R[i+1]
+    T_LPF_R.append(Time_OF[it_1])
+    dt_LPF_R.append(Time_OF[it_2]-Time_OF[it_1])
+    dF_LPF_R.append(LPF_FBR_R[it_2]-LPF_FBR_R[it_1])
+
+dF_LPF_R = np.true_divide(dF_LPF_R,(WR*((L1+L2)/L2)))
+
+#band pass filtered
+dF_BPF_R = []
+dt_BPF_R = []
+T_BPF_R = []
+for i in np.arange(0,len(zero_crossings_index_BPF_FBR_R)-1):
+    it_1 = zero_crossings_index_BPF_FBR_R[i]
+    it_2 = zero_crossings_index_BPF_FBR_R[i+1]
+    T_BPF_R.append(Time_OF[it_1])
+    dt_BPF_R.append(Time_OF[it_2]-Time_OF[it_1])
+    dF_BPF_R.append(BPF_FBR_R[it_2]-BPF_FBR_R[it_1])
+
+dF_BPF_R = np.true_divide(dF_BPF_R,(WR*((L1+L2)/L2)))
+
+#high pass filtered
+dF_HPF_R = []
+dt_HPF_R = []
+T_HPF_R = []
+for i in np.arange(0,len(zero_crossings_index_HPF_FBR_R)-1):
+    it_1 = zero_crossings_index_HPF_FBR_R[i]
+    it_2 = zero_crossings_index_HPF_FBR_R[i+1]
+    T_HPF_R.append(Time_OF[it_1])
+    dt_HPF_R.append(Time_OF[it_2]-Time_OF[it_1])
+    dF_HPF_R.append(HPF_FBR_R[it_2]-HPF_FBR_R[it_1])
+
+dF_HPF_R = np.true_divide(dF_HPF_R,(WR*((L1+L2)/L2)))
+
 
 
 # #Figures 3 freq analysis
-# out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Three_frequency_analysis/"
-# plt.rcParams['font.size'] = 16
-# fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=True)
-# P,X = probability_dist(dF_R)
-# ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_R)))
-# P,X = probability_dist(dF_E)
-# ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_E)))
-# ax1.set_xlabel("$\\Delta F/(W_RL/L_2)$ [-]")
-# ax1.set_yscale("log")
-# ax1.grid()
-# ax1.legend()
-# P,X = probability_dist(dt_R)
-# ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_R)))
-# P,X = probability_dist(dt_E)
-# ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_E)))
-# ax2.set_xlabel("$\\Delta \\tau$ [s]")
-# ax2.set_yscale("log")
-# ax2.grid()
-# ax2.legend()
-# fig.supylabel("log() Probability [-]")
-# plt.tight_layout()
-# plt.savefig(out_dir+"dF_dt.png")
-# plt.close(fig)
+out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Three_frequency_analysis/"
+plt.rcParams['font.size'] = 16
+fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=False)
+P,X = probability_dist(dF_R)
+ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_R)))
+P,X = probability_dist(dF_E)
+ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_E)))
+ax1.set_xlabel("$\\Delta F/(W_RL/L_2)$ [-]")
+ax1.set_yscale("log")
+ax1.grid()
+ax1.legend()
+P,X = probability_dist(dt_R)
+ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_R)))
+P,X = probability_dist(dt_E)
+ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_E)))
+ax2.set_xlabel("$\\Delta \\tau$ [s]")
+ax2.set_yscale("log")
+ax2.grid()
+ax2.legend()
+fig.supylabel("log() Probability [-]")
+plt.tight_layout()
+plt.savefig(out_dir+"dF_dt.png")
+plt.close(fig)
 
 
-# fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=True)
-# P,X = probability_dist(dF_LPF_R)
-# ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_LPF_R)))
-# P,X = probability_dist(dF_LPF_E)
-# ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_LPF_E)))
-# ax1.set_xlabel("LPF (0.3Hz): $\\Delta F/(W_RL/L_2)$ [-]")
-# ax1.grid()
-# ax1.set_yscale("log")
-# ax1.legend()
-# P,X = probability_dist(dt_LPF_R)
-# print("LPF",np.min(X))
-# ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_LPF_R)))
-# P,X = probability_dist(dt_LPF_E)
-# print("LPF",np.min(X))
-# ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_LPF_E)))
-# ax2.set_xlabel("$\\Delta \\tau$ [s]")
-# ax2.grid()
-# ax2.legend()
-# ax2.set_yscale("log")
-# fig.supylabel("log() Probability [-]")
-# plt.tight_layout()
-# plt.savefig(out_dir+"LPF_dF_dt.png")
-# plt.close(fig)
+fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=False)
+P,X = probability_dist(dF_LPF_R)
+ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_LPF_R)))
+P,X = probability_dist(dF_LPF_E)
+ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_LPF_E)))
+ax1.set_xlabel("LPF (0.3Hz): $\\Delta F/(W_RL/L_2)$ [-]")
+ax1.grid()
+ax1.set_yscale("log")
+ax1.legend()
+P,X = probability_dist(dt_LPF_R)
+ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_LPF_R)))
+P,X = probability_dist(dt_LPF_E)
+ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_LPF_E)))
+ax2.set_xlabel("$\\Delta \\tau$ [s]")
+ax2.grid()
+ax2.legend()
+ax2.set_yscale("log")
+fig.supylabel("log() Probability [-]")
+plt.tight_layout()
+plt.savefig(out_dir+"LPF_dF_dt.png")
+plt.close(fig)
 
 
-# fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=True)
-# P,X = probability_dist(dF_BPF_R)
-# ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_BPF_R)))
-# P,X = probability_dist(dF_BPF_E)
-# ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_BPF_E)))
-# ax1.set_xlabel("BPF (0.3-0.9Hz): $\\Delta F/(W_RL/L_2)$ [-]")
-# ax1.grid()
-# ax1.legend()
-# ax1.set_yscale("log")
-# P,X = probability_dist(dt_BPF_R)
-# print("BPF",np.min(X))
-# ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_BPF_R)))
-# P,X = probability_dist(dt_BPF_E)
-# print("BPF",np.min(X))
-# ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_BPF_E)))
-# ax2.set_xlabel("$\\Delta \\tau$ [s]")
-# ax2.grid()
-# ax2.legend()
-# ax2.set_yscale("log")
-# fig.supylabel("log() Probability [-]")
-# plt.tight_layout()
-# plt.savefig(out_dir+"BPF_dF_dt.png")
-# plt.close(fig)
+fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=False)
+P,X = probability_dist(dF_BPF_R)
+ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_BPF_R)))
+P,X = probability_dist(dF_BPF_E)
+ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_BPF_E)))
+ax1.set_xlabel("BPF (0.3-0.9Hz): $\\Delta F/(W_RL/L_2)$ [-]")
+ax1.grid()
+ax1.legend()
+ax1.set_yscale("log")
+P,X = probability_dist(dt_BPF_R)
+ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_BPF_R)))
+P,X = probability_dist(dt_BPF_E)
+ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_BPF_E)))
+ax2.set_xlabel("$\\Delta \\tau$ [s]")
+ax2.grid()
+ax2.legend()
+ax2.set_yscale("log")
+fig.supylabel("log() Probability [-]")
+plt.tight_layout()
+plt.savefig(out_dir+"BPF_dF_dt.png")
+plt.close(fig)
 
-# fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=True)
-# P,X = probability_dist(dF_HPF_R)
-# ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_HPF_R)))
-# P,X = probability_dist(dF_HPF_E)
-# ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_HPF_E)))
-# ax1.set_xlabel("HPF (1.5-40Hz): $\\Delta F/(W_RL/L_2)$ [-]")
-# ax1.grid()
-# ax1.legend()
-# ax1.set_yscale("log")
-# P,X = probability_dist(dt_HPF_R)
-# print("HPF",np.min(X))
-# ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_HPF_R)))
-# P,X = probability_dist(dt_HPF_E)
-# print("HPF",np.min(X))
-# ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_HPF_E)))
-# ax2.set_xlabel("$\\Delta \\tau$ [s]")
-# ax2.grid()
-# ax2.legend()
-# ax2.set_yscale("log")
-# fig.supylabel("log() Probability [-]")
-# plt.tight_layout()
-# plt.savefig(out_dir+"HPF_dF_dt.png")
-# plt.close(fig)
+fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=False)
+P,X = probability_dist(dF_HPF_R)
+ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_HPF_R)))
+P,X = probability_dist(dF_HPF_E)
+ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_HPF_E)))
+ax1.set_xlabel("HPF (1.5-40Hz): $\\Delta F/(W_RL/L_2)$ [-]")
+ax1.grid()
+ax1.legend()
+ax1.set_yscale("log")
+P,X = probability_dist(dt_HPF_R)
+ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_HPF_R)))
+P,X = probability_dist(dt_HPF_E)
+ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_HPF_E)))
+ax2.set_xlabel("$\\Delta \\tau$ [s]")
+ax2.grid()
+ax2.legend()
+ax2.set_yscale("log")
+fig.supylabel("log() Probability [-]")
+plt.tight_layout()
+plt.savefig(out_dir+"HPF_dF_dt.png")
+plt.close(fig)
 
 
 
-# #FBR calc
-# dF_diff_E = []
-# for i in np.arange(0,len(zero_crossings_index_FBR_E)-1):
+#FBR calc
+dF_diff_E = []
+for i in np.arange(0,len(zero_crossings_index_FBR_E)-1):
 
-#     it_1 = zero_crossings_index_FBR_E[i]
-#     it_2 = zero_crossings_index_FBR_E[i+1]
+    it_1 = zero_crossings_index_FBR_E[i]
+    it_2 = zero_crossings_index_FBR_E[i+1]
 
    
-#     dF_diff_E.append((abs(FBR_E[it_2] - FBR_E[it_1]) - abs(LPF_2_FBR_E[it_2] - LPF_2_FBR_E[it_1])))
+    dF_diff_E.append((abs(FBR_E[it_2] - FBR_E[it_1]) - abs(LPF_2_FBR_E[it_2] - LPF_2_FBR_E[it_1])))
 
 
-# dF_diff_R = []
-# for i in np.arange(0,len(zero_crossings_index_FBR_R)-1):
+dF_diff_R = []
+for i in np.arange(0,len(zero_crossings_index_FBR_R)-1):
 
-#     it_1 = zero_crossings_index_FBR_R[i]
-#     it_2 = zero_crossings_index_FBR_R[i+1]
+    it_1 = zero_crossings_index_FBR_R[i]
+    it_2 = zero_crossings_index_FBR_R[i+1]
 
    
-#     dF_diff_R.append((abs(FBR_R[it_2] - FBR_R[it_1]) - abs(LPF_2_FBR_R[it_2] - LPF_2_FBR_R[it_1])))
+    dF_diff_R.append((abs(FBR_R[it_2] - FBR_R[it_1]) - abs(LPF_2_FBR_R[it_2] - LPF_2_FBR_R[it_1])))
 
 
-# fig = plt.figure(figsize=(14,8))
-# P,X = probability_dist(dF_diff_R)
-# plt.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_diff_R)))
-# P,X = probability_dist(dF_diff_E)
-# plt.plot(X,P,"-b",label="Deform: {}".format(moments(dF_diff_E)))
-# plt.xlabel("$| \\Delta F_{total}|-| \\Delta F_{LPF+BPF}|$ [kN]")
-# plt.ylabel("log() Probability [-]")
-# plt.yscale("log")
-# plt.legend()
-# plt.title("Contribution from HPF to total $F_B$")
-# plt.grid()
-# plt.tight_layout()
-# plt.savefig(out_dir+"dF_diff.png")
-# plt.close(fig)
+fig = plt.figure(figsize=(14,8))
+P,X = probability_dist(dF_diff_R)
+plt.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_diff_R)))
+P,X = probability_dist(dF_diff_E)
+plt.plot(X,P,"-b",label="Deform: {}".format(moments(dF_diff_E)))
+plt.xlabel("$| \\Delta F_{total}|-| \\Delta F_{LPF+BPF}|$ [kN]")
+plt.ylabel("log() Probability [-]")
+plt.yscale("log")
+plt.legend()
+plt.title("Contribution from HPF to total $F_B$")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"dF_diff.png")
+plt.close(fig)
 
 
-# E = []
-# R = []
-# thresholds = np.arange(0.5,1.5,0.1)
-# for threshold in thresholds:
-#     filtered = np.abs(dF_R) >= threshold
-#     R.append(sum(np.abs(dF_R) >= threshold))
-#     E.append(sum(np.abs(dF_E) >= threshold))
+E = []
+R = []
+thresholds = np.arange(0.5,1.5,0.1)
+for threshold in thresholds:
+    filtered = np.abs(dF_R) >= threshold
+    R.append(sum(np.abs(dF_R) >= threshold))
+    E.append(sum(np.abs(dF_E) >= threshold))
 
-# fig = plt.figure(figsize=(14,8))
-# plt.plot(thresholds,R,"-or",label="Rigid")
-# plt.plot(thresholds,E,"-ob",label="Deform")
-# plt.xlabel("$|\\Delta F/(W_RL/L_2)|$ [-]")
-# plt.ylabel("Number of jumps exceed threshold [-]")
-# plt.legend()
-# plt.grid()
-# plt.tight_layout()
-# plt.savefig(out_dir+"threshold_events.png")
-# plt.close(fig)
+fig = plt.figure(figsize=(14,8))
+plt.plot(thresholds,R,"-or",label="Rigid")
+plt.plot(thresholds,E,"-ob",label="Deform")
+plt.xlabel("$|\\Delta F/(W_RL/L_2)|$ [-]")
+plt.ylabel("Number of jumps exceed threshold [-]")
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"threshold_events.png")
+plt.close(fig)
 
-# fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8),sharex=True)
+fig,(ax1,ax2,ax3) = plt.subplots(3,1,figsize=(14,8),sharex=True)
 # ax1.plot(Time_OF[1:],hvelB1_E[:,225],"-b",label="Deform")
 # ax1.plot(Time_OF[1:],hvelB1_R[:,225],"-r",label="Rigid")
 # ax1.legend()
