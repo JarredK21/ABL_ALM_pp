@@ -25,7 +25,7 @@ def probability_dist(it):
 
     std = np.std(y)
     bin_width = std/20
-    x = np.arange(np.min(y),np.max(y)+bin_width,bin_width)
+    x = np.arange(data_min,data_max,bin_width)
     dx = x[1]-x[0]
     P = []
     X = []
