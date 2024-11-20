@@ -57,7 +57,7 @@ def Horz_vel_2(it):
     f = interpolate.interp1d(h,twist)
     f_u = interpolate.interp1d(h,u_mean_profile)
 
-    u_i = u[it]; v_i = v[it]
+    u_i = u_H[it]; v_i = v_H[it]
     twist_h = f(90); u_mean = f_u(90)
 
     vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
@@ -115,11 +115,12 @@ del precursor_df; del Time_pre; del mean_profiles; del t_start; del u; del v
 df = Dataset("Dataset.nc")
 Time_OF = np.array(df.variables["Time_OF"])
 OF_vars = df.groups["OpenFAST_Variables"]
-del df; del OF_vars
 
 Azimuth = np.radians(np.array(OF_vars.variables["Azimuth"]))
 
 Azimuth = Azimuth+np.radians(334)
+
+del df; del OF_vars
 
 a = Dataset("./sampling_r_-63.0.nc")
 
@@ -226,7 +227,7 @@ with Pool() as pool:
         print(ix)
         ix+=1
 
-u_H = np.array(u_pri); del u_hvel; del u_pri; del v_H
+u_H = np.array(u_pri); del u_pri; del v_H
 
 
 cmin = -7
@@ -242,7 +243,7 @@ levels_H = np.concatenate((levs_min,levs_max[1:]))
 
 
 
-
+plt.rcParams['font.size'] = 40
 
 def Update(it):
 
@@ -268,7 +269,7 @@ def Update(it):
     T = Time[it]
 
 
-    fig,(ax1,ax2) = plt.subplots(1,2,figsize=(50,30))
+    fig,(ax1,ax2) = plt.subplots(1,2,figsize=(100,30))
     plt.rcParams['font.size'] = 40
 
     cs = ax1.contourf(X,Y,u_plane,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
@@ -291,8 +292,6 @@ def Update(it):
     ax2.plot(x_lims,y_lims,linewidth=1.0,color="k")
 
 
-    cd = plt.colorbar(cz)
-
 
     YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
 
@@ -305,7 +304,6 @@ def Update(it):
     plt.savefig("ISOplots/"+Time_idx+".png")
     plt.cla()
     cb.remove()
-    cd.remove()
     plt.close(fig)
 
     return T
