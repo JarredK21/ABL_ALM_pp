@@ -528,9 +528,9 @@ levels = np.concatenate((levs_min,levs_max[1:]))
 print("line 153", levels)
 
 #define thresholds with number of increments
-levels_pos = np.linspace(0.7,cmax,4)
+levels_pos = np.linspace(0.76,cmax,4)
 print("line 157", levels_pos)
-levels_neg = np.linspace(cmin,-0.7,4)
+levels_neg = np.linspace(cmin,-0.61,4)
 print("line 159", levels_neg)
 
 

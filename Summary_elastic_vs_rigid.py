@@ -83,9 +83,11 @@ def dt_calc(y,dt):
 
 
 
-def probability_dist(y):
+def probability_dist(y,N):
     std = np.std(y)
-    bin_width = std/20
+    if N=="default":
+        N=20
+    bin_width = std/N
     x = np.arange(np.min(y),np.max(y)+bin_width,bin_width)
     dx = x[1]-x[0]
     P = []
@@ -1001,11 +1003,11 @@ for i in np.arange(0,len(zero_crossings_index_LPF_FBR_E)-1):
 
 dF_LPF_E = np.true_divide(dF_LPF_E,(WR*((L1+L2)/L2)))
 
-fig,ax = plt.subplots()
-ax.plot(Time_OF,LPF_FBR_E)
-ax2=ax.twinx()
-ax2.scatter(T_LPF_E,dt_LPF_E)
-plt.show()
+# fig,ax = plt.subplots()
+# ax.plot(Time_OF,LPF_FBR_E)
+# ax2=ax.twinx()
+# ax2.scatter(T_LPF_E,dt_LPF_E)
+# plt.show()
 
 #band pass filtered
 dF_BPF_E = []
@@ -1089,20 +1091,21 @@ dF_HPF_R = np.true_divide(dF_HPF_R,(WR*((L1+L2)/L2)))
 
 
 # #Figures 3 freq analysis
+N=2
 out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Three_frequency_analysis/"
 plt.rcParams['font.size'] = 16
 fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=False)
-P,X = probability_dist(dF_R)
+P,X = probability_dist(dF_R,N)
 ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_R)))
-P,X = probability_dist(dF_E)
+P,X = probability_dist(dF_E,N)
 ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_E)))
 ax1.set_xlabel("$\\Delta F/(W_RL/L_2)$ [-]")
 ax1.set_yscale("log")
 ax1.grid()
 ax1.legend()
-P,X = probability_dist(dt_R)
+P,X = probability_dist(dt_R,N)
 ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_R)))
-P,X = probability_dist(dt_E)
+P,X = probability_dist(dt_E,N)
 ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_E)))
 ax2.set_xlabel("$\\Delta \\tau$ [s]")
 ax2.set_yscale("log")
@@ -1115,17 +1118,17 @@ plt.close(fig)
 
 
 fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=False)
-P,X = probability_dist(dF_LPF_R)
+P,X = probability_dist(dF_LPF_R,N)
 ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_LPF_R)))
-P,X = probability_dist(dF_LPF_E)
+P,X = probability_dist(dF_LPF_E,N)
 ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_LPF_E)))
 ax1.set_xlabel("LPF (0.3Hz): $\\Delta F/(W_RL/L_2)$ [-]")
 ax1.grid()
 ax1.set_yscale("log")
 ax1.legend()
-P,X = probability_dist(dt_LPF_R)
+P,X = probability_dist(dt_LPF_R,N)
 ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_LPF_R)))
-P,X = probability_dist(dt_LPF_E)
+P,X = probability_dist(dt_LPF_E,N)
 ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_LPF_E)))
 ax2.set_xlabel("$\\Delta \\tau$ [s]")
 ax2.grid()
@@ -1138,17 +1141,17 @@ plt.close(fig)
 
 
 fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=False)
-P,X = probability_dist(dF_BPF_R)
+P,X = probability_dist(dF_BPF_R,N)
 ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_BPF_R)))
-P,X = probability_dist(dF_BPF_E)
+P,X = probability_dist(dF_BPF_E,N)
 ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_BPF_E)))
 ax1.set_xlabel("BPF (0.3-0.9Hz): $\\Delta F/(W_RL/L_2)$ [-]")
 ax1.grid()
 ax1.legend()
 ax1.set_yscale("log")
-P,X = probability_dist(dt_BPF_R)
+P,X = probability_dist(dt_BPF_R,N)
 ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_BPF_R)))
-P,X = probability_dist(dt_BPF_E)
+P,X = probability_dist(dt_BPF_E,N)
 ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_BPF_E)))
 ax2.set_xlabel("$\\Delta \\tau$ [s]")
 ax2.grid()
@@ -1160,17 +1163,17 @@ plt.savefig(out_dir+"BPF_dF_dt.png")
 plt.close(fig)
 
 fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,8),sharey=False)
-P,X = probability_dist(dF_HPF_R)
+P,X = probability_dist(dF_HPF_R,N)
 ax1.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_HPF_R)))
-P,X = probability_dist(dF_HPF_E)
+P,X = probability_dist(dF_HPF_E,N)
 ax1.plot(X,P,"-b",label="Deform: {}".format(moments(dF_HPF_E)))
 ax1.set_xlabel("HPF (1.5-40Hz): $\\Delta F/(W_RL/L_2)$ [-]")
 ax1.grid()
 ax1.legend()
 ax1.set_yscale("log")
-P,X = probability_dist(dt_HPF_R)
+P,X = probability_dist(dt_HPF_R,N)
 ax2.plot(X,P,"-r",label="Rigid: {}".format(moments(dt_HPF_R)))
-P,X = probability_dist(dt_HPF_E)
+P,X = probability_dist(dt_HPF_E,N)
 ax2.plot(X,P,"-b",label="Deform: {}".format(moments(dt_HPF_E)))
 ax2.set_xlabel("$\\Delta \\tau$ [s]")
 ax2.grid()
@@ -1205,9 +1208,9 @@ for i in np.arange(0,len(zero_crossings_index_FBR_R)-1):
 
 
 fig = plt.figure(figsize=(14,8))
-P,X = probability_dist(dF_diff_R)
+P,X = probability_dist(dF_diff_R,N)
 plt.plot(X,P,"-r",label="Rigid: {}".format(moments(dF_diff_R)))
-P,X = probability_dist(dF_diff_E)
+P,X = probability_dist(dF_diff_E,N)
 plt.plot(X,P,"-b",label="Deform: {}".format(moments(dF_diff_E)))
 plt.xlabel("$| \\Delta F_{total}|-| \\Delta F_{LPF+BPF}|$ [kN]")
 plt.ylabel("log() Probability [-]")
