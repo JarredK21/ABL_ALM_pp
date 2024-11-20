@@ -185,7 +185,7 @@ with Pool() as pool:
 
 u = np.array(u_pri); del u_hvel; del u_pri; del v
 
-                         
+u[u<-7]=-7; u[u>7]=7 
 
 cmin = -7
 cmax = 7
@@ -228,6 +228,8 @@ with Pool() as pool:
         ix+=1
 
 u_H = np.array(u_pri); del u_pri; del v_H
+
+u_H[u_H<-7]=-7; u_H[u_H>7]=7
 
 
 cmin = -7
