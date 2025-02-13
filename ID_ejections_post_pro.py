@@ -61,6 +61,8 @@ for threshold in Thresholds:
 
     group_a = a.groups["{}".format(threshold)]
 
+    print(group_a)
+
     Iy_a = np.array(group_a.variables["Iy_ejection"])
     Iz_a = -np.array(group_a.variables["Iz_ejection"])
     I_a = np.sqrt(np.add(np.square(Iy_a),np.square(Iz_a)))

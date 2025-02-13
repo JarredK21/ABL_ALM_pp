@@ -207,76 +207,76 @@ Azimuth = np.array(OF_vars.variables["Azimuth"][Start_time_idx:])
 
 #Azimuth = 360 - Azimuth
 
-# RtAeroFyh = np.array(OF_vars.variables["RtAeroFyh"][Start_time_idx:])/1000
-# RtAeroFzh = np.array(OF_vars.variables["RtAeroFzh"][Start_time_idx:])/1000
+RtAeroFyh = np.array(OF_vars.variables["RtAeroFyh"][Start_time_idx:])/1000
+RtAeroFzh = np.array(OF_vars.variables["RtAeroFzh"][Start_time_idx:])/1000
 
-# RtAeroFys,RtAeroFzs = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
+RtAeroFys,RtAeroFzs = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
 
-# # RtAeroMyh = np.array(OF_vars.variables["RtAeroMyh"][Start_time_idx:])/1000
-# # RtAeroMzh = np.array(OF_vars.variables["RtAeroMzh"][Start_time_idx:])/1000
+# RtAeroMyh = np.array(OF_vars.variables["RtAeroMyh"][Start_time_idx:])/1000
+# RtAeroMzh = np.array(OF_vars.variables["RtAeroMzh"][Start_time_idx:])/1000
 
-# # RtAeroMys,RtAeroMzs = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
+# RtAeroMys,RtAeroMzs = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
 
-# # RtAeroMRE = np.sqrt( np.add(np.square(RtAeroMys), np.square(RtAeroMzs)) ) 
+# RtAeroMRE = np.sqrt( np.add(np.square(RtAeroMys), np.square(RtAeroMzs)) ) 
 
-# RtAeroMys = np.array(OF_vars.variables["LSSTipMys"][Start_time_idx:])
-# RtAeroMzs = np.array(OF_vars.variables["LSSTipMzs"][Start_time_idx:])
+RtAeroMys = np.array(OF_vars.variables["LSSTipMys"][Start_time_idx:])
+RtAeroMzs = np.array(OF_vars.variables["LSSTipMzs"][Start_time_idx:])
 
-# RtAeroMRE = np.sqrt(np.add(np.square(RtAeroMys),np.square(RtAeroMzs)))
+RtAeroMRE = np.sqrt(np.add(np.square(RtAeroMys),np.square(RtAeroMzs)))
 
-# MRE_moms = moments(RtAeroMRE)[:2]
-
-
-# uvelB1 = np.array(dg_E.variables["uvel"][Start_time_idx:,1:301])
-# vvelB1 = np.array(dg_E.variables["vvel"][Start_time_idx:,1:301])
-# uvelB1[uvelB1<0]=0; vvelB1[vvelB1<0]=0 #remove negative velocities
-# hvelB1 = np.add(np.cos(np.radians(29))*uvelB1, np.sin(np.radians(29))*vvelB1)
-# uvelB2 = np.array(dg_E.variables["uvel"][Start_time_idx:,301:601])
-# vvelB2 = np.array(dg_E.variables["vvel"][Start_time_idx:,301:601])
-# uvelB2[uvelB2<0]=0; vvelB2[vvelB2<0]=0 #remove negative velocities
-# hvelB2 = np.add(np.cos(np.radians(29))*uvelB2, np.sin(np.radians(29))*vvelB2)
-# uvelB3 = np.array(dg_E.variables["uvel"][Start_time_idx:,601:901])
-# vvelB3 = np.array(dg_E.variables["vvel"][Start_time_idx:,601:901])
-# uvelB3[uvelB3<0]=0; vvelB3[vvelB3<0]=0 #remove negative velocities
-# hvelB3 = np.add(np.cos(np.radians(29))*uvelB3, np.sin(np.radians(29))*vvelB3)
-
-# R = np.linspace(0,63,300)
-# dr = R[1] - R[0]
-# IyE = []
-# IzE = []
-# ix=0
-# with Pool() as pool:
-#     for Iy_it, Iz_it in pool.imap(actuator_asymmetry_calc,Time_steps):
-#         IyE.append(Iy_it); IzE.append(Iz_it)
-#         print(ix)
-#         ix+=1
+MRE_moms = moments(RtAeroMRE)[:2]
 
 
-# IE = np.sqrt(np.add(np.square(IyE),np.square(IzE)))
+uvelB1 = np.array(dg_E.variables["uvel"][Start_time_idx:,1:301])
+vvelB1 = np.array(dg_E.variables["vvel"][Start_time_idx:,1:301])
+uvelB1[uvelB1<0]=0; vvelB1[vvelB1<0]=0 #remove negative velocities
+hvelB1 = np.add(np.cos(np.radians(29))*uvelB1, np.sin(np.radians(29))*vvelB1)
+uvelB2 = np.array(dg_E.variables["uvel"][Start_time_idx:,301:601])
+vvelB2 = np.array(dg_E.variables["vvel"][Start_time_idx:,301:601])
+uvelB2[uvelB2<0]=0; vvelB2[vvelB2<0]=0 #remove negative velocities
+hvelB2 = np.add(np.cos(np.radians(29))*uvelB2, np.sin(np.radians(29))*vvelB2)
+uvelB3 = np.array(dg_E.variables["uvel"][Start_time_idx:,601:901])
+vvelB3 = np.array(dg_E.variables["vvel"][Start_time_idx:,601:901])
+uvelB3[uvelB3<0]=0; vvelB3[vvelB3<0]=0 #remove negative velocities
+hvelB3 = np.add(np.cos(np.radians(29))*uvelB3, np.sin(np.radians(29))*vvelB3)
+
+R = np.linspace(0,63,300)
+dr = R[1] - R[0]
+IyE = []
+IzE = []
+ix=0
+with Pool() as pool:
+    for Iy_it, Iz_it in pool.imap(actuator_asymmetry_calc,Time_steps):
+        IyE.append(Iy_it); IzE.append(Iz_it)
+        print(ix)
+        ix+=1
+
+
+IE = np.sqrt(np.add(np.square(IyE),np.square(IzE)))
 # IE_moms = moments(IE)[:2]
 
 
 # hvelB1E = hvelB1; hvelB2E = hvelB2; hvelB3E = hvelB3
 
 
-# ccE = round(correlation_coef(RtAeroMRE[:-1],IE),2)
-# plt.rcParams['font.size'] = 16
-# out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Rotor_Var_plots/"
-# fig,ax = plt.subplots(figsize=(14,8))
-# ax.plot(Time_OF,RtAeroMRE,"-r",label="Moments: {}".format(MRE_moms))
-# ax.set_ylabel("Out-of-plane bending moment deformable [kN-m]")
-# ax.grid()
-# ax.legend(loc="upper left")
-# ax2=ax.twinx()
-# ax2.plot(Time_OF[:-1],IE,"-b",label="Moments: {}".format(IE_moms))
-# ax2.set_ylabel("Blade Asymmetry [$m^3/s$]")
-# ax2.grid()
-# ax2.legend(loc="upper right")
-# fig.supxlabel("Time [s]")
-# fig.suptitle("Deformable case Correlation coefficient = {}".format(ccE))
-# plt.tight_layout()
-# plt.savefig(out_dir+"Elastic_MR_IB_2.png")
-# plt.close()
+ccE = round(correlation_coef(RtAeroMRE[:-1],IE),2)
+plt.rcParams['font.size'] = 16
+out_dir="../../NREL_5MW_MCBL_E_CRPM/post_processing/Rotor_Var_plots/"
+fig,ax = plt.subplots(figsize=(14,8))
+ax.plot(Time_OF,RtAeroMRE,"-r",label="Moments: {}".format(MRE_moms))
+ax.set_ylabel("Out-of-plane bending moment deformable [kN-m]")
+ax.grid()
+ax.legend(loc="upper left")
+ax2=ax.twinx()
+ax2.plot(Time_OF[:-1],IE,"-b",label="Moments: {}".format(IE_moms))
+ax2.set_ylabel("Blade Asymmetry [$m^3/s$]")
+ax2.grid()
+ax2.legend(loc="upper right")
+fig.supxlabel("Time [s]")
+fig.suptitle("Deformable case Correlation coefficient = {}".format(ccE))
+plt.tight_layout()
+plt.savefig(out_dir+"Elastic_MR_IB_2.png")
+plt.close()
 
 
 
@@ -366,10 +366,10 @@ OF_vars = ds_R.groups["OpenFAST_Variables"]
 
 # RtAeroMRR = np.sqrt( np.add(np.square(RtAeroMys), np.square(RtAeroMzs)) ) 
 
-# RtAeroMys = np.array(OF_vars.variables["LSSTipMys"][Start_time_idx:])
-# RtAeroMzs = np.array(OF_vars.variables["LSSTipMzs"][Start_time_idx:])
+RtAeroMys = np.array(OF_vars.variables["LSSTipMys"][Start_time_idx:])
+RtAeroMzs = np.array(OF_vars.variables["LSSTipMzs"][Start_time_idx:])
 
-# RtAeroMRR = np.sqrt(np.add(np.square(RtAeroMys),np.square(RtAeroMzs)))
+RtAeroMRR = np.sqrt(np.add(np.square(RtAeroMys),np.square(RtAeroMzs)))
 
 # MRR_moms = moments(RtAeroMRR)[:2]
 
@@ -429,18 +429,18 @@ OF_vars = ds_R.groups["OpenFAST_Variables"]
 # plt.grid()LSShftFzs
 # plt.close()
 
-# fig = plt.figure(figsize=(14,8))
-# frq,PSD = temporal_spectra(RtAeroMRR,dt_OF,Var="MRR")
-# plt.loglog(frq,PSD,"-r",label="Rigid")
-# frq,PSD = temporal_spectra(RtAeroMRE,dt_OF,Var="MRE")
-# plt.loglog(frq,PSD,"-b",label="Elastic")
-# plt.ylabel("PSD Out-of-plane bending moment [kN-m]")
-# plt.legend()
-# plt.grid()
-# plt.xlabel("Frequency [Hz]")
-# plt.tight_layout()
-# plt.savefig(out_dir+"Spectra_MR.png")
-# plt.close()
+fig = plt.figure(figsize=(14,8))
+frq,PSD = temporal_spectra(RtAeroMRR,dt_OF,Var="MRR")
+plt.loglog(frq,PSD,"-r",label="Rigid")
+frq,PSD = temporal_spectra(RtAeroMRE,dt_OF,Var="MRE")
+plt.loglog(frq,PSD,"-b",label="Elastic")
+plt.ylabel("PSD Out-of-plane bending moment [kN-m]")
+plt.legend()
+plt.grid()
+plt.xlabel("Frequency [Hz]")
+plt.tight_layout()
+plt.savefig(out_dir+"Spectra_MR.png")
+plt.close()
 
 # fig = plt.figure(figsize=(14,8))
 # frq,PSD = temporal_spectra(IE,dt_OF,Var="IE")

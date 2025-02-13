@@ -1,318 +1,312 @@
 from netCDF4 import Dataset
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import glob 
-import os
-from matplotlib import cm
-import operator
-import math
-import sys
-import time
-from multiprocessing import Pool
-import pyFAST.input_output as io
 from scipy import interpolate
 
 
-def coriolis_twist(u,v):
-    twist = np.arctan(np.true_divide(v,u))
+def hard_filter(signal,cutoff,dt,filter_type):
 
-    return twist
+    N = len(signal)
+    spectrum = np.fft.fft(signal)
+    F = np.fft.fftfreq(N,dt)
+    #F = (1/(dt*N)) * np.arange(N)
+    if filter_type=="lowpass":
+        spectrum_filter = spectrum*(np.abs(F)<cutoff)
+    elif filter_type=="highpass":
+        spectrum_filter = spectrum*(np.abs(F)>cutoff)
+    elif filter_type=="bandpass":
+        spectrum_filter = spectrum*(np.abs(F)>cutoff[0])
+        spectrum_filter = spectrum_filter*(np.abs(F)<cutoff[1])
+        
+
+    spectrum_filter = np.fft.ifft(spectrum_filter)
+
+    return np.real(spectrum_filter)
 
 
-def Horizontal_velocity(it):
-    f = interpolate.interp1d(h,twist)
-    f_u = interpolate.interp1d(h,u_mean_profile)
-    vel = []
-    fluct_vel = []
-    for i in np.arange(0,len(zs)):
+def tranform_fixed_frame(y,z,Theta):
 
-        u_i = u[it,i*x:(i+1)*x]; v_i = v[it,i*x:(i+1)*x]
+    Y = y*np.cos(Theta) - z*np.sin(Theta)
+    Z = y*np.sin(Theta) + z*np.cos(Theta)
+
+    return Y,Z
 
 
-        if zs[i] < h[0]:
-            twist_h = f(h[0])
-            u_mean = f_u(h[0])
+def dt_calc(u,dt):
+    #compute time derivative using first order forward difference
+    d_dt = []
+    for i in np.arange(0,len(u)-1,1):
+        d_dt.append( (u[i+1]-u[i])/dt )
 
-        elif zs[i] > h[-1]:
-            twist_h = f(h[-1])
-            u_mean = f_u(h[-1])
+    return d_dt
+
+
+def correlation_coef(x,y):
+    
+    r = (np.sum(((x-np.mean(x))*(y-np.mean(y)))))/(np.sqrt(np.sum(np.square(x-np.mean(x)))*np.sum(np.square(y-np.mean(y)))))
+
+    return r
+
+
+def probability_dist(y,N):
+    std = np.std(y)
+    if N=="default":
+        N=20
+    bin_width = std/N
+    x = np.arange(np.min(y),np.max(y)+bin_width,bin_width)
+    dx = x[1]-x[0]
+    P = []
+    X = []
+    for i in np.arange(0,len(x)-1):
+        p = 0
+        for yi in y:
+            if yi >= x[i] and yi <= x[i+1]:
+                p+=1
+        P.append(p/(dx*len(y)))
+        X.append((x[i+1]+x[i])/2)
+
+    print(np.sum(P)*dx)
+
+    return P,X
+
+
+def energy_contents_check(Var,e_fft,signal,dt):
+
+    E = (1/dt)*np.sum(e_fft)
+
+    q = np.sum(np.square(signal))
+
+    E2 = q
+
+    print(Var, E, E2, abs(E2/E))    
+
+
+def temporal_spectra(signal,dt,Var):
+
+    fs =1/dt
+    n = len(signal) 
+    if n%2==0:
+        nhalf = int(n/2+1)
+    else:
+        nhalf = int((n+1)/2)
+    frq = np.arange(nhalf)*fs/n
+    Y   = np.fft.fft(signal)
+    PSD = abs(Y[range(nhalf)])**2 /(n*fs) # PSD
+    PSD[1:-1] = PSD[1:-1]*2
+
+
+    energy_contents_check(Var,PSD,signal,dt)
+
+    return frq, PSD
+
+
+def LPF_standard_dev(signal):
+
+    N = len(signal)
+    signal_LPF = np.array(hard_filter(signal,0.3,dt,"lowpass"))
+    sigma = np.sqrt(np.sum(np.square(np.subtract(signal,signal_LPF)))/N)
+
+    return sigma
+
+
+def theta_360(Theta):
+    Theta_360 = []
+    for theta in Theta:
+        if theta < 0:
+            Theta_360.append(theta+360)
         else:
-            twist_h = f(zs[i])
-            u_mean = f_u(zs[i])
+            Theta_360.append(theta)
+    return Theta_360
 
 
-        vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
 
 
-        fluc_vel_i = np.subtract(vel_i,u_mean)
-        vel.extend(vel_i)
-        fluct_vel.extend(fluc_vel_i)
-    vel = np.array(vel)
-    fluct_vel = np.array(fluct_vel)
-    return vel,fluct_vel
+in_dir = "../../NREL_5MW_MCBL_R_CRPM_3/post_processing/"
+out_dir=in_dir+"Jims_plots/"
 
+
+df_OF = Dataset(in_dir+"Dataset.nc")
+
+Time_OF = np.array(df_OF.variables["Time_OF"])
+dt = Time_OF[1] - Time_OF[0]
+
+OpenFAST_vars = df_OF.groups["OpenFAST_Variables"]
+print(OpenFAST_vars)
+
+Azimuth = np.radians(np.array(OpenFAST_vars.variables["Azimuth"]))
+
+#Torque
+RtAeroMxa = np.array(OpenFAST_vars.variables["RtAeroMxh"])/1000
 
-def Horz_vel_2(it):
-    f = interpolate.interp1d(h,twist)
-    f_u = interpolate.interp1d(h,u_mean_profile)
+RtAeroFyh = np.array(OpenFAST_vars.variables["RtAeroFyh"])/1000
+RtAeroFzh = np.array(OpenFAST_vars.variables["RtAeroFzh"])/1000
+RtAeroFys,RtAeroFzs = tranform_fixed_frame(RtAeroFyh,RtAeroFzh,Azimuth)
 
-    u_i = u_H[it]; v_i = v_H[it]
-    twist_h = f(90); u_mean = f_u(90)
+RtAeroMyh = np.array(OpenFAST_vars.variables["RtAeroMyh"])/1000
+RtAeroMzh = np.array(OpenFAST_vars.variables["RtAeroMzh"])/1000
 
-    vel_i = u_i*np.cos(twist_h) + v_i*np.sin(twist_h)
+RtAeroMys,RtAeroMzs = tranform_fixed_frame(RtAeroMyh,RtAeroMzh,Azimuth)
 
-    fluc_vel_i = np.subtract(vel_i,u_mean)
+#OOPBM
+L1 = 1.912; L2 = 2.09
 
-    return fluc_vel_i
+OOPBM = np.sqrt(np.add(np.square(RtAeroMys),np.square(RtAeroMzs)))
 
-
-def blade_positions(it):
-
-    R = 63
-    Az = -Azimuth[it]
-    Y = [2560]; Y2 = [2560]; Y3 = [2560]
-    Z = [90]; Z2 = [90]; Z3 = [90]
-
-    Y.append(Y[0]+R*np.sin(Az))
-    Z.append(Z[0]+R*np.cos(Az))
-
-    Az2 = Az-(2*np.pi)/3
-    if Az2 < -2*np.pi:
-        Az2 += (2*np.pi)
-    
-    Az3 = Az-(4*np.pi)/3
-    if Az2 < -2*np.pi:
-        Az2 += (2*np.pi)
-
-    Y2.append(Y2[0]+R*np.sin(Az2))
-    Z2.append(Z2[0]+R*np.cos(Az2))
-
-    Y3.append(Y3[0]+R*np.sin(Az3))
-    Z3.append(Z3[0]+R*np.cos(Az3))
-
-    return Y, Z, Y2, Z2, Y3, Z3
-
-
-start_time = time.time()
-
-
-precursor_df = Dataset("./abl_statistics76000.nc")
-Time_pre = np.array(precursor_df.variables["time"])
-mean_profiles = precursor_df.groups["mean_profiles"] #create variable to hold mean profiles
-t_start = np.searchsorted(precursor_df.variables["time"],38200)
-u = np.average(mean_profiles.variables["u"][t_start:],axis=0)
-v = np.average(mean_profiles.variables["v"][t_start:],axis=0)
-h = mean_profiles["h"][:]
-twist = coriolis_twist(u,v) #return twist angle in radians for precursor simulation
-
-u_mean_profile = (u * np.cos(twist)) + (v * np.sin(twist))
-
-del precursor_df; del Time_pre; del mean_profiles; del t_start; del u; del v
-
-
-
-df = Dataset("Dataset.nc")
-Time_OF = np.array(df.variables["Time_OF"])
-OF_vars = df.groups["OpenFAST_Variables"]
-
-Azimuth = np.radians(np.array(OF_vars.variables["Azimuth"]))
-
-Azimuth = Azimuth+np.radians(334)
-
-del df; del OF_vars
-
-a = Dataset("./sampling_r_-63.0.nc")
-
-p = a.groups["p_r"]
-
-#time options
-Time = np.array(a.variables["time"])
-Time = Time - Time[0]
-tstart = 700
-tstart_idx = np.searchsorted(Time,tstart)
-tend = 1000
-tend_idx = np.searchsorted(Time,tend)
-Time_steps = np.arange(0, tend_idx-tstart_idx)
-Time = Time[tstart_idx:tend_idx]
-
-f = interpolate.interp1d(Time_OF,Azimuth)
-Azimuth = f(Time)
-print(len(Azimuth))
-print(len(Time))
-
-
-x = p.ijk_dims[0] #no. data points
-y = p.ijk_dims[1] #no. data points
-
-
-normal = 29.29
-
-#define plotting axes
-coordinates = np.array(p.variables["coordinates"])
-
-
-xo = coordinates[0:x,0]
-yo = coordinates[0:x,1]
-
-rotor_coordiates = [2560,2560,90]
-
-x_trans = xo - rotor_coordiates[0]
-y_trans = yo - rotor_coordiates[1]
-
-phi = np.radians(-normal)
-xs = np.subtract(x_trans*np.cos(phi), y_trans*np.sin(phi))
-ys = np.add(y_trans*np.cos(phi), x_trans*np.sin(phi))
-xs = xs + rotor_coordiates[0]
-ys = ys + rotor_coordiates[1]
-zs = np.linspace(p.origin[2],p.origin[2]+p.axis2[2],y)
-
-
-u = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
-v = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
-
-u[u<0]=0; v[v<0]=0 #remove negative velocities
-
-u_hvel = [];u_pri = []
-ix=0
-with Pool() as pool:
-    for u_hvel_it, u_hvel_pri_it in pool.imap(Horizontal_velocity,Time_steps):
-        
-        u_hvel.append(u_hvel_it)
-        u_pri.append(u_hvel_pri_it)
-        print(ix)
-        ix+=1
-
-u = np.array(u_pri); del u_hvel; del u_pri; del v
-
-u[u<-7]=-7; u[u>7]=7 
-
-cmin = -7
-cmax = 7
-
-
-nlevs = int((cmax-cmin)/2)
-if nlevs>abs(cmin) or nlevs>cmax:
-    nlevs = min([abs(cmin),cmax])+1
-
-levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
-levels = np.concatenate((levs_min,levs_max[1:]))
-
-
-print("line 370",levels)
-
-
-a = Dataset("./sampling_l_85.nc")
-
-p = a.groups["p_l"]
-
-x_H = p.ijk_dims[0] #no. data points
-y_H = p.ijk_dims[1] #no. data points
-
-xs_H = np.linspace(p.origin[0],p.origin[0]+p.axis1[0],x_H)
-ys_H = np.linspace(p.origin[1],p.origin[1]+p.axis2[1],y_H)
-
-
-u_H = np.array(p.variables["velocityx"][tstart_idx:tend_idx])
-v_H = np.array(p.variables["velocityy"][tstart_idx:tend_idx])
-
-u_H[u_H<0]=0; v_H[v_H<0]=0 #remove negative velocities
-
-u_pri = []
-ix=0
-with Pool() as pool:
-    for u_hvel_pri_it in pool.imap(Horz_vel_2,Time_steps):
-        
-        u_pri.append(u_hvel_pri_it)
-        print(ix)
-        ix+=1
-
-u_H = np.array(u_pri); del u_pri; del v_H
-
-u_H[u_H<-7]=-7; u_H[u_H>7]=7
-
-
-cmin = -7
-cmax = 7
-
-
-nlevs = int((cmax-cmin)/2)
-if nlevs>abs(cmin) or nlevs>cmax:
-    nlevs = min([abs(cmin),cmax])+1
-
-levs_min = np.linspace(cmin,0,nlevs,dtype=int); levs_max = np.linspace(0,cmax,nlevs,dtype=int)
-levels_H = np.concatenate((levs_min,levs_max[1:]))
-
-
-
-plt.rcParams['font.size'] = 40
-
-def Update(it):
-
-    U = u[it] #velocity time step it
-    U_H = u_H[it]
-    
-    if it < 10:
-        Time_idx = "000{}".format(it)
-    elif it >= 10 and it < 100:
-        Time_idx = "00{}".format(it)
-    elif it >= 100 and it < 1000:
-        Time_idx = "0{}".format(it)
-    elif it >= 1000 and it < 10000:
-        Time_idx = "{}".format(it)
-
-    u_plane = U.reshape(y,x)
-    X,Y = np.meshgrid(ys,zs)
-
-
-    u_plane_H = U_H.reshape(x_H,y_H)
-    X_H,Y_H = np.meshgrid(xs_H,ys_H)
-
-    T = Time[it]
-
-
-    fig,(ax1,ax2) = plt.subplots(1,2,figsize=(100,30))
-    plt.rcParams['font.size'] = 40
-
-    cs = ax1.contourf(X,Y,u_plane,levels=levels, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
-
-    ax1.set_xlabel("y' axis (rotor frame of reference) [m]")
-    ax1.set_ylabel("z' axis (rotor frame of reference) [m]")
-
-    cb = plt.colorbar(cs)
-
-    ax1.set_title("Rotor plane: -63.0m offset\nFluctuating streamwise velocity $u'_{x'}$")
-
-    cz = ax2.contourf(X_H,Y_H,u_plane_H,levels=levels_H, cmap=cm.coolwarm,vmin=cmin,vmax=cmax)
-
-    ax2.set_xlabel("x axis [m]")
-    ax2.set_ylabel("y axis [m]")
-
-    ax2.set_title("Horizontal plane: hub height 90m\nFluctuating streamwise velocity $u'_{x'}$")
-
-    x_lims = [2524.5,2585.5]; y_lims = [2615.1,2504.9]
-    ax2.plot(x_lims,y_lims,linewidth=1.0,color="k")
-
-
-
-    YB1,ZB1,YB2,ZB2,YB3,ZB3 = blade_positions(it)
-
-    ax1.plot(YB1,ZB1,color="k",linewidth = 1)
-    ax1.plot(YB2,ZB2,color="r",linewidth = 1)
-    ax1.plot(YB3,ZB3,color="b",linewidth = 1)  
-
-
-    fig.suptitle("Time: {}s".format(T))
-    plt.savefig("ISOplots/"+Time_idx+".png")
-    plt.cla()
-    cb.remove()
-    plt.close(fig)
-
-    return T
-
-
-
-with Pool() as pool:
-    for T in pool.imap(Update,Time_steps):
-
-        print(T,time.time()-start_time)
+#FB
+FBMy = RtAeroMzs/L2; FBFy = -RtAeroFys*((L1+L2)/L2)
+FBMz = -RtAeroMys/L2; FBFz = -RtAeroFzs*((L1+L2)/L2)
+
+FBy = -(FBMy + FBFy); FBz = -(FBMz + FBFz)
+
+FBR = np.sqrt(np.add(np.square(FBy),np.square(FBz)))
+Theta_FBR = np.degrees(np.arctan2(FBz,FBy))
+Theta_FBR = theta_360(Theta_FBR)
+
+
+#LPF signals
+LPF_Mx = np.array(hard_filter(RtAeroMxa,0.3,dt,"lowpass"))
+
+LPF_OOPBM = np.array(hard_filter(OOPBM,0.3,dt,"lowpass"))
+BPF_OOPBM = np.array(hard_filter(OOPBM,[0.3,0.9],dt,"bandpass"))
+HPF_OOPBM = np.array(hard_filter(OOPBM,[1.5,40],dt,"bandpass"))
+LPF_BPF_OOPBM = np.array(hard_filter(OOPBM,0.9,dt,"lowpass"))
+
+LPF_FBR = np.array(hard_filter(FBR,0.3,dt,"lowpass"))
+BPF_FBR = np.array(hard_filter(FBR,[0.3,0.9],dt,"bandpass"))
+HPF_FBR = np.array(hard_filter(FBR,[1.5,40],dt,"bandpass"))
+LPF_BPF_FBR = np.array(hard_filter(FBR,0.9,dt,"lowpass"))
+
+Time_start_idx = np.searchsorted(Time_OF,200); Time_end_idx = np.searchsorted(Time_OF,240)
+plt.rcParams['font.size'] = 24
+fig = plt.figure(figsize=(28,12))
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],FBR[Time_start_idx:Time_end_idx],"-k",label="$F_{B,\perp}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],LPF_BPF_FBR[Time_start_idx:Time_end_idx],"-g",label="LPF 0.9Hz $F_{B,\perp}$")
+plt.xlabel("Time [s]")
+plt.ylabel("Main Bearing radial force magnitude [kN]")
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"LPF_BPF_FBR.png")
+plt.close()
+
+Time_start_idx = np.searchsorted(Time_OF,200); Time_end_idx = np.searchsorted(Time_OF,300)
+fig = plt.figure(figsize=(28,12))
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],FBR[Time_start_idx:Time_end_idx],"-k",label="$F_{B,\perp}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],LPF_FBR[Time_start_idx:Time_end_idx],"-g",label="LPF 0.3Hz $F_{B,\perp}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],BPF_FBR[Time_start_idx:Time_end_idx],"-r",label="BPF 0.3-0.9Hz $F_{B,\perp}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],HPF_FBR[Time_start_idx:Time_end_idx]-1000,"-b",label="HPF 1.5-40Hz $F_{B,\perp}$\noffset=-1000kN")
+plt.legend()
+plt.xlabel("Time [s]")
+plt.ylabel("Main Bearing radial force magnitude [kN]")
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR_3_freqs.png")
+plt.close()
+
+
+Time_start_idx = np.searchsorted(Time_OF,200); Time_end_idx = np.searchsorted(Time_OF,240)
+fig = plt.figure(figsize=(28,12))
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],OOPBM[Time_start_idx:Time_end_idx],"-k",label="$M_{H,\perp}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],LPF_BPF_OOPBM[Time_start_idx:Time_end_idx],"-g",label="LPF 0.9Hz $M_{H,\perp}$")
+plt.xlabel("Time [s]")
+plt.ylabel("OOPBM magnitude [kN-m]")
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"LPF_BPF_OOPBM.png")
+plt.close()
+
+Time_start_idx = np.searchsorted(Time_OF,200); Time_end_idx = np.searchsorted(Time_OF,300)
+fig = plt.figure(figsize=(28,12))
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],OOPBM[Time_start_idx:Time_end_idx],"-k",label="$M_{H,\perp}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],LPF_OOPBM[Time_start_idx:Time_end_idx],"-g",label="LPF 0.3Hz $M_{H,\perp}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],BPF_OOPBM[Time_start_idx:Time_end_idx],"-r",label="BPF 0.3-0.9Hz $M_{H,\perp}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],HPF_OOPBM[Time_start_idx:Time_end_idx]-1000,"-b",label="HPF 1.5-40Hz $M_{H,\perp}$\noffset=-1000kN")
+plt.xlabel("Time [s]")
+plt.ylabel("OOPBM magnitude [kN-m]")
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.savefig(out_dir+"OOPBM_3_freqs.png")
+plt.close()
+
+
+#Statistics over 1000s
+print(np.average(OOPBM)); print(np.std(OOPBM)); print(LPF_standard_dev(OOPBM))
+print(np.average(RtAeroMxa)); print(np.std(RtAeroMxa)); print(LPF_standard_dev(RtAeroMxa))
+print(np.average(FBR)); print(np.std(FBR)); print(LPF_standard_dev(FBR))
+
+
+#plots over 800-1000s
+
+Time_start = 800
+Time_start_idx = np.searchsorted(Time_OF,Time_start)
+
+Time_end = 1000
+Time_end_idx = np.searchsorted(Time_OF,Time_end)
+
+plt.rcParams['font.size'] = 24
+fig = plt.figure(figsize=(28,12))
+plt.plot(Time_OF[Time_start_idx:Time_end_idx], OOPBM[Time_start_idx:Time_end_idx])
+plt.axhline(y=np.average(OOPBM),linestyle="--",color="k",label="$\langle \widetilde{M}_{H,\perp ,mod} \\rangle _{1000s}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],LPF_OOPBM[Time_start_idx:Time_end_idx],"-g",label="LPF $\widetilde{M}_{H,\perp ,mod}$")
+plt.xlabel("Time [s]")
+plt.ylabel("Aerodynamic OOPBM magnitude [kN-m]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"OOPBM.png")
+plt.close()
+
+fig = plt.figure(figsize=(28,12))
+plt.plot(Time_OF[Time_start_idx:Time_end_idx], RtAeroMxa[Time_start_idx:Time_end_idx])
+plt.axhline(y=np.average(RtAeroMxa),linestyle="--",color="k",label="$\langle \widetilde{M}_{H,x} \\rangle _{1000s}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],LPF_Mx[Time_start_idx:Time_end_idx],"-g",label="LPF $\widetilde{M}_{H,x}$")
+plt.xlabel("Time [s]")
+plt.ylabel("Torque [kN-m]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"Torque.png")
+plt.close()
+
+fig = plt.figure(figsize=(28,12))
+plt.plot(Time_OF[Time_start_idx:Time_end_idx], FBR[Time_start_idx:Time_end_idx])
+plt.axhline(y=np.average(FBR),linestyle="--",color="k",label="$\langle \widetilde{F}_{B,\perp} \\rangle _{1000s}$")
+plt.plot(Time_OF[Time_start_idx:Time_end_idx],LPF_FBR[Time_start_idx:Time_end_idx],"-g",label="LPF $\widetilde{F}_{B,\perp}$")
+plt.xlabel("Time [s]")
+plt.ylabel("Aerodynamic main bearing radial force magnitude [kN]")
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig(out_dir+"FBR.png")
+plt.close()
+
+
+#trajectories
+
+MR = np.sqrt(np.add(np.square(RtAeroMys/L2),np.square(RtAeroMzs/L2)))
+MTheta = np.degrees(np.arctan2(RtAeroMys/L2,-RtAeroMzs/L2))
+MTheta = theta_360(MTheta)
+
+FR = np.sqrt(np.add(np.square(RtAeroFys*((L1+L2)/L2)),np.square(RtAeroFzs*((L1+L2)/L2))))
+FTheta = np.degrees(np.arctan2(RtAeroFzs*((L1+L2)/L2),RtAeroFys*((L1+L2)/L2)))
+FTheta = theta_360(FTheta)
+
+Time_start = 200
+Time_start_idx = np.searchsorted(Time_OF,Time_start)
+
+Time_end = 240
+Time_end_idx = np.searchsorted(Time_OF,Time_end)
+
+plt.rcParams['font.size'] = 12
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(projection='polar')
+ax.plot(np.radians(Theta_FBR[Time_start_idx:Time_end_idx]),FBR[Time_start_idx:Time_end_idx],"-r",label="$\widetilde{\mathbf{F}}_{B,\perp}$")
+ax.plot(np.radians(MTheta[Time_start_idx:Time_end_idx]),MR[Time_start_idx:Time_end_idx],"-b",label="$\widetilde{\mathbf{M}}_{H,\perp,mod}(1/L_2)$")
+ax.plot(np.radians(FTheta[Time_start_idx:Time_end_idx]),FR[Time_start_idx:Time_end_idx],"-g",label="$\widetilde{\mathbf{F}}_{H,\perp}(L/L_2)$")
+
+ax.legend()
+ax.set_title("Vector trajectories [kN]\n200-240s")
+plt.savefig(out_dir+"FR_MR_FBR_trajectory.png")
+plt.close(fig)

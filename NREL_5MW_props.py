@@ -124,8 +124,8 @@ WT_E = df_E.groups["WTG01"]
 Time = np.array(WT_E.variables["time"])
 Start_time_idx = np.searchsorted(Time,Time[0]+200)
 
-Time_steps = np.arange(0,len(Time))
-#Time = Time[Start_time_idx:]
+Time_steps = np.arange(Start_time_idx,len(Time))
+Time = Time[Start_time_idx:]-Time[0]
 
 Rotor_coordinates = [np.float64(WT_E.variables["xyz"][0,0,0]),np.float64(WT_E.variables["xyz"][0,0,1]),np.float64(WT_E.variables["xyz"][0,0,2])]
 
@@ -138,27 +138,27 @@ with Pool() as pool:
         print(ix)
         ix+=1
 
-out_dir=in_dir+"Elastic_deformations_analysis/"
-plt.rcParams['font.size'] = 16
-fig = plt.figure(figsize=(14,8))
-plt.plot(Time,xs)
-plt.xlabel("Time [s]")
-plt.ylabel("$x_H$ coordinate blade tip [m]")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"xH_tip_coordinate.png")
-plt.close(fig)
+# out_dir=in_dir+"Elastic_deformations_analysis/"
+# plt.rcParams['font.size'] = 16
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time,xs)
+# plt.xlabel("Time [s]")
+# plt.ylabel("$x_H$ coordinate blade tip [m]")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"xH_tip_coordinate.png")
+# plt.close(fig)
 
-idx = np.searchsorted(Time,Time[0]+100)
-fig = plt.figure(figsize=(14,8))
-plt.plot(Time[:idx],xs[:idx])
-plt.xlabel("Time [s]")
-plt.ylabel("$x_H$ coordinate blade tip [m]")
-plt.title("First 100s initial OpenFAST transients")
-plt.grid()
-plt.tight_layout()
-plt.savefig(out_dir+"xH_tip_coordinate_100.png")
-plt.close(fig)
+# idx = np.searchsorted(Time,Time[0]+100)
+# fig = plt.figure(figsize=(14,8))
+# plt.plot(Time[:idx],xs[:idx])
+# plt.xlabel("Time [s]")
+# plt.ylabel("$x_H$ coordinate blade tip [m]")
+# plt.title("First 100s initial OpenFAST transients")
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(out_dir+"xH_tip_coordinate_100.png")
+# plt.close(fig)
 
 ix = 0
 My = []
@@ -174,9 +174,9 @@ plt.rcParams['font.size'] = 16
 fig = plt.figure(figsize=(14,8))
 plt.plot(Time,My)
 plt.axhline(y=np.mean(My),linestyle="--",color="k")
-plt.xlabel("Time [s]")
-plt.ylabel("Estimated $M_{H,y}$ due to weight [kN-m]")
-plt.title("Mean = {}kN-m, Standard deviation = {}kN-m".format(M_mean,M_std))
+plt.xlabel("Time [s]",fontsize=22)
+plt.ylabel("Estimated $M_{H,y}$ due to weight [kN-m]",fontsize=22)
+plt.title("Average = {}kN-m, Standard deviation = {}kN-m".format(M_mean,M_std))
 plt.grid()
 plt.tight_layout()
 plt.savefig(out_dir+"My_WR.png")

@@ -1524,8 +1524,8 @@ for i in np.arange(0,len(dUxB1)):
     elif abs(dUxB3[i]) == abs_max_dUx:
         max_dUx.append(dUxB3[i])
 
-plt.plot(Time_mag_HPF,max_dUx)
-plt.show()
+# plt.plot(Time_mag_HPF,max_dUx)
+# plt.show()
 
 
 plt.rcParams['font.size'] = 16
@@ -1533,7 +1533,7 @@ out_dir=in_dir+"High_frequency_analysis/velocity_cc_FBR/"
 
 max_dUx = []
 for i in np.arange(0,len(dUxB1)):
-    max_dUx.append(np.max([dUxB1[i],dUxB2[i],dUxB3[i]]))
+    max_dUx.append(np.max([abs(dUxB1[i]),abs(dUxB2[i]),abs(dUxB3[i])]))
 
 
 fig = plt.figure(figsize=(14,8))
