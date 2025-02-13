@@ -64,11 +64,11 @@ for height in heights:
         ic+=1
 
 
-    velocityx = np.sqrt( np.add( np.square(p_r.variables["velocityx"][Start_time_idx:,ic]), np.square(p_r.variables["velocityy"][Start_time_idx:,ic]) ))
+    upri = np.sqrt( np.add( np.square(p_r.variables["velocityx"][Start_time_idx:,ic]), np.square(p_r.variables["velocityy"][Start_time_idx:,ic]) ))
 
     plt.rcParams['font.size'] = 16
     fig = plt.figure(figsize=(14,8))
-    plt.plot(Time,velocityx)
+    plt.plot(Time,upri)
     plt.ylabel("u veloicity component [m/s]")
     plt.xlabel("Time [s]")
     plt.grid()
@@ -78,7 +78,7 @@ for height in heights:
     plt.close(fig)
 
 
-    upri = velocityx - np.average(velocityx)
+    upri = upri - np.average(upri)
     fig = plt.figure(figsize=(14,8))
     frq,PSD = temporal_spectra(upri,dt,"upri")
     plt.loglog(frq,PSD)
@@ -88,4 +88,24 @@ for height in heights:
     plt.grid()
     plt.tight_layout()
     plt.savefig("plots/PSD_LES_u_{}.png".format(height))
+    plt.close(fig)
+
+    
+    upri = np.array(p_r.variables["velocityx"][Start_time_idx:,ic])
+    upri = upri - np.average(upri)
+    vpri = np.array(p_r.variables["velocityy"][Start_time_idx:,ic])
+    vpri = vpri - np.average(vpri)
+    wpri = np.array(p_r.variables["velocityz"][Start_time_idx:,ic])
+    wpri = wpri - np.average(wpri)
+    TKE = 0.5*(upri**2 + vpri**2 + wpri**2) 
+    fig = plt.figure(figsize=(14,8))
+    frq,PSD = temporal_spectra(TKE,dt,"TKE")
+    plt.loglog(frq,PSD)
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("PSD - TKE [$m^4/s^4$]")
+    plt.title("Center of rotor. Height = {}m".format(height))
+    plt.ylim(bottom=1e-07)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("plots/PSD_TKE_{}.png".format(height))
     plt.close(fig)
